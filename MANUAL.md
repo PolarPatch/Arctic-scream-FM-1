@@ -71,7 +71,10 @@ across the stereo field.
 | Page | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 |---|---|---|---|---|
 | MIXER 1 | LEVEL | DLY SEND | REV SEND | GRAIN SEND |
-| MIXER 2 | PAN | | | |
+| MIXER 2 | PAN | TYPE | POS | |
+
+- **TYPE** (MIXER 2): the track filter is a low-pass (`LP`), high-pass (`HP`) or band-pass (`BP`). `LP` open (CUTOFF at the top) or `HP` open (CUTOFF at the bottom) means no filtering. A band-pass is gentle at RESONANCE 0 and narrows as you turn it up.
+- **POS** (MIXER 2): `PRE`: the effect sends hear the filtered sound (as GR!MM 1.0). `POST`: only the track's dry sound is filtered; GRAIN, DELAY and SPACE hear it unfiltered (a dark track with a bright reverb, say).
 
 <br clear="right">
 <p align="center"><img src="docs/manual/screens/mixer.png" alt="MIXER 1" width="300"></p>

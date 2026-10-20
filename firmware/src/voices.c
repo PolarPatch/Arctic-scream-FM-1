@@ -69,6 +69,8 @@ typedef struct {
                                                  * DECAY 0..99 (fm.c; a built-in PATCH's: fm_builtin) */
     volatile int32_t dr_borga, dr_storm, dr_rise;   /* DRONE: BORGA 0..100 %, STOARBMA 0..100 %, GOHCCAT 0 OFF .. 6
                                                  * (32 bars) (drone.c) */
+    volatile int32_t ftype, fpos;               /* (V2) MIXER 2: the track filter's TYPE (FT_: LP, HP, BP), POS (0 PRE:
+                                                 * the sends hear it filtered; 1 POST: only the dry sound filtered) */
 } track_t;
 #define TRK_DEF {ENG_VA, {{0, 10, 90, 30}, {0, 64, 64, 20}, {0, 0, 127, 0}, {0, 12, 64, 10}, {4, 0, 40, 0}, {0, 64, 80, 64}, {0, 0, 60, 0}, {96, 64, 50, 40}}, 100, 0, 100, 0, 64, 0, \
                  {60, 85, 51, 105}, 0, 0, 0, 0, 0, 4, 1, 50, 40, 30, 9, 0, 84, 24, 100, 0, 0, {{0}}}

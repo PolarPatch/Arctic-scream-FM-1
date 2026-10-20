@@ -10,8 +10,9 @@
  *   the working project, saved by itself (autosave: grimm.c), in two objects, each in a pair of sectors written in
  *   turn (a cut save leaves the other copy):
  *     WORK  (sectors 1, 2): the four tracks (their source, every source's settings, ENV, LATCH, CHORD, ARP, LFO, LEVEL,
- *           the sends, PAN), the effects, the tempo, the SCALE, the four sequences, the slot in use, the song (its
- *           chain, MODE) and the mutes and solos, the tracks' FM patches (version 7; before: the PATCH as built)
+ *           the sends, PAN, the track filter's TYPE and POS), the effects, the tempo, the SCALE, the four sequences,
+ *           the slot in use, the song (its chain, MODE) and the mutes and solos, the tracks' FM patches (version 7;
+ *           before: the PATCH as built)
  *   the slots A..D (each the four tracks, their sequences and step locks, their FM patches; tempo and effects are
  *   global): one copy, a stream over sectors 3, 4 and 5 (each its own header and CRC; the FM patches after the four
  *   slots, where it was zeros before step 24: zeros, the PATCH as built). Saving a slot rewrites the sectors it lives in
@@ -411,7 +412,10 @@ static uint8_t *pk_track(uint8_t *q, uint32_t t)
     q[42] = (uint8_t)clamp(trk[t].pan, 0, 127);
     q[43] = ch_pack(t);
     q[44] = (uint8_t)((trk[t].arp ? 0x80u : 0u) | (uint32_t)clamp(trk[t].arp_mode, 0, NARPMODE - 1));   /* ARP */
-    q[45] = (uint8_t)clamp(trk[t].arp_rate, 0, NARPRATE - 1), q[46] = (uint8_t)((uint32_t)clamp(trk[t].arp_oct, 1, 4) |
+    q[45] = (uint8_t)((uint32_t)clamp(trk[t].arp_rate, 0, NARPRATE - 1) | (uint32_t)clamp(trk[t].ftype, 0, NFTYPE - 1) << 4 |
+                      (uint32_t)clamp(trk[t].fpos, 0, 1) << 6);   /* (GR!MM V2's MIXER 2 TYPE, POS over ARP's RATE: its
+                                                 * byte 32 is DRONE's here; saved before: 0, LP PRE) */
+    q[46] = (uint8_t)((uint32_t)clamp(trk[t].arp_oct, 1, 4) |
                                                                                  (uint32_t)clamp(trk[t].dr_rise, 0, DR_NRISE - 1) << 4);
     q[47] = (uint8_t)clamp(trk[t].arp_gate, 10, 100);
     lfo_pk(q + 48, t);                          /* LFO */
@@ -452,8 +456,9 @@ static const uint8_t *uk_track(const uint8_t *q0, uint32_t t, int isr, uint32_t 
     trk[t].dr_borga = clamp(q[32], 0, 100), trk[t].dr_storm = clamp(q[37] >> 1, 0, 100), trk[t].dr_rise = clamp(q[46] >> 4 & 7u, 0, DR_NRISE - 1);
     trk[t].level = q[38], trk[t].dly = q[39], trk[t].rev = q[40], trk[t].grn = q[41], trk[t].pan = q[42];
     trk[t].cut = 127 - clamp(q[29], 0, 127), trk[t].res = clamp(q[30], 0, 127), trk[t].fx = clamp((int8_t)q[31] + 100, 0, 200);
+    trk[t].ftype = clamp(q[45] >> 4 & 3u, 0, NFTYPE - 1), trk[t].fpos = q[45] >> 6 & 1u;   /* (saved before 1.3: LP PRE) */
     ch_unpack(t, q[43]);
-    trk[t].arp_mode = clamp(q[44] & 0x7Fu, 0, NARPMODE - 1), trk[t].arp_rate = clamp(q[45], 0, NARPRATE - 1);
+    trk[t].arp_mode = clamp(q[44] & 0x7Fu, 0, NARPMODE - 1), trk[t].arp_rate = clamp(q[45] & 15u, 0, NARPRATE - 1);
     trk[t].arp_oct = clamp(q[46] & 7u, 1, 4), trk[t].arp_gate = clamp(q[47], 10, 100);
     trk[t].arp = (int32_t)(q[44] >> 7 & 1u);    /* (on or off: arp.c's arp_watch starts it empty) */
     lfo_uk(q + 48, t);

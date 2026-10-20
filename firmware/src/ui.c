@@ -435,8 +435,10 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         }
         ui_3(S->val, k == 3u ? (uint32_t)clamp(v, 0, 200) : ui_pc(v));
         return;
-    case PG_MIX2:
-        if (v == 64) put_s(S->val, "C");
+    case PG_MIX2:                               /* PAN; (V2) the track filter's TYPE, POS */
+        if (k == 1u) put_s(S->val, FT_NAME[clamp(v, 0, NFTYPE - 1)]);
+        else if (k == 2u) put_s(S->val, v ? "POST" : "PRE");
+        else if (v == 64) put_s(S->val, "C");
         else put_u(put_s(S->val, v < 64 ? "L" : "R"), (uint32_t)(v < 64 ? 64 - v : v - 64));
         return;
     case PG_GRAIN:
@@ -1738,7 +1740,8 @@ static uint32_t ui_pic_key(void)
         UI_H(p ? *p : -1);
     }
     for (t = 0; t < NT; t++)
-        UI_H(trk[t].level), UI_H(trk[t].dly), UI_H(trk[t].rev), UI_H(trk[t].grn), UI_H(trk[t].pan), UI_H(trk[t].eng);
+        UI_H(trk[t].level), UI_H(trk[t].dly), UI_H(trk[t].rev), UI_H(trk[t].grn), UI_H(trk[t].pan), UI_H(trk[t].eng),
+            UI_H(trk[t].ftype), UI_H(trk[t].fpos);
     UI_H(trk[sel].fm_alg), UI_H(trk[sel].fm_fb), UI_H(fm_op), UI_H(trk[sel].p[ENG_FM][0]);
     UI_H(trk[sel].latch), UI_H(trk[sel].chord), UI_H(trk[sel].ch_type), UI_H(trk[sel].ch_voice), UI_H(sc_root), UI_H(sc_scale);
     if (PAGES[page].btn == BTN_SEL) UI_H(ch_last), UI_H(ui_oct);
