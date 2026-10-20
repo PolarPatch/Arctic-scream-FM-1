@@ -324,9 +324,15 @@ colours the whole mix at the end. Each page has its own northern lights.
 | GRAIN | SIZE (10–390 ms) | DENSITY | SCATTER | MIX |
 | DELAY | TIME (20 ms – 3 s) | FEEDBACK (to 150 %) | WEAR | MIX |
 | SPACE | SIZE (to ~32 s, then INF) | DAMP | MIX | PRE-DELAY |
+| MASTER | CUTOFF | RESONANCE | TYPE (LP / HP / BP) | POSITION (PRE FX / POST REVERB / END) |
+| DRIVE | AMOUNT | TYPE (SOFT / FUZZ / CLIP / FOLD) | TONE | MIX |
 
 - **Runaway echo:** past 100 % FEEDBACK the echo grows and saturates, and burns magenta on the screen.
 - GRAIN and DELAY both pour into SPACE. All four TAPE knobs at 0 switch TAPE off.
+
+- **MASTER** filters everything, in stereo. **POSITION** says where: `PRE FX` filters the tracks' dry mix before the effects return (the reverb and echoes stay bright), `POST REVERB` filters the tracks and the effects together (before DRIVE and TAPE), `END` filters the very end, after TAPE and the PERFORM tricks. `LP` with CUTOFF at the top or `HP` at the bottom switches it off completely.
+- **DRIVE** distorts everything after SPACE, before TAPE. **AMOUNT** is how hard (0 = off completely), **TYPE** the character: `SOFT` (warm saturation), `FUZZ` (lopsided, buzzy), `CLIP` (hard), `FOLD` (a wavefolder: the harder you drive it, the more it folds back into new overtones). **TONE** darkens it (`OPEN` at the top), **MIX** blends it with the clean sound. A limiter after it keeps even the loudest settings from blowing up the output.
+- MASTER and DRIVE belong to the project (saved with it, like the other effects); TYPE and POS belong to each track.
 
 ---
 
