@@ -19,7 +19,8 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { inflateSync } from "node:zlib";
 import { execFileSync } from "node:child_process";
 import { Client, VirtualFM1, LiveSender, MidiTransport, findFM1, OBJ, parseSound, buildRecord, makeBackup, checkBackup,
-         restoreBackup, makeProject, checkProject, makeSlot, recordOk, unpack7, hex, sampleName, parseSeq, buildSeq, seqToMidi, midiToSeq,
+         restoreBackup, makeProject, checkProject, makeSlot, recordOk, unpack7, hex, sampleName, parseSeq, buildSeq, seqToMidi, midiToSeq, SET_V1, settingsOf, withSettings,
+         sameSettings, crc32,
          SEQ_DIV } from "./editor_core.js";
 
 let ex, data, size, started = false, rewinding = false;
@@ -180,6 +181,19 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   let pbad = 0;
   try { checkProject({ ...pf, crc: pf.crc ^ 1 }, info); } catch { pbad = 1; }
   check(eq([...pc], [...pa]) && pf.slot === "A" && pbad, "editor: project A saved to a file, loaded into C, read back; a damaged file refused");
+  {                                                          // 1.3: SETTINGS (MIDI CHANNEL, CLOCK), V1.0's backups
+    const s0 = await cl.get(OBJ.SET, info.setSize), sw = withSettings(s0, { mch: 18, clk: 3 });
+    await cl.put(OBJ.SET, sw, info.fmt);
+    const s1 = await cl.get(OBJ.SET, info.setSize), v = settingsOf(s1);
+    check(sameSettings(sw, s1) && v.mch === 18 && v.clk === 3, "editor: SETTINGS: MIDI CHANNEL CH 5 > SEL, CLOCK TRS written, read back");
+    const old = Uint8Array.from([...s0.slice(0, SET_V1 - 1), 1]);   // (1.2's settings: 168 bytes, version 1)
+    const bk = JSON.parse(JSON.stringify(b1));
+    bk.objects[0] = { id: OBJ.SET, len: SET_V1, crc: crc32(old), data: Buffer.from(old).toString("base64") };
+    const objs = checkBackup(bk, info);
+    await restoreBackup(cl, objs.slice(0, 1), info);
+    const s2 = await cl.get(OBJ.SET, info.setSize);
+    check(sameSettings(old, s2) && settingsOf(s2).clk === 0, "editor: a 1.2 backup's settings restored on 1.3 (CLOCK INT)");
+  }
   const fr = 48000, n = 38400, wav = new Uint8Array(44 + n * 4), dv = new DataView(wav.buffer);   // 0.8 s, 16 bit stereo
   [..."RIFF"].forEach((c, i) => { wav[i] = c.charCodeAt(0); }), dv.setUint32(4, 36 + n * 4, true);
   [..."WAVEfmt "].forEach((c, i) => { wav[8 + i] = c.charCodeAt(0); });

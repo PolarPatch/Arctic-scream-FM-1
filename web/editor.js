@@ -13,7 +13,7 @@
 import { Client, MidiTransport, VirtualFM1, LiveSender, findFM1, HEAD, CMD, OBJ, PROTOS, EditorError, emptyRecord, isEmpty,
          recordOk, parseSound, buildRecord, soundTitle, makeBackup, checkBackup, restoreBackup, makeProject, checkProject, makeSlot, noteFromName,
          sampleName, noteName, pack7, hex, SEQ_N, SEQ_DIV, SEQ_MODE, parseSeq, buildSeq, emptyStep, seqToMidi,
-         midiToSeq } from "./editor_core.js";
+         midiToSeq, SET_V1, MCH_NAMES, CLOCK_NAMES, settingsOf, withSettings, sameSettings } from "./editor_core.js";
 const RISE = ["OFF", "1 BAR", "2 BARS", "4 BARS", "8 BARS", "16 BARS", "32 BARS"];   // DRONE's GOHCCAT
 
 const $ = (id) => document.getElementById(id);
@@ -38,6 +38,7 @@ const fwName = (v) => `p0larpatch v${v}`;                   // (the firmware as 
 let wasm = null, vf = null, vfc = null, meta = null;        // grimm.wasm; its instance here (texts, the virtual FM-1)
 let conn = null;                                             // { client, info, kind: "fm1" | "virtual", transport, live, seq }
 let busy = false;
+let setBytes = null;                                         // the settings as last read from the FM-1 (SETTINGS)
 const user = Array.from({ length: 64 }, () => emptyRecord()), dirty = new Array(64).fill(false);
 let pick = { fact: true, i: 0 }, readAt = "";                // the sound chosen in the library
 const tracks = [null, null, null, null], loaded = ["", "", "", ""], from = ["", "", "", ""];   // T1..T4: the sound,
@@ -152,6 +153,8 @@ addEventListener("keydown", startEngine, true);
 function setConn(c) {
   if (conn && conn.transport.close) conn.transport.close();
   conn = c;
+  setBytes = null;                                           // (another FM-1, or none: read its settings again)
+  if ($("set-mch").options.length) drawSettings();
   const s = $("conn");
   s.textContent = !c ? "NOT CONNECTED" : c.kind === "virtual" ? `VIRTUAL FM-1 · ${fwName(c.info.firmware)}` : `FM-1 · ${fwName(c.info.firmware)}`;
   s.classList.toggle("on", !!c);
@@ -328,8 +331,11 @@ function drawSlots() {
 }
 function refreshButtons() {
   const c = !!conn && !busy, u = !pick.fact, empty = u && isEmpty(user[pick.i]);
-  ["b-readall", "b-store", "b-backup", "b-restore", "b-sinfo", "b-sfactory"].forEach((id) => { $(id).disabled = !c; });
+  ["b-readall", "b-store", "b-backup", "b-restore", "b-sinfo", "b-sfactory", "b-setread"].forEach((id) => { $(id).disabled = !c; });
   document.querySelectorAll("#proj button").forEach((b) => { b.disabled = !c; });
+  $("b-setwrite").disabled = !c || !setBytes;
+  $("set-mch").disabled = $("set-clk").disabled = !setBytes;
+  if (setBytes && setBytes.length <= SET_V1) $("set-clk").disabled = true;   // (1.2 and before: no CLOCK)
   $("b-disconnect").disabled = !conn || busy;
   $("b-connect").disabled = $("b-try").disabled = $("b-connect2").disabled = $("b-try2").disabled = busy;
   for (let t = 0; t < 4; t++) $("b-load" + t).disabled = empty;
@@ -1224,8 +1230,9 @@ $("f-restore").onchange = async (e) => {
     download(`arctic-scream-backup-before-restore-${stamp()}.json`, JSON.stringify(before, null, 1));
     await restoreBackup(conn.client, objs, conn.info, (i, n, what) => { progress(i, n); say(`WRITING ${what.toUpperCase()}…`); });
     for (let i = 0; i < objs.length; i++) {                  // read back: as written
-      const d = await conn.client.get(objs[i].id, objs[i].data.length);
-      if (d.some((x, k) => x !== objs[i].data[k])) throw new EditorError(`${objs[i].what.toUpperCase()} DID NOT READ BACK AS WRITTEN`, 0);
+      const set = objs[i].id === OBJ.SET, d = await conn.client.get(objs[i].id, set ? conn.info.setSize : objs[i].data.length);
+      if (set ? !sameSettings(objs[i].data, d) : d.some((x, k) => x !== objs[i].data[k]))
+        throw new EditorError(`${objs[i].what.toUpperCase()} DID NOT READ BACK AS WRITTEN`, 0);
       progress(i + 1, objs.length);
     }
     for (const o of objs) if (o.id >= OBJ.SND && o.id < OBJ.SND + 64) { user[o.id - OBJ.SND] = o.data; dirty[o.id - OBJ.SND] = false; }
@@ -1264,6 +1271,32 @@ $("f-proj").onchange = async (e) => {
 };
 
 // ------------------------------------------------------------------ start: the four tracks and sequences as the firmware starts
+// ------------------------------------------------------------------ settings (GR!MM V2): MIDI CHANNEL, CLOCK
+function drawSettings() {
+  const m = $("set-mch"), c = $("set-clk"), v2 = !setBytes || setBytes.length > SET_V1;
+  m.textContent = c.textContent = "";
+  MCH_NAMES.forEach((n, i) => { if (v2 || i <= 13) el("option", { value: i }, m, n); });
+  CLOCK_NAMES.forEach((n, i) => el("option", { value: i }, c, n));
+  if (setBytes) { const s = settingsOf(setBytes); m.value = s.mch; c.value = s.clk; }
+  refreshButtons();
+}
+$("b-setread").onclick = () => job("SETTINGS", async () => {
+  setBytes = await conn.client.get(OBJ.SET, conn.info.setSize);
+  drawSettings();
+  return "SETTINGS READ FROM THE FM-1";
+});
+$("b-setwrite").onclick = () => job("SETTINGS", async () => {
+  const b = withSettings(setBytes, { mch: +$("set-mch").value, clk: +$("set-clk").value });
+  await conn.client.put(OBJ.SET, b, conn.info.fmt, progress);
+  const back = await conn.client.get(OBJ.SET, conn.info.setSize);
+  if (!sameSettings(b, back)) throw new EditorError("THE SETTINGS DID NOT READ BACK AS SENT", 0);
+  setBytes = back;
+  drawSettings();
+  return `SETTINGS WRITTEN: MIDI CHANNEL ${MCH_NAMES[b[3]]}${b.length > SET_V1 ? ", CLOCK " + CLOCK_NAMES[b[SET_V1]] : ""}`;
+});
+drawSettings();
+
+// ------------------------------------------------------------------ start: the four tracks as GR!MM starts
 (async () => {
   try {
     wasm = await (await fetch("grimm.wasm")).arrayBuffer();
