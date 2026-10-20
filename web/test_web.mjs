@@ -146,7 +146,7 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   const vf = await VirtualFM1.create(readFileSync("web/dist/grimm.wasm"));
   vf.warmUp();
   const cl = new Client(vf), info = await cl.info(), meta = vf.meta();
-  check(info.proto === 3 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 168 && info.factory === 47,
+  check(info.proto === 3 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 169 && info.factory === 47,
         `editor: INFO (${info.firmware}, protocol ${info.proto}, ${info.sounds} sounds, slots ${info.slotSize} B)`);
   const iw = parseSound(Uint8Array.from(meta.factory[46].rec), meta);
   check(meta.factory[46].name === "ICE WRAITH" && iw.latch === 1 && iw.drone.borga === 65 && iw.drone.storm === 0 && iw.drone.rise === 4 &&

@@ -27,6 +27,8 @@ else
     echo "saves  FAILED: Arctic Scream 1.2's project loads otherwise (diff tests/data/a1.2-state.txt build/compat/a1.2-state.txt)"
     exit 1
 fi
-# GR!MM V2: MIDI. The TRS jack's parser (tests/midi_uart_test.c)
+# GR!MM V2: MIDI. The TRS jack's parser (tests/midi_uart_test.c); the clock in and out, MIDI CHANNEL's CH n > SEL
+# (tests/clock_test.py: host mode's "clock", "trs" and "probe")
 cc -O2 -Wall -Wno-unused-function -Ifirmware/hal -o build/host/midi_uart_test tests/midi_uart_test.c
 build/host/midi_uart_test
+python3 tests/clock_test.py build/host/grimm
