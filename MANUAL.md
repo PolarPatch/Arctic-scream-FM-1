@@ -361,7 +361,7 @@ FREEZE is a toggle: tap it to hold the grain cloud, tap again to let go.
 
 - **COLOUR:** pick the one that matches your FM-1.
 - **MIDI CHANNEL:** `1-4` puts T1–T4 on channels 1–4 (or higher, up to `13-16`); `ALL > SEL` sends everything to the
-  selected track.
+  selected track; `CH 1 > SEL` … `CH 16 > SEL` sends only that channel to the selected track and ignores the others.
 - **SCREEN OFF:** the screen goes dark after the chosen time; the music goes on. The first touch only wakes it.
 - **MIDI LEARN:** set LEARN, turn a knob on the FM-1, then move one on your controller. Up to 32 links.
 - **SEQ MIDI OUT:** sends the sequencer's and the arpeggiator's notes out over USB.
