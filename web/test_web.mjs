@@ -19,8 +19,8 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { inflateSync } from "node:zlib";
 import { execFileSync } from "node:child_process";
 import { Client, VirtualFM1, LiveSender, MidiTransport, findFM1, OBJ, parseSound, buildRecord, makeBackup, checkBackup,
-         restoreBackup, makeProject, checkProject, makeSlot, recordOk, unpack7, hex, sampleName, parseSeq, buildSeq, seqToMidi, midiToSeq, SET_V1, settingsOf, withSettings,
-         sameSettings, crc32,
+         restoreBackup, makeProject, checkProject, makeSlot, recordOk, unpack7, hex, sampleName, parseSeq, buildSeq, seqToMidi, midiToSeq, SET_V1, SET_V2, settingsOf, withSettings,
+         sameSettings, crc32, checkSamples, restoreSamples,
          SEQ_DIV } from "./editor_core.js";
 
 let ex, data, size, started = false, rewinding = false;
@@ -193,6 +193,16 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
     await restoreBackup(cl, objs.slice(0, 1), info);
     const s2 = await cl.get(OBJ.SET, info.setSize);
     check(sameSettings(old, s2) && settingsOf(s2).clk === 0, "editor: a 1.2 backup's settings restored on 1.3 (CLOCK INT)");
+    const v2 = Uint8Array.from([...sw.slice(0, SET_V1 - 1), 2, 3]);   // (V2's version 2: 169 bytes, CLOCK TRS, no LATCH)
+    bk.objects[0] = { id: OBJ.SET, len: SET_V2, crc: crc32(v2), data: Buffer.from(v2).toString("base64") };
+    await restoreBackup(cl, checkBackup(bk, info).slice(0, 1), info);
+    const s3 = await cl.get(OBJ.SET, info.setSize), v3 = settingsOf(s3);
+    check(sameSettings(v2, s3) && v3.clk === 3 && v3.latch === 0, "editor: a version 2 backup's settings restored (CLOCK as saved, LATCH OFF)");
+    const sl = withSettings(s3, { mch: 0, clk: 0, latch: 1 });
+    await cl.put(OBJ.SET, sl, info.fmt);
+    const s4 = await cl.get(OBJ.SET, info.setSize);
+    check(sameSettings(sl, s4) && settingsOf(s4).latch === 1, "editor: SETTINGS: LATCH (SYSTEM 3) ON written, read back");
+    await cl.put(OBJ.SET, withSettings(s4, { mch: 0, clk: 0, latch: 0 }), info.fmt);
   }
   {                                                          // GR!MM V2: FX (25): read, set live (MASTER, DRIVE, T2's filter)
     const f0 = await cl.fx();
@@ -241,6 +251,32 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
     }
     const nm = String.fromCharCode(...readFileSync("build/web/test2.bin").subarray(8, 16)).replace(/\0+$/, "");
     check(nm === sampleName("Sample-002") && nm === "SAMP-002", `editor: a long sample name cut as the uploader cuts it, its number kept (${nm})`);
+  }
+  {                                                          // GR!MM V2: the sample slots in a backup, restored
+    for (const [k, nm, root] of [[0, "ICE-A", 45], [1, "ICE-B", 52], [3, "ICE-D", 60]]) {   // (Arctic Scream has no
+      const x = makeSlot(wav.buffer, nm, root);              // factory samples: three of the test's own beside slot 3's)
+      await cl.smpUpload(k, x.hdr, x.data);
+    }
+    const bs = await makeBackup(cl, info), sm = checkSamples(JSON.parse(JSON.stringify(bs)), info);
+    const names = bs.samples.map((x) => x && x.name).join();
+    check(names === "ICE-A,ICE-B,TESTWAV,ICE-D" && sm.every((d, k) => d && d.length === bs.samples[k].len),
+          `editor: a backup holds the four sample slots, header and data (${names})`);
+    await cl.smpFactory(), await cl.smpErase(1);             // (all four empty: CLEAR)
+    const done = await restoreSamples(cl, sm), back = await Promise.all([0, 1, 2, 3].map((k) => cl.smpRead(k)));
+    const ok = back.every((d, k) => d && d.length === sm[k].length && d.every((x, i) => x === sm[k][i]));
+    check(done.join() === "WRITTEN,WRITTEN,WRITTEN,WRITTEN" && ok && (await cl.smpInfo()).every((x) => x.state === 1),
+          `editor: the backup's samples restored, read back the same, checked by the FM-1 (${done.join(", ")})`);
+    const d2 = await restoreSamples(cl, [sm[0], sm[1], sm[2], null]), i2 = await cl.smpInfo();
+    check(d2.join() === "AS IT WAS,AS IT WAS,AS IT WAS,EMPTIED" && i2[3].state === 0 && await cl.smpRead(3) === null,
+          `editor: a slot empty in the backup emptied, the others not written again (${d2.join(", ")})`);
+    const nb = JSON.parse(JSON.stringify(bs));
+    delete nb.samples;
+    check(checkSamples(nb, info) === null, "editor: an older backup (no samples): the sample slots left as they are");
+    const bad = JSON.parse(JSON.stringify(bs)), bd = Buffer.from(bad.samples[2].data, "base64");
+    bd[600] ^= 1, bad.samples[2].data = bd.toString("base64"), bad.samples[2].crc = crc32(bd);
+    let refused = false;
+    try { checkSamples(bad, info); } catch { refused = true; }
+    check(refused, "editor: a damaged sample in a backup refused before anything is written");
   }
   const sf = await cl.smpFactory();
   check(sf.every((x) => x.state === 0 && !x.name), `editor: CLEAR: all four slots empty (${sf.map((x) => x.name || "-").join(", ")})`);

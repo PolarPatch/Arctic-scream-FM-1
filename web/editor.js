@@ -13,7 +13,7 @@
 import { Client, MidiTransport, VirtualFM1, LiveSender, findFM1, HEAD, CMD, OBJ, PROTOS, EditorError, emptyRecord, isEmpty,
          recordOk, parseSound, buildRecord, soundTitle, makeBackup, checkBackup, restoreBackup, makeProject, checkProject, makeSlot, noteFromName,
          sampleName, noteName, pack7, hex, SEQ_N, SEQ_DIV, SEQ_MODE, parseSeq, buildSeq, emptyStep, seqToMidi,
-         midiToSeq, SET_V1, MCH_NAMES, CLOCK_NAMES, settingsOf, withSettings, sameSettings } from "./editor_core.js";
+         midiToSeq, SET_V1, SET_V2, MCH_NAMES, CLOCK_NAMES, settingsOf, withSettings, sameSettings, checkSamples, restoreSamples } from "./editor_core.js";
 const RISE = ["OFF", "1 BAR", "2 BARS", "4 BARS", "8 BARS", "16 BARS", "32 BARS"];   // DRONE's GOHCCAT
 
 const $ = (id) => document.getElementById(id);
@@ -334,8 +334,9 @@ function refreshButtons() {
   ["b-readall", "b-store", "b-backup", "b-restore", "b-sinfo", "b-sfactory", "b-setread"].forEach((id) => { $(id).disabled = !c; });
   document.querySelectorAll("#proj button").forEach((b) => { b.disabled = !c; });
   $("b-setwrite").disabled = !c || !setBytes;
-  $("set-mch").disabled = $("set-clk").disabled = !setBytes;
+  $("set-mch").disabled = $("set-clk").disabled = $("set-latch").disabled = !setBytes;
   if (setBytes && setBytes.length <= SET_V1) $("set-clk").disabled = true;   // (1.2 and before: no CLOCK)
+  if (setBytes && setBytes.length <= SET_V2) $("set-latch").disabled = true;   // (before SYSTEM 3: no LATCH)
   $("b-disconnect").disabled = !conn || busy;
   $("b-connect").disabled = $("b-try").disabled = $("b-connect2").disabled = $("b-try2").disabled = busy;
   for (let t = 0; t < 4; t++) $("b-load" + t).disabled = empty;
@@ -1215,16 +1216,22 @@ $("b-sfactory").onclick = () => {                            // CLEAR (the facto
 $("b-backup").onclick = () => job("BACKUP", async () => {
   const b = await makeBackup(conn.client, conn.info, (i, n, what) => { progress(i, n); say(`READING ${what.toUpperCase()}…`); });
   download(`arctic-scream-backup-${stamp()}.json`, JSON.stringify(b, null, 1));
-  return "BACKUP MADE: ALL 64 SOUNDS, SLOTS A–D, THE SETTINGS (DOWNLOADED)";
+  return `BACKUP MADE: ALL 64 SOUNDS, SLOTS A–D, THE SETTINGS${b.samples ? ", THE SAMPLES" : " (NOT THE SAMPLES: THIS FIRMWARE CANNOT SEND THEM)"} (DOWNLOADED)`;
 });
 $("b-restore").onclick = () => $("f-restore").click();
 $("f-restore").onchange = async (e) => {
   const f = e.target.files[0];
   e.target.value = "";
   if (!f) return;
-  let objs;
-  try { objs = checkBackup(JSON.parse(await f.text()), conn.info); } catch (err) { say(`RESTORE: ${errText(err)} (NOTHING WRITTEN)`, "err"); return; }
-  if (!confirm(`RESTORE ${f.name}?\n\nThis REPLACES all 64 user sounds, slots A–D and the settings on the FM-1. A backup of what it holds now is made (downloaded) first.`)) return;
+  let objs, smp;
+  try {
+    const b = JSON.parse(await f.text());
+    objs = checkBackup(b, conn.info), smp = checkSamples(b, conn.info);
+  } catch (err) { say(`RESTORE: ${errText(err)} (NOTHING WRITTEN)`, "err"); return; }
+  if (!confirm(`RESTORE ${f.name}?\n\nThis REPLACES all 64 user sounds, slots A–D and the settings on the FM-1` +
+               (smp ? ", and the four sample slots (as in the file; one already the same is not written again)" :
+                 " (the file has no samples: the sample slots stay as they are)") +
+               ". A backup of what it holds now is made (downloaded) first.")) return;
   await job("RESTORE", async () => {
     const before = await makeBackup(conn.client, conn.info, (i, n) => { progress(i, n); say("FIRST, A BACKUP OF WHAT THE FM-1 HOLDS NOW…"); });
     download(`arctic-scream-backup-before-restore-${stamp()}.json`, JSON.stringify(before, null, 1));
@@ -1237,7 +1244,14 @@ $("f-restore").onchange = async (e) => {
     }
     for (const o of objs) if (o.id >= OBJ.SND && o.id < OBJ.SND + 64) { user[o.id - OBJ.SND] = o.data; dirty[o.id - OBJ.SND] = false; }
     drawSlots();
-    return "RESTORED AND READ BACK: EVERYTHING AS IN THE FILE (THE BACKUP FROM BEFORE IS DOWNLOADED)";
+    let sd = "";
+    if (smp) {                                               // GR!MM V2: the sample slots as in the file, each checked
+      const done = await restoreSamples(conn.client, smp, (k, i, n) => { progress(i, n); say(`WRITING SAMPLE ${k + 1}…`); });
+      smpInfo = await conn.client.smpInfo();
+      drawSamples();
+      sd = `; SAMPLES: ${done.map((w, k) => `${k + 1} ${w}`).join(", ")}`;
+    }
+    return `RESTORED AND READ BACK: EVERYTHING AS IN THE FILE${sd} (THE BACKUP FROM BEFORE IS DOWNLOADED)`;
   });
 };
 
@@ -1270,14 +1284,14 @@ $("f-proj").onchange = async (e) => {
   });
 };
 
-// ------------------------------------------------------------------ start: the four tracks and sequences as the firmware starts
-// ------------------------------------------------------------------ settings (GR!MM V2): MIDI CHANNEL, CLOCK
+// ------------------------------------------------------------------ settings (GR!MM V2): MIDI CHANNEL, CLOCK, LATCH
 function drawSettings() {
-  const m = $("set-mch"), c = $("set-clk"), v2 = !setBytes || setBytes.length > SET_V1;
-  m.textContent = c.textContent = "";
+  const m = $("set-mch"), c = $("set-clk"), l = $("set-latch"), v2 = !setBytes || setBytes.length > SET_V1;
+  m.textContent = c.textContent = l.textContent = "";
   MCH_NAMES.forEach((n, i) => { if (v2 || i <= 13) el("option", { value: i }, m, n); });
   CLOCK_NAMES.forEach((n, i) => el("option", { value: i }, c, n));
-  if (setBytes) { const s = settingsOf(setBytes); m.value = s.mch; c.value = s.clk; }
+  ["OFF", "ON"].forEach((n, i) => el("option", { value: i }, l, n));
+  if (setBytes) { const s = settingsOf(setBytes); m.value = s.mch; c.value = s.clk; l.value = s.latch; }
   refreshButtons();
 }
 $("b-setread").onclick = () => job("SETTINGS", async () => {
@@ -1286,17 +1300,18 @@ $("b-setread").onclick = () => job("SETTINGS", async () => {
   return "SETTINGS READ FROM THE FM-1";
 });
 $("b-setwrite").onclick = () => job("SETTINGS", async () => {
-  const b = withSettings(setBytes, { mch: +$("set-mch").value, clk: +$("set-clk").value });
+  const b = withSettings(setBytes, { mch: +$("set-mch").value, clk: +$("set-clk").value, latch: +$("set-latch").value });
   await conn.client.put(OBJ.SET, b, conn.info.fmt, progress);
   const back = await conn.client.get(OBJ.SET, conn.info.setSize);
   if (!sameSettings(b, back)) throw new EditorError("THE SETTINGS DID NOT READ BACK AS SENT", 0);
   setBytes = back;
   drawSettings();
-  return `SETTINGS WRITTEN: MIDI CHANNEL ${MCH_NAMES[b[3]]}${b.length > SET_V1 ? ", CLOCK " + CLOCK_NAMES[b[SET_V1]] : ""}`;
+  return `SETTINGS WRITTEN: MIDI CHANNEL ${MCH_NAMES[b[3]]}${b.length > SET_V1 ? ", CLOCK " + CLOCK_NAMES[b[SET_V1]] : ""}` +
+         (b.length > SET_V2 ? `, LATCH ${b[SET_V2] ? "ON" : "OFF"}` : "");
 });
 drawSettings();
 
-// ------------------------------------------------------------------ start: the four tracks as GR!MM starts
+// ------------------------------------------------------------------ start: the four tracks and sequences as the firmware starts
 (async () => {
   try {
     wasm = await (await fetch("grimm.wasm")).arrayBuffer();
