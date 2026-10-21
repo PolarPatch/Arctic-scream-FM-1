@@ -1216,7 +1216,8 @@ $("b-sfactory").onclick = () => {                            // CLEAR (the facto
 $("b-backup").onclick = () => job("BACKUP", async () => {
   const b = await makeBackup(conn.client, conn.info, (i, n, what) => { progress(i, n); say(`READING ${what.toUpperCase()}…`); });
   download(`arctic-scream-backup-${stamp()}.json`, JSON.stringify(b, null, 1));
-  return `BACKUP MADE: ALL 64 SOUNDS, SLOTS A–D, THE SETTINGS${b.samples ? ", THE SAMPLES" : " (NOT THE SAMPLES: THIS FIRMWARE CANNOT SEND THEM)"} (DOWNLOADED)`;
+  return `BACKUP MADE: ALL 64 SOUNDS, SLOTS A–D, THE SETTINGS${b.samples ? ", THE SAMPLES" : " (NOT THE SAMPLES: THIS FIRMWARE CANNOT SEND THEM)"} (DOWNLOADED)` +
+         (conn.client.missed ? `; ${conn.client.missed} REPLIES MISSED, ASKED AGAIN` : "");
 });
 $("b-restore").onclick = () => $("f-restore").click();
 $("f-restore").onchange = async (e) => {
