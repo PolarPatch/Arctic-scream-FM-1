@@ -56,9 +56,10 @@
  *              running, the first touch only wakes it), HOME again: SYSTEM 2 (MIDI LEARN: LEARN, a knob turned on any
  *              page, then a CC: linked, 32 at most; CLEAR ALL + OCT+; OCT- cancels; SEQ MIDI OUT: the steps' and the
  *              arps' notes out on their tracks' channels too; SAMPLES: RESTORE + OCT+ writes the four factory
- *              samples over the slots, OCT- keeps them; none built in: CLEAR, the slots emptied), HOME again: SYSTEM 3 (GR!MM V2: LATCH: FROM SOUND, a sound
- *              loaded brings its own LATCH, as before; ALWAYS OFF, loading a sound never changes the track's LATCH, off
- *              unless SEL + OCT+ latched it); the FM-1's settings, not the project's
+ *              samples over the slots, OCT- keeps them; none built in: CLEAR, the slots emptied), HOME again:
+ *              SYSTEM 3 (GR!MM V2: LATCH: FROM SOUND, a sound loaded brings its own LATCH, as before; ALWAYS OFF, a
+ *              sound loaded sets the track's LATCH OFF; at the load only: EDIT's LATCH, SEL + OCT+ as ever); the
+ *              FM-1's settings, not the project's
  *   SAVE       SOUNDS (64 slots: a track's source, its four, ENV, LATCH (FM: its own patch); SLOT, CATEGORY, TYPE (the list by source),
  *              ACTION; playing: SAVE / CLEAR wait for the stop) -> PROJECTS (the slots A..D: the four tracks' sounds,
  *              sequences and the mixer; SLOT, ACTION LOAD / SAVE / ERASE / NEW); OCT+ does the ACTION, OCT- backs out;
