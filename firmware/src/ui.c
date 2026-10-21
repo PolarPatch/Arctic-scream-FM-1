@@ -163,7 +163,8 @@ static void ui_head_text(void)
     else if (page == PG_HOME) tempo_text(ui_hr, "> ");   /* (Main: the tempo; a MIDI clock's: "EXT 120.4") */
     else if (P->btn == BTN_SEL) put_u(put_s(ui_hr, "T"), sel + 1u);
     else if (page == PG_ARP) put_s(ui_hr, trk[sel].latch ? "LATCH" : "");   /* (Arp: LATCH, if on) */
-    else if (page == PG_SYSTEM || page == PG_SYS2) put_s(ui_hr, "V" APP_VER);   /* (System: the version) */
+    else if (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3) put_s(ui_hr, "V" APP_VER);   /* (System: the
+                                                 * version) */
     else if (page == PG_FMALGO || page == PG_FMOP) put_u(put_s(ui_hr, "OP "), (uint32_t)clamp(fm_op, 0, 5) + 1u);   /* (EditFM:
                                                  * the operator) */
     else if (page == PG_SONG) put_u(put_s(put_u(ui_hr, (uint32_t)song_cur() + 1u), "/"), song_length());   /* (Song: the
@@ -361,6 +362,7 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         put_s(S->val, k == 2u ? (v ? SMP_FACT_N ? "RESTORE" : "CLEAR" : "KEEP") : k ? (v ? "ON" : "OFF") :
               v == LEARN_CLEAR ? "CLEAR" : LEARN_NAME[clamp(v, 0, 2)]);
         return;
+    case PG_SYS3: put_s(S->val, v ? "ON" : "OFF"); return;   /* (V2) LATCH */
     case PG_SOUNDS:
         if (k == 0u) { ui_3(S->val, (uint32_t)v + 1u); return; }
         if (k == 1u) { ui_squeeze(S->val, CAT_NAME[clamp(v, 0, NCAT - 1)]); return; }
@@ -521,7 +523,7 @@ static void ui_tint(uint32_t pg)
     case PG_MIX1: case PG_MIX2: case PG_TRACK: a = BW_CYAN, b = BW_GREEN, c = BW_VIOLET, x = BW_MAGENTA; break;
     case PG_SONG: a = BW_GOLD, b = BW_MAGENTA, c = BW_PERIWINKLE, x = BW_CYAN; break;
     case PG_SOUNDS: case PG_PROJECTS: a = BW_BLUE, b = BW_AMBER, c = BW_TEAL, x = BW_MAGENTA; break;
-    case PG_SYSTEM: case PG_SYS2: a = BW_MAGENTA, b = BW_CYAN, c = BW_BLUE, x = BW_CYAN; break;
+    case PG_SYSTEM: case PG_SYS2: case PG_SYS3: a = BW_MAGENTA, b = BW_CYAN, c = BW_BLUE, x = BW_CYAN; break;
     default:
         ui_d = UI_D0, ui_m = UI_M0, ui_l = UI_L0, ui_acc = ui_hd = ui_acc_user;
         return;
@@ -1737,6 +1739,16 @@ static void pic_sys2(void)
     }
 }
 
+static void pic_sys3(void)                      /* (V2) SYSTEM 3: LATCH, what it does; the combo for the track's */
+{
+    ui_caption("NEW PROJECTS", 0);
+    sys_row(0, "LATCH", set.latch ? "ON" : "OFF");
+    ui_text(PX0 + 6, 104, "A NEW PROJECT'S TRACKS", 1, UI_M);
+    ui_text(PX0 + 6, 116, "START WITH THIS LATCH", 1, UI_M);
+    ui_text(PX0 + 6, 140, "SEL + OCT+: THE TRACK'S", 1, UI_M);
+    ui_text(PX0 + 6, 152, "LATCH ON, OFF", 1, UI_M);
+}
+
 static void pic_notbuilt(void) { ui_text(120 - 4 * 13, 96, "NOT BUILT YET", 1, UI_M); }
 
 static void ui_pic_draw(void)
@@ -1777,6 +1789,7 @@ static void ui_pic_draw(void)
     case PG_PROJECTS: pic_projects(); return;
     case PG_SYSTEM: pic_system(); return;
     case PG_SYS2: pic_sys2(); return;
+    case PG_SYS3: pic_sys3(); return;
     default: pic_notbuilt(); return;
     }
 }
@@ -1817,8 +1830,8 @@ static uint32_t ui_pic_key(void)
         UI_H(smp[k].state), UI_H(smp[k].ready), UI_H(smp[k].n);
     }
     if (page == PG_TAPE) UI_H(tf_wow), UI_H(tf_sat), UI_H(tf_tone), UI_H(tf_hiss);
-    if (page == PG_SYSTEM || page == PG_SYS2) { /* the settings, the links */
-        UI_H(set.col), UI_H(set.mch), UI_H(set.tune), UI_H(set.scr), UI_H(set.out), UI_H(set.nlk);
+    if (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3) {   /* the settings, the links */
+        UI_H(set.col), UI_H(set.mch), UI_H(set.tune), UI_H(set.scr), UI_H(set.out), UI_H(set.nlk), UI_H(set.latch);
         for (k = 0; k < NLINK * 5u; k++) UI_H(set.lk[k / 5u][k % 5u]);
     }
     if (PAGES[page].btn == BTN_SEQ) {           /* the pattern, its settings, the cursor, the step playing */
