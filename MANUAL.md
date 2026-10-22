@@ -353,6 +353,23 @@ FREEZE is a toggle: tap it to hold the grain cloud, tap again to let go.
 
 <br clear="right">
 
+### GENERATE: hold FX + a black key
+
+A track can play by itself: random notes of the **SCALE** (with chord mode on: random chords, the track's chord on each), on the tempo (or the MIDI clock it follows, SYSTEM 2's CLOCK), whether the sequencer plays or not. It rests now and then and varies its note lengths, so it breathes, and every note gets a volume and an attack of its own.
+
+| Hold FX + | F#3 | G#3 | A#3 | C#4 | D#4 |
+|---|---|---|---|---|---|
+| | T1 on/off | T2 on/off | T3 on/off | T4 on/off | MODE |
+
+- **MODE** steps through **DRIFT → PULSE → STORM**, the same for all four tracks; the header shows its name for a moment (and switching a track on or off shows `T1 GENERATE DRIFT` or `T1 GENERATE OFF`).
+  - **DRIFT:** few notes, long (2–8 beats), soft, slow attacks, low: ambient.
+  - **PULSE:** a melody on eighths, mostly on the beat, walking the scale in small steps: steadier.
+  - **STORM:** dense, short sixteenths, the volume swinging wildly, wide.
+- While FX is held, the five black keys glow and the keys of the tracks that generate are lit.
+- **The pattern:** while a track generates, its own pattern is not heard; it keeps running silently underneath, so when you switch GENERATE off it comes back in time, exactly as it was. GENERATE never writes into it.
+- It plays the track's own sound through its own voices, like your keys: it never takes another track's voices (a full track skips a note). Mute and solo (GLO) work on it as usual.
+- Nothing is saved: after power-on GENERATE is off on every track, and MODE is DRIFT.
+
 ---
 
 ## 11 · System: hold HOME
