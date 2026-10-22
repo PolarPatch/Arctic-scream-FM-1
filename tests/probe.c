@@ -32,7 +32,26 @@ static void host_probe(void)
                (int)trk[0].latch, (int)trk[1].latch, (int)trk[2].latch, (int)trk[3].latch, set.latch, n, sv_wait,
                sv_wait && fm1_ms - sv_said < SV_SAY_MS);
         P2 = brw_pos[sel] >= 0 ? cat_item((uint32_t)brw_cat[sel] % NCAT, (uint32_t)brw_pos[sel]) : 0;
-        printf(" eng %d slatch %d", (int)trk[sel].eng, P2 ? (int)(P2[12] & 1u) : -1);   /* (the byte's rest: DRONE's) */
+        printf(" eng %d slatch %d sname ", (int)trk[sel].eng, P2 ? (int)(P2[12] & 1u) : -1);   /* (the byte's rest:
+                                                 * DRONE's) */
+        {                                       /* (V2: the factory sound PRESETS loaded, its name, "_" for a space) */
+            const char *nm = P2 ? snd_fname(P2) : 0;
+            for (; nm && *nm; nm++) putchar(*nm == ' ' ? '_' : *nm);
+            if (!nm) putchar('-');
+        }
+        {                                       /* (V2: GENERATE: on (bit t), MODE; the tracks' patterns' hashes;
+                                                 * the notes on by source: sequencer's, generated (track:note)) */
+            uint32_t t2, h, j2;
+            printf(" gen %u %u ph", gen_on, gen_mode);
+            for (t2 = 0; t2 < NT; t2++) {
+                const uint8_t *b = (const uint8_t *)&seq[t2].pat[0];
+                for (h = 2166136261u, j2 = 0; j2 < sizeof seq[t2].pat[0]; j2++) h = (h ^ b[j2]) * 16777619u;
+                printf("%s%08x", t2 ? "," : " ", h);
+            }
+            printf(" srcs");
+            for (j2 = 0; j2 < nlat; j2++) printf(" %u:%u:%u", lat_src[j2], lat_trk[j2] + 1u, lat_note[j2]);
+            printf(" /srcs");
+        }
         printf(" voices");                      /* (each voice: its stage (0 off, 1 attack, 2 sustain, 3 release, 4
                                                  * fade), track, note, in the notes-on list or not) */
         for (i = 0; i < NV; i++) printf(" %u/%u/%u/%d", (unsigned)vc[i].stage, (unsigned)vc[i].trk + 1u,
