@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 GR!MM
 """DRIVE's level table (firmware/src/master.c DR_LEVEL): each TYPE's loudness (RMS) at AMOUNT 0, 16 .. 128 on a chord of
-two saws at three levels (RMS 2000, 4000, 8000: ~-24 .. -12 dBFS), computed as the firmware does it (integers: softclip on dsp.c's TANH table, the TYPEs' curves, the
+two saws at three levels (RMS 1000, 2000, 4000: ~-30 .. -18 dBFS, Arctic Scream's mix; GR!MM's: 2000 .. 8000), computed as the firmware does it (integers: softclip on dsp.c's TANH table, the TYPEs' curves, the
 gain), and a gain (Q12) a TYPE an AMOUNT that brings it to the target, SOFT's own level but never past twice the clean
 sound's (+6 dB): the three levels' gains' geometric mean. All four as loud as each other at an AMOUNT; turning AMOUNT up never more than ~6 dB louder.
 
@@ -46,7 +46,8 @@ def gain(ty, a):                                 # (Q8: SOFT to ~8x, the others 
 
 CHORD = [((i * 262 / 44100) % 1 - .5) + ((i * 330 / 44100) % 1 - .5) for i in range(8820)]   # (two saws: C4 E4)
 CR = (sum(x * x for x in CHORD) / len(CHORD)) ** .5
-LEVELS = (2000, 4000, 8000)                      # (its RMS: ~-24, -18, -12 dBFS, a track's to a full mix)
+LEVELS = (1000, 2000, 4000)                      # (its RMS: ~-30, -24, -18 dBFS: Arctic Scream's mix, darker and
+                                                # quieter than GR!MM's 2000, 4000, 8000)
 
 
 def rms(ty, a, lvl):

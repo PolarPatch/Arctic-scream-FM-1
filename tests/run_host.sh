@@ -8,7 +8,7 @@ mkdir -p build/host
 MACHO=                                          # (macOS: Mach-O has no ".pool" section; the pool is plain .bss there)
 [ "$(uname -s)" = Darwin ] && MACHO="-Dsection(x)=used"
 cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DAPP_VER="\"${APP_VER:-1.3}\"" ${MACHO:+"$MACHO"} -Ifirmware/src -Ifirmware/gen -o build/host/grimm firmware/src/grimm.c
-build/host/grimm build/host/grimm
+GRIMM_MASTER=1022 build/host/grimm build/host/grimm   # (GR!MM V2: MASTER as web/test_web.mjs turns it: 1022, Q12 4080)
 python3 - <<'PY'
 from pathlib import Path
 from PIL import Image
@@ -40,3 +40,5 @@ python3 tests/quick_test.py build/host/grimm
 python3 tests/latch_test.py build/host/grimm
 # GR!MM V2: GENERATE (FX held + the black keys): in the SCALE, the pattern unheard and unchanged (tests/gen_test.py)
 python3 tests/gen_test.py build/host/grimm
+# GR!MM V2: the gain staging: no clip at any MASTER, SPACE and DELAY under their knee (tests/level_test.py)
+python3 tests/level_test.py build/host/grimm

@@ -22,9 +22,10 @@ static volatile int32_t dr_amt, dr_type, dr_tone = 127, dr_mix = 127;   /* DRIVE
 #define DR_LIM 30000                            /* the limiter's ceiling (Q15: ~-0.8 dB) */
 #define DR_TOP 26000                            /* CLIP's and FOLD's (and FUZZ's offset's) level */
 static const uint16_t DR_LEVEL[NDTYPE][9] = {   /* each TYPE's gain (Q12) at AMOUNT 0, 16 .. 128: SOFT's loudness, at most
-                                                 * +6 dB (tools/gen_drive_levels.py) */
-    {4096, 4096, 4096, 3956, 3286, 2691, 2251, 1924, 1698}, {4365, 3404, 2741, 2253, 1716, 1393, 1226, 1142, 1099},
-    {4014, 3068, 2488, 2120, 1706, 1491, 1388, 1333, 1304}, {4014, 3083, 2650, 2474, 2240, 2204, 2186, 2186, 2184}};
+                                                 * +6 dB (tools/gen_drive_levels.py; Arctic Scream: at its mix's levels,
+                                                 * RMS 1000, 2000, 4000, its sounds darker and quieter than GR!MM's) */
+    {4096, 4096, 4096, 3850, 3011, 2375, 1896, 1534, 1281}, {4380, 3383, 2644, 1993, 1312, 940, 739, 635, 584},
+    {4073, 3125, 2398, 1801, 1216, 913, 773, 707, 675}, {4073, 3125, 2398, 1870, 1382, 1155, 1094, 1095, 1092}};
 static int32_t mf_cs[NMPOS], mf_ic[NMPOS][2][2], mf_mx[NMPOS], dr_lp[2], dr_env;   /* audio: MASTER at each POSITION:
                                                  * its cutoff now, its states, its share (0 .. MF_ONE); DRIVE's TONE's,
                                                  * the limiter's peak */

@@ -106,7 +106,9 @@ check("DRIVE full on a big chord, TONE closed: the limiter holds it (no clipping
 # DRIVE's levels: at one AMOUNT the four TYPEs within ~1.5 dB of each other; SOFT the gentlest (its highs the least)
 lv = []
 for ty in range(4):
-    d, _, _ = run(f"dl_{ty}", FX(6) + [(1200, "enc 2 80"), (1300, f"enc 3 {ty}")])
+    d, _, _ = run(f"dl_{ty}", [(500, "btn 6"), (550, "btn 8"), (600, "enc 2 127"), (650, "enc 3 127")] + FX(6) +
+                  [(1200, "enc 2 80"), (1300, f"enc 3 {ty}")])   # (Arctic Scream: VOLUME up, CUTOFF open first: its
+                                                # tracks start darker and quieter, under the levels DRIVE's table is for)
     lv.append(measure(d)[:2])
 rs = [r for r, _ in lv]
 check("DRIVE at AMOUNT 80: SOFT, FUZZ, CLIP, FOLD about as loud (within 1.5 dB)", max(rs) / min(rs) < 1.19,
