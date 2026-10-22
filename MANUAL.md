@@ -355,20 +355,26 @@ FREEZE is a toggle: tap it to hold the grain cloud, tap again to let go.
 
 ### GENERATE: hold FX + a black key
 
-A track can play by itself: random notes of the **SCALE** (with chord mode on: random chords, the track's chord on each), on the tempo (or the MIDI clock it follows, SYSTEM 2's CLOCK), whether the sequencer plays or not. It rests now and then and varies its note lengths, so it breathes, and every note gets a volume and an attack of its own.
+A track can play by itself: random notes of the **SCALE** (with chord mode on: random chords, the track's chord on each), on the tempo (or the MIDI clock it follows, SYSTEM 2's CLOCK), whether the sequencer plays or not. It rests now and then and varies its note lengths, so it breathes, and every note gets a volume and an attack of its own. Each track has its own **MODE**, **OCTAVE** and **RANGE**.
 
-| Hold FX + | F#3 | G#3 | A#3 | C#4 | D#4 |
-|---|---|---|---|---|---|
-| | T1 on/off | T2 on/off | T3 on/off | T4 on/off | MODE |
+| Hold FX + | F#3 | G#3 | A#3 | C#4 | D#4 | F#4 | G#4 | A#4 |
+|---|---|---|---|---|---|---|---|---|
+| | T1 | T2 | T3 | T4 | MODE | OCTAVE − | OCTAVE + | RANGE |
 
-- **MODE** steps through **DRIFT → PULSE → STORM**, the same for all four tracks; the header shows its name for a moment (and switching a track on or off shows `T1 GENERATE DRIFT` or `T1 GENERATE OFF`).
-  - **DRIFT:** few notes, long (2–8 beats), soft, slow attacks, low: ambient.
+- **A track's key (F#3, G#3, A#3, C#4), tapped:** GENERATE on or off for that track. It switches when you let the key go, and only if you pressed no other key while holding it.
+- **D#4, F#4, G#4, A#4 with a track's key held:** that track's MODE, OCTAVE or RANGE only (its on/off stays as it is). **Alone** (no track's key held): all four tracks together, all set to the same value (the next one after T1's).
+- **MODE** steps through **DRIFT → PULSE → STORM**:
+  - **DRIFT:** few notes, long (2–8 beats), soft, slow attacks: ambient.
   - **PULSE:** a melody on eighths, mostly on the beat, walking the scale in small steps: steadier.
-  - **STORM:** dense, short sixteenths, the volume swinging wildly, wide.
-- While FX is held, the five black keys glow and the keys of the tracks that generate are lit.
+  - **STORM:** dense, short sixteenths, the volume swinging wildly.
+- **OCTAVE** (−3 … +3) is the generator's own, separate from the keyboard's OCT: at 0 its notes start at C3. **RANGE** (1, 2 or 3 OCT) is how far up from there it may play: OCTAVE 0 with RANGE 2 plays C3–B4.
+- Every note stays in the SCALE and in the range. A chord's notes that would go past the range are folded back into it by whole octaves (they stay in the scale and the chord stays the same chord, voiced closer); two notes landing on the same pitch sound once.
+- The header shows what changed for a moment: `T1 GENERATE PULSE`, `T1 GENERATE OFF`, `T2 PULSE`, `T1 OCT -1`, `ALL RANGE 2 OCT`.
+- **The PERFORM screen** (FX held) shows a tile for each track under the tricks: lit while it generates, its MODE, its range (`C3-B4`), and a small square that flashes each time it plays a note.
+- While FX is held, the eight black keys glow and the keys of the tracks that generate are lit.
 - **The pattern:** while a track generates, its own pattern is not heard; it keeps running silently underneath, so when you switch GENERATE off it comes back in time, exactly as it was. GENERATE never writes into it.
 - It plays the track's own sound through its own voices, like your keys: it never takes another track's voices (a full track skips a note). Mute and solo (GLO) work on it as usual.
-- Nothing is saved: after power-on GENERATE is off on every track, and MODE is DRIFT.
+- Nothing is saved: after power-on GENERATE is off on every track, every track DRIFT, OCTAVE 0, RANGE 2 OCT.
 
 ---
 
