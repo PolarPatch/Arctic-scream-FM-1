@@ -47,11 +47,13 @@ The **[editor](https://polarpatch.github.io/Arctic-scream-FM-1/editor.html)** ru
 
 ## Install
 
-Download `arctic-scream.fwsc` from [Releases](../../releases). Then, with Python 3 and `pip install mido python-rtmidi`, connect the FM-1 over USB and run:
+Download `arctic-scream-X.Y.fwsc` (the newest) from [Releases](../../releases). Then, with Python 3 and `pip install mido python-rtmidi`, connect the FM-1 over USB and run:
 
 ```
-python3 tools/fm1_install.py arctic-scream.fwsc
+python3 tools/fm1_install.py arctic-scream-1.0.fwsc
 ```
+
+Every release is built and signed on GitHub from the tagged source (the FM-1 Firmware Hub's [fm1-build](https://github.com/zvenson/fm1-build)); check a file with `gh attestation verify arctic-scream-1.0.fwsc --repo PolarPatch/Arctic-scream-FM-1 --signer-workflow zvenson/fm1-build/.github/workflows/build.yml`.
 
 It installs over the FM-1's own firmware, GR!MM or any other FM-1 firmware. Don't unplug the FM-1 while it writes. If anything goes wrong, the **Rescue** page on the [FM-1 Firmware Hub](https://thefirmwarehub.com/) brings a stuck FM-1 back, and M-VAVE's own updater puts the original firmware back.
 

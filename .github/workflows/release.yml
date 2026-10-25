@@ -1,0 +1,17 @@
+# Arctic Scream p0larpatch's releases: a tag (v1.0, ...) is built, attested and released on GitHub by the FM-1
+# Firmware Hub's shared workflow (zvenson/fm1-build, reviewed at @v1), so the hub's card shows "Built from source".
+# One package a release: build/arctic-scream-X.Y.fwsc. Never replace or add a package by hand afterwards.
+name: release
+on:
+  push:
+    tags: ['v*']
+jobs:
+  build:
+    uses: zvenson/fm1-build/.github/workflows/build.yml@v1
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    with:
+      build: ./build.sh --release "${GITHUB_REF_NAME#v}"
+      packages: build/arctic-scream-*.fwsc
