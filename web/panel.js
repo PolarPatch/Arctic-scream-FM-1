@@ -72,9 +72,10 @@ function knob(name) {
 }
 function button(name, [ux, uy, uw, uh]) {
   const b = { name, id: BTN[name] };
-  b.el = at("button", "btn", ux * UX, uy * UY, uw * UX, uh * UX);
+  b.el = at("button", name === "REC" ? "btn rec" : "btn", ux * UX, uy * UY, uw * UX, uh * UX);
   b.el.type = "button";
-  b.el.innerHTML = (name === "PLAY" ? "PLAY<br>STOP" : name) + `<span class="sc">${SHORT[name]}</span>`;   // (its computer key)
+  b.el.innerHTML = (name === "PLAY" ? "PLAY<br>STOP" : name === "REC" ? '<i class="dot"></i>REC' : name) +
+    `<span class="sc">${SHORT[name]}</span>`;   // (its computer key; REC its record dot)
   b.el.title = `${name} (${BTN_NAME[name] || "BTN_" + name.replace("OCT-", "OCT_DOWN").replace("OCT+", "OCT_UP")}): ${SHORT[name]}`;
   buttons.push(b);
   bindButton(b);

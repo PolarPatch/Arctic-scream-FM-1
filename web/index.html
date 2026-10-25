@@ -15,7 +15,7 @@
 <style>
 /* BlueWatch's colours only: its cyberpunk theme's greys and accents, its dark theme's panel greys */
 :root { --bg: #060410; --body: #161b22; --bed: #0a0d12; --part: #1c232c; --part-hi: #242c37; --edge: #30363d;
-        --fg: #eaf6fa; --label: #a6afb9; --dim: #7fa8b8; --muted: #45606e; --lit: #22d3ee; --latch: #22d3ee;
+        --fg: #eaf6fa; --label: #a6afb9; --dim: #7fa8b8; --muted: #45606e; --lit: #22d3ee; --latch: #22d3ee; --rec: #f85149;
         --ice: #22d3ee; --aurora: #3fb950; --violet: #a78bfa; --plasma: #ff1a8c;
         --mono: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
         --key: #c9d1d9; --key-black: #a6afb9; --key-held: #e6edf3; --key-lit: #a78bfa;
@@ -65,6 +65,14 @@ a { color: inherit; }
 .btn.lit { border-color: var(--lit); color: var(--fg); box-shadow: 0 0 .7cqw rgba(34, 211, 238, .35); }
 .btn.held { background: var(--part-hi); color: var(--fg); }
 .btn.latched { border-style: dashed; border-color: var(--latch); }
+/* REC: a red edge always, its record dot; recording (lit): the edge glows and the dot blinks (BlueWatch's red) */
+.btn.rec { border-color: var(--rec); color: var(--fg); }
+.btn.rec .dot { display: inline-block; width: .85cqw; height: .85cqw; margin: 0 .45cqw .1cqw 0; border-radius: 50%;
+                background: var(--rec); opacity: .5; vertical-align: middle; }
+.btn.rec.lit { border-color: var(--rec); box-shadow: 0 0 .9cqw rgba(248, 81, 73, .6); }
+.btn.rec.lit .dot { opacity: 1; box-shadow: 0 0 .6cqw var(--rec); animation: rec-blink 1s steps(1) infinite; }
+@keyframes rec-blink { 50% { opacity: .15; box-shadow: none; } }
+@media (prefers-reduced-motion: reduce) { .btn.rec.lit .dot { animation: none; } }
 /* the trays the buttons sit in */
 .tray { background: var(--bed); border-radius: 1.2cqw; }
 .btn .sc { position: absolute; right: .35cqw; top: .15cqw; font: 600 .95cqw/1 ui-monospace, Menlo, Consolas, monospace; opacity: .55; }
