@@ -401,14 +401,19 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         if (k == 0u) fm_ratio_text(S->val, (uint32_t)clamp(fm_op, 0, 5));
         else ui_3(S->val, (uint32_t)clamp(v, 0, 99));
         return;
-    case PG_HOME:                               /* the four tracks (the knobs are the selected one's: VOLUME, CUTOFF,
-                                                 * RESONANCE, FX; the header says what they change): "T2 FM", its LEVEL;
-                                                 * the selected track in the accent; MUTE */
-        put_s(put_s(put_u(put_s(S->lab, "T"), k + 1u), " "), SRC_CODE[clamp(trk[k].eng, 0, NENG - 1)]);
-        S->fill = (uint8_t)((clamp(trk[k].level, 0, 127) * 8 + 63) / 127);
-        ui_3(S->val, ui_pc(trk[k].level));
-        if (trk_quiet >> k & 1u) { put_s(S->val, "MUTE"); S->dim = 1; }
-        S->acc = k == sel;
+    case PG_HOME:                               /* the selected track's, as the knobs (Arctic Scream p0larpatch; GR!MM's
+                                                 * showed the four tracks' LEVELs here): VOLUME (MUTE), CUTOFF ("OPEN",
+                                                 * "2.4K", "450"), RESONANCE, FX to 200 % */
+        if (k == 0u && (trk_quiet >> sel & 1u)) { put_s(S->val, "MUTE"); S->dim = 1; return; }
+        if (k == 1u) {
+            uint32_t hz = CUTOFF_HZ[clamp(v, 0, 127)];
+            if (v >= 127) put_s(S->val, "OPEN");
+            else if (hz < 1000u) put_u(S->val, hz);
+            else if (hz < 10000u) put_s(put_x10(S->val, (hz + 50u) / 100u), "K");
+            else put_s(put_u(S->val, (hz + 500u) / 1000u), "K");
+            return;
+        }
+        ui_3(S->val, k == 3u ? (uint32_t)clamp(v, 0, 200) : ui_pc(v));
         return;
     case PG_MIX2:
         if (v == 64) put_s(S->val, "C");
