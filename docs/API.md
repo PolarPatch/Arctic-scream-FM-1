@@ -42,7 +42,7 @@ static void app_main(void)
 
 Names the platform defines that you can change from the build: `APP_NAME` (the rescue and crash screens,
 default `"DINGHY"`), `APP_VER` (set by `./build.sh --release`), `FELUCCA_ID` (the package identity:
-GR!MM's is `FM-1_966`, set in `tools/build.py`).
+Arctic Scream's is `FM-1_977`, GR!MM's `FM-1_966`, set in `tools/build.py`).
 
 ## Time
 

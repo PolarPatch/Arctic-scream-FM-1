@@ -14,7 +14,7 @@
  * checks and indexes a little at a time (samples_poll), after boot and after an upload. An empty, unfinished or broken
  * slot is never ready: it plays nothing.
  *
- * Upload (tools/fm1_sample_upload.py): SysEx F0 7D 47 52 <cmd> <args> F7 ("GR"), answered with the same head and cmd:
+ * Upload (tools/fm1_sample_upload.py): SysEx F0 7D 41 53 <cmd> <args> F7 ("AS"), answered with the same head and cmd:
  *   11 BEGIN  slot                      -> slot, rc   the slot is empty from now on (its first sector erased)
  *   12 WRITE  slot, off (3 x 7 bit), pack7 data (<= 256 B)  -> slot, off (3 x 7), rc   off from 512 on, each one
  *             where the last ended, a multiple of 256; a write at a 4 KiB boundary erases that sector first
@@ -188,7 +188,7 @@ static void smp_scan(uint32_t k)
 }
 
 /* ---- the upload */
-#define SX_HEAD 3u                              /* 7D 47 52 */
+#define SX_HEAD 3u                              /* 7D 41 53 ("AS", Arctic Scream's; GR!MM's 7D 47 52) */
 static uint8_t sx_buf[SMP_HDR_LEN + 8u];        /* a decoded data block or header */
 #define SX_INFO (1u + SMP_SLOTS * 17u)          /* INFO's reply: slots, then each: state, name (8), 0, n (3), max (3);
                                                  * then each: its root */
@@ -217,8 +217,8 @@ static void sx_reply(uint32_t cmd, const uint8_t *a, uint32_t n)
     uint32_t i, w = 0;
     sx_out[w++] = 0xF0;
     sx_out[w++] = 0x7D;
-    sx_out[w++] = 0x47;
-    sx_out[w++] = 0x52;
+    sx_out[w++] = 0x41;
+    sx_out[w++] = 0x53;
     sx_out[w++] = (uint8_t)cmd;
     for (i = 0; i < n && w < sizeof sx_out - 1u; i++)
         sx_out[w++] = a[i] & 0x7Fu;
@@ -270,7 +270,7 @@ static void smp_frame(const uint8_t *f, uint32_t n, int silent)
 {
     uint32_t cmd, slot, rc = 0, i;
     uint8_t r[SX_INFO];
-    if (n < SX_HEAD + 1u || f[1] != 0x47 || f[2] != 0x52)
+    if (n < SX_HEAD + 1u || f[1] != 0x41 || f[2] != 0x53)
         return;                                 /* another 7D frame: not ours */
     cmd = f[3];
     f += SX_HEAD + 1u;

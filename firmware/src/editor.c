@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
 /* GR!MM's editor mailbox: a web editor (or tools/fm1_editor_test.py) reads and writes the FM-1's sounds, slots A..D
- * and settings over USB SysEx, on the sample upload's head (F0 7D 47 52 <cmd> .. F7, pack7: samples.c), commands
+ * and settings over USB SysEx, on the sample upload's head (F0 7D 41 53 <cmd> .. F7, pack7: samples.c), commands
  * 20..22 beside the samples' 11..15. The format: docs/EDITOR_PROTOCOL.md. Its approach is SLOOP's editor backup
  * (isod89/sloop-fm1, web/EDITOR_PROTOCOL.md, cmds 34..36, GPL-3.0): objects by id, read by offset and count, written
  * as BEGIN (length, CRC-32) -> DATA (in order) -> COMMIT; GR!MM's own code, its own ids and a format version.
@@ -69,7 +69,7 @@ static void ed_send(uint32_t cmd, const uint8_t *a, uint32_t n, const uint8_t *d
 {                                               /* head, a, pack7 d, tail (ASCII, 0: none) */
     uint8_t *w = ED_TX;
     uint32_t i, j;
-    *w++ = 0xF0, *w++ = 0x7D, *w++ = 0x47, *w++ = 0x52, *w++ = (uint8_t)cmd;
+    *w++ = 0xF0, *w++ = 0x7D, *w++ = 0x41, *w++ = 0x53, *w++ = (uint8_t)cmd;
     for (i = 0; i < n; i++) *w++ = a[i] & 0x7Fu;
     for (i = 0; i < dn; i += 7u) {              /* pack7: a byte of top bits, then up to 7 bytes */
         uint32_t g = dn - i < 7u ? dn - i : 7u, top = 0;
@@ -132,7 +132,7 @@ static int ed_frame(const uint8_t *f, uint32_t n, int silent)
 {
     uint8_t r[16];
     uint32_t cmd, o, rc = ER_OK;
-    if (n < 4u || f[1] != 0x47 || f[2] != 0x52 || f[3] < ED_INFO || f[3] > ED_TRACK) return 0;
+    if (n < 4u || f[1] != 0x41 || f[2] != 0x53 || f[3] < ED_INFO || f[3] > ED_TRACK) return 0;
     cmd = f[3], f += 4, n -= 4;
     if (cmd == ED_INFO) {                       /* proto, fmt, the version (0-ended), sounds, a sound's size, the
                                                  * factory's, a slot's size, the settings' size, sample slots, used */

@@ -47,7 +47,7 @@ enum { ENC_SELECT = 0, ENC_ALGORITHM = 1, ENC_KNOB1 = 2, ENC_KNOB2 = 3, ENC_KNOB
 #define APP_NAME "DINGHY"
 #endif
 #ifndef FELUCCA_ID
-#define FELUCCA_ID "FM-1_966"                   /* package identity: GR!MM 1.x (tools/build.py) */
+#define FELUCCA_ID "FM-1_977"                   /* package identity: Arctic Scream 1.x (tools/build.py; GR!MM's is 966) */
 #endif
 #ifndef APP_VER
 #define APP_VER "0.0"

@@ -25,9 +25,9 @@ For the browser build: the [Emscripten SDK](https://emscripten.org) in `~/emsdk`
 ## The firmware
 
 ```sh
-./build.sh                                  # -> build/grimm.fwsc (identity FM-1_966, version 1.0)
-./build.sh --release 1.1                    # -> build/grimm-1.1.fwsc, the version "1.1" on the screen
-py tools/fm1_install.py build/grimm.fwsc    # install it over USB (asks first); --info: what the FM-1 runs
+./build.sh                                  # -> build/arctic-scream.fwsc (identity FM-1_977, version 1.0)
+./build.sh --release 1.1                    # -> build/arctic-scream-1.1.fwsc, the version "1.1" on the screen
+py tools/fm1_install.py build/arctic-scream.fwsc    # install it over USB (asks first); --info: what the FM-1 runs
 ```
 
 The build fails on what would brick or break an FM-1 firmware: a 64-bit division, a call into the chip ROM, too

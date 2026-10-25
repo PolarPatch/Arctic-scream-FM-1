@@ -6,7 +6,7 @@
 // the backup file, and a WAV made a sample slot (a port of Felucca's tools/sampleio.py, GPL-3.0, and of
 // tools/fm1_sample_upload.py: the same bytes). web/editor.js (the page) and web/test_web.mjs use it.
 
-export const HEAD = [0x7d, 0x47, 0x52];
+export const HEAD = [0x7d, 0x41, 0x53];   // "AS": Arctic Scream's (GR!MM's 7D 47 52)
 export const CMD = { SMP_BEGIN: 11, SMP_WRITE: 12, SMP_END: 13, SMP_ERASE: 14, SMP_INFO: 15, SMP_FACTORY: 16, INFO: 20, GET: 21, PUT: 22,
                      TRACK: 23 };
 export const PROTOS = [1, 2];                              // the editor protocols this page knows (2: TRACK)
@@ -64,7 +64,7 @@ export const u35 = (v) => [0, 1, 2, 3, 4].map((k) => Math.floor(v / 2 ** (7 * k)
 export const rd35 = (b, i = 0) => b.slice(i, i + 5).reduce((a, x, k) => a + x * 2 ** (7 * k), 0);
 
 // ------------------------------------------------------------------ the client
-// transport.request(frame) -> Promise of the reply's bytes after its cmd; frame: 7D 47 52 cmd args (no F0 / F7)
+// transport.request(frame) -> Promise of the reply's bytes after its cmd; frame: 7D 41 53 cmd args (no F0 / F7)
 export class Client {
   constructor(transport) { this.t = transport; this.chain = Promise.resolve(); }
   wait(ms) {                                               // time for the FM-1 (the virtual one: its clock run on)

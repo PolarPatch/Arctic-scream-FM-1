@@ -15,7 +15,7 @@ GR!MM stores it (firmware/src/samples.c). A slot holds 6.64 s: a longer file is 
 name is the file's (8 characters, A-Z 0-9 and a few signs) unless --name; the root note (the key that plays it at its
 own pitch) is C4 = 60, or a note in the file name ("drone_A2.wav"), or --root.
 
-It talks only to an FM-1 running GR!MM (it asks for the identity first: FM-1_966), and the FM-1 only writes while
+It talks only to an FM-1 running Arctic Scream (it asks for the identity first: FM-1_977), and the FM-1 only writes while
 nothing sounds: unlatch every note and let DELAY's and SPACE's tails end first. Needs mido and python-rtmidi
 (py -m pip install mido python-rtmidi), as tools\\fm1_install.py.
 """
@@ -29,7 +29,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import sampleio as sio  # noqa: E402  (Felucca's: read_any_wav, resample, to_int16, ima_encode, user_slot, note_from_name)
 
-HDR = [0x7D, 0x47, 0x52]                        # F0 7D 47 52 ... F7: GR!MM's (Felucca's is 7D 46 4C)
+HDR = [0x7D, 0x41, 0x53]                        # F0 7D 41 53 ... F7: Arctic Scream's (GR!MM's 7D 47 52, Felucca's 7D 46 4C)
 SLOTS, RATE = 4, 22050
 SLOT_SIZE, DATA_OFF, HDR_LEN = 72 * 1024, 512, 480
 MAX_DATA = SLOT_SIZE - DATA_OFF                 # 73216 bytes of ADPCM
@@ -107,8 +107,8 @@ class Link:
         dev.link.close()
         if dev.id.loader:
             sys.exit(f"the FM-1 is in update mode ({ident}): finish the install first (tools\\fm1_install.py)")
-        if not re.fullmatch(r"FM-1_966|FM-1_95\d", ident):   # (GR!MM 1.x; 95N: its builds before the release)
-            sys.exit(f"the FM-1 runs {ident}, not GR!MM (FM-1_966): install GR!MM first (tools\\fm1_install.py)")
+        if ident != "FM-1_977":                  # (Arctic Scream 1.x)
+            sys.exit(f"the FM-1 runs {ident}, not Arctic Scream (FM-1_977): install Arctic Scream first (tools\\fm1_install.py)")
         out = fi.pair_output(name, backend.output_names())
         if not out:
             sys.exit(f"no MIDI output beside {name}")

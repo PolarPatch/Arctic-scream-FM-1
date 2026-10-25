@@ -297,7 +297,7 @@ static void stress_sysex_out(const uint8_t *p, uint32_t n)   /* (host.c's sysex_
     memcpy(st_sxr, p, st_sxn);
 }
 static void st_fb(uint32_t b) { if (st_fn < sizeof st_f) st_f[st_fn++] = (uint8_t)(b & 0x7Fu); }
-static void st_fhead(uint32_t cmd) { st_fn = 0, st_fb(0x7D), st_fb(0x47), st_fb(0x52), st_fb(cmd); }
+static void st_fhead(uint32_t cmd) { st_fn = 0, st_fb(0x7D), st_fb(0x41), st_fb(0x53), st_fb(cmd); }
 static void st_f35(uint32_t v) { uint32_t k; for (k = 0; k < 5u; k++) st_fb(v >> (7u * k)); }
 static void st_fpack(const uint8_t *d, uint32_t n)
 {

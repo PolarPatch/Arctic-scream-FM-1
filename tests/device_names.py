@@ -20,7 +20,7 @@ if not os.path.exists(clang):
 os.makedirs("build/stress", exist_ok=True)
 pre = "build/stress/device.i"
 subprocess.run([clang, "-target", "pi32v2", "-E", "-Os", "-fno-builtin", "-Ifirmware/hal", "-Ifirmware/src",
-                "-Ifirmware/gen", '-DFELUCCA_ID="FM-1_966"', '-DAPP_VER="0.0"', "firmware/src/grimm.c", "-o", pre],
+                "-Ifirmware/gen", '-DFELUCCA_ID="FM-1_977"', '-DAPP_VER="0.0"', "firmware/src/grimm.c", "-o", pre],
                check=True)
 out = subprocess.run(["gcc", "-fsyntax-only", "-m32", "-w", "-Wredundant-decls", "-x", "c", pre],
                      capture_output=True, text=True).stderr

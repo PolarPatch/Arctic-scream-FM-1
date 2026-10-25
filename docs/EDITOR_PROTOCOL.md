@@ -11,8 +11,8 @@ Protocol 1 (step 26a) has commands 20–22; protocol 2 (step 26b2) adds 23 TRACK
 
 ## Frames
 
-- Request: `F0 7D 47 52 <cmd> <args…> F7`. `7D` is the non-commercial ID, `47 52` is "GR" (Felucca's and SLOOP's are
-  `46 4C`, so neither firmware takes the other's commands).
+- Request: `F0 7D 41 53 <cmd> <args…> F7`. `7D` is the non-commercial ID, `41 53` is "AS", Arctic Scream's (GR!MM's is
+  `47 52`, Felucca's and SLOOP's `46 4C`, so no firmware takes another's commands).
 - Every request gets one reply with the same head and `<cmd>`. A frame of another head, or an unknown command, gets
   none. Send one request at a time and wait for its reply.
 - Frames are at most 640 bytes between `F0` and `F7`.

@@ -48,7 +48,7 @@ SDK_SHA256 = {
     "cfg/eq_cfg_hw.bin": "41167491bffed4651750719c973d2758adeb9021a5670d02d6a53c85ed80ea7d",
 }
 
-PRODUCT = "FM-1_966"                # GR!MM 1.x: 966, every release (FM-1_9NN: the installers resume its loader; the hub's
+PRODUCT = "FM-1_977"                # Arctic Scream 1.x: 977, every release (GR!MM's is 966) (FM-1_9NN: the installers resume its loader; the hub's
                                     # other firmwares hold 950, 95x, 961, so not Dinghy's 9 + minor); Dinghy is 99N
 VERSION = None                      # APP_VER for release builds (else DEFAULT_VERSION)
 DEFAULT_VERSION = "1.0"
@@ -273,16 +273,16 @@ def mmio_check():
 def main():
     global PRODUCT, VERSION
     ap = argparse.ArgumentParser()
-    ap.add_argument("--release", metavar="X.Y", help="release build: the version string X.Y (identity FM-1_966 as always)")
+    ap.add_argument("--release", metavar="X.Y", help="release build: the version string X.Y (identity FM-1_977 as always)")
     ap.add_argument("--sdk", type=Path, help="JieLi AC79 SDK checkout (default: $AC79_SDK)")
     a = ap.parse_args()
-    name = "grimm.fwsc"
+    name = "arctic-scream.fwsc"
     if a.release:                   # one digit each: the identity has room for two (X.Y; a .Z only in the text)
         m = re.fullmatch(r"(\d)\.(\d)(\.\d)?(-[A-Za-z0-9]+)?", a.release)
         if not m:
             raise SystemExit(f"--release {a.release}: use X.Y, X.Y.Z or X.Y-suffix, one digit each")
         VERSION = m[1] + "." + m[2] + (m[3] or "")
-        name = f"grimm-{a.release}.fwsc"
+        name = f"arctic-scream-{a.release}.fwsc"
     fm1pkg_make.SDK = a.sdk
     for rel, sha in SDK_SHA256.items():          # fail early without the SDK
         if hashlib.sha256(fm1pkg_make.sdk_file(rel)).hexdigest() != sha:
