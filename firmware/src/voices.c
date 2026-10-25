@@ -69,7 +69,7 @@ typedef struct {
                                                  * DECAY 0..99 (fm.c; a built-in PATCH's: fm_builtin) */
 } track_t;
 #define TRK_DEF {ENG_VA, {{0, 10, 90, 30}, {0, 64, 64, 20}, {0, 0, 127, 0}, {0, 12, 64, 10}, {4, 0, 40, 0}, {0, 64, 80, 64}, {0, 0, 60, 0}}, 100, 0, 100, 0, 64, 0, \
-                 {22, 85, 127, 89}, 0, 0, 0, 0, 0, 4, 1, 50, 64, 0, 0, 0, 127, 0, 100, 0, 0, {{0}}}
+                 {60, 85, 127, 105}, 0, 0, 0, 0, 0, 4, 1, 50, 40, 30, 9, 0, 84, 24, 100, 0, 0, {{0}}}
 static track_t trk[NT] = {TRK_DEF, TRK_DEF, TRK_DEF, TRK_DEF};   /* VA: SAW, DETUNE 10, CUTOFF 90, RESONANCE 30
                                                  * (Felucca's ANALOG); FM: BELL as made, DETUNE 20; SAMPLE: slot 1,
                                                  * the whole sample, forward; VOICE: A, SHIFT 0, BUZZ 64, BREATH 10
@@ -77,9 +77,11 @@ static track_t trk[NT] = {TRK_DEF, TRK_DEF, TRK_DEF, TRK_DEF};   /* VA: SAW, DET
                                                  * PHYS: MODAL, STRUCTURE 64, DAMP 80, bowed at 50 %; PHASE: SAW,
                                                  * DCW 60, one line (Felucca's); LEVEL 100,
                                                  * DLY 0, REV 100, GRN 0, PAN the middle; LATCH OFF; ENV: ATTACK
-                                                 * 5 ms, DECAY 1 s, SUSTAIN 100 %, RELEASE 2 s; chord mode OFF (SCALE, CLOSE); ARP OFF (UP, 1/16,
-                                                 * 1 octave, GATE 50 %); LFO DEPTH 0 (RATE ~1.7 s, PITCH, SINE);
-                                                 * the filter open, FX 100 %; FM: its patch, BELL's (fm_builtin at
+                                                 * ~0.2 s, DECAY 1 s, SUSTAIN 100 %, RELEASE ~5 s; chord mode OFF (SCALE, CLOSE); ARP OFF (UP,
+                                                 * 1/16, 1 octave, GATE 50 %); LFO DEPTH 30 % (slow, TRK CUTOFF,
+                                                 * SINE); the filter at CUTOFF 84, RESONANCE 24 (Arctic p0lar
+                                                 * patches: darker, and every knob of TRACK, ENV, LFO heard from the
+                                                 * start); FX 100 %; FM: its patch, BELL's (fm_builtin at
                                                  * power-on) */
 static voice_t vc[NV];
 static uint32_t vblock;                         /* audio: + 1 every control block (fm.c: once a block a track) */

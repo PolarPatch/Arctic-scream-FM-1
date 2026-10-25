@@ -6,7 +6,7 @@
 // The page of GR!MM in the browser: the FM-1's panel, its input to the worklet (worklet.js), the screen and the
 // lights back, the settings kept in this browser.
 
-// ids as platform.c names them: buttons BTN_* (bit = id), encoders ENC_*, keys bit k = key k (0 = F3 .. 26 = G5)
+// ids as platform.c names them: buttons BTN_* (bit = id), encoders ENC_*, keys bit k = key k (0 = F2 .. 26 = G4)
 const BTN = { "OCT-": 0, "OCT+": 1, FX: 2, SCL: 3, ENV: 4, LFO: 5, EDIT: 6, GLO: 7, HOME: 8, SAVE: 9, ARP: 10, SEQ: 11, PLAY: 12, REC: 13 };
 const BTN_NAME = { SCL: "BTN_SEL" };                       // (platform.c's name where it differs from the print)
 const ENC = { SELECT: 0, ALGORITHM: 1, "KNOB 1": 2, "KNOB 2": 3, "KNOB 3": 4, "KNOB 4": 5, PRESETS: 6 };
@@ -15,7 +15,7 @@ const WHITE = [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19, 21, 23, 24, 26];
 const BLACK = [1, 3, 5, 8, 10, 13, 15, 17, 20, 22, 25];
 const BLACK_AFTER = [0, 1, 2, 4, 5, 7, 8, 9, 11, 12, 14];  // the white key each black one follows
 const NOTE = ["F", "F♯", "G", "G♯", "A", "A♯", "B", "C", "C♯", "D", "D♯", "E"];
-const keyName = (k) => NOTE[k % 12] + (3 + Math.floor((k + 5) / 12));
+const keyName = (k) => NOTE[k % 12] + (2 + Math.floor((k + 5) / 12));   // (key 0 = F2: KEY0, an octave down)
 const STORE = "grimm-web-settings";
 
 let node = null, btnMask = 0, keyMask = 0, latched = 0, master = 700;
@@ -217,7 +217,7 @@ function bindKnob(k) {
   });
 }
 
-// the computer keyboard (Felucca's map): F3..A♯4 on the Z (white) and A (black) rows, B4..G5 on Q..O in semitones,
+// the computer keyboard (Felucca's map): F2..A♯3 on the Z (white) and A (black) rows, B3..G4 on Q..O in semitones,
 // the twelve buttons on the number row in the panel's order, [ ] OCT, the arrows SELECT and ALGORITHM
 const KEYMAP = {};
 ["KeyZ", "KeyX", "KeyC", "KeyV", "KeyB", "KeyN", "KeyM", "Comma", "Period", "Slash"].forEach((c, i) => KEYMAP[c] = { key: WHITE[i] });

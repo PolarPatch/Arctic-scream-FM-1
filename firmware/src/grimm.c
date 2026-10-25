@@ -634,7 +634,7 @@ static uint32_t uk_n;                           /* (UK_ONE + a count: an action 
 static int32_t ch_last = -1;                    /* SEL's picture: the note last played (a key, MIDI), its chord shown */
 
 /* ---- the screen: plain text, a row per value; only what changed is drawn */
-#define KEY0 53u                                /* key 0 = F3 */
+#define KEY0 41u                                /* key 0 = F2 (Arctic p0lar patches: an octave down, for drones) */
 #define OCT_BOTH (1u << BTN_OCT_DOWN | 1u << BTN_OCT_UP)
 #define HOLD_MS 600u                            /* a button held this long: its hold function (HOME: SYSTEM) */
 
@@ -1240,7 +1240,7 @@ static void sys_sync(void)
         set.tune = tn, set.col = col, set.mch = mch, set.scr = scr, set.out = out;
         set_dirty = 1, set_t = fm1_ms;
     }
-    ui_acc = UI_ACCENTS[set.col & 3u];
+    ui_acc_user = UI_ACCENTS[set.col & 3u];
     tune_f = (set.tune * 23666 + set.tune * set.tune * 7) / 10000;   /* (2^(c / 1200) - 1, x 4096) */
     mo_seq = set.out;
 }

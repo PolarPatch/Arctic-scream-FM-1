@@ -17,14 +17,29 @@
 
 #define UI_K RGB(0x06, 0x04, 0x10)              /* the palette, arctic night (after PolarPatch BlueWatch's cyberpunk theme):
                                                  * black (the background), */
-#define UI_D RGB(0x16, 0x22, 0x2e)              /* dark */
-#define UI_M RGB(0x45, 0x60, 0x6e)              /* mid */
-#define UI_L RGB(0x7f, 0xa8, 0xb8)              /* light */
+#define UI_D0 RGB(0x16, 0x22, 0x2e)             /* dark */
+#define UI_M0 RGB(0x45, 0x60, 0x6e)             /* mid */
+#define UI_L0 RGB(0x7f, 0xa8, 0xb8)             /* light */
 #define UI_W RGB(0xea, 0xf6, 0xfa)              /* white */
-static const uint16_t UI_ACCENTS[4] = {RGB(0x22, 0xd3, 0xee), RGB(0x3d, 0xff, 0xa8), RGB(0xa7, 0x8b, 0xfa),
-                                       RGB(0xff, 0x1a, 0x8c)};   /* ice (the default), aurora, violet, plasma (SYSTEM);
+static uint16_t ui_d = UI_D0, ui_m = UI_M0, ui_l = UI_L0;   /* dark, mid, light as the page is drawn: tinted on ENV,
+                                                 * LFO, EDIT and SEQ (ui_tint) */
+#define UI_D ui_d
+#define UI_M ui_m
+#define UI_L ui_l
+static const uint16_t UI_ACCENTS[4] = {RGB(0x22, 0xd3, 0xee), RGB(0x3f, 0xb9, 0x50), RGB(0xa7, 0x8b, 0xfa),
+                                       RGB(0xff, 0x1a, 0x8c)};   /* ice (the default), aurora, violet, plasma (SYSTEM;
+                                                 * BlueWatch's cyan, green, violet, magenta);
                                                  * also the four tracks' colours on HOME and the boot screen */
-static uint16_t ui_acc = RGB(0x22, 0xd3, 0xee); /* the accent */
+static uint16_t ui_acc = RGB(0x22, 0xd3, 0xee); /* the accent (as the page is drawn) */
+static uint16_t ui_acc_user = RGB(0x22, 0xd3, 0xee);   /* .. COLOUR's (SYSTEM) */
+static uint16_t ui_hd = RGB(0x22, 0xd3, 0xee);  /* the header's block */
+/* the pages' own colours, BlueWatch's only (its cyberpunk accents and its charts' colours): a page's light, its mid and
+ * dark tinted from it, and an accent beside it: ENV amber and magenta, LFO pink and cyan, EDIT periwinkle and amber, SEQ
+ * green and magenta */
+static const uint16_t UI_TINT[4][2] = {{RGB(0xff, 0xcb, 0x47), RGB(0xff, 0x1a, 0x8c)},
+                                       {RGB(0xf4, 0x72, 0xb6), RGB(0x22, 0xd3, 0xee)},
+                                       {RGB(0x7c, 0x8c, 0xf8), RGB(0xff, 0xcb, 0x47)},
+                                       {RGB(0x3f, 0xb9, 0x50), RGB(0xff, 0x1a, 0x8c)}};
 #define UI_PIC_MS 40u                           /* the picture redrawn at most this often */
 #define UI_BAT_W 16                             /* the header's battery (and its tip) */
 #define UI_BOOT_MS 3000u                        /* the boot screen this long */
@@ -176,7 +191,7 @@ static void ui_bat_draw(int32_t x, int32_t y)   /* the battery, 16 x 8: an outli
 static void ui_head_draw(void)
 {
     int32_t bw = 10 + 8 * ui_len(ui_hb), bx = 3 + bw + 3;
-    ui_rect(3, 3, bw, 18, ui_acc);
+    ui_rect(3, 3, bw, 18, ui_hd);
     ui_text(8, 8, ui_hb, 1, UI_K);
     ui_rect(bx, 3, 237 - bx, 18, UI_D);
     ui_text(bx + 5, 8, ui_hl, 1, UI_L);
@@ -434,6 +449,19 @@ static uint16_t ui_mix(uint16_t a, uint16_t b, uint32_t q, uint32_t n)   /* a ->
     uint32_t r = ((uint32_t)(a >> 11) * (n - q) + (uint32_t)(b >> 11) * q) / n;
     uint32_t g = ((a >> 5 & 63u) * (n - q) + (b >> 5 & 63u) * q) / n, bl = ((a & 31u) * (n - q) + (b & 31u) * q) / n;
     return (uint16_t)(r << 11 | g << 5 | bl);
+}
+static void ui_tint(uint32_t pg)                /* the palette for page pg */
+{
+    int32_t i = pg == PG_ENV ? 0 : pg == PG_LFO ? 1 : pg == PG_SOUND || pg == PG_SOURCE || pg == PG_FMALGO || pg == PG_FMOP ? 2
+              : pg == PG_GRID || pg == PG_PATTERN ? 3 : -1;
+    uint16_t c;
+    if (i < 0) {
+        ui_d = UI_D0, ui_m = UI_M0, ui_l = UI_L0, ui_acc = ui_hd = ui_acc_user;
+        return;
+    }
+    c = UI_TINT[i][0];
+    ui_l = c, ui_m = ui_mix(UI_K, c, 9, 16), ui_d = ui_mix(UI_D0, c, 1, 9);
+    ui_hd = c, ui_acc = UI_TINT[i][1];
 }
 static void ui_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c) { cv_line(x0 - ui_ox, y0, x1 - ui_ox, y1, c); }
 static int ui_in(int32_t x, int32_t y, int32_t w, int32_t h)   /* does (x, y, w, h) reach into the region being drawn */
@@ -1574,11 +1602,11 @@ static int32_t bt_wave(uint32_t p)              /* a soft wave of p (0 .. 255): 
     int32_t q = (int32_t)(p & 127u), v = q * (128 - q) / 64;
     return p & 128u ? -v : v;
 }
-static void bt_logo(void)                       /* the logo, its greys from the background to ice, bt_k of 4 */
+static void bt_logo(void)                       /* the logo, its greys from the background to white, bt_k of 4 */
 {
     uint16_t pal[16];
     int32_t r, c, c0;
-    for (c = 0; c < 16; c++) pal[c] = ui_mix(UI_K, RGB(0xd8, 0xf6, 0xff), (uint32_t)c * bt_k, 60u);
+    for (c = 0; c < 16; c++) pal[c] = ui_mix(UI_K, UI_W, (uint32_t)c * bt_k, 60u);
     for (r = 0; r < LOGO_H; r++) {
         if (!ui_in(BT_LX, BT_LY + r, LOGO_W, 1)) continue;
         for (c = 0; c < LOGO_W; c = c0) {       /* (a run of one grey: one rect) */
@@ -1635,7 +1663,9 @@ static void ui_update(int32_t oct)
     static char hb[12], hl[24], hr[12];
     uint32_t k, key, st;
     static uint32_t an_t;
-    int all = page != shown_page || ui_acc != shown_acc;   /* (a new COLOUR: everything again) */
+    int all;
+    ui_tint(page);
+    all = page != shown_page || ui_acc != shown_acc;   /* (a new COLOUR: everything again) */
     if (fm1_ms - ui_boot_t < UI_BOOT_MS) {      /* (the boot screen still) */
         ui_boot_frame();
         return;

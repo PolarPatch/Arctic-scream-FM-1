@@ -13,11 +13,12 @@
 <link rel="icon" href="polarpatch-logo.png">
 <meta name="description" content="Arctic p0lar patches by PolarPatch, a drone firmware for the M-VAVE FM-1, running in your browser: the same code the instrument runs.">
 <style>
-:root { --bg: #060410; --body: #1c2029; --bed: #13161d; --part: #2a2f39; --part-hi: #353b47; --edge: #3a414d;
-        --fg: #eaf6fa; --label: #c9d2dc; --dim: #7fa8b8; --muted: #45606e; --lit: #22d3ee; --latch: #22d3ee;
-        --ice: #22d3ee; --aurora: #3dffa8; --violet: #a78bfa; --plasma: #ff1a8c;
+/* BlueWatch's colours only: its cyberpunk theme's greys and accents, its dark theme's panel greys */
+:root { --bg: #060410; --body: #161b22; --bed: #0a0d12; --part: #1c232c; --part-hi: #242c37; --edge: #30363d;
+        --fg: #eaf6fa; --label: #a6afb9; --dim: #7fa8b8; --muted: #45606e; --lit: #22d3ee; --latch: #22d3ee;
+        --ice: #22d3ee; --aurora: #3fb950; --violet: #a78bfa; --plasma: #ff1a8c;
         --mono: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
-        --key: #d3d9e0; --key-black: #b5bcc6; --key-held: #e6ebf0;
+        --key: #c9d1d9; --key-black: #a6afb9; --key-held: #e6edf3; --key-lit: #a78bfa;
         color-scheme: dark; }
 html, body { background: var(--bg); }
 body { margin: 0; color: var(--fg); font: 13px/1.5 system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
@@ -55,7 +56,7 @@ a { color: inherit; }
 .brand { display: flex; align-items: center; justify-content: center; font: 700 1.9cqw/1 var(--mono); letter-spacing: .1em;
          color: var(--fg); white-space: nowrap; pointer-events: none; text-shadow: 0 0 .8cqw rgba(34, 211, 238, .45); }
 .brand span { color: var(--ice); margin-left: .5em; }
-.dial { border-radius: 50%; background: #1d2129; border: .45cqw solid #0f1116; cursor: ns-resize; touch-action: none; }
+.dial { border-radius: 50%; background: #0d1117; border: .45cqw solid #060410; cursor: ns-resize; touch-action: none; }
 .dial::after { content: ""; position: absolute; left: 50%; top: 10%; width: 9%; height: 30%; margin-left: -4.5%;
                border-radius: 1cqw; background: var(--fg); transform-origin: 50% 133%; transform: rotate(var(--a, 0deg)); }
 .btn { padding: 0; background: var(--part); color: var(--label); border: .15cqw solid var(--edge); border-radius: .9cqw;
@@ -67,19 +68,19 @@ a { color: inherit; }
 /* the trays the buttons sit in */
 .tray { background: var(--bed); border-radius: 1.2cqw; }
 .btn .sc { position: absolute; right: .35cqw; top: .15cqw; font: 600 .95cqw/1 ui-monospace, Menlo, Consolas, monospace; opacity: .55; }
-.bezel { background: #0b0b0c; border-radius: 1.8cqw; }
+.bezel { background: #060410; border-radius: 1.8cqw; }
 .bed { background: var(--bed); border-radius: 1.4cqw; }
-/* the keys: flat grey capsules, the sharps a shade darker; lit (the key's LED): a cyan edge; pressed: lighter, and a
- * cyan ring around it */
+/* the keys: flat grey capsules, the sharps a shade darker; lit (the key's LED): a violet edge; pressed: lighter, and a
+ * violet ring around it */
 .key { border-radius: 99cqw; background: var(--key); border: .25cqw solid transparent; cursor: pointer; touch-action: none; }
 .key.black { background: var(--key-black); }
-.key.lit { border-color: var(--lit); box-shadow: 0 0 .8cqw rgba(34, 211, 238, .45); }
-.key.held { background: var(--key-held); outline: .25cqw solid var(--lit); outline-offset: .25cqw; }
+.key.lit { border-color: var(--key-lit); box-shadow: 0 0 .8cqw rgba(167, 139, 250, .5); }
+.key.held { background: var(--key-held); outline: .25cqw solid var(--key-lit); outline-offset: .25cqw; }
 .dial:focus-visible, .btn:focus-visible, .key:focus-visible { outline: .25cqw solid var(--fg); outline-offset: .2cqw; }
-canvas { display: block; z-index: 2; background: #000; image-rendering: crisp-edges; image-rendering: pixelated; pointer-events: none; }
+canvas { display: block; z-index: 2; background: #060410; image-rendering: crisp-edges; image-rendering: pixelated; pointer-events: none; }
 canvas.big { z-index: 5; outline: 1px solid var(--edge); }
 .start { inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px; z-index: 6;
-         background: rgba(0, 0, 0, .55); border-radius: 3.7cqw; }
+         background: rgba(6, 4, 16, .6); border-radius: 3.7cqw; }
 .start[hidden] { display: none; }
 .start button { font: 600 15px var(--mono); letter-spacing: .1em; padding: 10px 24px; background: transparent;
                 color: var(--ice); border: 1px solid var(--ice); border-radius: 4px; cursor: pointer;
@@ -144,9 +145,9 @@ footer p { margin: 4px 0; }
   <span>right-click or <kbd>Shift</kbd>-click a button: held until clicked again</span>
 </p>
 <p class="keys" aria-label="What the buttons do">
-  <span><kbd>Z</kbd>–<kbd>/</kbd> <kbd>S</kbd>–<kbd>'</kbd> keys F3–A♯4, <kbd>Q</kbd>–<kbd>O</kbd> B4–G5 · ALGORITHM (<kbd>←</kbd> <kbd>→</kbd>): the track</span>
+  <span><kbd>Z</kbd>–<kbd>/</kbd> <kbd>S</kbd>–<kbd>'</kbd> keys F2–A♯3, <kbd>Q</kbd>–<kbd>O</kbd> B3–G4 (an octave down: drones) · ALGORITHM (<kbd>←</kbd> <kbd>→</kbd>): the track</span>
   <span>EDIT (<kbd>5</kbd>): SOUND, (FM: FM ALGO, FM OP,) again SOURCE (VA, FM, SAMPLE: the factory samples URCHIN, LEAVE, NIKOLAI, M-SOFT, VOICE, WHEEL, PHYS, PHASE; LATCH)</span>
-  <span>ENV (<kbd>3</kbd>): ATTACK DECAY SUSTAIN RELEASE · FX (<kbd>1</kbd>): TAPE, GRAIN, DELAY, SPACE; hold FX + <kbd>Z</kbd> (F3): FREEZE, + G3 … F4: REV THROW, ECHO THROW, TAPE STOP, REVERSE, FILTER DOWN, FILTER UP, STUTTER (while held)</span>
+  <span>ENV (<kbd>3</kbd>): ATTACK DECAY SUSTAIN RELEASE · FX (<kbd>1</kbd>): TAPE, GRAIN, DELAY, SPACE; hold FX + <kbd>Z</kbd> (the first white key): FREEZE, + the next seven white keys: REV THROW, ECHO THROW, TAPE STOP, REVERSE, FILTER DOWN, FILTER UP, STUTTER (while held)</span>
   <span>SEL (<kbd>2</kbd>): SCALE (the keys snap to it), again CHORD (TYPE, VOICING); hold SEL: the track's chord mode on / off</span>
   <span>ARP (<kbd>9</kbd>): MODE, RATE, OCTAVES, GATE; hold ARP: the track's arp on / off (it plays the keys held; LATCH: they stay)</span>
   <span>LFO (<kbd>4</kbd>): RATE, DEPTH, DESTINATION (PITCH, VOLUME, PAN, the source's knobs, REV, GRAIN), SHAPE</span>
