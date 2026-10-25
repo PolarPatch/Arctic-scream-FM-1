@@ -145,9 +145,9 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   const vf = await VirtualFM1.create(readFileSync("web/dist/grimm.wasm"));
   vf.warmUp();
   const cl = new Client(vf), info = await cl.info(), meta = vf.meta();
-  check(info.proto === 2 && info.sounds === 64 && info.slotSize === 2532 && info.setSize === 168 && info.factory === 40,
+  check(info.proto === 2 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 168 && info.factory === 46,
         `editor: INFO (GR!MM ${info.firmware}, protocol ${info.proto}, ${info.sounds} sounds, slots ${info.slotSize} B)`);
-  check(meta.factory.length === 40 && meta.engines.length === 7 && meta.fmAlg.length === 32, "editor: the page's names and tables from the firmware");
+  check(meta.factory.length === 46 && meta.engines.length === 8 && meta.fmAlg.length === 32, "editor: the page's names and tables from the firmware");
   const f2 = await cl.get(OBJ.FACT + 2, 64);
   check(eq([...f2], meta.factory[2].rec) && recordOk(f2), `editor: factory sound 3 (${meta.factory[2].name}) read as the page has it`);
   const b0 = await makeBackup(cl, info);

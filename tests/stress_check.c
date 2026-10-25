@@ -99,10 +99,15 @@ static const uint8_t *st_seq5(uint8_t *o, const uint8_t *n)   /* a sequence (260
     for (k = 0; k < SEQ_N; k++) o[4 + k * 3u] = n[4 + k * 4u], o[5 + k * 3u] = n[5 + k * 4u], o[6 + k * 3u] = n[6 + k * 4u];
     return n + SEQ_PK;
 }
-static void st_trk5(uint8_t *q)                 /* (a track as before TRACK: its bytes 29..31 zero) */
+static const uint8_t *st_trk5(uint8_t *o, const uint8_t *q)   /* the tracks (TRK_PK B) as version 5's (52 B: before
+                                                 * HOWL; before TRACK: bytes 29..31 zero); the next of q */
 {
-    uint32_t t;
-    for (t = 0; t < NT; t++) q[t * TRK_PK + 29u] = q[t * TRK_PK + 30u] = q[t * TRK_PK + 31u] = 0;
+    uint32_t t, k;
+    for (t = 0; t < NT; t++, o += 52, q += TRK_PK) {
+        for (k = 0; k < 52u; k++) o[k] = q[k];
+        o[29] = o[30] = o[31] = 0;
+    }
+    return q;
 }
 static void st_work5(uint8_t *o)                /* the working project now, as version 5 (before TRACK too) */
 {
@@ -110,8 +115,8 @@ static void st_work5(uint8_t *o)                /* the working project now, as v
     const uint8_t *q = n;
     uint32_t k, t;
     pk_work(n);
-    st_trk5(n);
-    for (k = 0; k < NT * TRK_PK + 20u; k++) *o++ = *q++;
+    q = st_trk5(o, q), o += NT * 52u;
+    for (k = 0; k < 20u; k++) *o++ = *q++;
     for (t = 0; t < NT; t++, o += SEQ_PK5) q = st_seq5(o, q);
     q += NT * LOCK_PK;
     for (k = 0; k < SONG_PK; k++) *o++ = *q++;
@@ -121,8 +126,8 @@ static void st_slots5(uint8_t *o)               /* the slots now, as version 5 *
     uint32_t s, k, t;
     for (s = 0; s < 4u; s++) {
         const uint8_t *q = slots[s];
-        for (k = 0; k < 4u + NT * TRK_PK; k++) *o++ = *q++;
-        st_trk5(o - NT * TRK_PK);
+        for (k = 0; k < 4u; k++) *o++ = *q++;
+        q = st_trk5(o, q), o += NT * 52u;
         for (t = 0; t < NT; t++, o += SEQ_PK5) q = st_seq5(o, q);
     }
 }
@@ -204,8 +209,8 @@ static void stress_factory(void)                /* "factory" */
         n += cat_len(c);
     }
     for (i = 0; i < SND_N; i++) u += snd_rec(i) != 0;
-    if (SND_NFACT != 40u || !u || n != SND_NFACT + u)
-        stress_fail("factory: PRESETS' lists not the 40 factory sounds and the user's (sounds listed)", n);
+    if (SND_NFACT != 46u || !u || n != SND_NFACT + u)
+        stress_fail("factory: PRESETS' lists not the 46 factory sounds and the user's (sounds listed)", n);
     if (!(r = cat_item((uint32_t)brw_cat[sel] % NCAT, (uint32_t)brw_pos[sel])))
         stress_fail("factory: PRESETS browsed to nothing (place)", (uint32_t)brw_pos[sel]);
     e = r[3];

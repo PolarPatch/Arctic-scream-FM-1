@@ -101,7 +101,7 @@ static char *ui_3(char *s, uint32_t v) { s[0] = (char)('0' + v / 100u % 10u), s[
 static uint32_t ui_pc(int32_t v) { return ((uint32_t)clamp(v, 0, 127) * 100u + 63u) / 127u; }
 
 /* a source's short name (the HOME slabs: "T2 FM") */
-static const char *const SRC_CODE[NENG] = {"VA", "FM", "SA", "VO", "WH", "PH", "PD"};
+static const char *const SRC_CODE[NENG] = {"VA", "FM", "SA", "VO", "WH", "PH", "PD", "HW"};
 
 /* ---- the header */
 static char ui_hb[12], ui_hl[24], ui_hr[12];    /* the button, the left, the right */
@@ -420,7 +420,11 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         break;
     case PG_DELAY:
         if (k == 0u) { ui_time(S->val, DL_MS[clamp(v, 0, 127)] << 16); return; }
-        if (k == 1u) { ui_3(S->val, ((uint32_t)v * 110u + 63u) / 127u); return; }
+        if (k == 1u) {                          /* FEEDBACK, % (to 150: tape.c) */
+            int32_t f = v <= 100 ? v * 284 : 28400 + (v - 100) * 769;
+            ui_3(S->val, ((uint32_t)clamp(f, 0, 49152) * 100u + 16384u) / 32768u);
+            return;
+        }
         break;
     case PG_SPACE:
         if (k == 0u) {
@@ -978,13 +982,42 @@ static void pic_phase(void)                     /* the bent waveform of WAVE at 
     }
 }
 
-static void pic_source(void)                    /* the seven sources, the track's in the accent; LATCH */
+/* HOWL: the loop as a vortex (Audrey II's big knob, the circles round it): a ring for each step of FEEDBACK (awake:
+ * HOWLING), as far apart as BODY is long, fading out as DAMP closes, torn by DRIVE's sparks; each in its knob's colour */
+static void pic_howl(void)
+{
+    const volatile int32_t *p = trk[sel].p[ENG_HOWL];
+    int32_t fb = clamp(p[0], 0, 127), body = clamp(p[1], 0, 127), dmp = clamp(p[2], 0, 127), drv = clamp(p[3], 0, 127);
+    int32_t n = 1 + fb * 7 / 127, gap = 2 + body * 3 / 127, x, y, j;
+    char r[8];
+    howl_text(p, 0, r);
+    ui_caption(fb >= 82 ? "THE LOOP: HOWLING" : "THE LOOP: ASLEEP", r);
+    ui_rnd_s = 13;
+    for (y = 0; y < 30; y++)
+        for (x = 0; x < 54; x++) {
+            int32_t dx = x - 27, dy = (y - 15) * 2, d2 = dx * dx + dy * dy, c = 0;
+            uint16_t col = 0;
+            for (j = 0; j < n && !col; j++) {   /* the rings, the inner first */
+                int32_t rr = 2 + j * gap, lo = (2 * rr - 1) * (2 * rr - 1) / 4, hi = (2 * rr + 1) * (2 * rr + 1) / 4;
+                if (d2 >= lo && d2 < hi) {
+                    uint16_t k = j == n - 1 ? UI_KC[0] : UI_KC[j % 3 == 0 ? 1 : j % 3 == 1 ? 0 : 3];
+                    col = ui_mix(UI_K, k, (uint32_t)(48 - (dmp * j) / 26), 48u);   /* (DAMP: the outer ones dimmer) */
+                }
+            }
+            c = (int32_t)ui_rnd(1000);
+            if (!col && d2 < (2 + n * gap) * (2 + n * gap) && c < drv * 2) col = UI_KC[2];   /* DRIVE's sparks */
+            if (!col && y == 29 && !(x & 1)) col = UI_D0;
+            if (col) ui_cell(x, y, col);
+        }
+}
+
+static void pic_source(void)                    /* the eight sources, the track's in the accent; LATCH */
 {
     int32_t i, e = (int32_t)sel_eng();
     ui_caption("SOURCE", 0);
     for (i = 0; i < (int32_t)NENG; i++) {
-        int32_t y = 44 + i * 16;
-        if (i == e) ui_rect(PX0, y - 3, 108, 14, UI_D);
+        int32_t y = 44 + i * 14;
+        if (i == e) ui_rect(PX0, y - 3, 108, 13, UI_D);
         ui_text(PX0 + 4, y, i == e ? ">" : " ", 1, ui_acc);
         ui_text(PX0 + 16, y, ENGINES[i]->name, 1, i == e ? ui_acc : UI_M);
     }
@@ -1533,6 +1566,7 @@ static void ui_pic_draw(void)
         case ENG_VOICE: pic_voice(); return;
         case ENG_WHEEL: pic_wheel(); return;
         case ENG_PHYS: pic_phys(); return;
+        case ENG_HOWL: pic_howl(); return;
         default: pic_phase(); return;
         }
     case PG_SOURCE: pic_source(); return;

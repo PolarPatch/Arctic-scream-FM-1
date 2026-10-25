@@ -29,7 +29,7 @@
 #define REL_END (1 << 15)                       /* Q24: a release ends here, 54 dB down (a voice's last ~16 LSB, -66 dBFS;
                                                  * Felucca's 1 << 12 rendered the last ~2.7 s of a 6 s release unheard) */
 enum { ST_OFF, ST_ATK, ST_SUS, ST_REL, ST_FADE };
-enum { ENG_VA, ENG_FM, ENG_SAMPLE, ENG_VOICE, ENG_WHEEL, ENG_PHYS, ENG_PHASE, NENG };
+enum { ENG_VA, ENG_FM, ENG_SAMPLE, ENG_VOICE, ENG_WHEEL, ENG_PHYS, ENG_PHASE, ENG_HOWL, NENG };
 
 typedef struct {
     volatile uint32_t req;                      /* main loop: + 1 after want_* */
@@ -68,14 +68,14 @@ typedef struct {
                                                  * 0..7; an operator's (OP1 first) RATIO 0..31, FINE, LEVEL, ATTACK,
                                                  * DECAY 0..99 (fm.c; a built-in PATCH's: fm_builtin) */
 } track_t;
-#define TRK_DEF {ENG_VA, {{0, 10, 90, 30}, {0, 64, 64, 20}, {0, 0, 127, 0}, {0, 12, 64, 10}, {4, 0, 40, 0}, {0, 64, 80, 64}, {0, 0, 60, 0}}, 100, 0, 100, 0, 64, 0, \
+#define TRK_DEF {ENG_VA, {{0, 10, 90, 30}, {0, 64, 64, 20}, {0, 0, 127, 0}, {0, 12, 64, 10}, {4, 0, 40, 0}, {0, 64, 80, 64}, {0, 0, 60, 0}, {96, 64, 50, 40}}, 100, 0, 100, 0, 64, 0, \
                  {60, 85, 127, 105}, 0, 0, 0, 0, 0, 4, 1, 50, 40, 30, 9, 0, 84, 24, 100, 0, 0, {{0}}}
 static track_t trk[NT] = {TRK_DEF, TRK_DEF, TRK_DEF, TRK_DEF};   /* VA: SAW, DETUNE 10, CUTOFF 90, RESONANCE 30
                                                  * (Felucca's ANALOG); FM: BELL as made, DETUNE 20; SAMPLE: slot 1,
                                                  * the whole sample, forward; VOICE: A, SHIFT 0, BUZZ 64, BREATH 10
                                                  * (Felucca's); WHEEL: 3BAR, PERC OFF, CLICK 40, DRIVE 0 (Felucca's);
                                                  * PHYS: MODAL, STRUCTURE 64, DAMP 80, bowed at 50 %; PHASE: SAW,
-                                                 * DCW 60, one line (Felucca's); LEVEL 100,
+                                                 * DCW 60, one line (Felucca's); HOWL: FEEDBACK 96 (awake), BODY 64, DAMP 50, DRIVE 40; LEVEL 100,
                                                  * DLY 0, REV 100, GRN 0, PAN the middle; LATCH OFF; ENV: ATTACK
                                                  * ~0.2 s, DECAY 1 s, SUSTAIN 100 %, RELEASE ~5 s; chord mode OFF (SCALE, CLOSE); ARP OFF (UP,
                                                  * 1/16, 1 octave, GATE 50 %); LFO DEPTH 30 % (slow, TRK CUTOFF,
@@ -131,8 +131,9 @@ static inline uint32_t vinc(int32_t p16)
 #include "wheel.c"
 #include "phys.c"
 #include "phase.c"
+#include "howl.c"                               /* (Arctic p0lar patches: the feedback loop, after Audrey II) */
 static const engine_t *const ENGINES[NENG] = {&VA_ENGINE, &FM_ENGINE, &SAMPLE_ENGINE, &FORMANT_ENGINE, &WHEEL_ENGINE,
-                                              &PHYS_ENGINE, &PHASE_ENGINE};   /* (by ENG_) */
+                                              &PHYS_ENGINE, &PHASE_ENGINE, &HOWL_ENGINE};   /* (by ENG_) */
 
 /* main loop: voice v plays note for track t (a sounding voice fades out first; the same note of the same track
  * sounding goes on up from where it is) */

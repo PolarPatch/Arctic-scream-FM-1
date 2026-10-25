@@ -39,7 +39,8 @@
 #define FM_ALL (FM_PK * NT)
 #define PK_ENG 7u                               /* a track's sources kept (NENG); bytes 29..31 (an eighth source's
                                                  * room till step 23): TRACK's filter and FX, 0 their defaults */
-#define TRK_PK 52u                              /* a track, packed (OBJ_VERS: older versions' were shorter) */
+#define TRK_PK 56u                              /* a track, packed (OBJ_VERS: older versions' were shorter; Arctic
+                                                 * p0lar patches: + 4, HOWL's, bytes 52..55) */
 #define SEQ_PK 260u                             /* a sequence, packed: 4 + 64 steps x 4 B (the 4th: its chord) */
 #define SEQ_PK5 196u                            /* (version 5 and before: 3 B a step) */
 #define LOCK_PK 288u                            /* a track's step locks: 64 x the four values, 64 x 4 bits which */
@@ -53,23 +54,24 @@
 #define SLOT_ALL (SLOT_PK + FM_ALL)             /* a slot in RAM: SLOT_PK, its FM patches after (the stream's tail) */
 #define WORK_PK WORK_LEN(TRK_PK, SONG_PK, SEQ_PK, LOCK_PK, FM_ALL)
 #define OBJ_HDR 12u                             /* magic, the save count, type, version, length */
-#define OBJ_MAGIC 0x4B4D5247u                   /* "GRMK" */
+#define OBJ_MAGIC 0x4B504441u                   /* "ADPK" (Arctic p0lar patches' own: its tracks are longer than GR!MM's,
+                                                 * so neither reads the other's saves; GR!MM's was "GRMK") */
 #define OBJ_VER 7u
 #define SLS_VER 6u                              /* the slots' stream (its layout as version 6's) */
 #define NOBJV 6u
-static const uint16_t OBJ_VERS[NOBJV][6] = {{7, 52, 20, 260, 288, FM_ALL}, {6, 52, 20, 260, 288, 0},
+static const uint16_t OBJ_VERS[NOBJV][6] = {{7, TRK_PK, 20, 260, 288, FM_ALL}, {6, 52, 20, 260, 288, 0},
                                             {5, 52, 20, 196, 0, 0}, {4, 52, 0, 196, 0, 0}, {3, 48, 0, 196, 0, 0},
                                             {2, 44, 0, 196, 0, 0}};   /* the versions loaded, newest first: a track's,
                                                  * the song's, a sequence's, the locks', the FM patches' size (6: before
                                                  * the FM patches; 5: before chord steps and locks; 4: before the song;
                                                  * 3: before the LFO; 2: before ARP) */
-#define SLS_MAGIC 0x534C5247u                   /* "GRLS": a sector of the slots' stream */
+#define SLS_MAGIC 0x534C4441u                   /* "ADLS": a sector of the slots' stream (GR!MM's: "GRLS") */
 #define SLS_P (4096u - OBJ_HDR - 4u)            /* the stream's bytes a sector */
 #define SLS_N 3u                                /* its sectors: 3, 4, 5 */
 enum { OBJ_WORK, OBJ_SLOTS };
 enum { CAT_DRONE, CAT_PAD, CAT_BELL, CAT_ORGAN, CAT_KEYS, CAT_BASS, CAT_TEXTURE, CAT_VOICE, CAT_OTHER, NCAT };
 static const char *const CAT_NAME[NCAT] = {"DRONE", "PAD", "BELL", "ORGAN", "KEYS", "BASS", "TEXTURE", "VOICE", "OTHER"};
-_Static_assert(NENG <= PK_ENG, "a save keeps every source's settings");
+_Static_assert(NENG <= PK_ENG + 1u, "a save keeps every source's settings (the eighth, HOWL, at bytes 52..55)");
 _Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4u * SLOT_ALL <= SLS_N * SLS_P &&
                SAVE_NSECT >= 3u + SLS_N, "the save sectors");
 
@@ -130,6 +132,14 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSND(CAT_KEYS, 9, ENG_PHASE, 3, 0, 40, 4, 80, 90, 70, 80, 0, 0x00, 100, 1, 0, 0),       /* NORTHERN LIGHT */
     /* TEXTURES */
     FSND(CAT_TEXTURE, 1, ENG_VOICE, 96, 12, 0, 127, 100, 90, 120, 105, 1, 0x00, 30, 90, 4, 0), /* WIND OVER ICE */
+    /* HOWLS (Arctic p0lar patches: the HOWL source, after Audrey II; LATCH ON, slow in and out; the LFO on BODY, DAMP,
+     * FEEDBACK or TRK CUTOFF, wandering) */
+    FSND(CAT_DRONE, 7, ENG_HOWL, 92, 70, 50, 40, 90, 90, 127, 110, 1, 0x00, 30, 25, 4, 6),    /* POLAR HOWL */
+    FSND(CAT_DRONE, 8, ENG_HOWL, 100, 95, 62, 85, 70, 90, 127, 105, 1, 0x00, 45, 35, 4, 5),   /* WENDIGO */
+    FSND(CAT_DRONE, 9, ENG_HOWL, 112, 40, 35, 60, 60, 90, 120, 100, 1, 0x00, 20, 20, 5, 0),   /* FROZEN SCREAM */
+    FSND(CAT_TEXTURE, 2, ENG_HOWL, 88, 115, 95, 20, 110, 90, 127, 115, 1, 0x00, 25, 40, 9, 6), /* WHITEOUT */
+    FSND(CAT_TEXTURE, 3, ENG_HOWL, 104, 8, 30, 105, 40, 90, 110, 90, 1, 0x00, 60, 30, 4, 4),  /* DEAD SIGNAL */
+    FSND(CAT_TEXTURE, 4, ENG_HOWL, 96, 55, 75, 70, 95, 90, 127, 110, 1, 0x00, 35, 30, 3, 6),  /* ICE WRAITH */
 };
 static const char *const SND_FNAME[] = {
     "POLAR NIGHT", "SNOW VEIL", "GLACIER PAD", "MIDNIGHT SUN", "LICHEN", "SNOWDRIFT", "PERMAFROST", "DEEP FJORD",
@@ -137,7 +147,8 @@ static const char *const SND_FNAME[] = {
     "CRYSTAL HARP", "BOWED ICICLE", "STARLIGHT", "AURORA CHOIR", "TUNDRA VOICES", "BLIZZARD BREATH", "NORTHERN CALL",
     "EMPTY HORIZON", "ICE ORGAN", "BASE CAMP", "FROST KEYS", "SNOW GLOBE", "POLAR KEYS", "ICE PIANO",
     "TUNDRA STRINGS", "ICEBREAKER", "FOG HORN", "SVALBARD CELLO", "NORTH STRINGS", "SNOW OWL", "SIGNAL FLARE",
-    "ICICLE PLUCK", "FROST LUTE", "NORTHERN LIGHT", "WIND OVER ICE",
+    "ICICLE PLUCK", "FROST LUTE", "NORTHERN LIGHT", "WIND OVER ICE", "POLAR HOWL", "WENDIGO", "FROZEN SCREAM",
+    "WHITEOUT", "DEAD SIGNAL", "ICE WRAITH",
 };   /* (16 characters at most: the header beside HOME's tempo) */
 #define SND_NFACT (sizeof SND_FACTORY / sizeof SND_FACTORY[0])
 _Static_assert(SND_NFACT == sizeof SND_FNAME / sizeof SND_FNAME[0], "a name a factory sound");
@@ -356,8 +367,9 @@ static uint8_t *pk_track(uint8_t *q, uint32_t t)
     uint32_t e, k;
     for (k = 0; k < TRK_PK; k++) q[k] = 0;
     q[0] = (uint8_t)clamp(trk[t].eng, 0, NENG - 1);
-    for (e = 0; e < NENG; e++)
+    for (e = 0; e < PK_ENG; e++)
         for (k = 0; k < 4u; k++) q[1 + e * 4u + k] = (uint8_t)clamp(trk[t].p[e][k], 0, 255);
+    for (k = 0; k < 4u; k++) q[52 + k] = (uint8_t)clamp(trk[t].p[ENG_HOWL][k], 0, 255);   /* (HOWL) */
     for (k = 0; k < 4u; k++) q[33 + k] = (uint8_t)clamp(trk[t].env[k], 0, 127);
     q[29] = (uint8_t)(127 - clamp(trk[t].cut, 0, 127)), q[30] = (uint8_t)clamp(trk[t].res, 0, 127);   /* TRACK (0, 0, 0:
                                                  * open, 0, 100 %: as a save from before it) */
@@ -381,6 +393,7 @@ static void trk_def(uint8_t *q, uint32_t n)     /* a track's bytes from n on (a 
     uint32_t k;
     d[44] = (uint8_t)T0.arp_mode, d[45] = (uint8_t)T0.arp_rate, d[46] = (uint8_t)T0.arp_oct, d[47] = (uint8_t)T0.arp_gate;
     d[48] = (uint8_t)T0.lfo_rate, d[49] = 0, d[50] = (uint8_t)T0.lfo_dest, d[51] = (uint8_t)T0.lfo_shape;
+    for (k = 0; k < 4u; k++) d[52 + k] = (uint8_t)T0.p[ENG_HOWL][k];   /* (HOWL as at power-on) */
     for (k = n < 44u ? 44u : n; k < TRK_PK; k++) q[k] = d[k];
 }
 static void restart_track(uint32_t t);          /* (grimm.c: the audio ISR's NQ_RESTART, */
@@ -392,8 +405,9 @@ static const uint8_t *uk_track(const uint8_t *q0, uint32_t t, int isr, uint32_t 
     uint32_t e, k;
     for (k = 0; k < TRK_PK && k < n; k++) q[k] = q0[k];
     trk_def(q, n);                              /* (what an older save has not: as at power-on) */
-    for (e = 0; e < NENG; e++)
+    for (e = 0; e < PK_ENG; e++)
         for (k = 0; k < 4u; k++) trk[t].p[e][k] = q[1 + e * 4u + k];
+    for (k = 0; k < 4u; k++) trk[t].p[ENG_HOWL][k] = q[52 + k];
     for (k = 0; k < 4u; k++) trk[t].env[k] = q[33 + k];
     if (trk[t].latch && !q[37]) {               /* (LATCH ON -> OFF: its latched notes released; at the bar, now) */
         if (!isr) nq_put(NQ_RELEASE, t, 0);

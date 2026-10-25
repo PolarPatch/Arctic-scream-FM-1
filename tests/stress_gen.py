@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 GR!MM
 """The stress test's script (tests/stress.sh): host.c's script lines, and the times tests/stress_check.c checks that
-everything let go has stopped. Seven rounds: every source on every track (round r: track t plays source (r + t) mod 7),
+everything let go has stopped. Eight rounds: every source on every track (round r: track t plays source (r + t) mod 8),
 each track's chord mode, CHORD TYPE, VOICING and LATCH at random, SCALE off or set; then a burst of playing: white and
 black keys fast, held and let go, chords of keys, MIDI notes in (doubled note-ons too), the lowest and the highest
 octave, every page, knobs, PRESETS, the hold combos (SAVE + keys: slots; EDIT + OCT: undo / redo; SEL held; ARP held;
@@ -19,7 +19,7 @@ locks), SEL + OCT- (the locks cleared); steps recorded in chord mode (chord step
 MIDI CHANNEL 2-5, TUNE +7, SCREEN OFF 1 MIN; SYSTEM 2: SEQ MIDI OUT on, MIDI LEARN (ENV's ATTACK, CC 21); the settings
 saved; a minute untouched (the screen dark), a key (it only wakes it). In the rounds also: CCs (linked or not), MIDI
 LEARN on any page's knob (OCT- cancelling), MIDI CHANNEL changed with notes on, SEQ MIDI OUT off and on, CLEAR ALL.
-Then a user sound saved (SAVE > SOUNDS) and PRESETS turned through the 40 factory sounds into the user's, checked on
+Then a user sound saved (SAVE > SOUNDS) and PRESETS turned through the 46 factory sounds into the user's, checked on
 the way and at the end; the editor's mailbox (x_editor: reads, writes, refusals); from the rounds on, garbage to it
 every 47 ms (y_garbage). HOME's CUTOFF, RESONANCE, FX on every track in each round (T1's set before
 the power-on, checked back; the upgrade's old saves: open, 100 %); the LFO's TRK CUTOFF among its destinations.
@@ -92,11 +92,11 @@ def track(i):
 def setup(r):
     page(SEL)                                   # SCALE: ROOT, SCALE (OFF half of the time)
     turn(K1, -20); turn(K1, rnd.randrange(12))
-    turn(K2, -20); turn(K2, 0 if rnd.random() < 0.4 else rnd.randrange(1, 14))
+    turn(K2, -20); turn(K2, 0 if rnd.random() < 0.4 else rnd.randrange(1, 15))
     for i in range(4):
         track(i)
         source_page()                           # SOURCE: the round's source, LATCH
-        turn(K1, -10); turn(K1, (r + i) % 7)
+        turn(K1, -10); turn(K1, (r + i) % 8)
         turn(K2, rnd.choice([-1, 1]))
         if (r + i) % 7 == 1:                    # FM: FM ALGO, FM OP (EDIT from SOURCE: SOUND, FM ALGO, FM OP)
             tap(EDIT)
@@ -369,7 +369,7 @@ at(50, "keys 0")
 checks.append(f"{t} x_editor")                  # the editor's mailbox: GET, PUT, refusals
 at(100, "keys 0")
 checks.append(f"{t} y_garbage")                 # from here on: garbage to it, every 47 ms
-for r in range(7):
+for r in range(8):
     setup(r)
     burst(7000)
     let_go()

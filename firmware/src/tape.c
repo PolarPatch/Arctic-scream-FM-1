@@ -11,7 +11,7 @@
  *   at half the rate (22.05 kHz, as SPACE: 3.5 s fit in 155 KB, the work halves, the echoes stop near 10 kHz): the
  *   voices (every other sample, 1 2 1) -> the line (77456 samples) -> read TIME back, plus the wow (two slow sines,
  *   0.5 and 0.19 Hz: not quite periodic) and a little flutter (6.1 Hz), between samples, gliding over the block; the
- *   right side 9 ms later -> the loop: a one-pole low-pass (WEAR: ~7 kHz .. ~1.2 kHz), FEEDBACK (0 .. 110 %), a tanh
+ *   right side 9 ms later -> the loop: a one-pole low-pass (WEAR: ~7 kHz .. ~1.2 kHz), FEEDBACK (0 .. 150 %), a tanh
  *   saturation (WEAR: 1x .. 1.8x drive, the level made up), the DC block -> back into the line with the input,
  *   through a soft knee: no sum can clip. Each repeat: darker, a little saturated, a little more wobbly.
  *   TIME glides to a new value (~50 ms): the pitch bends, as a tape's does.
@@ -87,7 +87,9 @@ static void tape_render(const int32_t *in, int32_t *out, int32_t *rev, uint32_t 
     tc = 28300 - wear * 148;                    /* the loop's low-pass, Q15: ~7 kHz .. ~1.2 kHz */
     g = 4096 + wear * 26;                       /* the saturation's drive, Q12: 1x .. 1.8x */
     ig = (int32_t)(134217728u / (uint32_t)g);   /* .. and the level made up after it, Q15 */
-    fb = fbk * 284;                             /* FEEDBACK, Q15: 0 .. 1.1 */
+    fb = fbk <= 100 ? fbk * 284 : 28400 + (fbk - 100) * 769;   /* FEEDBACK, Q15: 0 .. ~0.87 at 100, then on to 1.5 (Arctic
+                                                 * p0lar patches: past unity on purpose, as Audrey II's echo: it grows
+                                                 * and saturates) */
 
     w = dl.w;
     {

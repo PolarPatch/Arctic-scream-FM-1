@@ -9,15 +9,17 @@
 
 enum { CH_SCALE, CH_MIN, CH_MAJ, CH_SUS2, CH_SUS4, CH_FIFTH, CH_MIN7, CH_MAJ7, CH_DIM, CH_ADD9, CH_CLUSTER, NCHORD };
 enum { VC_CLOSE, VC_OPEN, VC_SPREAD, VC_OCT, VC_DROP, NVOICING };
-#define NSCALE 14
+#define NSCALE 15
 #define CH_MAX 5u                               /* a chord's notes at most (4, and +OCT's) */
 static const uint16_t SC_MASK[NSCALE] = {       /* bit i: i semitones over ROOT in the scale */
-    0xFFF, 0x5AD, 0xAB5, 0x6AD, 0x5AB, 0xAD5, 0x6B5, 0x56B, 0x9AD, 0x5B3, 0x9CD, 0x9B3, 0x4A9, 0x295};
+    0xFFF, 0x5AD, 0xAB5, 0x6AD, 0x5AB, 0xAD5, 0x6B5, 0x56B, 0x9AD, 0x5B3, 0x9CD, 0x9B3, 0x4A9, 0x295,
+    0x663};                                     /* HORROR: Audrey Touch's eerie pad scale (0 1 5 6 9 10) */
 static const char *const SC_NAME[NSCALE] = {"CHROMATIC", "NATURAL MINOR", "MAJOR", "DORIAN", "PHRYGIAN", "LYDIAN",
     "MIXOLYDIAN", "LOCRIAN", "HARMONIC MINOR", "PHRYGIAN DOMINANT", "HUNGARIAN MINOR", "DOUBLE HARMONIC",
-    "MINOR PENTATONIC", "MAJOR PENTATONIC"};
+    "MINOR PENTATONIC", "MAJOR PENTATONIC", "HORROR"};
 static const char *const SC_SHORT[NSCALE] = {"OFF", "MINOR", "MAJOR", "DORIAN", "PHRYG", "LYDIAN", "MIXO", "LOCRIA",
-                                             "HARMIN", "PHRDOM", "HUNGMI", "DBLHAR", "MINPEN", "MAJPEN"};   /* (slabs) */
+                                             "HARMIN", "PHRDOM", "HUNGMI", "DBLHAR", "MINPEN", "MAJPEN",
+                                             "HORROR"};   /* (slabs) */
 static const char *const SC_NOTE[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 static const char *const CH_SHORT[NCHORD] = {"SCALE", "MIN", "MAJ", "SUS2", "SUS4", "FIFTH", "MIN7", "MAJ7", "DIM",
                                              "ADD9", "CLUSTR"};

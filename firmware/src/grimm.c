@@ -878,7 +878,8 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
     case PG_DELAY:
         switch (k) {
         case 0: put_s(put_u(s, DL_MS[clamp(v, 0, 127)]), " ms"); return;
-        case 1: put_s(put_u(s, ((uint32_t)v * 110u + 63u) / 127u), "%"); return;   /* the loop's gain: past 100 */
+        case 1: put_s(put_u(s, ((uint32_t)(v <= 100 ? v * 284 : 28400 + (v - 100) * 769) * 100u + 16384u) / 32768u), "%");
+            return;                             /* the loop's gain: past 100, to 150 (tape.c) */
         case 3: put_pc(s, v); return;
         default: put_u(s, (uint32_t)v); return;
         }

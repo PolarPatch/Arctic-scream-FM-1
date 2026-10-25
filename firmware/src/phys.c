@@ -19,6 +19,7 @@
 
 #include "phys_dsp.c"
 #include "phys_symp.c"
+#include "howl.h"                              /* (Arctic p0lar patches: HOWL's state shares the slot) */
 
 enum { PM_MODAL, PM_STRING, PM_MEMB, PM_SYMP, PM_COUNT };
 #define PHYS_BRIT 80                            /* Felucca's defaults for the knobs GR!MM leaves out */
@@ -35,9 +36,12 @@ typedef struct {
         px_modal_t m;                           /* MODAL, MEMB */
         px_string_t s;
         px_symp_t y;
+        howl_t h;                               /* HOWL (howl.c) */
     } u;
 } phys_slot_t;
 static phys_slot_t ph_slot[NV];
+typedef union { px_modal_t m; px_string_t s; px_symp_t y; } phys_only_t;
+_Static_assert(sizeof(howl_t) <= sizeof(phys_only_t), "HOWL fits in the PHYS slot: no RAM of its own");
 
 static const char *const N_PHYS_MODEL[PM_COUNT] = {"MODAL", "STRING", "MEMBRANE", "SYMPATH"};
 static const char *const N_PHYS_CHORD[8] = {"OCT", "5TH", "4TH", "MAJ", "MIN", "SUS", "7TH", "ROOT"};

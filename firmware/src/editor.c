@@ -21,7 +21,7 @@
  * DATA) the autosave waits (grimm.c: ed_open). Main loop only (samples_poll). */
 
 #define ED_PROTO 2u                             /* this protocol's version (INFO; 2: TRACK) */
-#define ED_FMT 1u                               /* the objects' format: sounds of 64 B, slots of SLOT_ALL, settings
+#define ED_FMT 2u                               /* the objects' format: sounds of 64 B, slots of SLOT_ALL, settings
                                                  * as set (SET_VER 1) */
 enum { ED_INFO = 20, ED_GET = 21, ED_PUT = 22, ED_TRACK = 23 };
 #define ED_SND7 74u                             /* a sound (64 B) in pack7 */
