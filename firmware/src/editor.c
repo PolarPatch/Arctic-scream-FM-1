@@ -12,6 +12,10 @@
  *   23 TRACK op 0 READ t / 1 SET t, pack7 sound (64 B) [, its name] / 2 SELECT t
  *                              -> op, t, the selected track, rc (READ: then pack7 track t's sound now, then its name
  *                                 as HOME shows it, if it has one)
+ *   24 SEQ  op 0 READ t / 1 SET t, pack7 sequence (SEQ_PK: store.c's pk_seq) / 2 TEMPO lo, hi (20..300) / 3 PLAY
+ *           on (0 STOP; as PLAY/STOP)
+ *                              -> op, t, sel, rc, the tempo (lo, hi), playing, track t's step playing + 1 (0: none)
+ *                                 (READ: then pack7 track t's sequence; Arctic Scream p0larpatch, protocol 3)
  * TRACK is live (protocol 2): a track's sound as it plays, read or set at once, as PRESETS loads one (snd_apply), never
  * saved; at any time, also while playing (the editor page's sliders, SLOOP's live SET). The page sends one at a time.
  * Objects: 0 the settings; 1..4 slots A..D; 16..79 the user's sounds 1..64; 80..119 the factory sounds (GET only).
@@ -20,18 +24,18 @@
  * store.c's saves (each written sector read back); refused, nothing changes. While a PUT is open (15 s after its last
  * DATA) the autosave waits (grimm.c: ed_open). Main loop only (samples_poll). */
 
-#define ED_PROTO 2u                             /* this protocol's version (INFO; 2: TRACK) */
+#define ED_PROTO 3u                             /* this protocol's version (INFO; 2: TRACK, 3: SEQ) */
 #define ED_FMT 2u                               /* the objects' format: sounds of 64 B, slots of SLOT_ALL, settings
                                                  * as set (SET_VER 1) */
-enum { ED_INFO = 20, ED_GET = 21, ED_PUT = 22, ED_TRACK = 23 };
+enum { ED_INFO = 20, ED_GET = 21, ED_PUT = 22, ED_TRACK = 23, ED_SEQ = 24 };
 #define ED_SND7 74u                             /* a sound (64 B) in pack7 */
 enum { EO_SET = 0, EO_SLOT = 1, EO_SND = 16, EO_FACT = 80 };
 enum { ER_OK, ER_ARGS, ER_BAD, ER_STOP, ER_FLASH, ER_NOBEGIN };   /* rc: arguments, the object (CRC, size, format,
                                                  * contents), stop / silence first, the flash, no BEGIN (or 15 s old) */
 #define ED_RX (st_img)                          /* a PUT's bytes (up to SLOT_ALL) */
-#define ED_FX (st_img + 2560u)                  /* a factory sound as a 64 B record */
+#define ED_FX (st_img + 2560u)                  /* a factory sound as a 64 B record; SEQ's sequence */
 #define ED_TX (st_img + 3072u)                  /* a reply */
-_Static_assert(SLOT_ALL <= 2560u && 6u + 12u + 293u + 1u <= 1024u, "the editor's room in st_img");
+_Static_assert(SLOT_ALL <= 2560u && 6u + 12u + 293u + 1u <= 1024u && SEQ_PK <= 512u, "the editor's room in st_img");
 static int32_t ed_obj = -1;                     /* the PUT begun (its object), -1 none */
 static uint32_t ed_len, ed_crc, ed_got, ed_t;
 
@@ -132,7 +136,7 @@ static int ed_frame(const uint8_t *f, uint32_t n, int silent)
 {
     uint8_t r[16];
     uint32_t cmd, o, rc = ER_OK;
-    if (n < 4u || f[1] != 0x41 || f[2] != 0x53 || f[3] < ED_INFO || f[3] > ED_TRACK) return 0;
+    if (n < 4u || f[1] != 0x41 || f[2] != 0x53 || f[3] < ED_INFO || f[3] > ED_SEQ) return 0;
     cmd = f[3], f += 4, n -= 4;
     if (cmd == ED_INFO) {                       /* proto, fmt, the version (0-ended), sounds, a sound's size, the
                                                  * factory's, a slot's size, the settings' size, sample slots, used */
@@ -159,6 +163,30 @@ static int ed_frame(const uint8_t *f, uint32_t n, int silent)
         r[0] = (uint8_t)o, r[1] = (uint8_t)rc;
         ed_wr35(r + 2, off), r[7] = (uint8_t)(c & 0x7Fu), r[8] = (uint8_t)(c >> 7 & 0x7Fu);
         ed_send(cmd, r, 9, rc ? 0 : b + off, rc ? 0u : c, 0);
+        return 1;
+    }
+    if (cmd == ED_SEQ) {                        /* op, t [, pack7 sequence | tempo] -> op, t, sel, rc, tempo, playing,
+                                                 * the step [, pack7 track t's sequence]: live, as SEQ's knobs */
+        uint32_t op = n >= 2u ? f[0] : 3u, t = n >= 2u ? f[1] : 0u, sq7 = SEQ_PK / 7u * 8u + (SEQ_PK % 7u ? SEQ_PK % 7u + 1u : 0u);
+        if (op > 3u || t >= NT) rc = ER_ARGS;
+        else if (op == 1u) {                    /* SET: the steps and PATTERN SETTINGS (uk_seq clamps them), the locks kept */
+            if (n < 2u + sq7 || unpack7(f + 2, sq7, ED_FX, SEQ_PK) != SEQ_PK) rc = ER_BAD;
+            else uk_seq(ED_FX, t, SEQ_PK);
+        } else if (op == 2u) {
+            if (n < 4u) rc = ER_ARGS;
+            else seq_bpm = clamp((int32_t)(f[2] | (uint32_t)f[3] << 7), 20, 300);
+        } else if (op == 3u) {
+            if (n < 3u) rc = ER_ARGS;
+            else if ((f[2] != 0) != (playing != 0)) {
+                playing = f[2] != 0;
+                nq_put(playing ? NQ_PLAY : NQ_STOP, 0, (uint32_t)slot_cur & 3u);
+            }
+        }
+        if (!rc && !op) pk_seq(ED_FX, t);
+        r[0] = (uint8_t)op, r[1] = (uint8_t)t, r[2] = (uint8_t)sel, r[3] = (uint8_t)rc;
+        r[4] = (uint8_t)(seq_bpm & 0x7F), r[5] = (uint8_t)(seq_bpm >> 7 & 0x7F), r[6] = (uint8_t)(seq_on != 0);
+        r[7] = (uint8_t)(t < NT && seq_on && seq[t].pos >= 0 ? seq[t].pos + 1 : 0);
+        ed_send(cmd, r, 8, ED_FX, !rc && !op ? SEQ_PK : 0u, 0);
         return 1;
     }
     if (cmd == ED_TRACK) {                      /* op, t [, pack7 sound, name] -> op, t, sel, rc [, pack7 track t's

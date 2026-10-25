@@ -19,7 +19,8 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { inflateSync } from "node:zlib";
 import { execFileSync } from "node:child_process";
 import { Client, VirtualFM1, LiveSender, MidiTransport, findFM1, OBJ, parseSound, buildRecord, makeBackup, checkBackup,
-         restoreBackup, makeSlot, recordOk, unpack7, hex, sampleName } from "./editor_core.js";
+         restoreBackup, makeSlot, recordOk, unpack7, hex, sampleName, parseSeq, buildSeq, seqToMidi, midiToSeq,
+         SEQ_DIV } from "./editor_core.js";
 
 let ex, data, size, started = false, rewinding = false;
 const { instance } = await WebAssembly.instantiate(readFileSync("web/dist/grimm.wasm"), {
@@ -145,8 +146,8 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   const vf = await VirtualFM1.create(readFileSync("web/dist/grimm.wasm"));
   vf.warmUp();
   const cl = new Client(vf), info = await cl.info(), meta = vf.meta();
-  check(info.proto === 2 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 168 && info.factory === 46,
-        `editor: INFO (GR!MM ${info.firmware}, protocol ${info.proto}, ${info.sounds} sounds, slots ${info.slotSize} B)`);
+  check(info.proto === 3 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 168 && info.factory === 46,
+        `editor: INFO (${info.firmware}, protocol ${info.proto}, ${info.sounds} sounds, slots ${info.slotSize} B)`);
   check(meta.factory.length === 46 && meta.engines.length === 8 && meta.fmAlg.length === 32, "editor: the page's names and tables from the firmware");
   const f2 = await cl.get(OBJ.FACT + 2, 64);
   check(eq([...f2], meta.factory[2].rec) && recordOk(f2), `editor: factory sound 3 (${meta.factory[2].name}) read as the page has it`);
@@ -225,6 +226,27 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   const tn = await cl.track(3);
   await cl.trackSet(3, t0[3].rec);
   check(tn.name === "GLACIER PAD" && (await cl.track(3)).name === "", `editor: TRACK: a sound's name as HOME shows it ("${tn.name}"), and none`);
+  // the sequences, live (SEQ, protocol 3: Arctic Scream p0larpatch)
+  const q0 = await cl.seq(1), p0 = parseSeq(q0.bytes);
+  check(p0.steps === 16 && p0.div === 4 && p0.st.every((s) => !s.note) && q0.bpm === 120 && !q0.playing && q0.pos === -1,
+        `editor: SEQ: a fresh sequence read (${p0.steps} steps of ${SEQ_DIV[p0.div]}, ${q0.bpm} BPM, stopped)`);
+  const q1 = { ...p0, steps: 12, div: 2, swing: 40, mode: 2, st: p0.st.map((s, k) => (k % 3 ? s : { note: 48 + k, chance: 90 - k, ratchet: 1 + k % 4, len: 1 + k % 3, chord: 0 })) };
+  q1.st[5] = { note: 60, chance: 100, ratchet: 1, len: 1, chord: 0x80 | 2 << 4 | 3 };
+  await cl.seqSet(1, buildSeq(q1));
+  const qb = await cl.seq(1);
+  check(eq([...qb.bytes], [...buildSeq(q1)]) && JSON.stringify(parseSeq(qb.bytes)) === JSON.stringify(q1),
+        "editor: SEQ: a sequence set live on track 2, read back as set (steps, settings, a chord step)");
+  check((await cl.tempo(97)).bpm === 97 && (await cl.seq(0)).bpm === 97, "editor: SEQ: the tempo set (97 BPM)");
+  await cl.play(true);
+  vf.step(1500);
+  const qp = await cl.seq(1);
+  await cl.play(false);
+  vf.step(50);
+  const qs = await cl.seq(1);
+  check(qp.playing && qp.pos >= 0 && qp.pos < 12 && !qs.playing && qs.pos === -1, `editor: SEQ: PLAY (step ${qp.pos + 1} playing after 1.5 s), STOP`);
+  const mid = seqToMidi(q1, 97), mback = midiToSeq(mid, { ...q1, st: [] });
+  check(mback.st.slice(0, 12).every((s, k) => s.note === (q1.st[k].note || 0)), `editor: SEQ: a sequence out as a MIDI file (${mid.length} B) and in again, its notes as they were`);
+  await cl.seqSet(1, q0.bytes), await cl.tempo(120);
 }
 // the page against the FM-1's own bytes, behind a fake Web MIDI: a GM synth (silent), a loop port, then the FM-1
 {

@@ -52,8 +52,9 @@ class Grimm extends AudioWorkletProcessor {
     else if (m.type === "master") ex.web_master(m.value | 0);
     else if (m.type === "midi") ex.web_midi(m.data[0], m.data[1], m.data[2]);
     else if (m.type === "sysex") {                          // the editor: a frame without F0 / F7 (its reply dropped);
-      const f = m.data, set = (q) => q[3] === 23 && q[4] === 1, k = set(f) ? this.sx.findIndex((q) => set(q) && q[5] === f[5]) : -1;
-      if (k >= 0) this.sx[k] = f; else this.sx.push(f);      // (a track's sound waiting: the newest in its place)
+      const f = m.data, set = (q) => (q[3] === 23 || q[3] === 24) && q[4] === 1;   // (TRACK's and SEQ's SET)
+      const k = set(f) ? this.sx.findIndex((q) => set(q) && q[3] === f[3] && q[5] === f[5]) : -1;
+      if (k >= 0) this.sx[k] = f; else this.sx.push(f);      // (a track's sound or sequence waiting: the newest in its place)
     }
     else if (m.type === "panic" && ex.web_panic) ex.web_panic();
   }
@@ -103,7 +104,9 @@ class Grimm extends AudioWorkletProcessor {
       const n = ex.web_settings_len();
       if (n >= 0) msg.settings = new Uint8Array(ex.memory.buffer, ex.web_settings(), n).slice();
     }
-    if (msg.fb || msg.leds || msg.settings) this.port.postMessage(msg, transfer);
+    const sq = ex.web_seq_state ? ex.web_seq_state() >>> 0 : 0;   // (the sequencer: the editor's playhead)
+    if (sq !== this.sentSeq) this.sentSeq = msg.seq = sq;
+    if (msg.fb || msg.leds || msg.settings || msg.seq !== undefined) this.port.postMessage(msg, transfer);
   }
 
   process(inputs, outputs) {

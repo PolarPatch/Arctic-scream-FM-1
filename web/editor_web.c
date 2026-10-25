@@ -94,6 +94,13 @@ EXPORT char *web_env_text(uint32_t k, int32_t v)   /* ENV's ATTACK, DECAY, SUSTA
     return wt;
 }
 EXPORT char *web_lfo_text(int32_t v) { lfo_rate_text(wt, v, " "); return wt; }   /* the LFO's RATE */
+EXPORT uint32_t web_seq_state(void)            /* (Arctic Scream p0larpatch) the sequencer for the editor's playhead:
+                                                 * bit 28 playing, 7 bits a track: its step playing + 1 (0: none) */
+{
+    uint32_t t, s = seq_on ? 1u << 28 : 0u;
+    for (t = 0; t < NT; t++) s |= (uint32_t)(seq_on && seq[t].pos >= 0 ? seq[t].pos + 1 : 0) << (7u * t);
+    return s;
+}
 EXPORT void web_panic(void)                     /* every track's notes let go (latched ones too) */
 {
     uint32_t t;

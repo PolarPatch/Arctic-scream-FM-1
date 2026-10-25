@@ -1,226 +1,388 @@
 <!doctype html>
 <!-- SPDX-License-Identifier: GPL-3.0-only
      Copyright (C) 2026 GR!MM
-     GR!MM's editor: the FM-1's sounds, samples and a backup, over Web MIDI SysEx (docs/EDITOR_PROTOCOL.md). Its sections
-     in a left menu and its way of editing (the tracks' sounds, live, as the knobs) follow SLOOP's editor (isod89/sloop-fm1,
-     web/, GPL-3.0); its code and look are GR!MM's. The sounds play here in GR!MM's own engine (grimm.wasm, the firmware's
-     code), its screen beside the keys. The font: Press Start 2P (SIL OFL 1.1, LICENSES/OFL-PressStart2P.txt). -->
+     Arctic Scream p0larpatch changes (the name, the look after PolarPatch BlueWatch's cyberpunk theme, the sequencer
+     page, the sound tools): Copyright (C) 2026 PolarPatch
+     The editor: the FM-1's sounds, sequences, samples and a backup, over Web MIDI SysEx (docs/EDITOR_PROTOCOL.md). Its
+     sections in a left menu and its way of editing (the tracks' sounds, live, as the knobs) follow SLOOP's editor
+     (isod89/sloop-fm1, web/, GPL-3.0); its code is GR!MM's and Arctic Scream's. The sounds play here in the firmware's
+     own engine (grimm.wasm), its screen beside the keys. The screen's font: Press Start 2P (SIL OFL 1.1,
+     LICENSES/OFL-PressStart2P.txt). -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GR!MM editor</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 fill=%22%230b0b0a%22/%3E%3Crect x=%223%22 y=%223%22 width=%2210%22 height=%2210%22 fill=%22%23c8321e%22/%3E%3C/svg%3E">
+<title>Arctic scream editor</title>
+<link rel="icon" href="polarpatch-logo.png">
+<meta name="description" content="The Arctic Scream p0larpatch editor: the M-VAVE FM-1's sounds, sequences, samples and backups, live over USB.">
 <style>
 @font-face { font-family: "Press Start 2P"; src: url("PressStart2P-Regular.ttf") format("truetype"); font-display: block; }
-:root { --k: #0b0b0a; --d: #26251f; --m: #5e5b54; --l: #b8b4a9; --w: #e8e4d8; --a: #c8321e; color-scheme: dark; }
+/* BlueWatch's colours only (as the demo, web/index.html): its cyberpunk theme's greys and accents */
+:root { --bg: #060410; --side: #0a0d12; --card: #0d1117; --part: #161b22; --part-hi: #1c232c; --edge: #30363d;
+        --fg: #eaf6fa; --label: #a6afb9; --dim: #7fa8b8; --muted: #45606e;
+        --ice: #22d3ee; --aurora: #3fb950; --violet: #a78bfa; --plasma: #ff1a8c; --rec: #f85149;
+        --peri: #7c8cf8; --teal: #3fb9a5; --amber: #ffcb47; --pink: #f472b6; --sky: #4fb3e8; --gold: #d9a441;
+        --mono: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+        color-scheme: dark; }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--k); color: var(--l); }
-body { font: 13px/1.5 system-ui, "Segoe UI", Arial, sans-serif; }
-.px, h1, h2, h3, button, label, select, input, nav a, .slot, table { font-family: "Press Start 2P", monospace; font-size: 8px; line-height: 1.6; }
-header { display: flex; gap: 6px; padding: 6px; }
-header .tag { background: var(--a); color: var(--k); padding: 8px 10px; font-size: 16px; }
-header .bar { flex: 1; background: var(--d); display: flex; align-items: center; justify-content: space-between; padding: 0 12px; }
-header .bar span { font-size: 8px; }
-header .bar b { font-size: 16px; font-weight: normal; color: var(--l); }
-#conn { color: var(--m); }
-#conn.on { color: var(--w); }
-.wrap { display: flex; gap: 6px; padding: 0 6px 6px; min-height: calc(100vh - 54px); }
-nav { width: 132px; flex: none; display: flex; flex-direction: column; gap: 4px; }
-nav a { display: block; background: var(--d); color: var(--l); padding: 10px 8px; text-decoration: none; cursor: pointer; }
-nav a.on { background: var(--a); color: var(--k); }
-nav a.off { color: var(--m); }
-main { flex: 1; min-width: 0; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); }
+body { font: 12px/1.5 var(--mono);
+       background-image: radial-gradient(circle at 15% 0%, rgba(34, 211, 238, .06), transparent 45%),
+                         radial-gradient(circle at 85% 100%, rgba(255, 26, 140, .04), transparent 45%);
+       background-attachment: fixed; }
+a { color: inherit; }
+button, select, input { font: inherit; }
+/* the frame: a menu on the left, the page on the right */
+.app { display: grid; grid-template-columns: 210px minmax(0, 1fr); min-height: 100vh; }
+aside { background: var(--side); border-right: 1px solid var(--edge); display: flex; flex-direction: column; padding: 14px 10px;
+        position: sticky; top: 0; height: 100vh; }
+.brand { display: flex; gap: 10px; align-items: center; padding: 0 4px 12px; }
+.brand img { width: 40px; height: 40px; border: 1px solid var(--edge); border-radius: 4px; }
+.brand b { display: block; font-size: 14px; letter-spacing: .06em; text-shadow: 0 0 8px rgba(34, 211, 238, .45); }
+.brand small { display: block; color: var(--dim); font-size: 10px; letter-spacing: .08em; }
+.brand small span { color: var(--ice); }
+.aurora { display: flex; gap: 3px; margin: 0 4px 14px; }
+.aurora i { flex: 1; height: 2px; border-radius: 2px; background: currentColor; box-shadow: 0 0 5px currentColor; }
+nav h4 { margin: 12px 6px 4px; color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+nav a { display: flex; gap: 8px; align-items: center; padding: 6px 8px; color: var(--label); text-decoration: none; cursor: pointer;
+        border-left: 2px solid transparent; letter-spacing: .04em; }
+nav a i { width: 14px; color: var(--muted); font-style: normal; text-align: center; }
+nav a:hover { color: var(--fg); background: var(--part); }
+nav a.on { color: var(--fg); background: var(--part-hi); border-left-color: var(--ice); }
+nav a.on i { color: var(--ice); }
+.dev { margin-top: auto; border-top: 1px solid var(--edge); padding: 10px 4px 0; }
+#conn { display: flex; gap: 6px; align-items: center; color: var(--dim); font-size: 11px; }
+#conn::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+#conn.on { color: var(--fg); }
+#conn.on::before { background: var(--aurora); box-shadow: 0 0 6px var(--aurora); }
+.dev .row { margin: 8px 0 0; }
+.dev .links { margin-top: 8px; color: var(--dim); font-size: 10px; }
+main { padding: 18px 22px 40px; min-width: 0; }
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--edge);
+       margin-bottom: 14px; }
+.top h1 { margin: 0 0 8px; font-size: 20px; font-weight: 500; color: var(--ice); letter-spacing: .14em; text-transform: uppercase; }
+#msgs { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 2px 0 6px; }
+#msg { background: var(--card); border: 1px solid var(--edge); border-left: 3px solid var(--muted); padding: 7px 10px; min-height: 32px;
+       color: var(--label); }
+#msg.ok { color: var(--fg); border-left-color: var(--aurora); }
+#msg.err { color: var(--fg); border-left-color: var(--rec); }
+#prog { height: 3px; background: var(--part); margin-top: 4px; visibility: hidden; }
+#prog i { display: block; height: 100%; width: 0; background: var(--ice); box-shadow: 0 0 6px var(--ice); }
 section { display: none; }
 section.on { display: block; }
-h2 { font-size: 16px; font-weight: normal; margin: 6px 0 12px; color: var(--w); }
-h3 { font-weight: normal; color: var(--m); margin: 16px 0 6px; }
-p.note { color: var(--m); max-width: 60em; margin: 6px 0; }
-button { background: var(--d); color: var(--w); border: 2px solid var(--m); padding: 8px 10px; cursor: pointer; }
-button:hover { border-color: var(--l); }
-button.go { background: var(--a); color: var(--k); border-color: var(--a); }
-button:disabled { opacity: .35; cursor: default; }
+/* cards: BlueWatch's bracket corners */
+.card { position: relative; background: var(--card); border: 1px solid var(--edge); padding: 12px 14px; margin-bottom: 12px; }
+.card::before, .card::after { content: ""; position: absolute; width: 10px; height: 10px; pointer-events: none; }
+.card::before { top: -1px; left: -1px; border-top: 2px solid var(--c, var(--ice)); border-left: 2px solid var(--c, var(--ice)); }
+.card::after { bottom: -1px; right: -1px; border-bottom: 2px solid var(--c, var(--ice)); border-right: 2px solid var(--c, var(--ice)); }
+.card h2 { margin: 0 0 10px; font-size: 15px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; display: flex;
+           gap: 8px; align-items: baseline; }
+.card h2 i { font-style: normal; color: var(--c, var(--ice)); }
+.card h2 small { margin-left: auto; color: var(--muted); font-size: 10px; letter-spacing: .08em; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 12px; align-items: start; }
+h3 { margin: 12px 0 6px; color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+p.note { color: var(--dim); max-width: 72em; margin: 6px 0; font-size: 11px; }
+button { background: var(--part); color: var(--label); border: 1px solid var(--edge); border-radius: 3px; padding: 5px 10px;
+         cursor: pointer; letter-spacing: .04em; }
+button:hover { color: var(--fg); border-color: var(--label); }
+button.go { color: var(--fg); border-color: var(--ice); box-shadow: 0 0 6px rgba(34, 211, 238, .25); }
+button.on, .toggle.on { background: var(--part-hi); color: var(--fg); border-color: var(--violet); }
+button.warn { border-color: var(--rec); }
+button:disabled { opacity: .35; cursor: default; box-shadow: none; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
-select, input[type=text], input[type=number] { background: var(--k); color: var(--w); border: 2px solid var(--m); padding: 6px; }
-#msgs { position: sticky; top: 0; z-index: 3; }
-#msg { background: var(--d); padding: 8px 10px; margin-bottom: 6px; min-height: 30px; color: var(--l); }
-#msg.ok { color: var(--w); border-left: 6px solid var(--l); }
-#msg.err { color: var(--w); border-left: 6px solid var(--a); }
-#prog { height: 6px; background: var(--d); margin-bottom: 6px; visibility: hidden; }
-#prog i { display: block; height: 100%; width: 0; background: var(--a); }
-table.kv td { padding: 3px 14px 3px 0; }
-table.kv td:first-child { color: var(--m); }
-.slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 3px; }
-.slot { background: var(--d); padding: 7px 8px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 2px solid transparent; }
-.slot .n { color: var(--m); }
-.slot.empty { color: var(--m); }
-.slot.sel { border-color: var(--a); }
-.slot.dirty::after { content: " *"; color: var(--a); }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; }
-.grp { background: var(--d); padding: 10px; }
-.grp h3 { margin: 0 0 8px; color: var(--l); }
-.ctl { margin: 0 0 10px; }
-.ctl .lab { display: flex; justify-content: space-between; gap: 8px; }
-.ctl .lab span { color: var(--w); }
-input[type=range] { width: 100%; appearance: none; -webkit-appearance: none; height: 18px; background: var(--k); margin: 4px 0 0; }
-input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 18px; background: var(--a); border: 0; }
-input[type=range]::-moz-range-thumb { width: 12px; height: 18px; background: var(--a); border: 0; border-radius: 0; }
+select, input[type=text], input[type=number] { background: var(--bg); color: var(--fg); border: 1px solid var(--edge);
+                                                border-radius: 3px; padding: 5px 7px; }
+select:focus, input:focus { outline: 1px solid var(--ice); }
+label.k { color: var(--dim); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+/* a control: its name in its colour, its value big, a slider filled to it (--c: the colour, --p: how far) */
+.ctls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px 14px; }
+.ctls.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ctl { min-width: 0; padding: 4px 0 6px; border-top: 1px solid var(--part-hi); }
+.ctl .lab { color: var(--c, var(--peri)); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis; }
+.ctl .val { font-size: 19px; line-height: 1.3; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ctl select { width: 100%; margin-top: 4px; color: var(--c, var(--peri)); }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 16px; background: transparent; margin: 2px 0 0; cursor: pointer; }
+input[type=range]::-webkit-slider-runnable-track { height: 3px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--c, var(--peri)) var(--p, 0%), var(--part-hi) var(--p, 0%)); }
+input[type=range]::-moz-range-track { height: 3px; border-radius: 2px; background: var(--part-hi); }
+input[type=range]::-moz-range-progress { height: 3px; background: var(--c, var(--peri)); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 5px; height: 14px; margin-top: -5.5px; border-radius: 1px;
+  background: var(--fg); box-shadow: 0 0 5px var(--c, var(--peri)); }
+input[type=range]::-moz-range-thumb { width: 5px; height: 14px; border: 0; border-radius: 1px; background: var(--fg); }
+input[type=range]:focus { outline: none; }
+input[type=range]:focus-visible::-webkit-slider-thumb { outline: 1px solid var(--ice); outline-offset: 2px; }
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  aside { position: static; height: auto; }
+  nav { display: flex; flex-wrap: wrap; gap: 2px; } nav h4 { display: none; }
+  .cols { grid-template-columns: 1fr; }
+  .ctls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid16 { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .trks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  main { padding: 12px 16px 30px; }
+}
+table.kv td { padding: 3px 16px 3px 0; }
+table.kv td:first-child { color: var(--dim); }
+.slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 3px; }
+.slot { background: var(--part); padding: 6px 8px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        border: 1px solid transparent; border-radius: 2px; }
+.slot:hover { background: var(--part-hi); }
+.slot .n { color: var(--muted); }
+.slot.empty { color: var(--muted); }
+.slot.sel { border-color: var(--ice); color: var(--fg); }
+.slot.dirty::after { content: " *"; color: var(--plasma); }
+.pickbar { position: sticky; top: 46px; z-index: 2; }
+/* the tracks */
+.trks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 0 0 12px; }
+.trk { text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 7px 10px; }
+.trk b { font-weight: 600; margin-right: 6px; }
+.trk:nth-child(1) b { color: var(--peri); } .trk:nth-child(2) b { color: var(--teal); }
+.trk:nth-child(3) b { color: var(--amber); } .trk:nth-child(4) b { color: var(--pink); }
+.trk.on { background: var(--part-hi); color: var(--fg); border-color: var(--ice); }
+/* play: the screen beside the keys */
+.play { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+#screen { width: 240px; max-width: 100%; aspect-ratio: 1; image-rendering: pixelated; display: block; background: #000;
+          border: 6px solid var(--bg); border-radius: 6px; outline: 1px solid var(--edge); }
+.play .keys { flex: 1 1 360px; min-width: 0; }
+.kbd { position: relative; height: 104px; max-width: 760px; margin-top: 4px; user-select: none; touch-action: none; }
+.kbd .w, .kbd .b { position: absolute; top: 0; cursor: pointer; border-radius: 0 0 3px 3px; }
+.kbd .w { background: var(--part); height: 104px; border: 1px solid var(--violet); }
+.kbd .b { background: var(--bg); height: 62px; z-index: 2; border: 1px solid var(--edge); }
+.kbd .down { background: var(--violet) !important; box-shadow: 0 0 10px var(--violet); }
+.kbd span { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; color: var(--dim); font-size: 10px; }
+/* the ENV's curve */
+canvas.env { display: block; width: 100%; max-width: 320px; height: 70px; margin: 0 0 6px; }
+canvas#alg { display: block; width: 100%; max-width: 432px; image-rendering: pixelated; background: var(--bg); margin-top: 6px; }
 .ops { width: 100%; border-collapse: collapse; }
 .ops td { padding: 2px 4px 2px 0; vertical-align: middle; }
-.ops td.o { color: var(--w); width: 34px; }
+.ops td.o { color: var(--fg); width: 34px; }
 .ops input[type=range] { margin: 0; }
-.ops .v { color: var(--w); width: 56px; padding-right: 16px; text-align: right; }
-canvas#alg { display: block; width: 100%; max-width: 432px; image-rendering: pixelated; background: var(--k); margin-top: 6px; }
-.toggle { border-color: var(--m); }
-.toggle.on { background: var(--l); color: var(--k); }
-.kbd { position: relative; height: 112px; max-width: 760px; margin-top: 8px; user-select: none; touch-action: none; }
-.kbd .w, .kbd .b { position: absolute; top: 0; border: 2px solid var(--k); cursor: pointer; }
-.kbd .w { background: var(--l); height: 112px; }
-.kbd .b { background: var(--d); height: 66px; z-index: 2; }
-.kbd .down { background: var(--a) !important; }
-.kbd span { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; color: var(--k); }
-.kbd .b span { color: var(--m); }
-.smp { display: grid; grid-template-columns: 70px 1fr; gap: 6px; background: var(--d); padding: 10px; margin-bottom: 6px; }
-.smp .drop { border: 2px dashed var(--m); padding: 10px; color: var(--m); }
-.smp .drop.hot { border-color: var(--a); color: var(--w); }
-.big { font-size: 16px; color: var(--w); }
-#log { background: var(--k); border: 2px solid var(--d); color: var(--l); padding: 8px; height: 260px; overflow: auto;
-       font: 11px/1.5 Consolas, "Courier New", monospace; white-space: pre-wrap; word-break: break-all; margin: 6px 0; }
-.trks { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 8px; }
-.trk { flex: 1 1 200px; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.trk b { font-weight: normal; color: var(--a); }
-.trk.on { background: var(--a); color: var(--k); border-color: var(--a); }
-.trk.on b { color: var(--k); }
-.play { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
-#screen { width: 480px; max-width: 100%; aspect-ratio: 1; image-rendering: pixelated; display: block; background: var(--k); }
-.play .keys { flex: 1 1 360px; min-width: 0; }
-.pickbar { position: sticky; top: 46px; z-index: 2; background: var(--k); padding: 4px 0; }
-a.lnk { color: var(--l); }
+.ops .v { color: var(--fg); width: 56px; padding-right: 16px; text-align: right; }
+/* SOUND TOOLS */
+.tools .row { margin: 4px 0; }
+.tools .steps { color: var(--dim); min-width: 6em; }
+.tools input[type=range] { width: 140px; --c: var(--violet); }
+details summary { cursor: pointer; color: var(--dim); }
+#diff { margin: 6px 0 0; padding: 0; list-style: none; color: var(--label); columns: 2 260px; }
+#diff li b { color: var(--violet); font-weight: 500; }
+/* the sequencer: violet, cyan and pink */
+.grid16 { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 3px; }
+.st { position: relative; min-width: 0; height: 46px; padding: 3px 4px; background: var(--part); border: 1px solid var(--edge);
+      border-radius: 2px; cursor: pointer; font-size: 10px; overflow: hidden; }
+.st .i { color: var(--muted); }
+.st .nn { display: block; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st.on { background: rgba(167, 139, 250, .22); border-color: var(--violet); }
+.st.on .i { color: var(--violet); }
+.st.chord { background: rgba(255, 26, 140, .16); border-color: var(--pink); }
+.st.out { opacity: .3; }
+.st.sel { outline: 2px solid var(--ice); outline-offset: -1px; }
+.st.now::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--ice); box-shadow: 0 0 6px var(--ice); }
+.st .bars { position: absolute; right: 3px; top: 3px; color: var(--pink); }
+.seqhead { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.seqhead .sep { width: 1px; height: 20px; background: var(--edge); margin: 0 4px; }
+#roll { display: block; width: 100%; height: 360px; background: var(--bg); border: 1px solid var(--edge); cursor: crosshair; touch-action: none; }
+table.steplist { border-collapse: collapse; width: 100%; }
+table.steplist td, table.steplist th { padding: 2px 6px 2px 0; text-align: left; }
+table.steplist th { color: var(--muted); font-weight: 500; font-size: 10px; letter-spacing: .1em; }
+table.steplist input[type=text] { width: 7em; }
+table.steplist input[type=number] { width: 5em; }
+table.steplist tr.out td { opacity: .35; }
+.playbtn.on { border-color: var(--aurora); color: var(--fg); box-shadow: 0 0 8px rgba(63, 185, 80, .4); }
+/* samples */
+.smp { display: grid; grid-template-columns: 50px 1fr; gap: 10px; }
+.smp .big { font-size: 26px; color: var(--sky); }
+.smp .drop { border: 1px dashed var(--edge); padding: 10px; color: var(--dim); margin: 6px 0; cursor: pointer; }
+.smp .drop.hot { border-color: var(--ice); color: var(--fg); }
+#log { background: var(--bg); border: 1px solid var(--edge); color: var(--label); padding: 8px; height: 260px; overflow: auto;
+       font: 11px/1.5 var(--mono); white-space: pre-wrap; word-break: break-all; margin: 6px 0; }
+footer { margin-top: 24px; color: var(--muted); font-size: 10px; }
+footer p { margin: 4px 0; max-width: 90em; }
 </style>
 </head>
 <body>
-<header>
-  <div class="tag px">GR!MM</div>
-  <div class="bar"><b class="px">EDITOR</b><span><a class="lnk px" href="index.html">DEMO</a> · <span id="conn" class="px">NOT CONNECTED</span></span></div>
-</header>
-<div class="wrap">
-  <nav>
-    <a data-s="connect">CONNECT</a>
-    <a data-s="sounds">SOUNDS</a>
-    <a data-s="editor">SOUND EDITOR</a>
-    <a data-s="samples">SAMPLES</a>
-    <a data-s="backup">BACKUP</a>
-  </nav>
+<div class="app">
+  <aside>
+    <div class="brand"><img src="polarpatch-logo.png" alt="PolarPatch"><div><b>Arctic scream</b><small><span>p0larpatch</span> · editor</small></div></div>
+    <div class="aurora"><i style="color:var(--ice)"></i><i style="color:var(--aurora)"></i><i style="color:var(--violet)"></i><i style="color:var(--plasma)"></i></div>
+    <nav>
+      <h4>track</h4>
+      <a data-s="editor"><i>∿</i>sound</a>
+      <a data-s="seq"><i>▦</i>sequencer</a>
+      <h4>sounds</h4>
+      <a data-s="sounds"><i>≡</i>library</a>
+      <a data-s="samples"><i>≈</i>samples</a>
+      <h4>device</h4>
+      <a data-s="backup"><i>▤</i>backup</a>
+      <a data-s="connect"><i>⚙</i>connection</a>
+    </nav>
+    <div class="dev">
+      <div id="conn">NOT CONNECTED</div>
+      <div class="row"><button id="b-connect" class="go">connect FM-1</button><button id="b-try">try</button></div>
+      <div class="links"><a href="index.html">demo</a> · <a href="cheatsheet.html">cheat sheet</a></div>
+    </div>
+  </aside>
   <main>
-    <div id="msgs"><div id="msg" class="px">LOADING GR!MM…</div><div id="prog"><i></i></div></div>
+    <div class="top"><h1 id="title">sound</h1></div>
+    <div id="msgs"><div id="msg">LOADING ARCTIC SCREAM…</div><div id="prog"><i></i></div></div>
 
     <section id="s-connect">
-      <h2>CONNECT</h2>
-      <div class="row">
-        <button id="b-connect" class="go">CONNECT FM-1 (USB)</button>
-        <button id="b-try">TRY WITHOUT AN FM-1</button>
-        <button id="b-disconnect">DISCONNECT</button>
+      <div class="card">
+        <h2><i>⚙</i>connection</h2>
+        <div class="row">
+          <button id="b-connect2" class="go">CONNECT FM-1 (USB)</button>
+          <button id="b-try2">TRY WITHOUT AN FM-1</button>
+          <button id="b-disconnect">DISCONNECT</button>
+        </div>
+        <p class="note">Connect the FM-1 with a USB data cable, switch it on with Arctic Scream, close other apps that use its
+          MIDI port, then click CONNECT and allow MIDI (SysEx) when the browser asks. Chrome or Edge on a computer. TRY
+          WITHOUT AN FM-1 runs the firmware's own code in this page instead: everything works, nothing is kept.</p>
+        <p class="note">Sounds and sequences change live, as the knobs do. Writing to the FM-1's memory (STORE, SEND,
+          RESTORE, samples) only happens while it is stopped and silent, and never without you clicking a button.</p>
+        <table class="kv" id="info"></table>
+        <div class="row"><button id="b-log" class="toggle">MIDI LOG</button><button id="b-logclear">CLEAR LOG</button></div>
+        <pre id="log" hidden></pre>
       </div>
-      <p class="note">Connect the FM-1 with a USB data cable, switch it on with GR!MM, close other apps that use its MIDI
-        port, then click CONNECT and allow MIDI (SysEx) when the browser asks. Chrome or Edge on a computer.
-        TRY WITHOUT AN FM-1 runs GR!MM's own code in this page instead: everything works, nothing is kept.</p>
-      <p class="note">The FM-1 only accepts writes while it is stopped and silent: stop the sequencer and let every
-        note, release and DELAY or SPACE tail end. Nothing is ever written without you clicking a button.</p>
-      <table class="kv" id="info"></table>
-      <div class="row"><button id="b-log" class="toggle">MIDI LOG</button><button id="b-logclear">CLEAR LOG</button></div>
-      <pre id="log" hidden></pre>
     </section>
 
     <section id="s-sounds">
-      <h2>SOUNDS</h2>
-      <div class="row">
-        <button id="b-readall" class="go">READ ALL FROM FM-1</button>
-        <span id="readat" class="px"></span>
-      </div>
-      <div class="pickbar">
-        <div class="row"><span class="px" id="pickname">—</span></div>
+      <div class="card pickbar">
+        <h2><i>≡</i>library <small id="readat"></small></h2>
+        <div class="row"><span id="pickname">—</span></div>
         <div class="row">
-          <span class="px">LOAD TO</span>
+          <label class="k">load to</label>
           <button id="b-load0" class="go">T1</button><button id="b-load1" class="go">T2</button>
           <button id="b-load2" class="go">T3</button><button id="b-load3" class="go">T4</button>
           <button id="b-export">EXPORT</button>
-          <span class="px">· USER SLOT:</span>
+          <label class="k">· user slot</label>
           <button id="b-rename">RENAME</button>
           <button id="b-clear">CLEAR</button>
           <button id="b-import">IMPORT</button>
           <button id="b-send" class="go">SEND TO FM-1</button>
-          <input type="file" id="f-import" accept=".json,.grimmsound" hidden>
+          <button id="b-readall">READ ALL FROM FM-1</button>
+          <input type="file" id="f-import" accept=".json,.grimmsound,.arcticsound" hidden>
         </div>
+        <p class="note">Click a sound, then LOAD TO a track (or double-click: the selected track). It plays there at once, on
+          the FM-1 too, and the sound page opens on it. RENAME, CLEAR and IMPORT change a user slot here (marked *) until
+          SEND TO FM-1 writes it.</p>
       </div>
-      <p class="note">Click a sound, then LOAD TO a track (or double-click: the track in the editor): it plays there at once,
-        on the FM-1 too, and the SOUND EDITOR opens on it. RENAME, CLEAR and IMPORT change a user slot here (marked *)
-        until SEND TO FM-1 writes it.</p>
-      <h3>USER SLOTS (ON THE FM-1)</h3>
-      <div class="slots" id="user"></div>
-      <h3>FACTORY SOUNDS (BUILT IN)</h3>
-      <div class="slots" id="factory"></div>
+      <div class="card" style="--c:var(--violet)"><h2><i>◆</i>user slots <small>on the FM-1</small></h2><div class="slots" id="user"></div></div>
+      <div class="card" style="--c:var(--aurora)"><h2><i>◇</i>factory sounds <small>built in</small></h2><div class="slots" id="factory"></div></div>
     </section>
 
     <section id="s-editor">
       <div class="trks" id="tracks"></div>
-      <h2 id="ed-title">T1</h2>
-      <p class="note" id="ed-from"></p>
-      <div class="row">
-        <button id="b-store" class="go">STORE IN SLOT</button>
-        <select id="ed-slot"></select>
-        <button id="b-eexport">EXPORT</button>
-        <button id="b-eimport">IMPORT</button>
-        <button id="b-revert">REVERT</button>
-        <input type="file" id="f-eimport" accept=".json,.grimmsound" hidden>
-      </div>
-      <div class="grp play">
-        <canvas id="screen" width="240" height="240"></canvas>
-        <div class="keys">
-          <h3>PLAY: GR!MM IN THIS PAGE, THE SELECTED TRACK</h3>
-          <div class="kbd" id="kbd"></div>
-          <div class="row">
-            <button id="b-panic">ALL NOTES OFF</button>
-            <span class="px">KEYS: Z X C V B N M , . / · S D F H J L ; ' · Q .. O (HIGHER)</span>
+      <div class="card">
+        <h2><i>∿</i><span id="ed-title">T1</span><small id="ed-from"></small></h2>
+        <div class="play">
+          <canvas id="screen" width="240" height="240"></canvas>
+          <div class="keys">
+            <div class="row">
+              <button id="b-store" class="go">STORE IN SLOT</button>
+              <select id="ed-slot"></select>
+              <button id="b-eexport">EXPORT</button>
+              <button id="b-eimport">IMPORT</button>
+              <button id="b-revert">REVERT</button>
+              <input type="file" id="f-eimport" accept=".json,.grimmsound,.arcticsound" hidden>
+            </div>
+            <div class="kbd" id="kbd"></div>
+            <div class="row">
+              <button id="b-panic">ALL NOTES OFF</button>
+              <span class="note">keys: Z X C V B N M , . / · S D F H J L ; ' · Q .. O higher</span>
+            </div>
           </div>
-          <p class="note">Every move of a control reaches the track at once: on the FM-1 (live, as its knobs; nothing is
-            saved until STORE IN SLOT) and in GR!MM here, whose screen this is and whose keys these are. Turn a knob on
-            the FM-1 and this page follows. A latched note stays until its key again, or ALL NOTES OFF. The TRACK
-            filter (HOME's CUTOFF, RESONANCE, FX) belongs to the track, not to a sound.</p>
         </div>
       </div>
-      <div class="grid" id="ed" style="margin-top:6px"></div>
-      <div class="grp" id="fm" style="margin-top:6px"></div>
+      <div class="card tools" style="--c:var(--violet)">
+        <h2><i>⟲</i>sound tools</h2>
+        <div class="row">
+          <button id="b-undo">undo</button><button id="b-redo">redo</button><span class="steps" id="t-steps">0 / 0 steps</span>
+          <button id="b-compare">compare with loaded</button>
+          <button id="b-sta">store a</button><button id="b-stb">store b</button><button id="b-ab">toggle a / b</button>
+          <label class="k">morph a → b</label><input type="range" id="t-morph" min="0" max="100" value="0" disabled>
+        </div>
+        <div class="row">
+          <label class="k">randomize</label>
+          <select id="t-rscope">
+            <option value="knobs">source knobs</option><option value="env">env</option><option value="lfo">lfo</option>
+            <option value="all">knobs + env + lfo</option><option value="src">everything, new source</option>
+          </select>
+          <label class="k">amount</label><input type="range" id="t-ramount" min="5" max="100" value="35">
+          <button id="b-rand" class="go">randomize</button>
+        </div>
+        <details><summary>changed since loaded</summary><ul id="diff"></ul></details>
+      </div>
+      <div class="cols" id="ed"></div>
+      <div class="card" id="fm" style="--c:var(--sky)"></div>
+    </section>
+
+    <section id="s-seq">
+      <div class="trks" id="strks"></div>
+      <div class="card" style="--c:var(--violet)">
+        <h2><i>▦</i>seq pattern <small id="sq-state"></small></h2>
+        <div class="ctls" id="sq-pat"></div>
+      </div>
+      <div class="card" style="--c:var(--pink)">
+        <h2><i>♪</i>steps</h2>
+        <div class="seqhead">
+          <button id="b-sqplay" class="playbtn">▶ play</button>
+          <span class="sep"></span>
+          <button id="b-sqreload">reload</button>
+          <button id="b-sqclear" class="warn">clear sequence</button>
+          <span class="sep"></span>
+          <label class="k">length</label><button id="b-sqless">−</button><input type="number" id="sq-len" min="1" max="64"><button id="b-sqmore">+</button>
+          <span class="sep"></span>
+          <button id="b-vgrid" class="on">grid</button><button id="b-vroll">piano roll</button>
+          <span class="sep"></span>
+          <button id="b-mexport">export midi</button><button id="b-mimport">import midi</button>
+          <input type="file" id="f-midi" accept=".mid,.midi,audio/midi" hidden>
+        </div>
+        <p class="note" id="sq-hint">Click a step to edit it below; double-click turns it on or off. In the piano roll a click
+          sets a step's note (on the note again: off); drag across steps to draw. Enter notes like C4 or F#3 (C4 = 60).</p>
+        <div id="sq-grid" class="grid16"></div>
+        <canvas id="roll" width="1024" height="360" hidden></canvas>
+        <h3 id="sq-stitle">step 1</h3>
+        <div class="ctls" id="sq-step"></div>
+        <details><summary>step list (type note names)</summary><table class="steplist" id="sq-list"></table></details>
+      </div>
     </section>
 
     <section id="s-samples">
-      <h2>SAMPLES</h2>
-      <div class="row"><button id="b-sinfo">REFRESH</button><button id="b-sfactory">CLEAR ALL SAMPLES</button></div>
+      <div class="card" style="--c:var(--sky)">
+        <h2><i>≈</i>samples</h2>
+        <div class="row"><button id="b-sinfo">REFRESH</button><button id="b-sfactory" class="warn">CLEAR ALL SAMPLES</button></div>
+        <p class="note">Any WAV (8 to 32 bit, float, mono or stereo, any rate) becomes mono, 22050 Hz, IMA ADPCM, as
+          tools/fm1_sample_upload.py makes it; a slot holds 6.64 s (longer: cut, with a short fade). The root note is C4
+          unless the file name has one ("drone_A2.wav"). A name is 8 characters (the slot's, what the FM-1 shows): a longer
+          one keeps its number ("Sample-002": SAMP-002). Arctic Scream comes with no samples of its own: the slots are
+          yours. CLEAR ALL SAMPLES empties all four.</p>
+      </div>
       <div id="smp"></div>
-      <p class="note">Any WAV (8 to 32 bit, float, mono or stereo, any rate) becomes mono, 22050 Hz, IMA ADPCM, as
-        tools/fm1_sample_upload.py makes it; a slot holds 6.64 s (longer: cut, with a short fade). The root note is C4
-        unless the file name has one ("drone_A2.wav"). A name is 8 characters (the slot's, what the FM-1 shows): a longer
-        one keeps its number ("Sample-002": SAMP-002). Arctic Scream comes with no samples of its own: the slots are
-        yours. CLEAR ALL SAMPLES empties all four.</p>
     </section>
 
     <section id="s-backup">
-      <h2>BACKUP</h2>
-      <div class="row">
-        <button id="b-backup" class="go">MAKE A BACKUP</button>
-        <button id="b-restore">RESTORE FROM A FILE…</button>
-        <input type="file" id="f-restore" accept=".json" hidden>
+      <div class="card" style="--c:var(--aurora)">
+        <h2><i>▤</i>backup</h2>
+        <div class="row">
+          <button id="b-backup" class="go">MAKE A BACKUP</button>
+          <button id="b-restore">RESTORE FROM A FILE…</button>
+          <input type="file" id="f-restore" accept=".json" hidden>
+        </div>
+        <p class="note">A backup holds all 64 user sounds, slots A–D and the settings (the same file as
+          tools/fm1_editor_test.py makes). Restoring first makes a backup of what the FM-1 has now (downloaded), then
+          writes everything, then reads it back to check. Samples are not in it: the FM-1 cannot send them back yet; keep
+          their WAV files.</p>
       </div>
-      <p class="note">A backup holds all 64 user sounds, slots A–D and the settings (the same file as
-        tools/fm1_editor_test.py makes). Restoring first makes a backup of what the FM-1 has now (downloaded), then
-        writes everything, then reads it back to check. Samples are not in it: the FM-1 cannot send them back yet; keep
-        their WAV files.</p>
     </section>
-    <footer class="note">
-      <p><b><a class="lnk" href="index.html">Try the GR!MM demo</a></b>: the FM-1's panel in your browser, the same firmware.</p>
-      <p>GR!MM · <a class="lnk" href="LICENSE">GPL-3.0-only</a> · <a class="lnk" href="https://github.com/GRiMMBIENT/grimm">source</a> · <a class="lnk" href="https://github.com/GRiMMBIENT/grimm/blob/main/LICENSING.md">credits and licences</a> (<a class="lnk" href="LICENSING.md">as text</a>) · fonts: Press Start 2P, <a class="lnk" href="LICENSES/OFL-PressStart2P.txt">SIL OFL 1.1</a>; Terminus, <a class="lnk" href="Terminus-LICENSE.txt">SIL OFL 1.1</a> · built with Emscripten (<a class="lnk" href="LICENSES/MIT-Emscripten.txt">MIT</a>, musl <a class="lnk" href="LICENSES/MIT-musl.txt">MIT</a>)</p>
-      <p>Built on Dinghy (zvenson), Felucca (Leo Kuroshita, Hügelton Instruments) and SLOOP (isod89); the editor's
-        sections and live editing follow SLOOP's editor. M-VAVE and FM-1 are trademarks of their owners; GR!MM is not
-        affiliated with or endorsed by them.</p>
+    <footer>
+      <p>Arctic Scream p0larpatch by PolarPatch · <a href="LICENSE">GPL-3.0-only</a> · <a href="LICENSING.md">credits and licences</a> ·
+        the PolarPatch logo is PolarPatch's, not under the GPL · fonts: Press Start 2P, <a href="LICENSES/OFL-PressStart2P.txt">SIL OFL 1.1</a>;
+        Terminus, <a href="Terminus-LICENSE.txt">SIL OFL 1.1</a> · built with Emscripten (<a href="LICENSES/MIT-Emscripten.txt">MIT</a>,
+        musl <a href="LICENSES/MIT-musl.txt">MIT</a>)</p>
+      <p>A fork of GR!MM (<a href="https://github.com/GRiMMBIENT/grimm">GRiMMBIENT/grimm</a>), built on Dinghy (zvenson), Felucca
+        (Leo Kuroshita, Hügelton Instruments) and SLOOP (isod89); the editor's sections and live editing follow SLOOP's
+        editor. M-VAVE and FM-1 are trademarks of their owners; Arctic Scream is not affiliated with or endorsed by them.</p>
     </footer>
   </main>
 </div>

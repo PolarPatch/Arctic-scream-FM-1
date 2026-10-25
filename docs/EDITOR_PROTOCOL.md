@@ -7,7 +7,8 @@ read/write scheme follows SLOOP's editor backup ([sloop-fm1](https://github.com/
 `web/EDITOR_PROTOCOL.md`, commands 34–36, GPL-3.0): objects by id, read by offset and count, written as BEGIN → DATA →
 COMMIT. The live one (23 TRACK) follows SLOOP's live SET: values at once, while playing, never saved.
 
-Protocol 1 (step 26a) has commands 20–22; protocol 2 (step 26b2) adds 23 TRACK. INFO says which.
+Protocol 1 (step 26a) has commands 20–22; protocol 2 (step 26b2) adds 23 TRACK; protocol 3 (Arctic Scream p0larpatch)
+adds 24 SEQ. INFO says which.
 
 ## Frames
 
@@ -40,7 +41,7 @@ Request: none. Reply, in order:
 
 | Bytes | |
 | --- | --- |
-| 1 | protocol version (2; step 26a's GR!MM: 1, without TRACK) |
+| 1 | protocol version (3; 2 without SEQ; step 26a's GR!MM: 1, without TRACK) |
 | 1 | object format (1). A PUT's BEGIN must name it |
 | n + 1 | the firmware version, ASCII, 0-terminated ("1.0") |
 | 1 | user sound slots (64) |
@@ -117,6 +118,29 @@ shows it (ASCII, up to 15; none: nothing, HOME shows the source).
   PATCH as built). A new FM ALGO starts the track's notes again, as on FM ALGO.
 - The editor page sends a SET for every move of a control, one at a time (it waits for the reply), the newest value
   kept while one is on its way; it reads the selected track about twice a second to follow the FM-1's knobs.
+
+## 24 SEQ (protocol 3)
+
+A track's sequence as it plays, read or set at once, as SEQ's knobs and keys do; the tempo; PLAY and STOP. Nothing is
+saved by it: the working project, autosaved, takes it as any edit on the FM-1. At any time, also while it plays.
+
+Request: `op`, `t` (the track, 0–3), then by `op`:
+
+| op | | Arguments |
+| --- | --- | --- |
+| 0 | READ | none |
+| 1 | SET | pack7 of a sequence (260 bytes, as in a slot, below: 298 bytes); its step locks are kept |
+| 2 | TEMPO | the tempo, low 7 bits, high bits (20–300 BPM; `t` ignored) |
+| 3 | PLAY | 1 play, 0 stop, as PLAY/STOP (`t` ignored; playing already, or stopped: nothing) |
+
+Reply: `op`, `t`, the selected track (0–3), `rc` (0, 1 arguments, 2 not a sequence), the tempo (low 7 bits, high
+bits), 1 if the sequencer plays, track `t`'s step playing + 1 (0: none), then for READ the pack7 of track `t`'s
+sequence now (298 bytes).
+
+- SET takes the values as the FM-1 clamps them (STEPS 1–64, a CHANCE over 100: 100, ...); a step's chord byte without
+  bit 7: a plain note.
+- The editor page sends a SET for every edit, one at a time, the newest kept; on its sequencer page it reads the
+  selected track's sequence four times a second (its playhead, and the FM-1's own edits).
 
 ## A sound (64 bytes)
 

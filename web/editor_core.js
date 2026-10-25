@@ -8,8 +8,8 @@
 
 export const HEAD = [0x7d, 0x41, 0x53];   // "AS": Arctic Scream's (GR!MM's 7D 47 52)
 export const CMD = { SMP_BEGIN: 11, SMP_WRITE: 12, SMP_END: 13, SMP_ERASE: 14, SMP_INFO: 15, SMP_FACTORY: 16, INFO: 20, GET: 21, PUT: 22,
-                     TRACK: 23 };
-export const PROTOS = [1, 2];                              // the editor protocols this page knows (2: TRACK)
+                     TRACK: 23, SEQ: 24 };
+export const PROTOS = [1, 2, 3];                           // the editor protocols this page knows (2: TRACK, 3: SEQ)
 export const OBJ = { SET: 0, SLOT: 1, SND: 16, FACT: 80 };
 const BEGIN = 0, DATA = 1, COMMIT = 2, ABORT = 3;
 export const RC = {
@@ -102,6 +102,21 @@ export class Client {
     return r[2];
   }
   async select(t) { return (await this.req(CMD.TRACK, [2, t], 1500))[2]; }
+  // SEQ (protocol 3): track t's sequence, live as SEQ's knobs -> { sel, bpm, playing, pos (the step playing, -1 none),
+  // bytes (SEQ_PK: READ only) }
+  async seqOp(args, quiet) {
+    const r = await this.req(CMD.SEQ, args, 1500, quiet);
+    if (r[3]) throw new EditorError(RC[r[3]] || `rc ${r[3]}`, r[3]);
+    return { sel: r[2], bpm: r[4] | r[5] << 7, playing: !!r[6], pos: r[7] - 1, bytes: r.length > 8 ? unpack7(r.slice(8)) : null };
+  }
+  async seq(t, quiet = false) {
+    const s = await this.seqOp([0, t], quiet);
+    if (!s.bytes || s.bytes.length !== SEQ_PK) throw new EditorError(`sequence ${t + 1}: ${s.bytes ? s.bytes.length : 0} bytes back, not ${SEQ_PK}`, 99);
+    return s;
+  }
+  seqSet(t, bytes) { return this.seqOp([1, t, ...pack7(bytes)], true); }
+  play(on) { return this.seqOp([3, 0, on ? 1 : 0], true); }
+  tempo(bpm) { const b = Math.max(20, Math.min(300, bpm | 0)); return this.seqOp([2, 0, b & 0x7f, b >> 7], true); }
   async get(obj, size, progress) {
     const out = new Uint8Array(size);
     for (let off = 0; off < size; off += 256) {
@@ -204,12 +219,12 @@ export class MidiTransport {                                 // Web MIDI (needs 
   }
   close() { this.input.onmidimessage = null; }
 }
-// the FM-1's ports: an output and an input that answer INFO as GR!MM. Its USB name is "Felucca" (the platform's): ports
-// named so, or FM-1, are tried first. An answer is an INFO reply, never our own INFO back (a loop port, as Bitwig's
+// the FM-1's ports: an output and an input that answer INFO as GR!MM. Its USB name is "Arctic Scream" (before 1.0's
+// rename: "Felucca", the platform's): ports named so, or FM-1, are tried first. An answer is an INFO reply, never our own INFO back (a loop port, as Bitwig's
 // "to Rack" ports, sends every frame back unchanged: step 26b's page took that for the FM-1)
 export async function findFM1(access, log = null) {
   const outs = [...access.outputs.values()], ins = [...access.inputs.values()];
-  const fm = (p) => /felucca|fm-?1|m-?vave|gr!?mm/i.test(p.name || "") ? 0 : 1;
+  const fm = (p) => /arctic|felucca|fm-?1|m-?vave|gr!?mm/i.test(p.name || "") ? 0 : 1;
   outs.sort((a, b) => fm(a) - fm(b));
   ins.sort((a, b) => fm(a) - fm(b));
   for (const out of outs) {
@@ -355,6 +370,93 @@ export function soundTitle(r, meta) {                        // as the FM-1 name
   if (isEmpty(r)) return "";
   const s = parseSound(r, meta);
   return s.name || `${meta.cats[s.cat]} ${String(s.num).padStart(2, "0")}`;
+}
+
+// ------------------------------------------------------------------ sequences (store.c's pk_seq: SEQ_PK B)
+export const SEQ_PK = 260, SEQ_N = 64;
+export const SEQ_DIV = ["1/4", "1/4T", "1/8", "1/8T", "1/16", "1/16T", "1/32", "1/32T"], SEQ_DIV_T = [96, 64, 48, 32, 24, 16, 12, 8];
+export const SEQ_MODE = ["FORWARD", "BACKWARD", "PINGPONG", "RANDOM"];
+export function parseSeq(b) {                                // -> { steps, div, swing, mode, st: [{ note, chance, ratchet, len, chord }] }
+  const st = [];
+  for (let k = 0; k < SEQ_N; k++) {
+    const i = 4 + k * 4, v = b[i] | b[i + 1] << 8 | b[i + 2] << 16;
+    st.push({ note: v & 127, chance: Math.min(100, v >> 7 & 127), ratchet: (v >> 14 & 3) + 1, len: (v >> 16 & 63) + 1,
+              chord: b[i + 3] & 0x80 ? b[i + 3] : 0 });
+  }
+  return { steps: b[0], div: b[1], swing: b[2], mode: b[3], st };
+}
+export function buildSeq(q) {
+  const b = new Uint8Array(SEQ_PK), c = (v, lo, hi) => Math.max(lo, Math.min(hi, v | 0));
+  b[0] = c(q.steps, 1, SEQ_N), b[1] = c(q.div, 0, 7), b[2] = c(q.swing, 0, 127), b[3] = c(q.mode, 0, 3);
+  q.st.forEach((s, k) => {
+    const v = c(s.note, 0, 127) | c(s.chance, 0, 100) << 7 | (c(s.ratchet, 1, 4) - 1) << 14 | (c(s.len, 1, SEQ_N) - 1) << 16;
+    b.set([v & 255, v >> 8 & 255, v >> 16 & 255, s.chord & 0x80 ? s.chord : 0], 4 + k * 4);
+  });
+  return b;
+}
+export const emptyStep = () => ({ note: 0, chance: 100, ratchet: 1, len: 1, chord: 0 });
+export function seqToMidi(q, bpm, name = "ARCTIC SCREAM") {   // a Standard MIDI File (type 0, 96 ticks a quarter: the FM-1's)
+  const ev = [], tps = SEQ_DIV_T[q.div] || 24;
+  for (let k = 0; k < q.steps; k++) {
+    const s = q.st[k];
+    if (!s.note) continue;
+    const t0 = k * tps, hit = Math.floor(tps / s.ratchet);
+    for (let r = 0; r < s.ratchet; r++) {
+      const on = t0 + r * hit, off = s.ratchet > 1 ? on + Math.max(1, hit >> 1) : t0 + s.len * tps - 1;
+      ev.push([on, 1, s.note], [off, 0, s.note]);
+    }
+  }
+  ev.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const vlq = (v) => { const o = [v & 127]; while ((v >>= 7)) o.unshift(v & 127 | 128); return o; };
+  const us = Math.round(60000000 / bpm), trk = [0, 0xff, 0x51, 3, us >> 16 & 255, us >> 8 & 255, us & 255];
+  const nm = Array.from(name.slice(0, 32), (c) => c.charCodeAt(0) & 127);
+  trk.push(0, 0xff, 0x03, nm.length, ...nm);
+  let at = 0;
+  for (const [t, on, n] of ev) { trk.push(...vlq(t - at), on ? 0x90 : 0x80, n, on ? 100 : 0); at = t; }
+  trk.push(...vlq(Math.max(0, q.steps * tps - at)), 0xff, 0x2f, 0);
+  const u32 = (v) => [v >>> 24, v >> 16 & 255, v >> 8 & 255, v & 255];
+  return Uint8Array.from([0x4d, 0x54, 0x68, 0x64, 0, 0, 0, 6, 0, 0, 0, 1, 0, 96, 0x4d, 0x54, 0x72, 0x6b, ...u32(trk.length), ...trk]);
+}
+export function midiToSeq(buf, q) {                          // a MIDI file's notes onto q's grid (its DIVISION; the first
+  const b = new Uint8Array(buf), u16 = (i) => b[i] << 8 | b[i + 1], u32 = (i) => (b[i] << 24 | b[i + 1] << 16 | b[i + 2] << 8 | b[i + 3]) >>> 0;
+  if (String.fromCharCode(...b.slice(0, 4)) !== "MThd") throw new Error("NOT A MIDI FILE");   // track with notes, one a step)
+  const ppq = u16(12);
+  if (ppq & 0x8000) throw new Error("SMPTE TIME IS NOT SUPPORTED");
+  let i = 8 + u32(4), notes = [];
+  while (i + 8 <= b.length && !notes.length) {
+    const end = i + 8 + u32(i + 4);
+    let p = i + 8, t = 0, run = 0;
+    const open = {};
+    const vlq = () => { let v = 0, c; do { c = b[p++]; v = v << 7 | c & 127; } while (c & 128); return v; };
+    while (p < end) {
+      t += vlq();
+      let st = b[p];
+      if (st & 0x80) p++, run = st; else st = run;
+      const hi = st & 0xf0;
+      if (st === 0xff) { p++; const n = vlq(); p += n; continue; }
+      if (st === 0xf0 || st === 0xf7) { const n = vlq(); p += n; continue; }
+      if (hi === 0x90 || hi === 0x80) {
+        const n = b[p], v = b[p + 1];
+        p += 2;
+        if (hi === 0x90 && v) open[n] = t;
+        else if (open[n] !== undefined) { notes.push([open[n], t, n]); delete open[n]; }
+      } else p += hi === 0xc0 || hi === 0xd0 ? 1 : 2;
+    }
+    i = end;
+  }
+  if (!notes.length) throw new Error("NO NOTES IN THE FILE");
+  const tps = (SEQ_DIV_T[q.div] || 24) * ppq / 96, out = { ...q, st: Array.from({ length: SEQ_N }, emptyStep) };
+  let last = 0;
+  notes.sort((a, b) => a[0] - b[0] || b[2] - a[2]);
+  for (const [on, off, n] of notes) {
+    const k = Math.round(on / tps);
+    if (k >= SEQ_N || out.st[k].note || Math.abs(on / tps - k) > 0.2) continue;   // (a chord: its highest note; off the
+                                                             // grid, a ratchet's hits: not a step of their own)
+    out.st[k] = { note: n, chance: 100, ratchet: 1, len: Math.max(1, Math.min(SEQ_N, Math.round((off - on) / tps))), chord: 0 };
+    last = Math.max(last, k + 1);
+  }
+  out.steps = Math.max(1, Math.min(SEQ_N, Math.ceil(last / 4) * 4 || last));
+  return out;
 }
 
 // ------------------------------------------------------------------ backup (the same file as tools/fm1_editor_test.py)
