@@ -1,0 +1,326 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     Copyright (C) 2026 PolarPatch
+     Arctic Scream p0larpatch at a glance: every button, knob and combo on one page, and how to wake the HOWL. Its facts
+     follow MANUAL.md (GR!MM's, Copyright (C) 2026 GR!MM, GPL-3.0) and this firmware's own changes. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arctic Scream Cheat Sheet</title>
+<link rel="icon" href="polarpatch-logo.png">
+<meta name="description" content="Arctic Scream p0larpatch at a glance: every button, knob and combo of the FM-1 firmware on one page, and how to summon the screams from the permafrost.">
+<style>
+/* BlueWatch's colours only, as the demo page */
+:root { --bg: #060410; --card: #0d1117; --card-hi: #161b22; --edge: #30363d; --fg: #eaf6fa; --label: #a6afb9;
+        --dim: #7fa8b8; --muted: #45606e; --ice: #22d3ee; --aurora: #3fb950; --violet: #a78bfa; --plasma: #ff1a8c;
+        --amber: #ffcb47; --pink: #f472b6; --teal: #3fb9a5; --periwinkle: #7c8cf8; --sky: #4fb3e8; --rose: #e0707a;
+        --lavender: #b083c9; --gold: #d9a441;
+        --mono: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+        color-scheme: dark; }
+html, body { background: var(--bg); }
+body { margin: 0; color: var(--fg); font: 13px/1.5 system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+       background-image: radial-gradient(circle at 15% 0%, rgba(34, 211, 238, .07), transparent 45%),
+                         radial-gradient(circle at 85% 100%, rgba(255, 26, 140, .05), transparent 45%);
+       background-attachment: fixed; }
+main { max-width: 1120px; margin: 0 auto; padding: 20px 16px 32px; }
+a { color: var(--ice); }
+
+/* the title block */
+.mast { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 18px; }
+.mast img { width: 72px; height: 72px; border: 1px solid var(--edge); border-radius: 4px; }
+.mast .t { flex: 1 1 320px; min-width: 0; }
+.mast h1 { margin: 0; font: 700 26px/1.15 var(--mono); letter-spacing: .1em; text-shadow: 0 0 10px rgba(34, 211, 238, .45); }
+.mast h1 span { color: var(--ice); }
+.mast p { margin: 4px 0 0; color: var(--dim); font: 12px/1.45 var(--mono); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.actions a, .actions button { font: 600 12px var(--mono); letter-spacing: .08em; color: var(--fg); background: var(--card-hi);
+                              border: 1px solid var(--edge); border-radius: 4px; padding: 7px 12px; text-decoration: none; cursor: pointer; }
+.actions a:hover, .actions button:hover { border-color: var(--ice); }
+
+/* the cards */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
+.card { background: var(--card); border: 1px solid var(--edge); border-top: 3px solid var(--c, var(--ice)); border-radius: 6px;
+        padding: 12px 14px 10px; break-inside: avoid; min-width: 0; }
+.card h2 { margin: 0 0 8px; font: 700 13px/1.2 var(--mono); letter-spacing: .14em; color: var(--c, var(--ice)); text-transform: uppercase; }
+.card h3 { margin: 10px 0 4px; font: 700 11px var(--mono); letter-spacing: .12em; color: var(--label); }
+dl { margin: 0; display: grid; grid-template-columns: minmax(96px, max-content) 1fr; gap: 4px 12px; }
+dt { font: 600 11.5px/1.5 var(--mono); color: var(--fg); white-space: nowrap; }
+dd { margin: 0; color: var(--label); min-width: 0; }
+dd b { color: var(--fg); font-weight: 600; }
+.note { margin: 8px 0 0; padding: 6px 8px; border-left: 2px solid var(--c, var(--ice)); background: var(--card-hi);
+        color: var(--label); font-size: 12px; }
+table.knobs { width: 100%; border-collapse: collapse; font: 11px/1.35 var(--mono); margin: 2px 0 4px; }
+table.knobs th, table.knobs td { border: 1px solid var(--edge); padding: 3px 5px; text-align: left; vertical-align: top; }
+table.knobs th { color: var(--label); font-weight: 600; background: var(--card-hi); }
+table.knobs td:first-child { color: var(--fg); font-weight: 600; white-space: nowrap; }
+.kb { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; margin: 4px 0 2px; }
+.kb span { font: 600 9.5px/1.2 var(--mono); text-align: center; padding: 5px 2px; border: 1px solid var(--edge); border-radius: 3px;
+           color: var(--fg); background: var(--card-hi); overflow-wrap: anywhere; }
+.kb span i { display: block; font-style: normal; color: var(--muted); font-size: 9px; margin-bottom: 2px; }
+.kb.v span { border-color: rgba(167, 139, 250, .55); }
+kbd { font: 600 11px ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--edge); border-radius: 3px; padding: 0 4px; color: var(--fg); }
+
+/* the scream: the page's heart, wide */
+.scream { grid-column: 1 / -1; --c: var(--plasma); background: linear-gradient(180deg, rgba(255, 26, 140, .06), transparent 60%), var(--card); }
+.scream .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 6px 22px; }
+.scream ol { margin: 0; padding-left: 20px; color: var(--label); }
+.scream ol li { margin: 0 0 5px; }
+.scream ol li b { color: var(--fg); }
+.meter { display: flex; height: 22px; border: 1px solid var(--edge); border-radius: 3px; overflow: hidden; font: 600 10px/22px var(--mono); margin: 4px 0 2px; }
+.meter span { text-align: center; color: var(--bg); white-space: nowrap; overflow: hidden; }
+.meter .a { flex: 48; background: var(--muted); color: var(--fg); }
+.meter .b { flex: 22; background: var(--violet); }
+.meter .c { flex: 57; background: var(--plasma); color: var(--fg); }
+.scale { display: flex; justify-content: space-between; font: 10px var(--mono); color: var(--muted); }
+
+footer { margin-top: 20px; color: var(--dim); font-size: 12px; text-align: center; }
+footer p { margin: 4px 0; }
+
+@media (max-width: 560px) {
+  .mast img { width: 48px; height: 48px; } .mast h1 { font-size: 19px; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  dl { grid-template-columns: minmax(0, 1fr); gap: 0; } dd { margin-bottom: 6px; } dt { white-space: normal; }
+  .kb span { font-size: 8.5px; }
+}
+/* print: on paper, black on white, two columns */
+@media print {
+  @page { size: A4; margin: 10mm; }
+  :root { --bg: #fff; --card: #fff; --card-hi: #f3f5f7; --edge: #c9d1d9; --fg: #0d1117; --label: #30363d; --dim: #45606e; --muted: #7fa8b8; }
+  body { background: #fff; font-size: 10.5px; }
+  main { max-width: none; padding: 0; }
+  .actions { display: none; }
+  .mast h1 { text-shadow: none; }
+  .grid { display: block; columns: 2; column-gap: 10px; }
+  .card { margin: 0 0 10px; }
+  .scream { background: #fff; column-span: all; }
+  .meter span { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+<main>
+<header class="mast">
+  <img src="polarpatch-logo.png" alt="PolarPatch">
+  <div class="t">
+    <h1>ARCTIC SCREAM <span>at a glance</span></h1>
+    <p>Arctic Scream p0larpatch 1.0 · drone firmware for the M-VAVE FM-1 by PolarPatch · four tracks, eight sources, and a feedback loop that wakes on its own</p>
+  </div>
+  <div class="actions">
+    <a href="index.html">PLAY THE DEMO</a>
+    <a href="editor.html">EDITOR</a>
+    <button type="button" onclick="print()">PRINT</button>
+  </div>
+</header>
+
+<div class="grid">
+
+<section class="card scream">
+  <h2>Summoning the screams from the permafrost</h2>
+  <div class="cols">
+    <div>
+      <h3>THE FAST WAY</h3>
+      <ol>
+        <li>Turn <b>PRESETS</b> to <b>DRONE</b> and the last six: <b>POLAR HOWL, WENDIGO, FROZEN SCREAM, WHITEOUT, DEAD SIGNAL, ICE WRAITH</b> (ICE WRAITH is there from the start).</li>
+        <li>Press a <b>low key</b> once. LATCH is on: the note stays until you press the key again.</li>
+        <li>Wait. The loop grows out of silence by itself in a few seconds.</li>
+        <li>Press <b>EDIT</b> and turn <b>KNOB 1–4</b>: you are playing the loop itself.</li>
+      </ol>
+      <h3>FROM NOTHING</h3>
+      <ol>
+        <li><b>EDIT</b> twice to SOURCE, <b>KNOB 1</b> to <b>HOWL</b>, <b>KNOB 2</b> LATCH ON.</li>
+        <li><b>EDIT</b> again (SOUND), hold a note, and bring <b>FEEDBACK</b> up slowly.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>THE THRESHOLD: KNOB 1 FEEDBACK</h3>
+      <div class="meter" aria-label="FEEDBACK: asleep to about 48, the threshold around 48 to 70, howling above"><span class="a">ASLEEP</span><span class="b">THRESHOLD</span><span class="c">HOWLING</span></div>
+      <div class="scale"><span>0 · −60 dB</span><span>~64</span><span>127 · +12 dB</span></div>
+      <p class="note">The sound lives on the edge. Set FEEDBACK just under the threshold and play short notes: each key is a burst that <b>provokes</b> the loop, which flares and dies away. Higher up it screams on its own; the saturation keeps it from blowing up.</p>
+      <dl>
+        <dt>K2 BODY</dt><dd>A second resonance, 1–17 ms. It <b>glides</b> when turned, so the whole sound bends; it also wanders a little by itself. Short = metal, long = hollow.</dd>
+        <dt>K3 DAMP</dt><dd>The loop's filter: a <b>scream</b> (18 kHz) down to a <b>growl under the ice</b> (100 Hz).</dd>
+        <dt>K4 DRIVE</dt><dd>Clean to <b>torn</b>. High DRIVE + low DAMP is the dirtiest beast.</dd>
+      </dl>
+    </div>
+    <div>
+      <h3>MAKE IT WORSE</h3>
+      <dl>
+        <dt>LFO → FEEDBACK</dt><dd>LFO page, DESTINATION <b>FEEDBACK</b>, slow RATE: the loop breathes in and out of the threshold, waking and falling asleep.</dd>
+        <dt>LFO → BODY</dt><dd>A slow, twisting scream. Shape <b>DRIFT</b> or <b>RANDOM</b> for the uneasy kind.</dd>
+        <dt>SCALE HORROR</dt><dd>SEL → SCALE, last in the list: close semitones, every note wrong in the right way.</dd>
+        <dt>DELAY &gt; 100 %</dt><dd>FX → DELAY, FEEDBACK past 100 % (to 150 %): the echo runs away and saturates. Watch the volume.</dd>
+        <dt>Two HOWLs</dt><dd>Two tracks of HOWL with a slightly different BODY beat against each other.</dd>
+        <dt>Low notes</dt><dd>Everything is an octave down already. Below ~43 Hz the string jumps an octave: a strange, shivering seam.</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="card" style="--c: var(--ice)">
+  <h2>Getting around</h2>
+  <dl>
+    <dt>ALGORITHM</dt><dd>Picks the track, <b>T1–T4</b>. Every page shows that track.</dd>
+    <dt>PRESETS</dt><dd>The next or previous sound, by category. On the sequencer: the tempo.</dd>
+    <dt>SELECT</dt><dd>HOME: the tempo. Sequencer: the cursor.</dd>
+    <dt>KNOB 1–4</dt><dd>The four values at the bottom of the screen, on every page.</dd>
+    <dt>MASTER</dt><dd>Volume.</dd>
+    <dt>tap a button</dt><dd>Its first page; tap again for the next. The header says where you are.</dd>
+    <dt>OCT− / OCT+</dt><dd>Octave down / up. In SAVE's pages: back / do it.</dd>
+    <dt>EDIT + OCT− / +</dt><dd>Undo / redo.</dd>
+  </dl>
+  <p class="note">Turn a knob slowly for fine steps, fast to sweep. The work saves itself when the sequencer is stopped and all is silent.</p>
+</section>
+
+<section class="card" style="--c: var(--violet)">
+  <h2>Playing</h2>
+  <dl>
+    <dt>keys</dt><dd>Play the selected track. The first white key is <b>F2</b>: an octave down, for drones.</dd>
+    <dt>LATCH ON</dt><dd>Press once to start, again to stop (EDIT → SOURCE, KNOB 2). All the HOWLs and SVALBARD CELLO latch.</dd>
+    <dt>hold SEL</dt><dd>Chord mode on / off: one key, a whole chord.</dd>
+    <dt>hold ARP</dt><dd>Arpeggiator on / off. It plays the keys held (with LATCH: they stay).</dd>
+    <dt>hold GLO + key</dt><dd>White keys 1–4 mute T1–T4, 5–8 solo them.</dd>
+  </dl>
+  <p class="note">Six voices are shared by the four tracks. A note beyond six takes the oldest, faded out.</p>
+</section>
+
+<section class="card" style="--c: var(--periwinkle)">
+  <h2>Sound: EDIT</h2>
+  <p style="margin:0 0 6px;color:var(--label)"><b style="color:var(--fg)">EDIT</b>: SOUND → (FM: FM ALGO → FM OP →) SOURCE.</p>
+  <table class="knobs">
+    <tr><th>SOURCE</th><th>K1</th><th>K2</th><th>K3</th><th>K4</th></tr>
+    <tr><td>VA</td><td>WAVE</td><td>DETUNE</td><td>CUTOFF</td><td>RESONANCE</td></tr>
+    <tr><td>FM</td><td>PATCH</td><td>BRIGHT</td><td>DECAY</td><td>DETUNE</td></tr>
+    <tr><td>SAMPLE</td><td>SLOT</td><td>START</td><td>LENGTH</td><td>REVERSE</td></tr>
+    <tr><td>VOICE</td><td>VOWEL</td><td>SHIFT</td><td>BUZZ</td><td>BREATH</td></tr>
+    <tr><td>WHEEL</td><td>DRAWBARS</td><td>PERC</td><td>CLICK</td><td>DRIVE</td></tr>
+    <tr><td>PHYS</td><td>MODEL</td><td>STRUCTURE</td><td>DAMP</td><td>BOW</td></tr>
+    <tr><td>PHASE</td><td>WAVE</td><td>WAVE2</td><td>DCW</td><td>DETUNE</td></tr>
+    <tr><td style="color:var(--plasma)">HOWL</td><td>FEEDBACK</td><td>BODY</td><td>DAMP</td><td>DRIVE</td></tr>
+  </table>
+  <dl>
+    <dt>FM ALGO</dt><dd>ALGO 1–32, FEEDBACK, OP (pick 1–6), FINE.</dd>
+    <dt>FM OP</dt><dd>RATIO, LEVEL, ATTACK, DECAY of that operator.</dd>
+  </dl>
+</section>
+
+<section class="card" style="--c: var(--amber)">
+  <h2>ENV and LFO</h2>
+  <table class="knobs">
+    <tr><th></th><th>K1</th><th>K2</th><th>K3</th><th>K4</th></tr>
+    <tr><td>ENV</td><td>ATTACK</td><td>DECAY</td><td>SUSTAIN</td><td>RELEASE</td></tr>
+    <tr><td>LFO</td><td>RATE</td><td>DEPTH</td><td>DESTINATION</td><td>SHAPE</td></tr>
+  </table>
+  <dl>
+    <dt>DESTINATION</dt><dd>PITCH, VOLUME, PAN, <b>the source's four knobs</b> by name, REV SEND, GRAIN SEND, the track's CUTOFF.</dd>
+    <dt>SHAPE</dt><dd>SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT.</dd>
+  </dl>
+  <p class="note">The LFO never restarts with a note, so drones keep breathing. RATE goes from 60 s a cycle to 20 Hz.</p>
+</section>
+
+<section class="card" style="--c: var(--lavender)">
+  <h2>Scales and chords: SEL</h2>
+  <dl>
+    <dt>SCALE</dt><dd>ROOT, SCALE (shared by all tracks): the keys snap to it. Last in the list: <b>HORROR</b>.</dd>
+    <dt>CHORD</dt><dd>CHORD TYPE (SCALE, MIN, MAJ, SUS2, SUS4, FIFTH, MIN7, MAJ7, DIM, ADD9, CLUSTER), VOICING (CLOSE, OPEN, SPREAD, +OCT, DROP).</dd>
+    <dt>ARP</dt><dd>MODE (UP, DOWN, UP-DOWN, RANDOM, AS PLAYED, CHORD), RATE, OCTAVES 1–4, GATE.</dd>
+  </dl>
+</section>
+
+<section class="card" style="--c: var(--pink)">
+  <h2>Sequencer: SEQ, PLAY, REC</h2>
+  <table class="knobs">
+    <tr><th></th><th>K1</th><th>K2</th><th>K3</th><th>K4</th></tr>
+    <tr><td>GRID</td><td>NOTE</td><td>CHANCE</td><td>RATCHET</td><td>LENGTH</td></tr>
+    <tr><td>PATTERN</td><td>STEPS</td><td>DIVISION</td><td>SWING</td><td>PLAY MODE</td></tr>
+  </table>
+  <dl>
+    <dt>PLAY / REC</dt><dd>Start / stop; record. Stopped + REC: each key fills a step. Playing + REC: notes land on the nearest step.</dd>
+    <dt>hold SEL + knob</dt><dd>Lock a sound value to the step. + OCT−: clear its locks.</dd>
+    <dt>hold SEQ + SELECT</dt><dd>The pattern's length.</dd>
+  </dl>
+  <h3>HOLD SEQ + A WHITE KEY</h3>
+  <div class="kb"><span><i>1</i>CLEAR</span><span><i>2</i>RANDOM</span><span><i>3</i>SHIFT ←</span><span><i>4</i>SHIFT →</span><span><i>5</i>COPY</span><span><i>6</i>PASTE</span><span><i>7</i>DOUBLE</span><span><i>8</i>MUTATE</span></div>
+</section>
+
+<section class="card" style="--c: var(--sky)">
+  <h2>Effects: FX</h2>
+  <table class="knobs">
+    <tr><th></th><th>K1</th><th>K2</th><th>K3</th><th>K4</th></tr>
+    <tr><td>TAPE</td><td>WOW</td><td>SATURATION</td><td>TONE</td><td>HISS</td></tr>
+    <tr><td>GRAIN</td><td>SIZE</td><td>DENSITY</td><td>SCATTER</td><td>MIX</td></tr>
+    <tr><td>DELAY</td><td>TIME</td><td>FEEDBACK (to 150 %)</td><td>WEAR</td><td>MIX</td></tr>
+    <tr><td>SPACE</td><td>SIZE (to INF)</td><td>DAMP</td><td>MIX</td><td>PRE-DELAY</td></tr>
+  </table>
+  <h3>HOLD FX + A WHITE KEY (WHILE HELD)</h3>
+  <div class="kb v"><span><i>1</i>FREEZE</span><span><i>2</i>REV THROW</span><span><i>3</i>ECHO THROW</span><span><i>4</i>TAPE STOP</span><span><i>5</i>REVERSE</span><span><i>6</i>FILTER DOWN</span><span><i>7</i>FILTER UP</span><span><i>8</i>STUTTER</span></div>
+  <p class="note">FREEZE is a toggle: tap to hold the grain cloud, tap again to let go. The sends: MIXER 1, or FX on HOME.</p>
+</section>
+
+<section class="card" style="--c: var(--teal)">
+  <h2>HOME and the mix</h2>
+  <table class="knobs">
+    <tr><th></th><th>K1</th><th>K2</th><th>K3</th><th>K4</th></tr>
+    <tr><td>HOME</td><td>VOLUME</td><td>CUTOFF</td><td>RESONANCE</td><td>FX</td></tr>
+    <tr><td>MIXER 1</td><td>LEVEL</td><td>DLY SEND</td><td>REV SEND</td><td>GRAIN SEND</td></tr>
+    <tr><td>MIXER 2</td><td>PAN</td><td></td><td></td><td></td></tr>
+  </table>
+  <p class="note">HOME draws each track's wave as it plays. FX turns the track's three sends together: 0 dry, 100 % as set, 200 % twice as wet.</p>
+</section>
+
+<section class="card" style="--c: var(--gold)">
+  <h2>Saving and loading</h2>
+  <h3>HOLD SAVE + A WHITE KEY</h3>
+  <div class="kb"><span><i>1</i>RECALL A</span><span><i>2</i>RECALL B</span><span><i>3</i>RECALL C</span><span><i>4</i>RECALL D</span><span><i>5</i>SAVE A</span><span><i>6</i>SAVE B</span><span><i>7</i>SAVE C</span><span><i>8</i>SAVE D</span></div>
+  <dl>
+    <dt>SAVE → SOUNDS</dt><dd>SLOT, CATEGORY, TYPE, ACTION (LOAD, SAVE, CLEAR): 64 slots for your own sounds. OCT+ does it.</dd>
+    <dt>SAVE → PROJECTS</dt><dd>SLOT A–D, ACTION (LOAD, SAVE, ERASE, <b>NEW</b>). NEW: four tracks of ICE WRAITH, empty patterns.</dd>
+    <dt>GLO → SONG</dt><dd>SECTION, PATTERN, REPEATS, MODE (OFF, SONG, SONG LOOP). REC + PLAY there records the slots you switch to.</dd>
+  </dl>
+</section>
+
+<section class="card" style="--c: var(--rose)">
+  <h2>Settings: hold HOME</h2>
+  <table class="knobs">
+    <tr><th></th><th>K1</th><th>K2</th><th>K3</th><th>K4</th></tr>
+    <tr><td>SYSTEM</td><td>COLOUR</td><td>MIDI CHANNEL</td><td>TUNE</td><td>SCREEN OFF</td></tr>
+    <tr><td>SYSTEM 2</td><td>MIDI LEARN</td><td>SEQ MIDI OUT</td><td>SAMPLES</td><td></td></tr>
+  </table>
+  <dl>
+    <dt>COLOUR</dt><dd>ICE, AURORA, VIOLET, PLASMA.</dd>
+    <dt>SAMPLES</dt><dd>RESTORE, then OCT+: the four factory samples back.</dd>
+    <dt>OCT− + OCT+</dt><dd>Together, on SYSTEM 2: reset CPU PEAK.</dd>
+  </dl>
+</section>
+
+<section class="card" style="--c: var(--aurora)">
+  <h2>Good to know</h2>
+  <dl>
+    <dt>factory sounds</dt><dd>46, in PAD, DRONE, BELL, VOICE, ORGAN, KEYS, OTHER, TEXTURE. Your own come after each category's.</dd>
+    <dt>HOWL is loud</dt><dd>At full FEEDBACK and DRIVE with DELAY past 100 %, mind MASTER and your ears.</dd>
+    <dt>not GR!MM's saves</dt><dd>Arctic Scream keeps its own saves. Coming from GR!MM, projects and slots start empty; samples stay.</dd>
+    <dt>samples</dt><dd>Four slots, your own WAVs from the editor.</dd>
+    <dt>stuck?</dt><dd>The Rescue page on the <a href="https://thefirmwarehub.com/">FM-1 Firmware Hub</a>.</dd>
+  </dl>
+</section>
+
+<section class="card" style="--c: var(--label)">
+  <h2>In the browser demo</h2>
+  <dl>
+    <dt><kbd>Z</kbd>–<kbd>/</kbd></dt><dd>White keys from F2 · <kbd>S</kbd>–<kbd>'</kbd> black · <kbd>Q</kbd>–<kbd>O</kbd> B3–G4.</dd>
+    <dt><kbd>1</kbd>–<kbd>6</kbd></dt><dd>FX, SEL, ENV, LFO, EDIT, GLO.</dd>
+    <dt><kbd>7</kbd>–<kbd>=</kbd></dt><dd>HOME, SAVE, ARP, SEQ, PLAY, REC.</dd>
+    <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>OCT−, OCT+ · <kbd>↑</kbd> <kbd>↓</kbd> SELECT · <kbd>←</kbd> <kbd>→</kbd> ALGORITHM.</dd>
+    <dt>combos</dt><dd>Hold a button's key and press others. Right-click or Shift-click holds a button.</dd>
+  </dl>
+</section>
+
+</div>
+
+<footer>
+  <p>Arctic Scream p0larpatch by PolarPatch, built on <a href="https://github.com/GRiMMBIENT/grimm">GR!MM</a> (GPL-3.0) · its HOWL source and HORROR scale follow <a href="https://github.com/Synthux-Academy/Audrey-II">Audrey II</a> (Nick Donaldson, Infrasonic Audio; Synthux Academy, MIT), written anew · <a href="LICENSING.md">credits and licences</a></p>
+  <p>M-VAVE and FM-1 are trademarks of their respective owners. Arctic Scream p0larpatch is not affiliated with or endorsed by them, nor by GR!MM.</p>
+</footer>
+</main>
+</body>
+</html>
