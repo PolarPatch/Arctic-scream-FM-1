@@ -9,20 +9,22 @@
  *   its label, 8 segments (light: filled), its value (16 px up to 3 characters, else 8 px)
  *   pages not built yet: the frame, their slabs named with empty bars and "---", NOT BUILT YET in the picture
  *   moving: the boot screen and HOME's picture, a frame every UI_ANIM_MS, only what moved drawn (ui_boot_frame,
- *   ui_home_frame; the audio ISR leaves its peaks in vis_pk, vis_lr)
+ *   ui_home_frame; the audio ISR leaves its peaks in vis_pk, vis_lr and its waves in sc_buf)
  * Drawn in regions (the header, the picture, each slab) into the canvas, a strip at a time (gfx.c: 240 x 64), and only
  * when what they show changes; the picture at most every UI_PIC_MS while a knob turns. Main loop only. */
 
 #include "grimm_pixfont.h"
 
-#define UI_K RGB(0x0b, 0x0b, 0x0a)              /* the palette: black (the background), */
-#define UI_D RGB(0x26, 0x25, 0x1f)              /* dark */
-#define UI_M RGB(0x5e, 0x5b, 0x54)              /* mid */
-#define UI_L RGB(0xb8, 0xb4, 0xa9)              /* light */
-#define UI_W RGB(0xe8, 0xe4, 0xd8)              /* white */
-static const uint16_t UI_ACCENTS[4] = {RGB(0xc8, 0x32, 0x1e), RGB(0xd0, 0x8a, 0x1c), RGB(0x2f, 0x8f, 0x8a),
-                                       RGB(0x7a, 0x4f, 0xb0)};   /* red (the default), amber, teal, violet (SYSTEM) */
-static uint16_t ui_acc = RGB(0xc8, 0x32, 0x1e); /* the accent */
+#define UI_K RGB(0x06, 0x04, 0x10)              /* the palette, arctic night (after PolarPatch BlueWatch's cyberpunk theme):
+                                                 * black (the background), */
+#define UI_D RGB(0x16, 0x22, 0x2e)              /* dark */
+#define UI_M RGB(0x45, 0x60, 0x6e)              /* mid */
+#define UI_L RGB(0x7f, 0xa8, 0xb8)              /* light */
+#define UI_W RGB(0xea, 0xf6, 0xfa)              /* white */
+static const uint16_t UI_ACCENTS[4] = {RGB(0x22, 0xd3, 0xee), RGB(0x3d, 0xff, 0xa8), RGB(0xa7, 0x8b, 0xfa),
+                                       RGB(0xff, 0x1a, 0x8c)};   /* ice (the default), aurora, violet, plasma (SYSTEM);
+                                                 * also the four tracks' colours on HOME and the boot screen */
+static uint16_t ui_acc = RGB(0x22, 0xd3, 0xee); /* the accent */
 #define UI_PIC_MS 40u                           /* the picture redrawn at most this often */
 #define UI_BAT_W 16                             /* the header's battery (and its tip) */
 #define UI_BOOT_MS 3000u                        /* the boot screen this long */
@@ -427,67 +429,56 @@ static void ui_caption(const char *l, const char *r)
     ui_text(PX0, 31, l, 1, UI_M);
     if (r) ui_text(PX0 + 216 - 8 * ui_len(r), 31, r, 1, UI_M);
 }
-static const char *const EYE[8] = {"....llllllll....", "..llmmmmmmmmll..", ".lmmmmaaaammmml.", "lmmmmaawkaammmml",
-                                   "lmmmmaakkaammmml", ".lmmmmaaaammmml.", "..llmmmmmmmmll..", "....llllllll...."};
-static uint16_t ui_col(char ch)
+static uint16_t ui_mix(uint16_t a, uint16_t b, uint32_t q, uint32_t n)   /* a -> b, q of n (RGB565) */
 {
-    switch (ch) {
-    case 'k': return UI_K;
-    case 'd': return UI_D;
-    case 'm': return UI_M;
-    case 'l': return UI_L;
-    case 'w': return UI_W;
-    default: return ui_acc;
-    }
+    uint32_t r = ((uint32_t)(a >> 11) * (n - q) + (uint32_t)(b >> 11) * q) / n;
+    uint32_t g = ((a >> 5 & 63u) * (n - q) + (b >> 5 & 63u) * q) / n, bl = ((a & 31u) * (n - q) + (b & 31u) * q) / n;
+    return (uint16_t)(r << 11 | g << 5 | bl);
 }
-static void ui_sprite(int32_t x, int32_t y, int32_t s, const char *const *rows, int32_t nr)   /* '.': none */
-{
-    int32_t r, c;
-    for (r = 0; r < nr; r++)
-        for (c = 0; rows[r][c]; c++)
-            if (rows[r][c] != '.') ui_rect(x + c * s, y + r * s, s, s, ui_col(rows[r][c]));
-}
+static void ui_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c) { cv_line(x0 - ui_ox, y0, x1 - ui_ox, y1, c); }
 static int ui_in(int32_t x, int32_t y, int32_t w, int32_t h)   /* does (x, y, w, h) reach into the region being drawn */
 {
     return x < ui_ox + (int32_t)cv_w && x + w > ui_ox && y < -cv_oy + (int32_t)cv_h && y + h > -cv_oy;
 }
-/* the eye at (x, y), 5 px a cell: its lids k open (4: wide, 0: shut; the lid's edge a light row), the iris dx, dy cells
- * off the middle (inside the white only) */
-static void ui_eye(int32_t x, int32_t y, int32_t k, int32_t dx, int32_t dy)
+static void ui_brackets(int32_t x, int32_t y, int32_t w, int32_t h, int32_t l, uint16_t c)   /* a frame's corner marks,
+                                                 * top left and bottom right (BlueWatch's panels) */
 {
-    static const char *const IRIS[4] = {".aaaa.", "aawkaa", "aakkaa", ".aaaa."};
-    int32_t r, c;
-    if (!ui_in(x, y, 80, 40)) return;
-    for (r = 0; r < 8; r++) {
-        int32_t d = r < 4 ? 3 - r : r - 4;      /* (rows from the middle) */
-        for (c = 0; c < 16; c++) {
-            char ch = EYE[r][c];
-            if (ch == '.' || d > k) continue;
-            if (d == k && k < 4) ch = 'l';
-            else if (ch != 'l') {
-                int32_t ir = r - 2 - dy, ic = c - 5 - dx;
-                ch = ir >= 0 && ir < 4 && ic >= 0 && ic < 6 && IRIS[ir][ic] != '.' ? IRIS[ir][ic] : 'm';
-            }
-            ui_rect(x + c * 5, y + r * 5, 5, 5, ui_col(ch));
-        }
+    ui_rect(x, y, l, 2, c), ui_rect(x, y, 2, l, c);
+    ui_rect(x + w - l, y + h - 2, l, 2, c), ui_rect(x + w - 2, y + h - l, 2, l, c);
+}
+/* a glowing polyline (Niagara Drift's scope: a dim line a pixel above and below, then the bright one) through n points
+ * (x0 + i dx, y[i]) */
+static void ui_glow(int32_t x0, int32_t dx, const int32_t *y, uint32_t n, uint16_t c)
+{
+    uint16_t d = ui_mix(UI_K, c, 1, 3);
+    uint32_t i;
+    for (i = 1; i < n; i++) {
+        int32_t xa = x0 + (int32_t)(i - 1) * dx, xb = xa + dx;
+        ui_line(xa, y[i - 1] - 1, xb, y[i] - 1, d);
+        ui_line(xa, y[i - 1] + 1, xb, y[i] + 1, d);
     }
+    for (i = 1; i < n; i++) ui_line(x0 + (int32_t)(i - 1) * dx, y[i - 1], x0 + (int32_t)i * dx, y[i], c);
 }
 
 /* ---- HOME's moving picture (Main), a frame every UI_ANIM_MS while it is shown and the screen lit, from the main loop:
- * what the audio ISR left in vis_pk, vis_lr (its peaks) and the notes on (their pitch). Only what changed is drawn.
- *   candles: LEVEL the most a flame can be (muted, LEVEL 0: out, a wisp of smoke); a silent track's burns low, a shape
- *   now and then; a sounding one's grows with its peak, dances (a row up or down) and flickers (three shapes, uneven)
- *   stars: the fog's pixels, a few at a time brighten to light and fade back; more of them the louder it is
- *   the eye: its iris goes towards the sound (left, right: the output's balance; up, down: high, low notes), a cell at
- *   a time; it blinks now and then, and at a sudden loud hit; silent ~4 s, it half-closes and drifts (dozing); the
- *   first sound wakes it with a blink */
+ * the arctic sky over four tracks, each its wave as it sounds (grimm.c's sc_buf: a capture from a rising zero, about two
+ * cycles of its lowest note), in its colour, glowing; each new capture blended into the one drawn (~0.45), so a wave
+ * drifts instead of jumping; a silent track's wave sinks back to a line. Muted, LEVEL 0: grey.
+ *   stars: the sky's pixels, a few at a time brighten to light and fade back; more of them the louder it is */
 #define NSTAR 46u
+#define HF_X 4                                  /* the field: the waves and the stars, its corner marks */
+#define HF_Y 26
+#define HF_W 232
+#define HF_H 137
+#define WV_X 24                                 /* a wave: from here, 2 px a point; its track's line at WV_Y(t) */
+#define WV_Y(t) (44 + (int32_t)(t) * 32)
+#define WV_HALF 24                              /* its height at the most (it reaches into the next one's: aurora); */
+#define WV_KNEE 500                             /* .. half of it at this (a soft knee: a quiet one seen, a loud one
+                                                 * never cut) */
 static uint8_t sk_x[NSTAR], sk_y[NSTAR], sk_b[NSTAR], sk_ph[NSTAR], sk_ok;   /* a star: where, M (else D), its sparkle's
                                                  * frame (0: none) */
-static uint8_t cn_h[NT], cn_s[NT], cn_n[NT];    /* a candle: its flame's rows (0: out), shape, frames to its next shape */
-static int32_t ey_k = 4, ey_dx, ey_dy, ey_tx, ey_ty, ey_bl, ey_doze;   /* the eye: lids, iris, its target, the blink's
-                                                 * frame (0: none), dozing */
-static uint32_t an_rng = 0x2545F491u, an_e[NT], an_avg, an_n, an_sound_t, an_blink_t, an_next, an_drift_t;
+static int32_t wv_d[NT][SC_N];                  /* the waves as drawn */
+static uint32_t an_rng = 0x2545F491u;
 static uint32_t an_rnd(uint32_t n)
 {
     an_rng ^= an_rng << 13, an_rng ^= an_rng >> 17, an_rng ^= an_rng << 5;
@@ -498,121 +489,88 @@ static uint16_t sk_col(uint32_t i)              /* a star's colour now: D or M; 
     uint32_t p = sk_ph[i];
     return !p ? (sk_b[i] ? UI_M : UI_D) : p >= 4u && p <= 9u ? UI_L : UI_M;
 }
-static void sk_init(void)                       /* the stars where Main has its fog (the concepts' random, seed 7) */
+static void sk_init(void)                       /* the stars (the concepts' random, seed 7) */
 {
     uint32_t i;
     ui_rnd_s = 7;
     for (i = 0; i < NSTAR; i++) {
-        sk_x[i] = (uint8_t)ui_rnd(79), sk_y[i] = (uint8_t)ui_rnd(44);
+        sk_x[i] = (uint8_t)(2u + ui_rnd(76)), sk_y[i] = (uint8_t)ui_rnd(44);
         sk_b[i] = ui_rnd(100) >= 65u;
     }
     sk_ok = 1;
 }
-static void pic_home(void)                      /* Main: the stars, the eye, a candle a track */
+static uint16_t wv_col(uint32_t t)              /* a track's colour (muted, LEVEL 0: grey) */
 {
-    static const char *const FLAME[3][4] = {{"..aa..", ".aaaa.", ".alla.", "..la.."}, {"...a..", "..aaa.", ".alla.", "..la.."},
-                                            {"..a...", ".aaa..", ".alla.", "..la.."}};
-    static const char *const BODY[9] = {"...m..", ".wlll.", ".wlll.", ".llll.", ".llll.", "lllll.", ".llll.", ".llll.",
-                                        "dddddd"};
-    uint32_t i;
-    int32_t t;
+    return trk[t].level <= 0 || (trk_quiet >> t & 1u) ? UI_M : UI_ACCENTS[t];
+}
+static void pic_home(void)                      /* Main: the stars, a wave a track */
+{
+    int32_t y[SC_N], x;
+    uint32_t i, t;
     if (!sk_ok) sk_init();
     for (i = 0; i < NSTAR; i++) ui_rect(sk_x[i] * 3, 27 + sk_y[i] * 3, 3, 3, sk_col(i));
-    ui_eye(80, 39, ey_k, ey_dx, ey_dy);
-    for (t = 0; t < (int32_t)NT; t++) {         /* four candles, 27 px apart, centred */
-        int32_t x = 43 + t * 45, y = 92, h = cn_h[t], r;
-        const char *f[4];
+    ui_brackets(HF_X, HF_Y, HF_W, HF_H, 10, ui_acc);
+    for (t = 0; t < NT; t++) {
+        int32_t c = WV_Y(t), flat = 1;
+        uint16_t col = wv_col(t);
         char lab[2] = {(char)('1' + t), 0};
-        if (!ui_in(x, y, 18, 52)) continue;
-        for (r = 0; r < 4; r++) f[r] = r >= 4 - h ? FLAME[cn_s[t] % 3u][r] : "......";
-        if (!h) f[1] = "..m...", f[2] = "...m..";   /* (out: a wisp of smoke) */
-        ui_sprite(x, y, 3, f, 4);
-        ui_sprite(x, y + 12, 3, BODY, 9);
-        ui_text(x + 5, y + 43, lab, 1, UI_M);
+        if (!ui_in(HF_X, c - WV_HALF - 2, HF_W, 2 * WV_HALF + 4)) continue;
+        if (t == sel) ui_rect(8, c - 6, 2, 12, col);   /* (the selected track) */
+        ui_text(12, c - 3, lab, 1, t == sel ? UI_W : UI_M);
+        for (i = 0; i < SC_N; i++) {
+            int32_t v = wv_d[t][i];
+            if (v) flat = 0;
+            y[i] = c - WV_HALF * v / ((v < 0 ? -v : v) + WV_KNEE);
+        }
+        if (flat)
+            for (x = WV_X; x < WV_X + 2 * (int32_t)SC_N; x += 4) ui_rect(x, c, 2, 1, UI_D);
+        else
+            ui_glow(WV_X, 2, y, SC_N, col);
     }
 }
 static void ui_pic_draw(void);
 static void ui_home_part(int32_t x, int32_t y, int32_t w, int32_t h) { ui_region(x, y, w, h, UI_K, ui_pic_draw); }
+static const uint16_t SC_PER[12] = {5394, 5091, 4805, 4536, 4281, 4041, 3814, 3600, 3398, 3207, 3027, 2857};   /* a
+                                                 * note's period in frames, its lowest octave (MIDI 0 .. 11) */
 static void ui_home_frame(int draw)             /* a frame of HOME's picture (draw: what changed, drawn) */
 {
-    static const int8_t BLINK[6] = {4, 2, 0, 0, 2, 3};   /* (a blink's lids, a frame each) */
-    uint32_t pk[NT], l = vis_lr[0], r = vis_lr[1], loud, t, i, sum = 0, n = 0, sound;
-    int32_t k, dx, dy;
-    an_n++;
+    uint32_t pk[NT], l = vis_lr[0], r = vis_lr[1], loud, t, i, v, moved = 0;
     for (t = 0; t < NT; t++) pk[t] = vis_pk[t], vis_pk[t] = 0;
     vis_lr[0] = vis_lr[1] = 0;
     loud = (l > r ? l : r) >> 7;                /* (0 .. 256: the output's peak, full scale) */
     loud = loud > 256u ? 256u : loud;
-    for (i = 0; i < nlat && i < NV; i++) sum += lat_note[i], n++;
-    sound = loud > 2u || n;
     if (!sk_ok) sk_init();
 
-    for (t = 0; t < NT; t++) {                  /* the candles */
-        uint32_t e = pk[t] / 96u, lv = trk[t].level <= 0 || (trk_quiet >> t & 1u) ? 0u : (ui_pc(trk[t].level) + 24u) / 25u;
-        uint32_t h, s = cn_s[t], lo = lv < 2u ? lv : 2u;
-        e = e > 256u ? 256u : e;
-        an_e[t] = e >= an_e[t] ? e : an_e[t] - (an_e[t] + 5u) / 6u;   /* (up at once, down over ~0.3 s) */
-        if (an_e[t] < 6u) h = lo;               /* (silent: low) */
-        else {
-            h = lo + ((lv - lo) * an_e[t] + 128u) / 256u;
-            if (!an_rnd(3) && h < lv) h++;      /* (the dance) */
-            else if (!an_rnd(4) && h > lo) h--;
+    for (t = 0; t < NT; t++) {                  /* the waves */
+        uint32_t lo = 128u;
+        for (v = 0; v < NV; v++)                /* (the track's lowest sounding note: about two of its cycles across) */
+            if (vc[v].stage != ST_OFF && vc[v].trk == t && vc[v].note < lo) lo = vc[v].note;
+        if (lo < 128u) sc_dec[t] = (uint32_t)clamp((int32_t)((2u * (SC_PER[lo % 12u] >> (lo / 12u)) + SC_N / 2u) / SC_N), 1, 64);
+        if (sc_st[t] == SC_READY) {
+            for (i = 0; i < SC_N; i++) wv_d[t][i] += (sc_buf[t][i] - wv_d[t][i]) * 29 / 64;
+            sc_st[t] = SC_WANT, moved = 1;
         }
-        if (!cn_n[t] || !--cn_n[t]) {           /* (a new shape, at uneven times: sounding often, silent seldom) */
-            s = (s + 1u + an_rnd(2)) % 3u;
-            cn_n[t] = (uint8_t)(an_e[t] >= 6u ? 1u + an_rnd(3) : 6u + an_rnd(14));
-        }
-        if (h != cn_h[t] || (s != cn_s[t] && h > 2u)) {
-            cn_h[t] = (uint8_t)h, cn_s[t] = (uint8_t)s;
-            if (draw) ui_home_part(43 + (int32_t)t * 45, 92, 18, 12);
-        }
-        cn_s[t] = (uint8_t)s;
+        if (!pk[t])                             /* (silent: back to a line) */
+            for (i = 0; i < SC_N; i++)
+                if (wv_d[t][i]) {
+                    wv_d[t][i] = wv_d[t][i] * 13 / 16;
+                    if (wv_d[t][i] > -16 && wv_d[t][i] < 16) wv_d[t][i] = 0;
+                    moved = 1;
+                }
     }
 
     for (i = 0; i < NSTAR; i++)                 /* the stars: the sparkling ones on; new ones (louder: more) */
         if (sk_ph[i]) {
             uint16_t c = sk_col(i);
             sk_ph[i] = sk_ph[i] >= 12u ? 0u : (uint8_t)(sk_ph[i] + 1u);
-            if (draw && sk_col(i) != c) ui_home_part(sk_x[i] * 3, 27 + sk_y[i] * 3, 3, 3);
+            if (draw && !moved && sk_col(i) != c) ui_home_part(sk_x[i] * 3, 27 + sk_y[i] * 3, 3, 3);
         }
     for (t = 0; t < 1u + loud / 96u; t++)
         if (an_rnd(64) < 3u + loud / 12u) {
             i = an_rnd(NSTAR);
             if (!sk_ph[i]) sk_ph[i] = 1;
         }
-
-    if (sound) {                                /* the eye: awake (the first sound: a blink), or dozing */
-        if (ey_doze) ey_doze = 0, ey_bl = 1;
-        an_sound_t = fm1_ms;
-    } else if (fm1_ms - an_sound_t > 4000u)
-        ey_doze = 1;
-    if (!ey_doze) {
-        ey_tx = l + r > 64u ? ((int32_t)r - (int32_t)l) * 3 / (int32_t)(l + r) : 0;   /* (the balance: -3 .. 3) */
-        ey_ty = !n ? 0 : sum / n >= 72u ? -1 : sum / n < 50u ? 1 : 0;   /* (high notes up, low down) */
-        if (loud > 48u && loud > 3u * an_avg + 24u && fm1_ms - an_blink_t > 600u) ey_bl = 1;   /* (a sudden hit) */
-    } else if (fm1_ms >= an_drift_t) {          /* (dozing: somewhere else now and then) */
-        ey_tx = (int32_t)an_rnd(5) - 2, ey_ty = (int32_t)an_rnd(2);
-        an_drift_t = fm1_ms + 1200u + an_rnd(1500);
-    }
-    an_avg = (an_avg * 7u + loud) / 8u;
-    if (!ey_bl && fm1_ms >= an_next) ey_bl = 1; /* (now and then) */
-    if (ey_bl) {
-        if (ey_bl == 1) an_next = fm1_ms + 2500u + an_rnd(5000);
-        an_blink_t = fm1_ms;
-        k = ey_bl < 6 ? BLINK[ey_bl] : ey_doze ? 2 : 4;
-        ey_bl = ey_bl >= 6 ? 0 : ey_bl + 1;
-    } else
-        k = ey_doze ? (ey_k > 2 && !(an_n % 9u) ? ey_k - 1 : ey_k < 2 ? ey_k + 1 : ey_k) : ey_k < 4 ? ey_k + 1 : 4;   /* (dozing:
-                                                 * the lids down slowly) */
-    dx = ey_dx, dy = ey_dy;
-    if (!(an_n % (ey_doze ? 5u : 2u))) {        /* (the iris: a cell at a time) */
-        dx += ey_tx > dx ? 1 : ey_tx < dx ? -1 : 0;
-        dy += ey_ty > dy ? 1 : ey_ty < dy ? -1 : 0;
-    }
-    if (k != ey_k || dx != ey_dx || dy != ey_dy) {
-        ey_k = k, ey_dx = dx, ey_dy = dy;
-        if (draw) ui_home_part(80, 39, 80, 40);
-    }
+    if (draw && moved) ui_home_part(HF_X, HF_Y, HF_W, HF_H);
 }
 static int32_t ui_oct;                          /* (the octave: SEL's keys) */
 
@@ -1599,42 +1557,72 @@ static uint32_t ui_pic_key(void)
 }
 
 /* ---- the screen: the boot, then the page, only what changed */
-/* Boot, UI_BOOT_MS at power-on (the project loaded before): the eye opens over the first second, the drips run down from
- * the bar over the three; only those two drawn again, a frame every UI_ANIM_MS */
-static const int8_t DRIP[30] = {0, 3, 0, 0, 6, 0, 2, 0, 0, 0, 8, 0, 0, 1, 0, 0, 4, 0, 0, 0, 7, 0, 0, 2, 0, 0, 5, 0, 0, 0};
-static uint32_t ui_boot_t, bt_k, bt_d;          /* from when; the lids, the drips' time (0 .. UI_BOOT_MS) shown */
-#define BOOT_LINE "FM-1 / DEATHDREAM / V" APP_VER
+/* Boot, UI_BOOT_MS at power-on (the project loaded before): the PolarPatch logo comes up out of the night over the first
+ * second, ARCTIC DRONES under it, and four ribbons of aurora in the tracks' colours drift under the name; only those
+ * two drawn again, a frame every UI_ANIM_MS */
+#include "polarpatch_logo.h"
+#define BOOT_LINE "FM-1 / POLARPATCH / V" APP_VER
+#define BT_LX ((240 - LOGO_W) / 2)              /* the logo, */
+#define BT_LY 6
+#define BT_RY 200                               /* the ribbons' middle line */
+static uint32_t ui_boot_t, bt_k, bt_ph;         /* from when; the logo's light (0 .. 4); the ribbons' phase */
 static const char *bt_note;                     /* the boot screen's last line, if not BOOT_LINE ("INSTALLING SAMPLES") */
-static int32_t bt_len(uint32_t x) { return DRIP[x] * (int32_t)bt_d / (int32_t)UI_BOOT_MS; }   /* a drip's cells now */
-static void ui_boot_draw(void)                  /* Boot: the eye, GR!MM, the drips */
+static int32_t bt_wave(uint32_t p)              /* a soft wave of p (0 .. 255): -64 .. 64, a parabola a half */
 {
-    int32_t x, y;
-    ui_eye(80, 48, (int32_t)bt_k, 0, 0);
-    ui_text(120 - 12 * 5, 100, APP_NAME, 3, UI_L);
-    for (y = 0; y < 10; y++)
-        for (x = 0; x < 30; x++)
-            if (!y || y <= bt_len((uint32_t)x)) ui_rect(60 + x * 4, 128 + y * 4, 4, 4, y ? ui_acc : UI_M);
-    ui_text(120 - 4 * ui_len(bt_note ? bt_note : BOOT_LINE), 210, bt_note ? bt_note : BOOT_LINE, 1, bt_note ? ui_acc : UI_M);
+    int32_t q = (int32_t)(p & 127u), v = q * (128 - q) / 64;
+    return p & 128u ? -v : v;
+}
+static void bt_logo(void)                       /* the logo, its greys from the background to ice, bt_k of 4 */
+{
+    uint16_t pal[16];
+    int32_t r, c, c0;
+    for (c = 0; c < 16; c++) pal[c] = ui_mix(UI_K, RGB(0xd8, 0xf6, 0xff), (uint32_t)c * bt_k, 60u);
+    for (r = 0; r < LOGO_H; r++) {
+        if (!ui_in(BT_LX, BT_LY + r, LOGO_W, 1)) continue;
+        for (c = 0; c < LOGO_W; c = c0) {       /* (a run of one grey: one rect) */
+            uint32_t v = LOGO[(r * LOGO_W + c) / 2] >> (c & 1 ? 0 : 4) & 15u, w;
+            for (c0 = c + 1; c0 < LOGO_W; c0++) {
+                w = LOGO[(r * LOGO_W + c0) / 2] >> (c0 & 1 ? 0 : 4) & 15u;
+                if (w != v) break;
+            }
+            if (v) ui_rect(BT_LX + c, BT_LY + r, c0 - c, 1, pal[v]);
+        }
+    }
+}
+static void bt_ribbons(void)                    /* four ribbons, each its speed and length, fading in with the logo */
+{
+    static const uint8_t K[NT] = {3, 5, 2, 4}, S[NT] = {5, 3, 7, 4}, A[NT] = {9, 6, 8, 5};
+    int32_t y[52];
+    uint32_t t, i;
+    for (t = 0; t < NT; t++) {
+        for (i = 0; i < 52u; i++) y[i] = BT_RY + bt_wave((i * K[t] + bt_ph * S[t] + t * 64u) & 255u) * A[t] / 64;
+        ui_glow(16, 4, y, 52, ui_mix(UI_K, UI_ACCENTS[t], bt_k, 4u));
+    }
+}
+static void ui_boot_draw(void)                  /* Boot: the logo, ARCTIC DRONES, the aurora */
+{
+    if (ui_in(BT_LX, BT_LY, LOGO_W, LOGO_H)) bt_logo();
+    ui_text(120 - 8 * ui_len(APP_NAME), 172, APP_NAME, 2, UI_W);
+    bt_ribbons();
+    ui_text(120 - 4 * ui_len(bt_note ? bt_note : BOOT_LINE), 224, bt_note ? bt_note : BOOT_LINE, 1, bt_note ? ui_acc : UI_M);
 }
 static void ui_boot(void)
 {
-    ui_boot_t = fm1_ms, bt_k = bt_d = 0;
+    ui_boot_t = fm1_ms, bt_k = bt_ph = 0;
     ui_region(0, 0, 240, 240, UI_K, ui_boot_draw);
 }
 static void ui_boot_frame(void)
 {
     static uint32_t t;
-    uint32_t e = fm1_ms - ui_boot_t, k = e >= 1000u ? 4u : e * 4u / 1000u, x, was = 0, now = 0;
+    uint32_t e = fm1_ms - ui_boot_t, k = e >= 1000u ? 4u : e * 4u / 1000u;
     if (fm1_ms - t < UI_ANIM_MS) return;
     t = fm1_ms;
     if (k != bt_k) {
         bt_k = k;
-        ui_region(80, 48, 80, 40, UI_K, ui_boot_draw);
+        ui_region(BT_LX, BT_LY, LOGO_W, LOGO_H, UI_K, ui_boot_draw);
     }
-    for (x = 0; x < 30u; x++) was += (uint32_t)bt_len(x);
-    bt_d = e;
-    for (x = 0; x < 30u; x++) now += (uint32_t)bt_len(x);
-    if (now != was) ui_region(60, 132, 120, 36, UI_K, ui_boot_draw);   /* (a drip a cell longer) */
+    bt_ph++;
+    ui_region(0, BT_RY - 18, 240, 36, UI_K, ui_boot_draw);
 }
 
 static void ui_update(int32_t oct)

@@ -106,7 +106,7 @@
  * Rules of the road (the chip has no FPU and no libgcc): integers only, no float, no 64-bit division.
  * tests/host.c runs this file on a computer (the screen as a PNG, the sound as a WAV), web/fm1_web.c in a browser.
  * What platform.c offers: docs/API.md. The chip's rules: docs/RULES.md. */
-#define APP_NAME "GR!MM"                        /* the app, the rescue and the crash screen say this */
+#define APP_NAME "ARCTIC DRONES"                /* the app, the rescue and the crash screen say this */
 #include "platform.c"
 #include "dsp.c"
 #include "wear.c"
@@ -137,6 +137,38 @@ static volatile uint32_t trk_quiet;             /* audio: the tracks silent (mut
 static volatile uint32_t vis_pk[NT], vis_lr[2]; /* audio: each track's peak (before LEVEL), the output's left and right,
                                                  * the highest since the main loop last took them (HOME's moving
                                                  * picture, ui.c; every 16th frame looked at) */
+/* HOME's waves (ui.c): each track's sound as it plays (after its filter, before LEVEL), SC_N points a point every sc_dec
+ * frames from a rising zero (so a steady wave stands still; none in SC_WAIT frames: from where it is). The main loop
+ * sets sc_dec from the track's lowest note (about two cycles across) and SC_WANT; the audio fills it and says SC_READY */
+#define SC_N 104u
+#define SC_WAIT 4096u
+enum { SC_WANT, SC_ARMED, SC_FILL, SC_READY };
+static volatile int16_t sc_buf[NT][SC_N];
+static volatile uint32_t sc_dec[NT] = {4, 4, 4, 4}, sc_st[NT];
+static uint32_t sc_i[NT], sc_k[NT];
+static int32_t sc_prev[NT];
+static void sc_take(uint32_t t, const int32_t *x, uint32_t n)
+{
+    uint32_t i, st = sc_st[t], d = sc_dec[t] ? sc_dec[t] : 1u;
+    if (st == SC_READY) return;
+    if (st == SC_WANT) st = SC_ARMED, sc_k[t] = 0;
+    for (i = 0; i < n; i++) {
+        int32_t s = x[i];
+        if (st == SC_ARMED) {
+            int go = (sc_prev[t] < 0 && s >= 0) || ++sc_k[t] > SC_WAIT;
+            sc_prev[t] = s;
+            if (!go) continue;
+            st = SC_FILL, sc_i[t] = sc_k[t] = 0;
+        }
+        if (sc_k[t]++ % d) continue;
+        sc_buf[t][sc_i[t]] = (int16_t)clamp(s >> 2, -32767, 32767);
+        if (++sc_i[t] == SC_N) {
+            st = SC_READY;
+            break;
+        }
+    }
+    sc_st[t] = st;
+}
 
 /* a x b >> 15 for a track's sum (its voices, a chord: past 16 bits, up to ~2^20), b Q15: exact, no 32-bit overflow
  * (mulq15's a * b wraps there: a crackle) */
@@ -215,6 +247,7 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
             for (k = 0; k < n; k += 16u)        /* (its peak, roughly: HOME's candle) */
                 if ((a = (uint32_t)(x[k] < 0 ? -x[k] : x[k])) > pk) pk = a;
             if (pk > vis_pk[t]) vis_pk[t] = pk;
+            sc_take(t, x, n);                   /* (HOME's wave) */
             mix_add(out, 2u, x, mix_g[t][0], g[0], n);
             mix_add(out + 1, 2u, x, mix_g[t][1], g[1], n);
             mix_add(dbus, 1u, x, mix_g[t][2], g[2], n);
@@ -774,7 +807,7 @@ static const char *lfo_dest_name(int32_t d)     /* DESTINATION: its name (a knob
     d = clamp(d, 0, NLFODEST - 1);
     return d >= LD_K1 && d <= LD_K4 ? knob_name(PG_SOUND, (uint32_t)(d - LD_K1)) : LFO_DEST_NAME[d];
 }
-static const char *const COL_NAME[4] = {"RED", "AMBER", "TEAL", "VIOLET"};   /* SYSTEM: COLOUR */
+static const char *const COL_NAME[4] = {"ICE", "AURORA", "VIOLET", "PLASMA"};   /* SYSTEM: COLOUR */
 static const char *const SCR_NAME[5] = {"NEVER", "1 MIN", "5 MIN", "15 MIN", "30 MIN"};   /* SCREEN OFF */
 static const char *const LEARN_NAME[3] = {"OFF", "LEARN", "CLEAR ALL"};   /* SYSTEM 2: MIDI LEARN */
 static char *mch_text(char *s, int32_t v)       /* MIDI CHANNEL: "1-4" .. "13-16", "ALL > SEL" */

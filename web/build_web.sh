@@ -26,6 +26,7 @@ mkdir -p build/web web/dist
 "$WASM_OPT" build/web/grimm.wasm --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext \
     --enable-mutable-globals --asyncify --pass-arg=asyncify-imports@env.web_yield -O2 -o web/dist/grimm.wasm
 cp web/index.html web/panel.js web/worklet.js assets/fonts/Terminus-LICENSE.txt web/dist/   # (the screen font: SIL OFL 1.1)
+cp assets/polarpatch-logo.png web/dist/                         # (the PolarPatch logo: PolarPatch's, not under the GPL)
 cp web/editor.html web/editor.js web/editor_core.js assets/fonts/PressStart2P-Regular.ttf web/dist/   # (the editor page)
 mkdir -p web/dist/LICENSES                       # (the pages ship with their licences: linked from their footers)
 cp LICENSE LICENSING.md web/dist/ && cp LICENSES/*.txt web/dist/LICENSES/ && touch web/dist/.nojekyll
