@@ -1645,9 +1645,9 @@ static uint32_t ui_pic_key(void)
 
 /* ---- the screen: the boot, then the page, only what changed */
 /* Boot, UI_BOOT_MS at power-on (the project loaded before): the PolarPatch logo comes up out of the night over the first
- * second, ARCTICSCREAM under it; only the logo drawn again, while it comes up */
+ * second, "Arctic scream" under it; only the logo drawn again, while it comes up */
 #include "polarpatch_logo.h"
-#define BT_NAME "ARCTICSCREAM"                  /* the name */
+#define BT_NAME "Arctic scream"                 /* the name */
 #define BT_LX ((240 - LOGO_W) / 2)              /* the logo, */
 #define BT_LY 22
 static uint32_t ui_boot_t, bt_k;                /* from when; the logo's light (0 .. 4) */
