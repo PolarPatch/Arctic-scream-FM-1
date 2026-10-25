@@ -1,0 +1,182 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     Copyright (C) 2026 GR!MM
+     Arctic Scream p0larpatch changes (the name, the look: after PolarPatch BlueWatch's cyberpunk theme): Copyright (C) 2026 PolarPatch
+     After Felucca's browser page, web/emu/index.html of hugelton/Felucca (Copyright (C) 2026 Leo Kuroshita
+     (@kurogedelic), Hügelton Instruments), which follows X0X's, web/emu/index.html of charlesvestal/fm1-x0x; both
+     GPL-3.0. GR!MM in the browser: firmware/src/grimm.c, the code the FM-1 runs, on a fake FM-1 (web/fm1_web.c). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arctic Scream p0larpatch</title>
+<link rel="icon" href="polarpatch-logo.png">
+<meta name="description" content="Arctic Scream p0larpatch by PolarPatch, a drone firmware for the M-VAVE FM-1, running in your browser: the same code the instrument runs.">
+<style>
+/* BlueWatch's colours only: its cyberpunk theme's greys and accents, its dark theme's panel greys */
+:root { --bg: #060410; --body: #161b22; --bed: #0a0d12; --part: #1c232c; --part-hi: #242c37; --edge: #30363d;
+        --fg: #eaf6fa; --label: #a6afb9; --dim: #7fa8b8; --muted: #45606e; --lit: #22d3ee; --latch: #22d3ee; --rec: #f85149;
+        --ice: #22d3ee; --aurora: #3fb950; --violet: #a78bfa; --plasma: #ff1a8c;
+        --mono: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+        --key: #c9d1d9; --key-black: #a6afb9; --key-held: #e6edf3; --key-lit: #a78bfa;
+        color-scheme: dark; }
+html, body { background: var(--bg); }
+body { margin: 0; color: var(--fg); font: 13px/1.5 system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+       /* the arctic night: a breath of ice and of plasma in the corners, faint scanlines (BlueWatch's cyberpunk) */
+       background-image: radial-gradient(circle at 15% 0%, rgba(34, 211, 238, .07), transparent 45%),
+                         radial-gradient(circle at 85% 100%, rgba(255, 26, 140, .05), transparent 45%),
+                         repeating-linear-gradient(0deg, rgba(255, 255, 255, .012) 0, rgba(255, 255, 255, .012) 1px, transparent 1px, transparent 3px);
+       background-attachment: fixed; }
+/* the masthead: the logo, the name glowing, what it is */
+.mast { width: min(100%, 1000px); margin: 0 auto 14px; display: flex; align-items: center; gap: 16px; }
+.mast img { width: 64px; height: 64px; border: 1px solid var(--edge); border-radius: 4px; }
+.mast h1 { margin: 0; font: 700 26px/1.1 var(--mono); letter-spacing: .12em; color: var(--fg);
+           text-shadow: 0 0 10px rgba(34, 211, 238, .45); }
+.mast h1 span { color: var(--ice); }
+.mast p { margin: 4px 0 0; color: var(--dim); font: 12px/1.4 var(--mono); }
+.mast .aurora { display: flex; gap: 4px; margin-top: 6px; }
+.mast .aurora i { width: 28px; height: 3px; border-radius: 2px; box-shadow: 0 0 6px currentColor; background: currentColor; }
+/* BlueWatch's bracket corners, on the instrument's frame */
+.frame { position: relative; width: min(100%, 1016px); margin: 0 auto; padding: 8px; box-sizing: border-box; }
+.frame::before, .frame::after { content: ""; position: absolute; width: 14px; height: 14px; pointer-events: none; }
+.frame::before { top: 0; left: 0; border-top: 2px solid var(--ice); border-left: 2px solid var(--ice); }
+.frame::after { bottom: 0; right: 0; border-bottom: 2px solid var(--ice); border-right: 2px solid var(--ice); }
+@media (max-width: 560px) { .mast img { width: 44px; height: 44px; } .mast h1 { font-size: 18px; } }
+main { padding: 16px; }
+a { color: inherit; }
+/* the FM-1: 161.5 x 96.5 mm; everything on it is placed in mm by panel.js (percentages of this box). At its widest,
+ * 1000 px, the 240 x 240 screen is 240 px: one CSS pixel per LCD pixel */
+.fm1 { position: relative; width: min(100%, 1000px); aspect-ratio: 161.5 / 96.5; margin: 0 auto;
+       background: var(--body); border-radius: 3.7cqw; container-type: inline-size; user-select: none;
+       -webkit-user-select: none; -webkit-touch-callout: none; }
+.fm1 > * { position: absolute; box-sizing: border-box; }
+.label { display: flex; align-items: flex-end; justify-content: center; font: 600 1.35cqw var(--mono);
+         letter-spacing: .14em; color: var(--label); white-space: nowrap; pointer-events: none; }
+/* the name under the screen */
+.brand { display: flex; align-items: center; justify-content: center; font: 700 1.9cqw/1 var(--mono); letter-spacing: .1em;
+         color: var(--fg); white-space: nowrap; pointer-events: none; text-shadow: 0 0 .8cqw rgba(34, 211, 238, .45); }
+.brand i { font-style: normal; color: var(--label); margin: 0 .5em; }
+.brand span { color: var(--ice); }
+.dial { border-radius: 50%; background: #0d1117; border: .45cqw solid #060410; cursor: ns-resize; touch-action: none; }
+.dial::after { content: ""; position: absolute; left: 50%; top: 10%; width: 9%; height: 30%; margin-left: -4.5%;
+               border-radius: 1cqw; background: var(--fg); transform-origin: 50% 133%; transform: rotate(var(--a, 0deg)); }
+.btn { padding: 0; background: var(--part); color: var(--label); border: .15cqw solid var(--edge); border-radius: .9cqw;
+       font: 600 1.15cqw/1.2 var(--mono); letter-spacing: .14em; cursor: pointer; touch-action: none; }
+/* lit (the button's LED): a cyan edge, still flat and grey; held: a lighter grey; latched: a dashed edge */
+.btn.lit { border-color: var(--lit); color: var(--fg); box-shadow: 0 0 .7cqw rgba(34, 211, 238, .35); }
+.btn.held { background: var(--part-hi); color: var(--fg); }
+.btn.latched { border-style: dashed; border-color: var(--latch); }
+/* REC: as the others; recording (lit): a red edge that glows and a record dot that blinks (BlueWatch's red) */
+.btn.rec .dot { display: none; width: .85cqw; height: .85cqw; margin: 0 .45cqw .1cqw 0; border-radius: 50%;
+                background: var(--rec); vertical-align: middle; }
+.btn.rec.lit .dot { display: inline-block; }
+.btn.rec.lit { border-color: var(--rec); box-shadow: 0 0 .9cqw rgba(248, 81, 73, .6); }
+.btn.rec.lit .dot { opacity: 1; box-shadow: 0 0 .6cqw var(--rec); animation: rec-blink 1s steps(1) infinite; }
+@keyframes rec-blink { 50% { opacity: .15; box-shadow: none; } }
+@media (prefers-reduced-motion: reduce) { .btn.rec.lit .dot { animation: none; } }
+/* the trays the buttons sit in */
+.tray { background: var(--bed); border-radius: 1.2cqw; }
+.btn .sc { position: absolute; right: .35cqw; top: .15cqw; font: 600 .95cqw/1 ui-monospace, Menlo, Consolas, monospace; opacity: .55; }
+.bezel { background: #060410; border-radius: 1.8cqw; }
+.bed { background: var(--bed); border-radius: 1.4cqw; }
+/* the keys: flat grey capsules, the sharps a shade darker; lit (the key's LED): a violet edge; pressed: lighter, and a
+ * violet ring around it */
+.key { border-radius: 99cqw; background: var(--key); border: .25cqw solid transparent; cursor: pointer; touch-action: none; }
+.key.black { background: var(--key-black); }
+.key.lit { border-color: var(--key-lit); box-shadow: 0 0 .8cqw rgba(167, 139, 250, .5); }
+.key.held { background: var(--key-held); outline: .25cqw solid var(--key-lit); outline-offset: .25cqw; }
+.dial:focus-visible, .btn:focus-visible, .key:focus-visible { outline: .25cqw solid var(--fg); outline-offset: .2cqw; }
+canvas { display: block; z-index: 2; background: #060410; image-rendering: crisp-edges; image-rendering: pixelated; pointer-events: none; }
+canvas.big { z-index: 5; outline: 1px solid var(--edge); }
+.start { inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px; z-index: 6;
+         background: rgba(6, 4, 16, .6); border-radius: 3.7cqw; }
+.start[hidden] { display: none; }
+.start button { font: 600 15px var(--mono); letter-spacing: .1em; padding: 10px 24px; background: transparent;
+                color: var(--ice); border: 1px solid var(--ice); border-radius: 4px; cursor: pointer;
+                box-shadow: 0 0 12px rgba(34, 211, 238, .35), inset 0 0 12px rgba(34, 211, 238, .15);
+                text-shadow: 0 0 8px rgba(34, 211, 238, .6); }
+.start button:hover { background: rgba(34, 211, 238, .12); }
+.start button:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+.start button:disabled { opacity: .5; cursor: progress; }
+.start p { margin: 0; max-width: 30em; text-align: center; }
+.under { width: min(100%, 1000px); margin: 10px auto 0; display: flex; flex-wrap: wrap; align-items: center;
+         justify-content: center; gap: 6px 16px; color: var(--dim); }
+.toggle { font: 600 11px system-ui, sans-serif; letter-spacing: .04em; background: var(--part); color: var(--dim);
+          border: 1px solid var(--edge); border-radius: 4px; padding: 3px 8px; cursor: pointer; }
+.toggle b { font-weight: 600; }
+.midiin { font: 600 11px system-ui, sans-serif; letter-spacing: .04em; color: var(--dim); }
+.midiin[hidden] { display: none; }
+.midiin select { font: inherit; letter-spacing: inherit; background: var(--part); color: var(--fg); border: 1px solid var(--edge);
+                 border-radius: 4px; padding: 2px 4px; margin-left: 4px; max-width: 16em; }
+.toggle b.on { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; }
+.keys { width: min(100%, 1000px); margin: 8px auto 0; text-align: center; color: var(--dim); line-height: 1.9; }
+.keys span { display: inline-block; max-width: calc(100% - 14px); margin: 0 7px; }   /* (a long one wraps inside the page) */
+.keys kbd { white-space: nowrap; }
+.keys.short { color: var(--fg); }
+kbd { font: 600 11px ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--edge); border-radius: 3px;
+      padding: 0 4px; color: var(--fg); }
+footer { max-width: 1000px; margin: 18px auto 0; text-align: center; color: var(--dim); font-size: 12px; }
+footer p { margin: 4px 0; }
+</style>
+</head>
+<body>
+<main>
+<header class="mast">
+  <img src="polarpatch-logo.png" alt="PolarPatch">
+  <div>
+    <h1>ARCTIC SCREAM <span>p0larpatch</span></h1>
+    <p>Drone firmware for the M-VAVE FM-1 by PolarPatch. Play it here, the same code the instrument runs, before you install it.</p>
+    <div class="aurora" aria-hidden="true"><i style="color: var(--ice)"></i><i style="color: var(--aurora)"></i><i style="color: var(--violet)"></i><i style="color: var(--plasma)"></i></div>
+  </div>
+</header>
+<div class="frame">
+<section class="fm1" id="fm1" aria-label="The FM-1">
+  <canvas id="screen" width="240" height="240" role="img" aria-label="The screen"></canvas>
+  <div class="start" id="start"><button id="go" type="button">Switch on</button><p id="error" hidden></p></div>
+</section>
+</div>
+
+<div class="under">
+  <button class="toggle" id="zoom" type="button" aria-pressed="false" title="Enlarge only the screen, to see its pixels">SCREEN <b data-s="1" class="on">1x</b> / <b data-s="2">2x</b></button>
+  <label class="midiin" hidden>MIDI IN <select id="midi-in" aria-label="The MIDI input the demo listens to"></select></label>
+  <label class="midiin" hidden>CH <select id="midi-ch" aria-label="The MIDI channel the demo listens to"></select></label>
+  <span id="status"></span>
+</div>
+
+<p class="keys short" aria-label="The keys, in short">
+  <b>Keys:</b>
+  <span><kbd>Z</kbd>–<kbd>/</kbd> <kbd>S</kbd>–<kbd>'</kbd> <kbd>Q</kbd>–<kbd>O</kbd> the keys</span>
+  <span><kbd>1</kbd>–<kbd>6</kbd> FX SCL ENV LFO EDIT GLO</span>
+  <span><kbd>7</kbd>–<kbd>=</kbd> HOME SAVE ARP SEQ PLAY REC</span>
+  <span><kbd>[</kbd> <kbd>]</kbd> OCT− OCT+</span>
+  <span><kbd>↑</kbd> <kbd>↓</kbd> SELECT · <kbd>←</kbd> <kbd>→</kbd> ALGORITHM</span>
+  <span>hold a button's key + other keys: its combos (SAVE + <kbd>Z</kbd>…)</span>
+  <span>right-click or <kbd>Shift</kbd>-click a button: held until clicked again</span>
+</p>
+<p class="keys" aria-label="What the buttons do">
+  <span><kbd>Z</kbd>–<kbd>/</kbd> <kbd>S</kbd>–<kbd>'</kbd> keys F2–A♯3, <kbd>Q</kbd>–<kbd>O</kbd> B3–G4 (an octave down: drones) · ALGORITHM (<kbd>←</kbd> <kbd>→</kbd>): the track</span>
+  <span>EDIT (<kbd>5</kbd>): SOUND, (FM: FM ALGO, FM OP,) again SOURCE (VA, FM, SAMPLE: your own, from the editor, VOICE, WHEEL, PHYS, PHASE, HOWL; LATCH) · HOWL: FEEDBACK wakes the loop (past about two thirds it howls by itself), BODY bends it, DAMP darkens it, DRIVE tears it</span>
+  <span>ENV (<kbd>3</kbd>): ATTACK DECAY SUSTAIN RELEASE · FX (<kbd>1</kbd>): TAPE, GRAIN, DELAY, SPACE; hold FX + <kbd>Z</kbd> (the first white key): FREEZE, + the next seven white keys: REV THROW, ECHO THROW, TAPE STOP, REVERSE, FILTER DOWN, FILTER UP, STUTTER (while held)</span>
+  <span>SEL (<kbd>2</kbd>): SCALE (the keys snap to it), again CHORD (TYPE, VOICING); hold SEL: the track's chord mode on / off</span>
+  <span>ARP (<kbd>9</kbd>): MODE, RATE, OCTAVES, GATE; hold ARP: the track's arp on / off (it plays the keys held; LATCH: they stay)</span>
+  <span>LFO (<kbd>4</kbd>): RATE, DEPTH, DESTINATION (PITCH, VOLUME, PAN, the source's knobs, REV, GRAIN), SHAPE</span>
+  <span>GLO (<kbd>6</kbd>): SONG (SECTION, PATTERN, REPEATS, MODE; REC there: song record); hold GLO + white keys 1–4: mute T1–T4, 5–8: solo</span>
+  <span>HOME (<kbd>7</kbd>): HOME (VOLUME, CUTOFF, RESONANCE, FX), MIXER 1, MIXER 2; hold: SYSTEM (COLOUR, MIDI CHANNEL, TUNE, SCREEN OFF), HOME again: SYSTEM 2 (MIDI LEARN, SEQ MIDI OUT, SAMPLES: RESTORE then OCT+ writes the four factory samples again)</span>
+  <span>SEQ (<kbd>0</kbd>): GRID, PATTERN SETTINGS · PLAY (<kbd>-</kbd>): start / stop · REC (<kbd>=</kbd>): record · SELECT (<kbd>↑</kbd> <kbd>↓</kbd>): SEQ the step (SEQ held: STEPS), HOME the tempo · PRESETS: SEQ the tempo</span>
+  <span>hold SEQ + white keys: CLEAR, RANDOM, SHIFT ←, SHIFT →, COPY, PASTE, DOUBLE, MUTATE · on SEQ's pages hold SEL + knobs: lock the step's sound (+ OCT−: clear)</span>
+  <span>SAVE (<kbd>8</kbd>): SOUNDS, PROJECTS; OCT+ (<kbd>]</kbd>) does the ACTION, OCT− backs out; hold + white keys 1–4: recall slots A–D, 5–8: save A–D · EDIT held + OCT−/OCT+: undo/redo · PRESETS: the sounds by category (SEQ: the tempo) · the work saves itself when stopped</span>
+  <span>drag or scroll a knob · right-click or <kbd>Shift</kbd>-click holds a button · MIDI in via Web MIDI (pick the input above; the channel is set on the FM-1: hold HOME &gt; SYSTEM &gt; MIDI CHANNEL) · CH filters one channel; to play the selected track from any single channel, set the FM-1's MIDI CHANNEL to ALL &gt; SEL (hold HOME &gt; SYSTEM)</span>
+</p>
+
+<footer>
+  <p><b><a href="cheatsheet.html">The cheat sheet</a></b>: every button, knob and combo on one page, and how to wake the HOWL</p>
+  <p><b><a href="editor.html">Open the editor</a></b>: edit sounds live, load samples, back up your FM-1 (Chrome or Edge)</p>
+  <p>Arctic Scream p0larpatch by PolarPatch, built on <a href="https://github.com/GRiMMBIENT/grimm">GR!MM</a> (GPL-3.0) · its HOWL source and HORROR scale follow <a href="https://github.com/Synthux-Academy/Audrey-II">Audrey II</a> (Nick Donaldson, Infrasonic Audio; Synthux Academy, MIT), written anew · the PolarPatch logo is PolarPatch's own, not under the GPL</p>
+  <p>The same <code>firmware/src/grimm.c</code> the FM-1 runs, compiled to WebAssembly · <a href="LICENSE">GPL-3.0-only</a> · <a href="https://github.com/GRiMMBIENT/grimm">source</a> · <a href="https://github.com/GRiMMBIENT/grimm/blob/main/LICENSING.md">credits and licences</a> (<a href="LICENSING.md">as text</a>) · fonts: Press Start 2P, <a href="LICENSES/OFL-PressStart2P.txt">SIL OFL 1.1</a>; Terminus, <a href="Terminus-LICENSE.txt">SIL OFL 1.1</a> · factory samples: <a href="LICENSES/CC0-1.0.txt">CC0 1.0</a> · built with Emscripten (<a href="LICENSES/MIT-Emscripten.txt">MIT</a>, musl <a href="LICENSES/MIT-musl.txt">MIT</a>)</p>
+  <p>Built on <a href="https://github.com/zvenson/dinghy">Dinghy</a> by zvenson, on the platform of <a href="https://github.com/hugelton/Felucca">Felucca</a> by Leo Kuroshita, Hügelton Instruments, and <a href="https://github.com/isod89/sloop-fm1">SLOOP</a> by isod89 · the browser build and the panel's layout follow Felucca's and charlesvestal's <a href="https://github.com/charlesvestal/fm1-x0x">X0X</a> (GPL-3.0) · </p>
+  <p>M-VAVE and FM-1 are trademarks of their respective owners. Arctic Scream p0larpatch (like GR!MM) is not affiliated with or endorsed by them, nor by GR!MM.</p>
+</footer>
+</main>
+<script type="module" src="panel.js"></script>
+</body>
+</html>
