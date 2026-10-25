@@ -122,7 +122,7 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSND(CAT_OTHER, 1, ENG_PHYS, 1, 64, 110, 70, 100, 100, 65, 95, 0, 0x00, 40, 0, 0, 0),   /* TUNDRA STRINGS */
     FSND(CAT_OTHER, 2, ENG_VA, 0, 20, 70, 15, 65, 85, 105, 75, 0, 0x00, 100, 1, 0, 0),      /* ICEBREAKER */
     FSND(CAT_OTHER, 3, ENG_FM, 3, 85, 64, 15, 75, 90, 115, 85, 0, 0x00, 40, 0, 0, 0),       /* FOG HORN */
-    FSND(CAT_OTHER, 4, ENG_PHYS, 1, 50, 115, 60, 85, 95, 70, 95, 0, 0x00, 95, 1, 0, 0),     /* SVALBARD CELLO */
+    FSND(CAT_OTHER, 4, ENG_PHYS, 1, 50, 115, 60, 85, 95, 70, 95, 1, 0x00, 95, 1, 0, 0),     /* SVALBARD CELLO */
     FSND(CAT_OTHER, 5, ENG_VA, 2, 40, 75, 5, 90, 90, 115, 95, 0, 0x00, 70, 1, 0, 0),        /* NORTH STRINGS */
     /* LEADS & PLUCKS */
     FSND(CAT_KEYS, 5, ENG_PHASE, 6, 0, 90, 0, 30, 90, 110, 80, 0, 0x00, 105, 1, 0, 0),      /* SNOW OWL */
