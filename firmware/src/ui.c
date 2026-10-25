@@ -1645,13 +1645,21 @@ static uint32_t ui_pic_key(void)
 
 /* ---- the screen: the boot, then the page, only what changed */
 /* Boot, UI_BOOT_MS at power-on (the project loaded before): the PolarPatch logo comes up out of the night over the first
- * second, "Arctic scream" under it; only the logo drawn again, while it comes up */
+ * second, "Arctic scream" under it, and four ribbons of aurora in the tracks' colours drift under the name; only those
+ * two drawn again, a frame every UI_ANIM_MS */
 #include "polarpatch_logo.h"
 #define BT_NAME "Arctic scream"                 /* the name */
 #define BT_LX ((240 - LOGO_W) / 2)              /* the logo, */
-#define BT_LY 22
-static uint32_t ui_boot_t, bt_k;                /* from when; the logo's light (0 .. 4) */
+#define BT_LY 12
+#define BT_NY 180                               /* the name's line */
+#define BT_RY 214                               /* the ribbons' middle line */
+static uint32_t ui_boot_t, bt_k, bt_ph;         /* from when; the logo's light (0 .. 4); the ribbons' phase */
 static const char *bt_note;                     /* the boot screen's last line, if any ("INSTALLING SAMPLES") */
+static int32_t bt_wave(uint32_t p)              /* a soft wave of p (0 .. 255): -64 .. 64, a parabola a half */
+{
+    int32_t q = (int32_t)(p & 127u), v = q * (128 - q) / 64;
+    return p & 128u ? -v : v;
+}
 static void bt_logo(void)                       /* the logo, its greys from the background to white, bt_k of 4 */
 {
     uint16_t pal[16];
@@ -1669,15 +1677,26 @@ static void bt_logo(void)                       /* the logo, its greys from the 
         }
     }
 }
-static void ui_boot_draw(void)                  /* Boot: the logo, the name */
+static void bt_ribbons(void)                    /* four ribbons, each its speed and length, fading in with the logo */
+{
+    static const uint8_t K[NT] = {3, 5, 2, 4}, S[NT] = {5, 3, 7, 4}, A[NT] = {7, 5, 6, 4};
+    int32_t y[52];
+    uint32_t t, i;
+    for (t = 0; t < NT; t++) {
+        for (i = 0; i < 52u; i++) y[i] = BT_RY + bt_wave((i * K[t] + bt_ph * S[t] + t * 64u) & 255u) * A[t] / 64;
+        ui_glow(16, 4, y, 52, ui_mix(UI_K, UI_ACCENTS[t], bt_k, 4u));
+    }
+}
+static void ui_boot_draw(void)                  /* Boot: the logo, the name, the aurora */
 {
     if (ui_in(BT_LX, BT_LY, LOGO_W, LOGO_H)) bt_logo();
-    ui_text(120 - 8 * ui_len(BT_NAME), 194, BT_NAME, 2, UI_W);
-    if (bt_note) ui_text(120 - 4 * ui_len(bt_note), 228, bt_note, 1, ui_acc);
+    ui_text(120 - 8 * ui_len(BT_NAME), BT_NY, BT_NAME, 2, UI_W);
+    bt_ribbons();
+    if (bt_note) ui_text(120 - 4 * ui_len(bt_note), 231, bt_note, 1, ui_acc);
 }
 static void ui_boot(void)
 {
-    ui_boot_t = fm1_ms, bt_k = 0;
+    ui_boot_t = fm1_ms, bt_k = bt_ph = 0;
     ui_region(0, 0, 240, 240, UI_K, ui_boot_draw);
 }
 static void ui_boot_frame(void)
@@ -1690,6 +1709,8 @@ static void ui_boot_frame(void)
         bt_k = k;
         ui_region(BT_LX, BT_LY, LOGO_W, LOGO_H, UI_K, ui_boot_draw);
     }
+    bt_ph++;
+    ui_region(0, BT_RY - 10, 240, 20, UI_K, ui_boot_draw);
 }
 
 static void ui_update(int32_t oct)
