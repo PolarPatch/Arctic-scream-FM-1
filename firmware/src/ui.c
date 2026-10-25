@@ -989,31 +989,42 @@ static void pic_phase(void)                     /* the bent waveform of WAVE at 
 
 /* HOWL: the loop as a vortex (Audrey II's big knob, the circles round it): a ring for each step of FEEDBACK (awake:
  * HOWLING), as far apart as BODY is long, fading out as DAMP closes, torn by DRIVE's sparks; each in its knob's colour */
+/* EditHOWL: the loop as aurora, moving (a frame every UI_ANIM_MS, ui_update): FEEDBACK wakes it (one dim, still line
+ * asleep; up to four tall ribbons, faster, howling), BODY their length (short: tight waves), DAMP their light, DRIVE
+ * their shape (round .. squared, torn); each ribbon in a knob's colour */
+#define HW_RY (PY0 + 54)                        /* the ribbons' middle line */
+static uint32_t hw_ph;                          /* their phase */
+static int32_t hw_wave(uint32_t p)              /* a soft wave of p (0 .. 255): -64 .. 64, a parabola a half */
+{
+    int32_t q = (int32_t)(p & 127u), v = q * (128 - q) / 64;
+    return p & 128u ? -v : v;
+}
 static void pic_howl(void)
 {
+    static const uint8_t S[4] = {3, 5, 2, 4}, O[4] = {0, 90, 170, 40};
     const volatile int32_t *p = trk[sel].p[ENG_HOWL];
     int32_t fb = clamp(p[0], 0, 127), body = clamp(p[1], 0, 127), dmp = clamp(p[2], 0, 127), drv = clamp(p[3], 0, 127);
-    int32_t n = 1 + fb * 7 / 127, gap = 2 + body * 3 / 127, x, y, j;
+    int32_t n = 1 + fb * 3 / 127, amp = 2 + fb * fb * 30 / (127 * 127), k = 12 - body * 8 / 127, sp = 1 + fb / 32;
+    int32_t y[55], i, j, x;
+    uint32_t lit = 16u - (uint32_t)(dmp * 10 / 127);
     char r[8];
     howl_text(p, 0, r);
     ui_caption(fb >= 82 ? "THE LOOP: HOWLING" : "THE LOOP: ASLEEP", r);
-    ui_rnd_s = 13;
-    for (y = 0; y < 30; y++)
-        for (x = 0; x < 54; x++) {
-            int32_t dx = x - 27, dy = (y - 15) * 2, d2 = dx * dx + dy * dy, c = 0;
-            uint16_t col = 0;
-            for (j = 0; j < n && !col; j++) {   /* the rings, the inner first */
-                int32_t rr = 2 + j * gap, lo = (2 * rr - 1) * (2 * rr - 1) / 4, hi = (2 * rr + 1) * (2 * rr + 1) / 4;
-                if (d2 >= lo && d2 < hi) {
-                    uint16_t k = j == n - 1 ? UI_KC[0] : UI_KC[j % 3 == 0 ? 1 : j % 3 == 1 ? 0 : 3];
-                    col = ui_mix(UI_K, k, (uint32_t)(48 - (dmp * j) / 26), 48u);   /* (DAMP: the outer ones dimmer) */
-                }
+    for (j = n - 1; j >= 0; j--) {              /* (the first, FEEDBACK's colour, on top) */
+        int32_t cy = HW_RY + (2 * j - (n - 1)) * 7;
+        for (i = 0; i < 55; i++) {
+            uint32_t ph = (uint32_t)(i * k) + hw_ph * (uint32_t)(S[j] * sp) + O[j];
+            int32_t v = hw_wave(ph & 255u) * 3 / 4 + hw_wave((ph / 2u + hw_ph + (uint32_t)j * 37u) & 255u) / 3;   /* (a slow ripple on it) */
+            {                                   /* DRIVE: a soft knee, round .. squared */
+                int32_t kn = 260 - drv * 2;
+                v = v * (64 + kn) / (kn + (v < 0 ? -v : v));
             }
-            c = (int32_t)ui_rnd(1000);
-            if (!col && d2 < (2 + n * gap) * (2 + n * gap) && c < drv * 2) col = UI_KC[2];   /* DRIVE's sparks */
-            if (!col && y == 29 && !(x & 1)) col = UI_D0;
-            if (col) ui_cell(x, y, col);
+            if (drv > 80 && ((uint32_t)i * 7u + hw_ph * 13u + (uint32_t)j * 5u) % 37u == 0u) v = -v / 2;   /* (torn) */
+            y[i] = cy + v * amp / 64;
         }
+        ui_glow(PX0, 4, y, 55, ui_mix(UI_K, UI_KC[j], lit, 16u));
+    }
+    for (x = 0; x < 54; x += 2) ui_cell(x, 29, UI_D0);
 }
 
 static void pic_source(void)                    /* the eight sources, the track's in the accent; LATCH */
@@ -1749,6 +1760,11 @@ static void ui_update(int32_t oct)
                                                  * unless all of it is about to be) */
         an_t = fm1_ms;
         ui_home_frame(!all);
+    }
+    if (page == PG_SOUND && sel_eng() == ENG_HOWL && fm1_ms - an_t >= UI_ANIM_MS) {   /* EditHOWL: its ribbons move */
+        an_t = fm1_ms;
+        hw_ph++;
+        if (!all) ui_region(0, PY0 + 8, 240, 96, UI_K, ui_pic_draw);
     }
     key = ui_pic_key();
     if (key != pic_key && (all || fm1_ms - pic_t >= UI_PIC_MS)) {
