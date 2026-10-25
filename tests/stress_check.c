@@ -402,10 +402,10 @@ static void stress_names(void)                  /* x_editor: a sound's name (byt
     if (had ? snd_put(61, was) : snd_clear(61)) stress_fail("x_editor: sound 62 not put back", 0);
     snd_pack(r, t, 0, 1);                       /* TRACK SET with its name: HOME's, and TRACK READ's */
     st_fhead(ED_TRACK), st_fb(1), st_fb(t), st_fpack(r, SND_SIZE);
-    for (k = 0; k < 11u; k++) st_fb((uint8_t)"FROZEN HALL"[k]);
+    for (k = 0; k < 11u; k++) st_fb((uint8_t)"GLACIER PAD"[k]);
     st_ed(0);
-    if (st_sxn < 10u || st_sxr[8] || (trk_sname(t, s), strcmp(s, "FROZEN HALL"))) stress_fail("x_editor: TRACK SET's name not HOME's", t);
-    if (st_track(0, t, 0, 0) || st_sxn != 84u + 11u || memcmp(st_sxr + 83, "FROZEN HALL", 11))
+    if (st_sxn < 10u || st_sxr[8] || (trk_sname(t, s), strcmp(s, "GLACIER PAD"))) stress_fail("x_editor: TRACK SET's name not HOME's", t);
+    if (st_track(0, t, 0, 0) || st_sxn != 84u + 11u || memcmp(st_sxr + 83, "GLACIER PAD", 11))
         stress_fail("x_editor: TRACK READ without the track's name (bytes)", st_sxn);
     if (st_track(1, t, r, 0) || *trk_sname(t, s)) stress_fail("x_editor: TRACK SET without a name kept the last one", t);
 }

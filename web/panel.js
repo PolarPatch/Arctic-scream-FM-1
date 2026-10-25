@@ -79,8 +79,8 @@ function button(name, [ux, uy, uw, uh]) {
   buttons.push(b);
   bindButton(b);
 }
-function key(k, cx, cy, kw, kh) {
-  const el = at("div", "key", cx - kw / 2, cy - kh / 2, kw, kh);
+function key(k, cx, cy, kw, kh, black) {
+  const el = at("div", black ? "key black" : "key", cx - kw / 2, cy - kh / 2, kw, kh);
   el.setAttribute("role", "button");
   el.setAttribute("aria-label", keyName(k));
   el.title = `${keyName(k)}: ${SHORT["k" + k]}`;
@@ -91,6 +91,13 @@ function key(k, cx, cy, kw, kh) {
   const [bx, by, bs] = L.bezel, [x0, y0, w, h] = L.keybed;
   at("div", "bezel", bx * UX, by * UY, bs * UX, bs * UX);
   at("div", "bed", x0 * UX, y0 * UY, w * UX, h * UX);
+  {                                                        // the trays the buttons sit in, 2 mm round them; the name
+    const [gx, gy, gw, gh, dx, dy] = L.grid, [ox, oy, ow, oh] = L.oct["OCT-"], ex = L.oct["OCT+"][0] + ow, p = 2;
+    at("div", "tray", gx * UX - p, gy * UY - p, (5 * dx + gw) * UX + 2 * p, dy * UY + gh * UX + 2 * p);
+    at("div", "tray", ox * UX - p, oy * UY - p, (ex - ox) * UX + 2 * p, oh * UX + 2 * p);
+    const n = at("div", "brand", bx * UX, by * UY + bs * UX + 0.3, bs * UX, 2.8);
+    n.innerHTML = "ARCTIC<span>p0lar patches</span>";
+  }
   Object.keys(L.knobs).forEach(knob);
   Object.entries(L.oct).forEach(([n, r]) => button(n, r));
   const [gx, gy, gw, gh, dx, dy] = L.grid;
@@ -100,7 +107,7 @@ function key(k, cx, cy, kw, kh) {
   const pitch = (w - 24) / 16 * UX, kw = pitch * 0.78, kh = h * 0.425 * UX, left = (x0 + 12) * UX;
   const top = y0 * UY, bedH = h * UX;
   WHITE.forEach((k, i) => key(k, left + (i + 0.5) * pitch, top + bedH * 0.75, kw, kh));
-  BLACK.forEach((k, j) => key(k, left + (BLACK_AFTER[j] + 1) * pitch, top + bedH * 0.25, kw, kh));
+  BLACK.forEach((k, j) => key(k, left + (BLACK_AFTER[j] + 1) * pitch, top + bedH * 0.25, kw, kh, true));
 }
 
 // the screen: its real size on the panel (SCREEN 1x), or twice that over the panel to see the pixels (2x)

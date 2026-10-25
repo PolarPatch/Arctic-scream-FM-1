@@ -73,7 +73,7 @@ _Static_assert(NENG <= PK_ENG, "a save keeps every source's settings");
 _Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4u * SLOT_ALL <= SLS_N * SLS_P &&
                SAVE_NSECT >= 3u + SLS_N, "the save sectors");
 
-/* the factory sounds: GR!MM's own (first drafts), records as the user's (no CRC: in the image, read-only), first in
+/* the factory sounds: GR!MM's own (first drafts; Arctic p0lar patches' names), records as the user's (no CRC: in the image, read-only), first in
  * each CATEGORY's list; their names beside them. Bytes: CATEGORY, its number, the source, its four, ENV (ATTACK, DECAY,
  * SUSTAIN, RELEASE), LATCH, CHORD (chord mode off: VOICING << 4 | CHORD TYPE), LFO (RATE, DEPTH, DESTINATION, SHAPE).
  * Sources: 0 VA (WAVE 0 SAW, 1 SQUARE, 2 SUPERSAW), 1 FM (PATCH 0 BELL, 1 ORGAN, 2 SOFT PAD, 3 REED), 3 VOICE, 4 WHEEL,
@@ -83,63 +83,61 @@ _Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4
     {SND_MAGIC1, c, n, e, k0, k1, k2, k3, a, d, s, r, la, ch, lr, ld, lt, ls}
 static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     /* PADS */
-    FSND(CAT_PAD, 1, ENG_VA, 2, 70, 62, 20, 105, 100, 110, 100, 1, 0x11, 30, 15, 5, 0),     /* CRYPT PAD */
-    FSND(CAT_PAD, 2, ENG_VA, 0, 25, 50, 10, 95, 90, 115, 95, 1, 0x13, 35, 10, 5, 6),        /* ASH VEIL */
-    FSND(CAT_PAD, 3, ENG_FM, 2, 90, 100, 60, 100, 90, 110, 105, 1, 0x27, 70, 15, 4, 1),     /* FROZEN HALL */
-    FSND(CAT_PAD, 4, ENG_PHASE, 5, 0, 60, 8, 110, 100, 120, 100, 1, 0x06, 40, 10, 5, 0),    /* LAST LIGHT */
-    FSND(CAT_PAD, 5, ENG_VA, 0, 45, 60, 25, 90, 90, 110, 95, 1, 0x04, 35, 1, 0, 6),         /* MOSS */
-    FSND(CAT_PAD, 6, ENG_FM, 2, 40, 64, 30, 95, 90, 115, 100, 1, 0x11, 40, 0, 0, 0),        /* BLACK VELVET */
+    FSND(CAT_PAD, 1, ENG_VA, 2, 70, 62, 20, 105, 100, 110, 100, 1, 0x11, 30, 15, 5, 0),     /* POLAR NIGHT */
+    FSND(CAT_PAD, 2, ENG_VA, 0, 25, 50, 10, 95, 90, 115, 95, 1, 0x13, 35, 10, 5, 6),        /* SNOW VEIL */
+    FSND(CAT_PAD, 3, ENG_FM, 2, 90, 100, 60, 100, 90, 110, 105, 1, 0x27, 70, 15, 4, 1),     /* GLACIER PAD */
+    FSND(CAT_PAD, 4, ENG_PHASE, 5, 0, 60, 8, 110, 100, 120, 100, 1, 0x06, 40, 10, 5, 0),    /* MIDNIGHT SUN */
+    FSND(CAT_PAD, 5, ENG_VA, 0, 45, 60, 25, 90, 90, 110, 95, 1, 0x04, 35, 1, 0, 6),         /* LICHEN */
+    FSND(CAT_PAD, 6, ENG_FM, 2, 40, 64, 30, 95, 90, 115, 100, 1, 0x11, 40, 0, 0, 0),        /* SNOWDRIFT */
     /* DRONES */
-    FSND(CAT_DRONE, 1, ENG_VA, 0, 15, 50, 0, 100, 90, 120, 105, 1, 0x05, 20, 8, 1, 0),      /* MONK DRONE */
-    FSND(CAT_DRONE, 2, ENG_VA, 1, 5, 52, 30, 100, 90, 120, 110, 1, 0x05, 25, 30, 5, 0),     /* ABYSS */
-    FSND(CAT_DRONE, 3, ENG_PHYS, 0, 100, 120, 60, 90, 90, 90, 100, 1, 0x05, 70, 20, 6, 5),  /* IRON LUNG */
-    FSND(CAT_DRONE, 4, ENG_WHEEL, 0, 0, 10, 0, 70, 40, 60, 90, 1, 0x05, 15, 0, 1, 0),       /* TOMB HUM */
-    FSND(CAT_DRONE, 5, ENG_VOICE, 96, 6, 100, 90, 90, 90, 115, 100, 1, 0x05, 115, 30, 1, 5), /* STATIC PRAYER */
-    FSND(CAT_DRONE, 6, ENG_FM, 1, 50, 64, 12, 95, 90, 120, 100, 1, 0x05, 40, 0, 0, 0),      /* DEEP WELL */
+    FSND(CAT_DRONE, 1, ENG_VA, 0, 15, 50, 0, 100, 90, 120, 105, 1, 0x05, 20, 8, 1, 0),      /* PERMAFROST */
+    FSND(CAT_DRONE, 2, ENG_VA, 1, 5, 52, 30, 100, 90, 120, 110, 1, 0x05, 25, 30, 5, 0),     /* DEEP FJORD */
+    FSND(CAT_DRONE, 3, ENG_PHYS, 0, 100, 120, 60, 90, 90, 90, 100, 1, 0x05, 70, 20, 6, 5),  /* CRACKING ICE */
+    FSND(CAT_DRONE, 4, ENG_WHEEL, 0, 0, 10, 0, 70, 40, 60, 90, 1, 0x05, 15, 0, 1, 0),       /* ARCTIC HUM */
+    FSND(CAT_DRONE, 5, ENG_VOICE, 96, 6, 100, 90, 90, 90, 115, 100, 1, 0x05, 115, 30, 1, 5), /* SOLAR WIND */
+    FSND(CAT_DRONE, 6, ENG_FM, 1, 50, 64, 12, 95, 90, 120, 100, 1, 0x05, 40, 0, 0, 0),      /* UNDER THE ICE */
     /* BELLS & METAL */
-    FSND(CAT_BELL, 1, ENG_FM, 0, 64, 90, 10, 0, 120, 0, 110, 0, 0x00, 40, 0, 0, 0),         /* IRON BELL */
-    FSND(CAT_BELL, 2, ENG_FM, 0, 80, 50, 0, 0, 100, 0, 95, 0, 0x00, 40, 0, 0, 0),           /* FUNERAL CHIME */
-    FSND(CAT_BELL, 3, ENG_PHYS, 0, 110, 115, 0, 0, 90, 127, 110, 0, 0x00, 40, 0, 0, 0),     /* RUST GONG */
-    FSND(CAT_BELL, 4, ENG_FM, 0, 85, 30, 20, 80, 100, 70, 95, 0, 0x00, 40, 0, 0, 0),        /* GLASS HARP */
-    FSND(CAT_BELL, 5, ENG_PHYS, 0, 70, 110, 45, 85, 90, 90, 100, 0, 0x00, 40, 0, 0, 0),     /* BOWED BELL */
-    FSND(CAT_BELL, 6, ENG_FM, 0, 110, 20, 30, 0, 70, 0, 70, 0, 0x00, 40, 0, 0, 0),          /* SHRINE */
+    FSND(CAT_BELL, 1, ENG_FM, 0, 64, 90, 10, 0, 120, 0, 110, 0, 0x00, 40, 0, 0, 0),         /* ICE BELL */
+    FSND(CAT_BELL, 2, ENG_FM, 0, 80, 50, 0, 0, 100, 0, 95, 0, 0x00, 40, 0, 0, 0),           /* FROST CHIME */
+    FSND(CAT_BELL, 3, ENG_PHYS, 0, 110, 115, 0, 0, 90, 127, 110, 0, 0x00, 40, 0, 0, 0),     /* ICEBERG GONG */
+    FSND(CAT_BELL, 4, ENG_FM, 0, 85, 30, 20, 80, 100, 70, 95, 0, 0x00, 40, 0, 0, 0),        /* CRYSTAL HARP */
+    FSND(CAT_BELL, 5, ENG_PHYS, 0, 70, 110, 45, 85, 90, 90, 100, 0, 0x00, 40, 0, 0, 0),     /* BOWED ICICLE */
+    FSND(CAT_BELL, 6, ENG_FM, 0, 110, 20, 30, 0, 70, 0, 70, 0, 0x00, 40, 0, 0, 0),          /* STARLIGHT */
     /* CHOIRS & VOICES */
-    FSND(CAT_VOICE, 1, ENG_VOICE, 0, 14, 30, 40, 85, 90, 90, 95, 0, 0x12, 100, 1, 0, 0),    /* CHOIR OF GHOSTS */
-    FSND(CAT_VOICE, 2, ENG_VOICE, 120, 4, 90, 45, 75, 80, 65, 90, 0, 0x05, 40, 0, 0, 0),    /* MONKS */
-    FSND(CAT_VOICE, 3, ENG_VOICE, 20, 14, 20, 110, 80, 90, 115, 95, 0, 0x13, 35, 10, 3, 6), /* WHISPER CHORUS */
-    FSND(CAT_VOICE, 4, ENG_VOICE, 64, 10, 45, 30, 90, 95, 65, 100, 0, 0x01, 25, 100, 3, 0), /* VIGIL */
-    FSND(CAT_VOICE, 5, ENG_FM, 2, 70, 64, 40, 85, 90, 115, 95, 0, 0x12, 95, 1, 0, 0),       /* HOLLOW HYMN */
+    FSND(CAT_VOICE, 1, ENG_VOICE, 0, 14, 30, 40, 85, 90, 90, 95, 0, 0x12, 100, 1, 0, 0),    /* AURORA CHOIR */
+    FSND(CAT_VOICE, 2, ENG_VOICE, 120, 4, 90, 45, 75, 80, 65, 90, 0, 0x05, 40, 0, 0, 0),    /* TUNDRA VOICES */
+    FSND(CAT_VOICE, 3, ENG_VOICE, 20, 14, 20, 110, 80, 90, 115, 95, 0, 0x13, 35, 10, 3, 6), /* BLIZZARD BREATH */
+    FSND(CAT_VOICE, 4, ENG_VOICE, 64, 10, 45, 30, 90, 95, 65, 100, 0, 0x01, 25, 100, 3, 0), /* NORTHERN CALL */
+    FSND(CAT_VOICE, 5, ENG_FM, 2, 70, 64, 40, 85, 90, 115, 95, 0, 0x12, 95, 1, 0, 0),       /* EMPTY HORIZON */
     /* ORGANS & KEYS */
-    FSND(CAT_ORGAN, 1, ENG_WHEEL, 15, 0, 20, 10, 10, 20, 75, 60, 0, 0x00, 40, 0, 0, 0),     /* FUNERAL ORGAN */
-    FSND(CAT_ORGAN, 2, ENG_WHEEL, 12, 0, 10, 0, 10, 90, 127, 55, 0, 0x00, 40, 0, 0, 0),     /* CHAPEL */
-    FSND(CAT_KEYS, 1, ENG_FM, 0, 45, 10, 5, 0, 75, 0, 50, 0, 0x00, 40, 0, 0, 0),            /* DEAD HARPSICHORD */
-    FSND(CAT_KEYS, 2, ENG_FM, 0, 90, 20, 0, 0, 75, 0, 60, 0, 0x00, 40, 0, 0, 0),            /* MUSIC BOX */
-    FSND(CAT_KEYS, 3, ENG_PHASE, 3, 0, 30, 6, 0, 105, 20, 80, 0, 0x00, 40, 0, 0, 0),        /* CATHEDRAL KEYS */
-    FSND(CAT_KEYS, 4, ENG_PHYS, 0, 30, 75, 0, 0, 90, 127, 60, 0, 0x00, 40, 0, 0, 0),        /* BONE PIANO */
+    FSND(CAT_ORGAN, 1, ENG_WHEEL, 15, 0, 20, 10, 10, 20, 75, 60, 0, 0x00, 40, 0, 0, 0),     /* ICE ORGAN */
+    FSND(CAT_ORGAN, 2, ENG_WHEEL, 12, 0, 10, 0, 10, 90, 127, 55, 0, 0x00, 40, 0, 0, 0),     /* BASE CAMP */
+    FSND(CAT_KEYS, 1, ENG_FM, 0, 45, 10, 5, 0, 75, 0, 50, 0, 0x00, 40, 0, 0, 0),            /* FROST KEYS */
+    FSND(CAT_KEYS, 2, ENG_FM, 0, 90, 20, 0, 0, 75, 0, 60, 0, 0x00, 40, 0, 0, 0),            /* SNOW GLOBE */
+    FSND(CAT_KEYS, 3, ENG_PHASE, 3, 0, 30, 6, 0, 105, 20, 80, 0, 0x00, 40, 0, 0, 0),        /* POLAR KEYS */
+    FSND(CAT_KEYS, 4, ENG_PHYS, 0, 30, 75, 0, 0, 90, 127, 60, 0, 0x00, 40, 0, 0, 0),        /* ICE PIANO */
     /* STRINGS & BRASS */
-    FSND(CAT_OTHER, 1, ENG_PHYS, 1, 64, 110, 70, 100, 100, 65, 95, 0, 0x00, 40, 0, 0, 0),   /* HAUNTED STRINGS */
-    FSND(CAT_OTHER, 2, ENG_VA, 0, 20, 70, 15, 65, 85, 105, 75, 0, 0x00, 100, 1, 0, 0),      /* DUNGEON BRASS */
-    FSND(CAT_OTHER, 3, ENG_FM, 3, 85, 64, 15, 75, 90, 115, 85, 0, 0x00, 40, 0, 0, 0),       /* WAR HORN */
-    FSND(CAT_OTHER, 4, ENG_PHYS, 1, 50, 115, 60, 85, 95, 70, 95, 0, 0x00, 95, 1, 0, 0),     /* CELLO GRAVE */
-    FSND(CAT_OTHER, 5, ENG_VA, 2, 40, 75, 5, 90, 90, 115, 95, 0, 0x00, 70, 1, 0, 0),        /* SORROW STRINGS */
+    FSND(CAT_OTHER, 1, ENG_PHYS, 1, 64, 110, 70, 100, 100, 65, 95, 0, 0x00, 40, 0, 0, 0),   /* TUNDRA STRINGS */
+    FSND(CAT_OTHER, 2, ENG_VA, 0, 20, 70, 15, 65, 85, 105, 75, 0, 0x00, 100, 1, 0, 0),      /* ICEBREAKER */
+    FSND(CAT_OTHER, 3, ENG_FM, 3, 85, 64, 15, 75, 90, 115, 85, 0, 0x00, 40, 0, 0, 0),       /* FOG HORN */
+    FSND(CAT_OTHER, 4, ENG_PHYS, 1, 50, 115, 60, 85, 95, 70, 95, 0, 0x00, 95, 1, 0, 0),     /* SVALBARD CELLO */
+    FSND(CAT_OTHER, 5, ENG_VA, 2, 40, 75, 5, 90, 90, 115, 95, 0, 0x00, 70, 1, 0, 0),        /* NORTH STRINGS */
     /* LEADS & PLUCKS */
-    FSND(CAT_KEYS, 5, ENG_PHASE, 6, 0, 90, 0, 30, 90, 110, 80, 0, 0x00, 105, 1, 0, 0),      /* WRAITH */
-    FSND(CAT_KEYS, 6, ENG_VA, 1, 6, 55, 10, 40, 90, 110, 75, 0, 0x00, 40, 0, 0, 0),         /* LANTERN */
-    FSND(CAT_KEYS, 7, ENG_FM, 0, 40, 10, 0, 0, 55, 0, 30, 0, 0x00, 40, 0, 0, 0),            /* SPIDER PLUCK */
-    FSND(CAT_KEYS, 8, ENG_PHYS, 3, 0, 85, 0, 0, 90, 127, 60, 0, 0x00, 40, 0, 0, 0),         /* LUTE */
-    FSND(CAT_KEYS, 9, ENG_PHASE, 3, 0, 40, 4, 80, 90, 70, 80, 0, 0x00, 100, 1, 0, 0),       /* CANDLE */
+    FSND(CAT_KEYS, 5, ENG_PHASE, 6, 0, 90, 0, 30, 90, 110, 80, 0, 0x00, 105, 1, 0, 0),      /* SNOW OWL */
+    FSND(CAT_KEYS, 6, ENG_VA, 1, 6, 55, 10, 40, 90, 110, 75, 0, 0x00, 40, 0, 0, 0),         /* SIGNAL FLARE */
+    FSND(CAT_KEYS, 7, ENG_FM, 0, 40, 10, 0, 0, 55, 0, 30, 0, 0x00, 40, 0, 0, 0),            /* ICICLE PLUCK */
+    FSND(CAT_KEYS, 8, ENG_PHYS, 3, 0, 85, 0, 0, 90, 127, 60, 0, 0x00, 40, 0, 0, 0),         /* FROST LUTE */
+    FSND(CAT_KEYS, 9, ENG_PHASE, 3, 0, 40, 4, 80, 90, 70, 80, 0, 0x00, 100, 1, 0, 0),       /* NORTHERN LIGHT */
     /* TEXTURES */
-    FSND(CAT_TEXTURE, 1, ENG_VOICE, 96, 12, 0, 127, 100, 90, 120, 105, 1, 0x00, 30, 90, 4, 0), /* WIND THRU STONE */
+    FSND(CAT_TEXTURE, 1, ENG_VOICE, 96, 12, 0, 127, 100, 90, 120, 105, 1, 0x00, 30, 90, 4, 0), /* WIND OVER ICE */
 };
 static const char *const SND_FNAME[] = {
-    "CRYPT PAD", "ASH VEIL", "FROZEN HALL", "LAST LIGHT", "MOSS", "BLACK VELVET",
-    "MONK DRONE", "ABYSS", "IRON LUNG", "TOMB HUM", "STATIC PRAYER", "DEEP WELL",
-    "IRON BELL", "FUNERAL CHIME", "RUST GONG", "GLASS HARP", "BOWED BELL", "SHRINE",
-    "CHOIR OF GHOSTS", "MONKS", "WHISPER CHORUS", "VIGIL", "HOLLOW HYMN",
-    "FUNERAL ORGAN", "CHAPEL", "DEAD HARPSICHORD", "MUSIC BOX", "CATHEDRAL KEYS", "BONE PIANO",
-    "HAUNTED STRINGS", "DUNGEON BRASS", "WAR HORN", "CELLO GRAVE", "SORROW STRINGS",
-    "WRAITH", "LANTERN", "SPIDER PLUCK", "LUTE", "CANDLE",
-    "WIND THRU STONE",
+    "POLAR NIGHT", "SNOW VEIL", "GLACIER PAD", "MIDNIGHT SUN", "LICHEN", "SNOWDRIFT", "PERMAFROST", "DEEP FJORD",
+    "CRACKING ICE", "ARCTIC HUM", "SOLAR WIND", "UNDER THE ICE", "ICE BELL", "FROST CHIME", "ICEBERG GONG",
+    "CRYSTAL HARP", "BOWED ICICLE", "STARLIGHT", "AURORA CHOIR", "TUNDRA VOICES", "BLIZZARD BREATH", "NORTHERN CALL",
+    "EMPTY HORIZON", "ICE ORGAN", "BASE CAMP", "FROST KEYS", "SNOW GLOBE", "POLAR KEYS", "ICE PIANO",
+    "TUNDRA STRINGS", "ICEBREAKER", "FOG HORN", "SVALBARD CELLO", "NORTH STRINGS", "SNOW OWL", "SIGNAL FLARE",
+    "ICICLE PLUCK", "FROST LUTE", "NORTHERN LIGHT", "WIND OVER ICE",
 };   /* (16 characters at most: the header beside HOME's tempo) */
 #define SND_NFACT (sizeof SND_FACTORY / sizeof SND_FACTORY[0])
 _Static_assert(SND_NFACT == sizeof SND_FNAME / sizeof SND_FNAME[0], "a name a factory sound");

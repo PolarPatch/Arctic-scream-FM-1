@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- SPDX-License-Identifier: GPL-3.0-only
      Copyright (C) 2026 GR!MM
-     Arctic Drones changes (the name, the look: after PolarPatch BlueWatch's cyberpunk theme): Copyright (C) 2026 PolarPatch
+     Arctic p0lar patches changes (the name, the look: after PolarPatch BlueWatch's cyberpunk theme): Copyright (C) 2026 PolarPatch
      After Felucca's browser page, web/emu/index.html of hugelton/Felucca (Copyright (C) 2026 Leo Kuroshita
      (@kurogedelic), Hügelton Instruments), which follows X0X's, web/emu/index.html of charlesvestal/fm1-x0x; both
      GPL-3.0. GR!MM in the browser: firmware/src/grimm.c, the code the FM-1 runs, on a fake FM-1 (web/fm1_web.c). -->
@@ -9,15 +9,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Arctic Drones</title>
+<title>Arctic p0lar patches</title>
 <link rel="icon" href="polarpatch-logo.png">
-<meta name="description" content="Arctic Drones by PolarPatch, a drone firmware for the M-VAVE FM-1, running in your browser: the same code the instrument runs.">
+<meta name="description" content="Arctic p0lar patches by PolarPatch, a drone firmware for the M-VAVE FM-1, running in your browser: the same code the instrument runs.">
 <style>
-:root { --bg: #060410; --body: #1a1d24; --bed: #11141a; --part: #272c35; --edge: #16222e; --fg: #eaf6fa;
-        --dim: #7fa8b8; --muted: #45606e; --lit: #fff4d6; --latch: #22d3ee;
+:root { --bg: #060410; --body: #1c2029; --bed: #13161d; --part: #2a2f39; --part-hi: #353b47; --edge: #3a414d;
+        --fg: #eaf6fa; --label: #c9d2dc; --dim: #7fa8b8; --muted: #45606e; --lit: #22d3ee; --latch: #22d3ee;
         --ice: #22d3ee; --aurora: #3dffa8; --violet: #a78bfa; --plasma: #ff1a8c;
         --mono: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
-        --key: #e7e4dc; --key-edge: #bdb8ad; --groove: #a7a299; --key-held: #f7d58a; --groove-lit: #ff9a1f;
+        --key: #d3d9e0; --key-black: #b5bcc6; --key-held: #e6ebf0;
         color-scheme: dark; }
 html, body { background: var(--bg); }
 body { margin: 0; color: var(--fg); font: 13px/1.5 system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
@@ -49,26 +49,33 @@ a { color: inherit; }
        background: var(--body); border-radius: 3.7cqw; container-type: inline-size; user-select: none;
        -webkit-user-select: none; -webkit-touch-callout: none; }
 .fm1 > * { position: absolute; box-sizing: border-box; }
-.label { display: flex; align-items: flex-end; justify-content: center; font-size: 1.5cqw; font-weight: 600;
-         letter-spacing: .04em; color: var(--dim); white-space: nowrap; pointer-events: none; }
-.dial { border-radius: 50%; background: var(--part); border: .5cqw solid var(--bed); cursor: ns-resize; touch-action: none; }
+.label { display: flex; align-items: flex-end; justify-content: center; font: 600 1.35cqw var(--mono);
+         letter-spacing: .14em; color: var(--label); white-space: nowrap; pointer-events: none; }
+/* the name under the screen */
+.brand { display: flex; align-items: center; justify-content: center; font: 700 1.9cqw/1 var(--mono); letter-spacing: .1em;
+         color: var(--fg); white-space: nowrap; pointer-events: none; text-shadow: 0 0 .8cqw rgba(34, 211, 238, .45); }
+.brand span { color: var(--ice); margin-left: .5em; }
+.dial { border-radius: 50%; background: #1d2129; border: .45cqw solid #0f1116; cursor: ns-resize; touch-action: none; }
 .dial::after { content: ""; position: absolute; left: 50%; top: 10%; width: 9%; height: 30%; margin-left: -4.5%;
                border-radius: 1cqw; background: var(--fg); transform-origin: 50% 133%; transform: rotate(var(--a, 0deg)); }
-.btn { padding: 0; background: var(--part); color: var(--fg); border: 1px solid var(--edge); border-radius: .8cqw;
-       font: 600 1.2cqw/1.15 system-ui, sans-serif; letter-spacing: .04em; cursor: pointer; touch-action: none; }
-.btn.lit { background: var(--lit); color: #111; }
-.btn.held { outline: .25cqw solid var(--fg); outline-offset: .1cqw; }
-.btn.latched { outline: .25cqw solid var(--latch); outline-offset: .1cqw; }
+.btn { padding: 0; background: var(--part); color: var(--label); border: .15cqw solid var(--edge); border-radius: .9cqw;
+       font: 600 1.15cqw/1.2 var(--mono); letter-spacing: .14em; cursor: pointer; touch-action: none; }
+/* lit (the button's LED): a cyan edge, still flat and grey; held: a lighter grey; latched: a dashed edge */
+.btn.lit { border-color: var(--lit); color: var(--fg); box-shadow: 0 0 .7cqw rgba(34, 211, 238, .35); }
+.btn.held { background: var(--part-hi); color: var(--fg); }
+.btn.latched { border-style: dashed; border-color: var(--latch); }
+/* the trays the buttons sit in */
+.tray { background: var(--bed); border-radius: 1.2cqw; }
 .btn .sc { position: absolute; right: .35cqw; top: .15cqw; font: 600 .95cqw/1 ui-monospace, Menlo, Consolas, monospace; opacity: .55; }
 .bezel { background: #0b0b0c; border-radius: 1.8cqw; }
 .bed { background: var(--bed); border-radius: 1.4cqw; }
-/* the keys: off-white with the groove down the middle; the groove lights (the key's LED), the key goes warm while pressed */
-.key { border-radius: 99cqw; background: var(--key); border: .12cqw solid var(--key-edge); cursor: pointer; touch-action: none; }
-.key::after { content: ""; position: absolute; left: 43%; width: 14%; top: 16%; bottom: 16%; border-radius: 1cqw;
-              background: var(--groove); box-shadow: inset 0 .1cqw .2cqw rgba(0, 0, 0, .35); }
-.key.held { background: var(--key-held); }
-.key.lit::after { background: var(--groove-lit); box-shadow: 0 0 .6cqw var(--groove-lit); }
-.dial:focus-visible, .btn:focus-visible, .key:focus-visible { outline: .25cqw solid var(--lit); outline-offset: .2cqw; }
+/* the keys: flat grey capsules, the sharps a shade darker; lit (the key's LED): a cyan edge; pressed: lighter, and a
+ * cyan ring around it */
+.key { border-radius: 99cqw; background: var(--key); border: .25cqw solid transparent; cursor: pointer; touch-action: none; }
+.key.black { background: var(--key-black); }
+.key.lit { border-color: var(--lit); box-shadow: 0 0 .8cqw rgba(34, 211, 238, .45); }
+.key.held { background: var(--key-held); outline: .25cqw solid var(--lit); outline-offset: .25cqw; }
+.dial:focus-visible, .btn:focus-visible, .key:focus-visible { outline: .25cqw solid var(--fg); outline-offset: .2cqw; }
 canvas { display: block; z-index: 2; background: #000; image-rendering: crisp-edges; image-rendering: pixelated; pointer-events: none; }
 canvas.big { z-index: 5; outline: 1px solid var(--edge); }
 .start { inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px; z-index: 6;
@@ -107,7 +114,7 @@ footer p { margin: 4px 0; }
 <header class="mast">
   <img src="polarpatch-logo.png" alt="PolarPatch">
   <div>
-    <h1>ARCTIC <span>DRONES</span></h1>
+    <h1>ARCTIC <span>p0lar patches</span></h1>
     <p>Drone firmware for the M-VAVE FM-1 by PolarPatch. Play it here, the same code the instrument runs, before you install it.</p>
     <div class="aurora" aria-hidden="true"><i style="color: var(--ice)"></i><i style="color: var(--aurora)"></i><i style="color: var(--violet)"></i><i style="color: var(--plasma)"></i></div>
   </div>
@@ -153,10 +160,10 @@ footer p { margin: 4px 0; }
 
 <footer>
   <p><b><a href="editor.html">Open the editor</a></b>: edit sounds live, load samples, back up your FM-1 (Chrome or Edge)</p>
-  <p>Arctic Drones by PolarPatch, built on <a href="https://github.com/GRiMMBIENT/grimm">GR!MM</a> (GPL-3.0) · its HOME waves follow <a href="https://github.com/evanyerburgh/niagara-drift">Niagara Drift</a>'s scopes · the PolarPatch logo is PolarPatch's own, not under the GPL</p>
+  <p>Arctic p0lar patches by PolarPatch, built on <a href="https://github.com/GRiMMBIENT/grimm">GR!MM</a> (GPL-3.0) · its HOME waves follow <a href="https://github.com/evanyerburgh/niagara-drift">Niagara Drift</a>'s scopes · the PolarPatch logo is PolarPatch's own, not under the GPL</p>
   <p>The same <code>firmware/src/grimm.c</code> the FM-1 runs, compiled to WebAssembly · <a href="LICENSE">GPL-3.0-only</a> · <a href="https://github.com/GRiMMBIENT/grimm">source</a> · <a href="https://github.com/GRiMMBIENT/grimm/blob/main/LICENSING.md">credits and licences</a> (<a href="LICENSING.md">as text</a>) · fonts: Press Start 2P, <a href="LICENSES/OFL-PressStart2P.txt">SIL OFL 1.1</a>; Terminus, <a href="Terminus-LICENSE.txt">SIL OFL 1.1</a> · factory samples: <a href="LICENSES/CC0-1.0.txt">CC0 1.0</a> · built with Emscripten (<a href="LICENSES/MIT-Emscripten.txt">MIT</a>, musl <a href="LICENSES/MIT-musl.txt">MIT</a>)</p>
   <p>Built on <a href="https://github.com/zvenson/dinghy">Dinghy</a> by zvenson, on the platform of <a href="https://github.com/hugelton/Felucca">Felucca</a> by Leo Kuroshita, Hügelton Instruments, and <a href="https://github.com/isod89/sloop-fm1">SLOOP</a> by isod89 · the browser build and the panel's layout follow Felucca's and charlesvestal's <a href="https://github.com/charlesvestal/fm1-x0x">X0X</a> (GPL-3.0) · </p>
-  <p>M-VAVE and FM-1 are trademarks of their respective owners. Arctic Drones (like GR!MM) is not affiliated with or endorsed by them, nor by GR!MM.</p>
+  <p>M-VAVE and FM-1 are trademarks of their respective owners. Arctic p0lar patches (like GR!MM) is not affiliated with or endorsed by them, nor by GR!MM.</p>
 </footer>
 </main>
 <script type="module" src="panel.js"></script>

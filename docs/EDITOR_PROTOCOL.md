@@ -108,8 +108,8 @@ Reply: `op`, `t`, the selected track (0–3), `rc` (0, 1 arguments, 2 not a soun
 `t`'s sound now (64 bytes: category 0, number 1, no name; its CRC right: 74 bytes), then its name as HOME's header
 shows it (ASCII, up to 15; none: nothing, HOME shows the source).
 
-- A track's name: the one SET gave it (the editor page sends the factory or user sound it loaded, "FROZEN HALL", or the
-  name typed in), else the sound PRESETS or SOUNDS loaded on the FM-1 ("CRYPT PAD", a user sound's name or "PAD 03"),
+- A track's name: the one SET gave it (the editor page sends the factory or user sound it loaded, "GLACIER PAD", or the
+  name typed in), else the sound PRESETS or SOUNDS loaded on the FM-1 ("POLAR NIGHT", a user sound's name or "PAD 03"),
   while the track's source is still that sound's; SET without a name: none.
 
 - SET applies all of it, as a sound loaded on PRESETS: the source (a new one: the track's notes start again), its four

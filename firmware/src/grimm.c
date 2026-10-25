@@ -106,7 +106,7 @@
  * Rules of the road (the chip has no FPU and no libgcc): integers only, no float, no 64-bit division.
  * tests/host.c runs this file on a computer (the screen as a PNG, the sound as a WAV), web/fm1_web.c in a browser.
  * What platform.c offers: docs/API.md. The chip's rules: docs/RULES.md. */
-#define APP_NAME "ARCTIC DRONES"                /* the app, the rescue and the crash screen say this */
+#define APP_NAME "ARCTIC p0lar patches"         /* the app, the rescue and the crash screen say this */
 #include "platform.c"
 #include "dsp.c"
 #include "wear.c"

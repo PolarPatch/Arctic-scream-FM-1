@@ -210,7 +210,7 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   // the tracks, live
   const t0 = await Promise.all([0, 1, 2, 3].map((t) => cl.track(t)));
   check(t0.every((r) => recordOk(r.rec)) && t0.every((r) => r.sel === t0[0].sel), `editor: the four tracks read (track ${t0[0].sel + 1} selected)`);
-  const ls = parseSound(Uint8Array.from(meta.factory[2].rec), meta);   // FROZEN HALL (FM) onto T3, then edited
+  const ls = parseSound(Uint8Array.from(meta.factory[2].rec), meta);   // GLACIER PAD (FM) onto T3, then edited
   ls.env[1] = 77, ls.lfo[1] = 42, ls.fm.ops[1][2] = 55, ls.fm.alg = 9;
   await cl.trackSet(2, buildRecord(ls));
   const lb = (await cl.track(2)).rec, lr = buildRecord(Object.assign(parseSound(lb, meta), { cat: ls.cat, num: ls.num, name: ls.name }));
@@ -221,10 +221,10 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   for (let i = 1; i <= 200; i++) { v = i; snd.set(0); if (i % 20 === 0) await new Promise((r) => setTimeout(r, 1)); }
   await snd.running;
   check(sent <= 12 && last === 200, `editor: a slider dragged through 200 values: ${sent} frames sent, the last one last`);
-  await cl.trackSet(3, buildRecord(ls), "FROZEN HALL");
+  await cl.trackSet(3, buildRecord(ls), "GLACIER PAD");
   const tn = await cl.track(3);
   await cl.trackSet(3, t0[3].rec);
-  check(tn.name === "FROZEN HALL" && (await cl.track(3)).name === "", `editor: TRACK: a sound's name as HOME shows it ("${tn.name}"), and none`);
+  check(tn.name === "GLACIER PAD" && (await cl.track(3)).name === "", `editor: TRACK: a sound's name as HOME shows it ("${tn.name}"), and none`);
 }
 // the page against the FM-1's own bytes, behind a fake Web MIDI: a GM synth (silent), a loop port, then the FM-1
 {
