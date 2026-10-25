@@ -4,16 +4,16 @@
  * once), over the whole output, after TAPE (app_audio: perform_render); FREEZE (F3) is GRAIN's (grain.c).
  *   REV THROW, ECHO THROW: every track's REV / DLY send full (grimm.c's mix, its gains ramped); the tails ring on
  *   TAPE STOP: the output slows to a stop over ~1 s (its pitch falling); let go: back up to speed in ~0.3 s, in time
- *   REVERSE: the last beat (at most the history's 0.75 s) backwards, round and round
+ *   REVERSE: the last beat (at most the history's 0.6 s) backwards, round and round
  *   STUTTER: the last 1/16 at the tempo, round and round
  *   FILTER DOWN, FILTER UP: a low-pass (high-pass) on the output, closing (opening) over ~2 s; let go: back in ~0.5 s
- * The history: the output (mono, at 22.05 kHz) the last 0.75 s, in what was GRAIN's 2 s ring (GRAIN keeps 1.25 s);
+ * The history: the output (mono, at 22.05 kHz) the last 0.6 s, in what was GRAIN's 2 s ring (GRAIN keeps 1 s);
  * TAPE STOP, REVERSE and STUTTER play from it (mono, at 22.05 kHz while they sound). Into the trick and out of it:
  * ~10 ms crossfades (between two of them: out of one, into the other); the loops' ends: ~3 ms fades. Nothing saved:
  * all off at power-on. Audio ISR; the main loop sets pf_held (grimm.c: PF_, G3 .. F4) and reads the state (the PERFORM
  * screen). */
 
-#define PF_LEN 16537u                           /* the history: 0.75 s at 22.05 kHz */
+#define PF_LEN 13230u                           /* the history: 0.6 s at 22.05 kHz (Arctic Scream p0larpatch: was 0.75) */
 #define PF_EDGE 64u                             /* a loop's end fades (history samples, ~3 ms) */
 #define PF_XF 75                                /* the crossfade's step a frame (Q15): ~10 ms */
 enum { PR_NONE, PR_TAPE, PR_BACK, PR_STUT };    /* the reader: what it plays */

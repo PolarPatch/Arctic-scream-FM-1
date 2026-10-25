@@ -216,10 +216,10 @@ root note (MIDI; 60 for an empty slot); 16 FACTORY (none) → rc: all four slots
 or CRC, 6 something sounds, 7 no flash. Before step 26b2, INFO came back cut short when the four slots all had long
 names (and overran a buffer on the FM-1).
 
-The factory samples (step 26c, `tools/gen_samples.py` from `assets/samples/`, CC0 1.0): URCHIN, LEAVE, NIKOLAI,
-M-SOFT, as an upload makes them (root C4). At power-on a slot whose 72 KiB are all erased (0xFF) gets its own; a slot
-that holds anything is never touched there. FACTORY, or SYSTEM 2's SAMPLES: RESTORE and OCT+ on the FM-1, write all
-four.
+The factory samples (step 26c, `tools/gen_samples.py` from `assets/samples/`): Arctic Scream has none for now
+(GR!MM's four are out), so FACTORY, or SYSTEM 2's SAMPLES: CLEAR and OCT+ on the FM-1, empties all four slots and
+power-on leaves them be. With samples built in, as an upload makes them (root C4): at power-on a slot whose 72 KiB
+are all erased (0xFF) gets its own, a slot that holds anything is never touched there, and FACTORY writes all four.
 
 ## A backup
 

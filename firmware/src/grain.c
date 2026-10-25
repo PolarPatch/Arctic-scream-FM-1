@@ -7,20 +7,21 @@
  * random spread of its start and the jitter of the interval from SCATTER, the level by overlap (1 / sqrt n), the
  * window table. GR!MM's: the ring the GRAIN bus is recorded into, FREEZE, a pan for each grain, the return into the
  * mix and into SPACE.
- *   at half the rate (22.05 kHz, as DELAY and SPACE): the GRAIN bus (every other sample, 1 2 1) -> the ring (1.25 s) ->
+ *   at half the rate (22.05 kHz, as DELAY and SPACE): the GRAIN bus (every other sample, 1 2 1) -> the ring (1 s) ->
  *   up to GE_NG grains read from it, each at its own place behind the newest sample and its own pan -> back to
  *   44.1 kHz, at MIX, into out and into the REV bus (the cloud falls into SPACE).
  *   FREEZE: the ring stops recording; the grains go on from what it holds.
- *   Nothing runs at MIX 0, or while the ring holds only silence (nothing sent for 1.25 s, nothing frozen).
+ *   Nothing runs at MIX 0, or while the ring holds only silence (nothing sent for 1 s, nothing frozen).
  *   SIZE      a grain's length: 10 ms x 2^(SIZE / 24), 10 .. 390 ms
  *   DENSITY   grains a second: 2^(DENSITY x 10 / 192), 1 .. 98 (as many as GE_NG let sound)
  *   SCATTER   the grains' spread: where they start, up to the whole ring back; the pan; the interval's jitter
  *   MIX       the return
  * The audio ISR calls grain_render with the GRAIN bus, before DELAY and SPACE; the main loop sets the parameters and
- * ge_freeze. The ring is in the pool (zero at boot): 55 KB. */
+ * ge_freeze. The ring is in the pool (zero at boot): 44 KB. */
 
-#define GE_LEN 27563u                           /* the ring: 1.25 s at 22.05 kHz (of what was 2 s: the other 0.75 s,
-                                                 * the FX layer's history, perform.c) */
+#define GE_LEN 22050u                           /* the ring: 1 s at 22.05 kHz (of what was 2 s: 0.6 s of it
+                                                 * the FX layer's history, perform.c; Arctic Scream p0larpatch: was
+                                                 * 1.25 s, the pool's room) */
 #define GE_NC 128u                              /* a block at half the rate: app_audio's 256 frames */
 #define GE_NG 8u                                /* grains at once */
 

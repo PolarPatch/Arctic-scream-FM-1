@@ -421,6 +421,16 @@ static void stress_fsamples(void)               /* x_editor: power-on's factory 
     uint32_t k, m;
     memcpy(keep, fake_flash, sizeof keep);
     memset(fake_flash, 0xFF, sizeof fake_flash);   /* (a new FM-1: nothing in the sample area) */
+#if !SMP_FACT_N                                 /* (Arctic Scream p0larpatch: none built in: RESTORE empties the slots) */
+    fake_flash[2u * SMP_SLOT_SIZE + 70000u] = 0x5A;
+    if ((m = smp_erased()) != 11u) stress_fail("x_editor: a slot holding a byte seen as erased (mask)", m);
+    st_fhead(16), st_sxn = 0, smp_frame(st_f, st_fn, 0);
+    if (st_sxn < 7u || st_sxr[5] != 6u || fake_flash[2u * SMP_SLOT_SIZE + 70000u] != 0x5A) stress_fail("x_editor: CLEAR while sounding", 0);
+    st_fhead(16), st_sxn = 0, smp_frame(st_f, st_fn, 1);
+    if (st_sxn < 7u || st_sxr[5] || smp_erased() != 15u) stress_fail("x_editor: CLEAR did not empty all four", st_sxn);
+    for (k = 0; k < SMP_SLOTS; k++)
+        if (smp[k].ready || smp[k].state != SS_EMPTY) stress_fail("x_editor: a cleared slot not empty (slot)", k);
+#else
     if (smp_erased() != 15u) stress_fail("x_editor: an erased sample area not seen as erased (mask)", smp_erased());
     fake_flash[2u * SMP_SLOT_SIZE + 70000u] = 0x5A;   /* (slot 3 holds a byte, deep in it) */
     if ((m = smp_erased()) != 11u) stress_fail("x_editor: a slot holding a byte seen as erased (mask)", m);
@@ -442,6 +452,7 @@ static void stress_fsamples(void)               /* x_editor: power-on's factory 
         while (smp[k].state == SS_SCAN) smp_scan(k);
     if (!smp[0].ready || strcmp(smp[0].name, "URCHIN") || !smp[3].ready || strcmp(smp[3].name, "M-SOFT"))
         stress_fail("x_editor: the factory samples do not check out", 0);
+#endif
     memcpy(fake_flash, keep, sizeof keep);      /* (back as it was, checked and indexed again) */
     for (k = 0; k < SMP_SLOTS; k++) {
         smp_look(k);

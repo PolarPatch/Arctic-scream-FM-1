@@ -190,7 +190,7 @@ typedef struct { uint32_t t, keys; int btn; uint8_t st, d1, d2; int enc, steps; 
 #define DOWN 0x100                                              /* btn: held from now (a btn alone: a tap, 1 ms) */
 #define UP 0x200                                                /* .. let go */
 static const host_ev_t SCRIPT0[] = {
-    /* T1: a VA chord sent to GRAIN; T2: a SAMPLE chord (slot 1: URCHIN, a factory sample) sent to DELAY; TAPE over it all at
+    /* T1: a VA chord sent to GRAIN; T2: a SAMPLE chord (slot 1: empty in a fresh Arctic Scream, so silent) sent to DELAY; TAPE over it all at
      * moderate settings; FREEZE once; then the notes let go (the frozen cloud and the tails go on) */
     {100, 0, BTN_HOME, 0, 0, 0, 0, 0},                          /* HOME: MIXER 1 (T1) */
     {110, 0, -1, 0, 0, 0, ENC_KNOB4, 100},                      /* GRAIN SEND 0 -> 100 */

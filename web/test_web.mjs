@@ -176,8 +176,8 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
     dv.setInt16(44 + i * 4, Math.round(v * 20000), true), dv.setInt16(46 + i * 4, Math.round(v * 12000), true);
   }
   const s0 = await cl.smpInfo();                            // (power-on: an erased sample area, the factory's)
-  check(s0.map((x) => `${x.state}${x.name}${x.root}`).join() === "1URCHIN60,1LEAVE60,1NIKOLAI60,1M-SOFT60",
-        `editor: the factory samples in the slots that held nothing at power-on (${s0.map((x) => x.name || "-").join(", ")})`);
+  check(s0.every((x) => x.state === 0 && !x.name),         // (Arctic Scream: no samples built in, the slots left empty)
+        `editor: the slots that held nothing at power-on still empty (${s0.map((x) => x.name || "-").join(", ")})`);
   const sl = makeSlot(wav.buffer, "TESTWAV", 57), zn = new DataView(sl.hdr.buffer).getUint32(36, true);
   const after = await cl.smpUpload(2, sl.hdr, sl.data);
   check(after[2].state === 1 && after[2].name === "TESTWAV" && after[2].n === zn && after[2].root === 57,
@@ -206,7 +206,7 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
     check(nm === sampleName("Sample-002") && nm === "SAMP-002", `editor: a long sample name cut as the uploader cuts it, its number kept (${nm})`);
   }
   const sf = await cl.smpFactory();
-  check(sf.map((x) => `${x.state}${x.name}`).join() === "1URCHIN,1LEAVE,1NIKOLAI,1M-SOFT", `editor: RESTORE: the four factory samples (${sf.map((x) => x.name).join(", ")})`);
+  check(sf.every((x) => x.state === 0 && !x.name), `editor: CLEAR: all four slots empty (${sf.map((x) => x.name || "-").join(", ")})`);
   // the tracks, live
   const t0 = await Promise.all([0, 1, 2, 3].map((t) => cl.track(t)));
   check(t0.every((r) => recordOk(r.rec)) && t0.every((r) => r.sel === t0[0].sel), `editor: the four tracks read (track ${t0[0].sel + 1} selected)`);

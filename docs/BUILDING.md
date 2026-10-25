@@ -52,8 +52,8 @@ cd web/dist && python3 -m http.server 8000  # then open http://localhost:8000/ (
 
 ## The factory samples
 
-`assets/samples/*.wav` become `firmware/gen/grimm_samples.h` with `py tools/gen_samples.py`, encoded exactly as
-`tools/fm1_sample_upload.py` uploads a WAV.
+None for now. The WAVs named in `tools/gen_samples.py` (`SAMPLES`, from `assets/samples/`) become
+`firmware/gen/grimm_samples.h` with `py tools/gen_samples.py`, encoded exactly as `tools/fm1_sample_upload.py` uploads a WAV.
 
 ## More
 

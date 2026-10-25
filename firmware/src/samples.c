@@ -29,7 +29,8 @@
  * pack7: groups of up to 7 bytes, each after one byte of their top bits (bit j = bit 7 of byte j), as Felucca's.
  * Factory samples (tools/gen_samples.py: the four of assets/samples/, as an upload makes them): at power-on each slot
  * that is erased (every byte 0xFF: it holds nothing, not even another firmware's data) gets its own; a slot that
- * holds anything is never touched there. RESTORE (SYSTEM 2's SAMPLES, the editor's FACTORY) writes all four. */
+ * holds anything is never touched there. RESTORE (SYSTEM 2's SAMPLES, the editor's FACTORY) writes all four.
+ * Arctic Scream p0larpatch: none for now (SMP_FACT_N 0): power-on leaves the slots be, RESTORE empties all four (CLEAR). */
 #include "grimm_samples.h"
 
 #define SMP_SLOTS 4u
@@ -226,11 +227,11 @@ static void sx_reply(uint32_t cmd, const uint8_t *a, uint32_t n)
     sysex_send(sx_out, w);
 }
 
-/* slot k := its factory sample, as an upload writes one: erased, the data, the header last, then checked; 0 ok, or rc
- * (2 erase, 3 write) */
+/* slot k := its factory sample, as an upload writes one: erased, the data, the header last, then checked (none: left
+ * erased, empty); 0 ok, or rc (2 erase, 3 write) */
 static uint32_t smp_factory(uint32_t k)
 {
-    uint32_t i, c, len = SMP_FACT_LEN[k];
+    uint32_t i;
     smp[k].ready = 0;
     smp[k].state = SS_EMPTY;
     smp[k].name[0] = 0;
@@ -239,6 +240,10 @@ static uint32_t smp_factory(uint32_t k)
     for (i = 0; i < SMP_SLOT_SIZE; i += 0x1000u)
         if (sample_flash_erase(k * SMP_SLOT_SIZE + i))
             return 2;
+#if SMP_FACT_N
+    if (k >= SMP_FACT_N)
+        return 0;
+    uint32_t c, len = SMP_FACT_LEN[k];
     for (i = 0; i < len; i += c) {              /* (through RAM: the flash does not read itself while it writes) */
         c = len - i < 256u ? len - i : 256u;
         memcpy(sx_buf, SMP_FACT_DATA[k] + i, c);
@@ -249,6 +254,7 @@ static uint32_t smp_factory(uint32_t k)
     if (sample_flash_write(k * SMP_SLOT_SIZE, sx_buf, SMP_HDR_LEN))
         return 3;
     smp_look(k);
+#endif
     return 0;
 }
 static uint32_t smp_erased(void)                /* power-on: the slots that hold nothing (every byte 0xFF), a bit each */

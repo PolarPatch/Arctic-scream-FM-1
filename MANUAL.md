@@ -32,7 +32,7 @@ GR!MM has **four tracks (T1–T4)**. Each track plays one sound, has its own seq
 
 **Undo:** hold **EDIT** and press **OCT−** to undo the last edit, **OCT+** to redo it.
 
-**At the first start** after installing, GR!MM writes its four factory samples into any sample slot that is still empty (the boot screen says `INSTALLING SAMPLES` for a few seconds). Slots that already hold something are never touched.
+**Samples:** Arctic Scream has no samples built in. Slots that already hold something (from an earlier firmware or an upload) are never touched at start.
 
 ---
 
@@ -89,7 +89,7 @@ Press **HOME** again for the mixer pages:
 
 On PHYS, STRUCTURE and BOW change meaning with the model; the screen shows the current name.
 
-The four sample slots come with GR!MM's factory samples: **1 URCHIN, 2 LEAVE, 3 NIKOLAI, 4 M-SOFT**. Replace them with your own from the [editor](#15-the-editor) (see also [Good to know](#14-good-to-know)).
+The four sample slots are yours: load your own WAV files from the [editor](#15-the-editor) (see also [Good to know](#14-good-to-know)). An empty slot is silent.
 
 ### FM editor (FM tracks only)
 
@@ -300,7 +300,7 @@ FREEZE is the exception: tap it to hold the grain cloud, tap again to release.
 - **SCREEN OFF:** the screen goes dark after the chosen time; the music keeps going. Your first touch only wakes it.
 - **MIDI LEARN:** set LEARN, turn any knob on the FM-1, then move a knob on your controller. Up to 32 links. CLEAR ALL removes them (confirm with OCT+).
 - **SEQ MIDI OUT:** sends the sequencer's and arp's notes out over USB on each track's channel.
-- **SAMPLES:** turn it to RESTORE and press **OCT+** to write the four factory samples back into all four sample slots (a few seconds; stop the sequencer and let the sound die out first). **OCT−** keeps your samples.
+- **SAMPLES:** turn it to CLEAR and press **OCT+** to empty all four sample slots (a few seconds; stop the sequencer and let the sound die out first). **OCT−** keeps your samples.
 - SYSTEM 2 also shows the processor load (CPU NOW / PEAK). OCT− + OCT+ together resets PEAK.
 
 ---
@@ -345,7 +345,7 @@ Turn **PRESETS** to step through them by category, then your own.
 
 - **Six voices** are shared by all tracks. A new note beyond six takes the oldest one, faded out.
 - **Your sounds, slots A–D, settings and samples survive firmware updates.**
-- **Samples:** load your own WAV files into the four slots with the [editor](#15-the-editor) (or, optionally, `tools/fm1_sample_upload.py`, see the README). SYSTEM 2's SAMPLES brings the factory samples back.
+- **Samples:** load your own WAV files into the four slots with the [editor](#15-the-editor) (or, optionally, `tools/fm1_sample_upload.py`, see the README). SYSTEM 2's SAMPLES empties all four.
 - **Stuck?** Use the Rescue page on the [FM-1 Firmware Hub](https://thefirmwarehub.com/).
 
 ---
@@ -356,7 +356,7 @@ Turn **PRESETS** to step through them by category, then your own.
 
 - **SOUND EDITOR:** the four tracks' sounds (T1–T4), every setting on screen with the FM-1's names. Every move plays on the FM-1 at once, like turning its knobs, and in the page's own GR!MM, whose screen and keys are beside the sliders (play them with the mouse or the computer keyboard: `Z`–`/`, `S`–`'`, `Q`–`O`). **STORE IN SLOT** saves the sound into one of your 64 slots, with the name you give it.
 - **SOUNDS:** your 64 slots and the 40 factory sounds; **LOAD TO T1–T4** puts one on a track. Rename, clear, import and export single sounds.
-- **SAMPLES:** drop a WAV on a slot and **UPLOAD** it; **RESTORE FACTORY SAMPLES**.
+- **SAMPLES:** drop a WAV on a slot and **UPLOAD** it; **CLEAR ALL SAMPLES**.
 - **BACKUP:** one file with all your sounds, slots A–D and settings, and a restore that makes a backup of what's there first. (Samples aren't in it: keep their WAV files.)
 
 The FM-1 only writes to its memory (store, upload, restore) while the sequencer is stopped and nothing sounds; the editor tells you when to wait. Nothing is written without you pressing a button.

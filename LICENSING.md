@@ -3,7 +3,7 @@
 GR!MM is free software under the GNU General Public License, version 3 only (`GPL-3.0-only`, full text in
 `LICENSE`). One file in it, `firmware/src/fm6_core.c` (msfa), is Apache-2.0 (`LICENSES/Apache-2.0-msfa.txt`), and two,
 `firmware/src/phys_dsp.c` (DaisySP) and `firmware/src/phys_symp.c` (Rings), are MIT (`LICENSES/MIT-DaisySP.txt`,
-`LICENSES/MIT-Rings.txt`); Apache-2.0 and MIT code may be combined into a GPL-3.0 work, and the firmware built with it is GPL-3.0-only as a whole. The four factory samples are CC0 1.0 (`LICENSES/CC0-1.0.txt`). You may use, study, change and share it. If you give someone a firmware built from it, give them its
+`LICENSES/MIT-Rings.txt`); Apache-2.0 and MIT code may be combined into a GPL-3.0 work, and the firmware built with it is GPL-3.0-only as a whole. You may use, study, change and share it. If you give someone a firmware built from it, give them its
 complete source under the same licence too.
 
 GR!MM is a modified version of [Dinghy](https://github.com/zvenson/dinghy) (zvenson), which is based on Felucca and
@@ -22,7 +22,7 @@ SLOOP. Everything below that is not marked as a GR!MM change is theirs.
 | The GRAIN effect `firmware/src/grain.c` (the GRAIN engine until step 7) | Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments: Felucca's GRAIN engine (`firmware/src/eng_grain.c`: the grain, its length and interval from SIZE and DENSITY, the spread and jitter, the overlap level, the Hann window), taken over without Felucca's sample sets, zones, reverse grains and per-part pool. GR!MM changes Copyright (C) 2026 GR!MM: an effect over a ring buffer of the GRAIN sends instead of a sample, FREEZE, a pan for each grain, the return into the mix and SPACE |
 | The SAMPLE source `firmware/src/sampler.c` (step 7's TAPE engine) | Copyright (C) 2026 GR!MM: GR!MM's own (varispeed over a sample slot, the loop and its two crossing heads, the window cache). It reads the slots with `samples.c`'s decoder and seek index and uses `pow2_q16` (Felucca's, in `samples.c`) |
 | The TAPE effect `firmware/src/tapefx.c` | Copyright (C) 2026 GR!MM: GR!MM's own (the short line the wow moves, the saturation as one curve, the low-pass, the hiss, the bypass cross-over). Its wow, flutter and saturation are DELAY's (`wear.c`, after X0X's TAPE delay as above) |
-| The factory samples' tool `tools/gen_samples.py` (its output `firmware/gen/grimm_samples.h`: the samples below, as a slot holds them) | Copyright (C) 2026 GR!MM | GPL-3.0-only |
+| The factory samples' tool `tools/gen_samples.py` (its output `firmware/gen/grimm_samples.h`: none for now) | Copyright (C) 2026 GR!MM | GPL-3.0-only |
 | The sample slots and their upload `firmware/src/samples.c`, `tools/fm1_sample_upload.py` | Copyright (C) 2026 GR!MM. The slot layout and the upload protocol (BEGIN / WRITE / END / ERASE / INFO, pack7) follow Felucca's user sample slots and uploader (`web/EDITOR_PROTOCOL.md`, `tools/fm1_sample_upload.py`, Copyright (C) 2026 Leo Kuroshita, GPL-3.0), with GR!MM's own magic ("GSMP") and SysEx ID (7D 47 52); the IMA ADPCM decoder is Felucca's (`eng_grain.c`), as tables built at boot (GR!MM), and so is `pow2_q16` (`eng_sample.c`) |
 | `tools/sampleio.py` | Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments: Felucca's, unchanged (WAV reading, resampling, IMA ADPCM encoding, the slot header) |
 | The platform's sample area and app SysEx (`firmware/src/platform.c`: `SAMPLE_AREA`, `sample_flash*`, `sysex_*`) | Copyright (C) 2026 GR!MM |
@@ -87,7 +87,6 @@ Copyright (C) 2026 GR!MM, GPL-3.0-only, unless a line says otherwise.
 
 | What | Licence | Where |
 | --- | --- | --- |
-| GR!MM's four factory samples, URCHIN, LEAVE, NIKOLAI and M-SOFT (`assets/samples/Urchin.wav`, `Leave.wav`, `Nikolai.wav`, `M-Soft.wav`; in the firmware and the browser build's `grimm.wasm` as `firmware/gen/grimm_samples.h`): recordings, Copyright (C) 2026 GR!MM. Free to use for anything, no credit needed | CC0 1.0 Universal | `LICENSES/CC0-1.0.txt` |
 
 ## Third-party material
 

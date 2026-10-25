@@ -52,7 +52,8 @@
  *              running, the first touch only wakes it), HOME again: SYSTEM 2 (MIDI LEARN: LEARN, a knob turned on any
  *              page, then a CC: linked, 32 at most; CLEAR ALL + OCT+; OCT- cancels; SEQ MIDI OUT: the steps' and the
  *              arps' notes out on their tracks' channels too; SAMPLES: RESTORE + OCT+ writes the four factory
- *              samples over the slots, OCT- keeps them); the FM-1's settings, not the project's
+ *              samples over the slots, OCT- keeps them; none built in: CLEAR, the slots emptied); the FM-1's
+ *              settings, not the project's
  *   SAVE       SOUNDS (64 slots: a track's source, its four, ENV, LATCH (FM: its own patch); SLOT, CATEGORY, TYPE (the list by source),
  *              ACTION; playing: SAVE / CLEAR wait for the stop) -> PROJECTS (the slots A..D: the four tracks' sounds,
  *              sequences and the mixer; SLOT, ACTION LOAD / SAVE / ERASE / NEW); OCT+ does the ACTION, OCT- backs out;
@@ -73,7 +74,7 @@
  *              TAPE:  WOW, SATURATION, TONE, HISS, over the whole mix (all 0: bypassed)
  *              GRAIN: SIZE (10 .. 390 ms), DENSITY (1 .. 98 a second), SCATTER, MIX (return); FX held + the lowest
  *                     white key (F3): FREEZE on or off
- *              DELAY: TIME (20 .. 3500 ms), FEEDBACK (0 .. 110 %), WEAR (darker, more wobbly repeats), MIX (return)
+ *              DELAY: TIME (20 .. 3000 ms), FEEDBACK (0 .. 110 %), WEAR (darker, more wobbly repeats), MIX (return)
  *              SPACE: SIZE (the decay, 0.4 .. ~32 s, then INF), DAMP, MIX (return), PRE-DELAY (0 .. 250 ms)
  *              held ~0.3 s: PERFORM (let go: back where it was); held + G3 .. F4, while held: REV THROW, ECHO THROW,
  *              TAPE STOP, REVERSE, FILTER DOWN, FILTER UP, STUTTER (the tricks' keys glow, lit while on; perform.c)
@@ -1437,7 +1438,7 @@ static void app_main(void)
                                                  * screen) */
 
     ui_boot();                                  /* (the boot screen, UI_BOOT_MS: ui_update moves it) */
-    if ((k = smp_erased()) != 0u) {             /* the factory samples into the slots that hold nothing (samples.c),
+    if (SMP_FACT_N && (k = smp_erased()) != 0u) {   /* the factory samples into the slots that hold nothing (samples.c),
                                                  * said on the boot screen while they go in (~1 s a slot) */
         uint32_t s;
         bt_note = "INSTALLING SAMPLES";
@@ -1713,13 +1714,13 @@ static void app_main(void)
         }
         learn_was = sy_learn == LEARN_CLEAR;
         if (sy_fac && page != PG_SYS2) sy_fac = 0;   /* SAMPLES: away, back to KEEP; RESTORE turned to: said */
-        if (sy_fac && !fac_was) hd_say("OCT+: RESTORE SAMPLES");
+        if (sy_fac && !fac_was) hd_say(SMP_FACT_N ? "OCT+: RESTORE SAMPLES" : "OCT+: CLEAR SAMPLES");
         fac_was = sy_fac != 0;
         if (fac_at && (int32_t)(fm1_ms - fac_at) >= 0) {   /* RESTORE: the four factory samples (~5 s) */
             uint32_t s, rc = 0;
             fac_at = 0;
             for (s = 0; s < SMP_SLOTS && !rc; s++) rc = smp_factory(s);
-            hd_say(rc ? "RESTORE FAILED" : "SAMPLES RESTORED");
+            hd_say(SMP_FACT_N ? rc ? "RESTORE FAILED" : "SAMPLES RESTORED" : rc ? "CLEAR FAILED" : "SAMPLES CLEARED");
         }
         sys_sync();
         if ((page == PG_FMALGO || page == PG_FMOP) && sel_eng() != ENG_FM) page = PG_SOUND;   /* (not FM now: SOUND) */

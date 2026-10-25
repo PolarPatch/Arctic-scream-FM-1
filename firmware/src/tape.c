@@ -8,8 +8,8 @@
  * has them (softclip, soft_knee, sh_tz, the one-pole low-pass that keeps
  * its steps' remainders so a tail ends in exact silence).
  *
- *   at half the rate (22.05 kHz, as SPACE: 3.5 s fit in 155 KB, the work halves, the echoes stop near 10 kHz): the
- *   voices (every other sample, 1 2 1) -> the line (77456 samples) -> read TIME back, plus the wow (two slow sines,
+ *   at half the rate (22.05 kHz, as SPACE: 3 s fit in 133 KB, the work halves, the echoes stop near 10 kHz): the
+ *   voices (every other sample, 1 2 1) -> the line (66432 samples) -> read TIME back, plus the wow (two slow sines,
  *   0.5 and 0.19 Hz: not quite periodic) and a little flutter (6.1 Hz), between samples, gliding over the block; the
  *   right side 9 ms later -> the loop: a one-pole low-pass (WEAR: ~7 kHz .. ~1.2 kHz), FEEDBACK (0 .. 150 %), a tanh
  *   saturation (WEAR: 1x .. 1.8x drive, the level made up), the DC block -> back into the line with the input,
@@ -23,14 +23,14 @@
  * sets the four parameters. The line and the state are in the pool (zero at boot): ~157 KB. */
 
 #define DL_NC 128u                              /* a block at half the rate: app_audio's 256 frames */
-#define DL_LEN 77456u                           /* 3500 ms (77175 samples) + the wow's reach + the right side's 9 ms */
+#define DL_LEN 66432u                           /* 3000 ms (66150 samples) + the wow's reach + the right side's 9 ms */
 #define DL_SPREAD (198 << 8)                    /* the right side reads 9 ms further back (Q8 samples) */
 #define DL_IN 16384                             /* the voices into the line, Q15: half (headroom for the loop) */
 #define DL_DCK 280                              /* the DC block: 30 Hz at 22.05 kHz, Q15 */
 #define DL_W1 12467522u                         /* the wow: 0.5 Hz, a block's step (2^32 * 256 / 44100 * Hz) */
 #define DL_W2 4737658u                          /* .. and 0.19 Hz beside it: not quite periodic */
 #define DL_W3 152103765u                        /* the flutter: 6.1 Hz */
-_Static_assert(77175u + 51u + 198u + 2u < DL_LEN, "DELAY: the longest read stays in the line");
+_Static_assert(66150u + 51u + 198u + 2u < DL_LEN, "DELAY: the longest read stays in the line");
 
 static int16_t dl_buf[DL_LEN] __attribute__((section(".pool")));
 static struct {
@@ -43,7 +43,7 @@ static struct {
 } dl __attribute__((section(".pool")));
 
 /* the parameters, 0..127, written by the main loop */
-static volatile int32_t dl_time = 88, dl_fb = 64, dl_wear = 50, dl_mix = 100;   /* 717 ms, 55 %, return 79 % (the tracks' DLY 0: nothing goes in) */
+static volatile int32_t dl_time = 88, dl_fb = 64, dl_wear = 50, dl_mix = 100;   /* 644 ms, 55 %, return 79 % (the tracks' DLY 0: nothing goes in) */
 
 /* main loop: the delay gives nothing out (MIX 0, or the line silent and nothing coming in) */
 static int tape_idle(void) { return dl_mix <= 0 || dl.quiet >= DL_LEN; }

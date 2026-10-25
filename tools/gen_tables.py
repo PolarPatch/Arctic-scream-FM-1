@@ -73,8 +73,8 @@ def main(path):
     L += ["    {" + ", ".join(str(v) for v in row) + "}," for row in g]
     L += ["};"]
     L += arr("RV_RT60_X10", "uint16_t", [int(round(t * 10)) for t in rt])
-    # DELAY (firmware/src/tape.c): TIME 0..127 -> 20 .. 3500 ms, exponential (~700 ms at 88)
-    L += arr("DL_MS", "uint16_t", [int(round(20 * 175 ** (v / 127))) for v in range(128)])
+    # DELAY (firmware/src/tape.c): TIME 0..127 -> 20 .. 3000 ms, exponential (~640 ms at 88; Arctic Scream p0larpatch: was 3500, the pool's room)
+    L += arr("DL_MS", "uint16_t", [int(round(20 * 150 ** (v / 127))) for v in range(128)])
     # FM (firmware/src/fm6_core.c, msfa via Felucca): Felucca's sine (1025 points: SINE[i + 1] needs no wrap) and its
     # FM6 tables (fm6_tables below: Felucca's tools/gen_tables.py, as it is)
     L += arr("SINE", "int16_t", [int(round(32767 * math.sin(2 * math.pi * i / 1024))) for i in range(1025)])

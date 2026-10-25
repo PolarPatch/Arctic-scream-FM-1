@@ -703,17 +703,17 @@ function drawSamples() {
   refreshButtons();
 }
 $("b-sinfo").onclick = sampleInfo;
-$("b-sfactory").onclick = () => {                            // RESTORE: the four factory samples, over whatever is there
-  if (!confirm("RESTORE THE FACTORY SAMPLES?\n\nThis REPLACES all four sample slots on the FM-1 with GR!MM's factory samples " +
-               "(URCHIN, LEAVE, NIKOLAI, M-SOFT). Your own samples in them are gone: keep their WAV files.")) return;
-  job("RESTORE FACTORY SAMPLES", async () => {
-    say("WRITING THE FOUR FACTORY SAMPLES (ABOUT 5 S)…");
+$("b-sfactory").onclick = () => {                            // CLEAR (the factory state: Arctic Scream has no samples built in)
+  if (!confirm("CLEAR ALL SAMPLES?\n\nThis EMPTIES all four sample slots on the FM-1. " +
+               "Your own samples in them are gone: keep their WAV files.")) return;
+  job("CLEAR ALL SAMPLES", async () => {
+    say("EMPTYING THE FOUR SAMPLE SLOTS (ABOUT 5 S)…");
     try { smpInfo = await conn.client.smpFactory(); } catch (e) {
       if (e.rc === 97) throw new EditorError("NO ANSWER: THE FM-1'S GR!MM IS OLDER THAN 26C (NO FACTORY SAMPLES)", 97);
       throw e;
     }
     drawSamples();
-    return `FACTORY SAMPLES RESTORED: ${smpInfo.map((x) => x.name || "-").join(", ")}`;
+    return "ALL FOUR SAMPLE SLOTS EMPTY";
   });
 };
 

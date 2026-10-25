@@ -343,7 +343,7 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         else if (v) S->fill = (uint8_t)(2 * v), put_s(put_u(S->val, SCR_S[clamp(v, 0, 4)] / 60u), "M");
         else S->fill = 8, put_s(S->val, "NVR");
         return;
-    case PG_SYS2: put_s(S->val, k == 2u ? (v ? "RESTORE" : "KEEP") : k ? (v ? "ON" : "OFF") : v == LEARN_CLEAR ? "CLEAR" :
+    case PG_SYS2: put_s(S->val, k == 2u ? (v ? SMP_FACT_N ? "RESTORE" : "CLEAR" : "KEEP") : k ? (v ? "ON" : "OFF") : v == LEARN_CLEAR ? "CLEAR" :
                         LEARN_NAME[clamp(v, 0, 2)]); return;
     case PG_SOUNDS:
         if (k == 0u) { ui_3(S->val, (uint32_t)v + 1u); return; }

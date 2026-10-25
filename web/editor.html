@@ -194,14 +194,13 @@ a.lnk { color: var(--l); }
 
     <section id="s-samples">
       <h2>SAMPLES</h2>
-      <div class="row"><button id="b-sinfo">REFRESH</button><button id="b-sfactory">RESTORE FACTORY SAMPLES</button></div>
+      <div class="row"><button id="b-sinfo">REFRESH</button><button id="b-sfactory">CLEAR ALL SAMPLES</button></div>
       <div id="smp"></div>
       <p class="note">Any WAV (8 to 32 bit, float, mono or stereo, any rate) becomes mono, 22050 Hz, IMA ADPCM, as
         tools/fm1_sample_upload.py makes it; a slot holds 6.64 s (longer: cut, with a short fade). The root note is C4
         unless the file name has one ("drone_A2.wav"). A name is 8 characters (the slot's, what the FM-1 shows): a longer
-        one keeps its number ("Sample-002": SAMP-002). RESTORE FACTORY SAMPLES writes GR!MM's four (URCHIN, LEAVE,
-        NIKOLAI, M-SOFT) over all four slots; an FM-1 also gets them by itself at power-on in a slot that holds
-        nothing.</p>
+        one keeps its number ("Sample-002": SAMP-002). Arctic Scream comes with no samples of its own: the slots are
+        yours. CLEAR ALL SAMPLES empties all four.</p>
     </section>
 
     <section id="s-backup">
@@ -218,7 +217,7 @@ a.lnk { color: var(--l); }
     </section>
     <footer class="note">
       <p><b><a class="lnk" href="index.html">Try the GR!MM demo</a></b>: the FM-1's panel in your browser, the same firmware.</p>
-      <p>GR!MM · <a class="lnk" href="LICENSE">GPL-3.0-only</a> · <a class="lnk" href="https://github.com/GRiMMBIENT/grimm">source</a> · <a class="lnk" href="https://github.com/GRiMMBIENT/grimm/blob/main/LICENSING.md">credits and licences</a> (<a class="lnk" href="LICENSING.md">as text</a>) · fonts: Press Start 2P, <a class="lnk" href="LICENSES/OFL-PressStart2P.txt">SIL OFL 1.1</a>; Terminus, <a class="lnk" href="Terminus-LICENSE.txt">SIL OFL 1.1</a> · factory samples: <a class="lnk" href="LICENSES/CC0-1.0.txt">CC0 1.0</a> · built with Emscripten (<a class="lnk" href="LICENSES/MIT-Emscripten.txt">MIT</a>, musl <a class="lnk" href="LICENSES/MIT-musl.txt">MIT</a>)</p>
+      <p>GR!MM · <a class="lnk" href="LICENSE">GPL-3.0-only</a> · <a class="lnk" href="https://github.com/GRiMMBIENT/grimm">source</a> · <a class="lnk" href="https://github.com/GRiMMBIENT/grimm/blob/main/LICENSING.md">credits and licences</a> (<a class="lnk" href="LICENSING.md">as text</a>) · fonts: Press Start 2P, <a class="lnk" href="LICENSES/OFL-PressStart2P.txt">SIL OFL 1.1</a>; Terminus, <a class="lnk" href="Terminus-LICENSE.txt">SIL OFL 1.1</a> · built with Emscripten (<a class="lnk" href="LICENSES/MIT-Emscripten.txt">MIT</a>, musl <a class="lnk" href="LICENSES/MIT-musl.txt">MIT</a>)</p>
       <p>Built on Dinghy (zvenson), Felucca (Leo Kuroshita, Hügelton Instruments) and SLOOP (isod89); the editor's
         sections and live editing follow SLOOP's editor. M-VAVE and FM-1 are trademarks of their owners; GR!MM is not
         affiliated with or endorsed by them.</p>
