@@ -55,7 +55,8 @@ a { color: inherit; }
 /* the name under the screen */
 .brand { display: flex; align-items: center; justify-content: center; font: 700 1.9cqw/1 var(--mono); letter-spacing: .1em;
          color: var(--fg); white-space: nowrap; pointer-events: none; text-shadow: 0 0 .8cqw rgba(34, 211, 238, .45); }
-.brand span { color: var(--ice); margin-left: .5em; }
+.brand i { font-style: normal; color: var(--label); margin: 0 .5em; }
+.brand span { color: var(--ice); }
 .dial { border-radius: 50%; background: #0d1117; border: .45cqw solid #060410; cursor: ns-resize; touch-action: none; }
 .dial::after { content: ""; position: absolute; left: 50%; top: 10%; width: 9%; height: 30%; margin-left: -4.5%;
                border-radius: 1cqw; background: var(--fg); transform-origin: 50% 133%; transform: rotate(var(--a, 0deg)); }
