@@ -33,13 +33,22 @@ static const uint16_t UI_ACCENTS[4] = {RGB(0x22, 0xd3, 0xee), RGB(0x3f, 0xb9, 0x
 static uint16_t ui_acc = RGB(0x22, 0xd3, 0xee); /* the accent (as the page is drawn) */
 static uint16_t ui_acc_user = RGB(0x22, 0xd3, 0xee);   /* .. COLOUR's (SYSTEM) */
 static uint16_t ui_hd = RGB(0x22, 0xd3, 0xee);  /* the header's block */
-/* the pages' own colours, BlueWatch's only (its cyberpunk accents and its charts' colours): a page's light, its mid and
- * dark tinted from it, and an accent beside it: ENV amber and magenta, LFO pink and cyan, EDIT periwinkle and amber, SEQ
- * green and magenta */
-static const uint16_t UI_TINT[4][2] = {{RGB(0xff, 0xcb, 0x47), RGB(0xff, 0x1a, 0x8c)},
-                                       {RGB(0xf4, 0x72, 0xb6), RGB(0x22, 0xd3, 0xee)},
-                                       {RGB(0x7c, 0x8c, 0xf8), RGB(0xff, 0xcb, 0x47)},
-                                       {RGB(0x3f, 0xb9, 0x50), RGB(0xff, 0x1a, 0x8c)}};
+/* BlueWatch's colours (its cyberpunk accents, its charts' colours), and only them */
+#define BW_CYAN RGB(0x22, 0xd3, 0xee)
+#define BW_MAGENTA RGB(0xff, 0x1a, 0x8c)
+#define BW_AMBER RGB(0xff, 0xcb, 0x47)
+#define BW_VIOLET RGB(0xa7, 0x8b, 0xfa)
+#define BW_GREEN RGB(0x3f, 0xb9, 0x50)
+#define BW_BLUE RGB(0x4f, 0x8c, 0xff)
+#define BW_PERIWINKLE RGB(0x7c, 0x8c, 0xf8)
+#define BW_TEAL RGB(0x3f, 0xb9, 0xa5)
+#define BW_GOLD RGB(0xd9, 0xa4, 0x41)
+#define BW_LAVENDER RGB(0xb0, 0x83, 0xc9)
+#define BW_ROSE RGB(0xe0, 0x70, 0x7a)
+#define BW_PINK RGB(0xf4, 0x72, 0xb6)
+#define BW_SKY RGB(0x4f, 0xb3, 0xe8)
+/* each knob its colour, on every page: its slab's bars and value, and what it moves in the picture */
+static const uint16_t UI_KC[4] = {BW_PERIWINKLE, BW_TEAL, BW_AMBER, BW_PINK};
 #define UI_PIC_MS 40u                           /* the picture redrawn at most this often */
 #define UI_BAT_W 16                             /* the header's battery (and its tip) */
 #define UI_BOOT_MS 3000u                        /* the boot screen this long */
@@ -193,9 +202,9 @@ static void ui_head_draw(void)
     int32_t bw = 10 + 8 * ui_len(ui_hb), bx = 3 + bw + 3;
     ui_rect(3, 3, bw, 18, ui_hd);
     ui_text(8, 8, ui_hb, 1, UI_K);
-    ui_rect(bx, 3, 237 - bx, 18, UI_D);
-    ui_text(bx + 5, 8, ui_hl, 1, UI_L);
-    ui_text(232 - 8 * ui_len(ui_hr), 8, ui_hr, 1, UI_M);
+    ui_rect(bx, 3, 237 - bx, 18, UI_D0);
+    ui_text(bx + 5, 8, ui_hl, 1, UI_L0);
+    ui_text(232 - 8 * ui_len(ui_hr), 8, ui_hr, 1, UI_M0);
     if (ui_bat >= 0) ui_bat_draw(232 - 8 * ui_len(ui_hr) - (ui_len(ui_hr) ? 4 : 0) - UI_BAT_W, 8);
 }
 
@@ -429,13 +438,14 @@ static void ui_slab_draw(void)
 {
     const slab_t *S = &ui_sl[ui_k];
     int32_t x = 3 + (int32_t)ui_k * 59, j, n = ui_len(S->val);
-    uint16_t fc = S->acc ? ui_acc : UI_L;
-    ui_rect(x, 165, 56, 72, UI_D);
-    ui_text(x + 4, 170, S->lab, 1, UI_L);
-    for (j = 0; j < 8; j++)                     /* 8 segments: light (the accent) filled, black empty */
+    uint16_t fc = S->acc ? ui_acc : UI_KC[ui_k];   /* (the knob's colour) */
+    ui_rect(x, 165, 56, 72, UI_D0);
+    ui_rect(x, 165, 56, 2, UI_KC[ui_k]);        /* (its colour along its top) */
+    ui_text(x + 4, 171, S->lab, 1, UI_L0);
+    for (j = 0; j < 8; j++)                     /* 8 segments: the knob's colour (the accent) filled, black empty */
         ui_rect(x + 4 + j * 6, 190, 5, 14, j < S->fill ? fc : UI_K);
-    if (n <= 3) ui_text(x + 4, 214, S->val, 2, S->dim ? UI_M : S->acc ? ui_acc : UI_L);
-    else ui_text(x + 4, 222, S->val, 1, S->dim ? UI_M : UI_L);
+    if (n <= 3) ui_text(x + 4, 214, S->val, 2, S->dim ? UI_M0 : fc);
+    else ui_text(x + 4, 222, S->val, 1, S->dim ? UI_M0 : fc);
 }
 
 /* ---- the pictures */
@@ -450,18 +460,29 @@ static uint16_t ui_mix(uint16_t a, uint16_t b, uint32_t q, uint32_t n)   /* a ->
     uint32_t g = ((a >> 5 & 63u) * (n - q) + (b >> 5 & 63u) * q) / n, bl = ((a & 31u) * (n - q) + (b & 31u) * q) / n;
     return (uint16_t)(r << 11 | g << 5 | bl);
 }
-static void ui_tint(uint32_t pg)                /* the palette for page pg */
+/* the palette for page pg: a page has three colours (the header's block and the picture's light; the picture's mid;
+ * its dark) and an accent, BlueWatch's in combination; HOME its own (the tracks' waves, the stars: the greys, COLOUR) */
+static void ui_tint(uint32_t pg)
 {
-    int32_t i = pg == PG_ENV ? 0 : pg == PG_LFO ? 1 : pg == PG_SOUND || pg == PG_SOURCE || pg == PG_FMALGO || pg == PG_FMOP ? 2
-              : pg == PG_GRID || pg == PG_PATTERN ? 3 : -1;
-    uint16_t c;
-    if (i < 0) {
+    uint16_t a, b, c, x;
+    switch (pg) {
+    case PG_ENV: a = BW_AMBER, b = BW_TEAL, c = BW_PERIWINKLE, x = BW_MAGENTA; break;
+    case PG_LFO: a = BW_PINK, b = BW_CYAN, c = BW_AMBER, x = UI_W; break;
+    case PG_SOUND: case PG_SOURCE: case PG_FMALGO: case PG_FMOP: a = BW_PERIWINKLE, b = BW_TEAL, c = BW_PINK, x = BW_AMBER; break;
+    case PG_GRID: case PG_PATTERN: a = BW_GREEN, b = BW_AMBER, c = BW_PERIWINKLE, x = BW_MAGENTA; break;
+    case PG_SCALE: case PG_CHORD: a = BW_LAVENDER, b = BW_CYAN, c = BW_AMBER, x = BW_MAGENTA; break;
+    case PG_ARP: a = BW_TEAL, b = BW_PINK, c = BW_AMBER, x = BW_CYAN; break;
+    case PG_TAPE: case PG_GRAIN: case PG_DELAY: case PG_SPACE: case PG_PERFORM:
+        a = BW_VIOLET, b = BW_SKY, c = BW_ROSE, x = BW_AMBER; break;
+    case PG_MIX1: case PG_MIX2: case PG_TRACK: a = BW_CYAN, b = BW_GREEN, c = BW_VIOLET, x = BW_MAGENTA; break;
+    case PG_SONG: a = BW_GOLD, b = BW_MAGENTA, c = BW_PERIWINKLE, x = BW_CYAN; break;
+    case PG_SOUNDS: case PG_PROJECTS: a = BW_BLUE, b = BW_AMBER, c = BW_TEAL, x = BW_MAGENTA; break;
+    case PG_SYSTEM: case PG_SYS2: a = BW_MAGENTA, b = BW_CYAN, c = BW_AMBER, x = BW_CYAN; break;
+    default:
         ui_d = UI_D0, ui_m = UI_M0, ui_l = UI_L0, ui_acc = ui_hd = ui_acc_user;
         return;
     }
-    c = UI_TINT[i][0];
-    ui_l = c, ui_m = ui_mix(UI_K, c, 9, 16), ui_d = ui_mix(UI_D0, c, 1, 9);
-    ui_hd = c, ui_acc = UI_TINT[i][1];
+    ui_hd = a, ui_l = a, ui_m = ui_mix(UI_K, b, 3, 4), ui_d = ui_mix(UI_K, c, 2, 5), ui_acc = x;
 }
 static void ui_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c) { cv_line(x0 - ui_ox, y0, x1 - ui_ox, y1, c); }
 static int ui_in(int32_t x, int32_t y, int32_t w, int32_t h)   /* does (x, y, w, h) reach into the region being drawn */
@@ -620,17 +641,17 @@ static void pic_va(void)                        /* EditVA: the waveform of WAVE 
     for (y = 0; y < 30; y++)
         for (x = 0; x < 54; x++) {
             uint16_t c = 0;
-            if (y == 29 && !(x & 1)) c = UI_D;
+            if (y == 29 && !(x & 1)) c = UI_KC[2];    /* (the colours: WAVE, DETUNE's other saws, CUTOFF's line) */
             if (w == WAVE_SUPER) {
-                if (va_saw(x, y, 19, 11)) c = UI_D;
-                if (va_saw(x, y, 17, 5)) c = UI_M;
-                if (va_saw(x, y, 18, 0)) c = UI_L;
+                if (va_saw(x, y, 19, 11)) c = UI_KC[3];
+                if (va_saw(x, y, 17, 5)) c = UI_KC[1];
+                if (va_saw(x, y, 18, 0)) c = UI_KC[0];
             } else if (w == WAVE_SQR) {
-                if (va_sqr(x, y, 18 + dt, 3)) c = UI_M;
-                if (va_sqr(x, y, 18, 0)) c = UI_L;
+                if (va_sqr(x, y, 18 + dt, 3)) c = UI_KC[1];
+                if (va_sqr(x, y, 18, 0)) c = UI_KC[0];
             } else {
-                if (va_saw(x, y, 18 + dt, 3)) c = UI_M;
-                if (va_saw(x, y, 18, 0)) c = UI_L;
+                if (va_saw(x, y, 18 + dt, 3)) c = UI_KC[1];
+                if (va_saw(x, y, 18, 0)) c = UI_KC[0];
             }
             if (c) ui_cell(x, y, c);
         }
@@ -985,17 +1006,18 @@ static void pic_env(void)                       /* Env: the shape of the track's
         else ev[x] = ys + (28 - ys) * (x - wa - wd - ws) / wr;
         if (ev[x] > 28) ev[x] = 28;
     }
-    ui_text(PX0 + (wa / 2) * 4, 31, "A", 1, UI_M);
-    ui_text(PX0 + (wa + wd / 2) * 4, 31, "D", 1, UI_M);
-    ui_text(PX0 + (wa + wd + ws / 2) * 4, 31, "S", 1, UI_M);
-    ui_text(PX0 + (wa + wd + ws + wr / 2) * 4, 31, "R", 1, UI_M);
+    ui_text(PX0 + (wa / 2) * 4, 31, "A", 1, UI_KC[0]);   /* (each stage in its knob's colour) */
+    ui_text(PX0 + (wa + wd / 2) * 4, 31, "D", 1, UI_KC[1]);
+    ui_text(PX0 + (wa + wd + ws / 2) * 4, 31, "S", 1, UI_KC[2]);
+    ui_text(PX0 + (wa + wd + ws + wr / 2) * 4, 31, "R", 1, UI_KC[3]);
     for (y = 0; y < 30; y++)
         for (x = 0; x < 54; x++) {
             int32_t n = x < 53 ? ev[x + 1] : ev[x], lo = ev[x] < n ? ev[x] : n, hi = ev[x] < n ? n : ev[x];
+            uint32_t st = x < wa ? 0u : x < wa + wd ? 1u : x < wa + wd + ws ? 2u : 3u;
             uint16_t c = 0;
-            if (y > ev[x] && y <= 28 && !((x + y) & 1)) c = UI_D;
-            if (y >= lo && y <= hi) c = UI_L;
-            if (y == 29 && !(x & 1)) c = UI_D;
+            if (y > ev[x] && y <= 28 && !((x + y) & 1)) c = ui_mix(UI_K, UI_KC[st], 1, 3);
+            if (y >= lo && y <= hi) c = UI_KC[st];
+            if (y == 29 && !(x & 1)) c = UI_D0;
             if (c) ui_cell(x, y, c);
         }
     ui_cell(wa - 1, 3, ui_acc), ui_cell(wa, 3, ui_acc), ui_cell(wa - 1, 4, ui_acc), ui_cell(wa, 4, ui_acc);
@@ -1324,7 +1346,8 @@ static void pic_lfo(void)                       /* Lfo: a cycle of SHAPE, the do
     uint32_t sh = (uint32_t)clamp(trk[sel].lfo_shape, 0, NLFOSHAPE - 1), dx = lfo_dot(), x;
     uint32_t ms = 3932160000u / lfo_hz_q16(trk[sel].lfo_rate);
     int32_t y, row[54];
-    uint16_t lc = trk[sel].lfo_depth > 0 ? UI_L : UI_M;   /* (DEPTH 0: the shape dim) */
+    uint16_t lc = trk[sel].lfo_depth > 0 ? UI_KC[3] : UI_M0;   /* (SHAPE's colour; DEPTH 0: dim) */
+    uint16_t dc = ui_mix(UI_K, UI_KC[1], 1, 3); /* (DEPTH's colour: the swing filled) */
     char l[32];
     lfo_rate_text(put_s(l, ms >= 995u ? "1 CYCLE = " : ""), trk[sel].lfo_rate, " ");
     put_s(l + ui_len(l), " / FREE");
@@ -1335,9 +1358,11 @@ static void pic_lfo(void)                       /* Lfo: a cycle of SHAPE, the do
             int32_t n = row[x < 53u ? x + 1u : x], lo = row[x] < n ? row[x] : n, hi = row[x] < n ? n : row[x];
             int32_t mx = 5 * (int32_t)x - 248, my = 5 * y - 20;
             uint16_t c = 0;
-            if (y == 15 && x % 3u == 0u) c = UI_D;
+            if (trk[sel].lfo_depth > 0 && ((y > 15 && y < row[x]) || (y < 15 && y > row[x])) && !((x + (uint32_t)y) & 1u))
+                c = dc;
+            if (y == 15 && x % 3u == 0u) c = UI_KC[2];   /* (the middle: DEST's colour) */
             if (y >= lo && y <= hi) c = lc;
-            if (((int32_t)x - 48) * ((int32_t)x - 48) + (y - 5) * (y - 5) <= 10 && mx * mx + my * my > 200) c = UI_L;
+            if (((int32_t)x - 48) * ((int32_t)x - 48) + (y - 5) * (y - 5) <= 10 && mx * mx + my * my > 200) c = UI_KC[0];
             if ((x == dx || x == dx + 1u) && y >= row[dx] - 1 && y <= row[dx]) c = ui_acc;   /* the dot */
             if (c) ui_cell((int32_t)x, y, c);
         }
