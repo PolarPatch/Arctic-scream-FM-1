@@ -79,8 +79,8 @@ static track_t trk[NT] = {TRK_DEF, TRK_DEF, TRK_DEF, TRK_DEF};   /* VA: SAW, DET
                                                  * DLY 0, REV 100, GRN 0, PAN the middle; LATCH OFF; ENV: ATTACK
                                                  * ~0.2 s, DECAY 1 s, SUSTAIN 100 %, RELEASE ~5 s; chord mode OFF (SCALE, CLOSE); ARP OFF (UP,
                                                  * 1/16, 1 octave, GATE 50 %); LFO DEPTH 30 % (slow, TRK CUTOFF,
-                                                 * SINE); the filter at CUTOFF 84, RESONANCE 24 (Arctic p0lar
-                                                 * patches: darker, and every knob of TRACK, ENV, LFO heard from the
+                                                 * SINE); the filter at CUTOFF 84, RESONANCE 24 (Arctic Scream
+                                                 * p0larpatch: darker, and every knob of TRACK, ENV, LFO heard from the
                                                  * start); FX 100 %; FM: its patch, BELL's (fm_builtin at
                                                  * power-on) */
 static voice_t vc[NV];
@@ -131,7 +131,7 @@ static inline uint32_t vinc(int32_t p16)
 #include "wheel.c"
 #include "phys.c"
 #include "phase.c"
-#include "howl.c"                               /* (Arctic p0lar patches: the feedback loop, after Audrey II) */
+#include "howl.c"                               /* (Arctic Scream p0larpatch: the feedback loop, after Audrey II) */
 static const engine_t *const ENGINES[NENG] = {&VA_ENGINE, &FM_ENGINE, &SAMPLE_ENGINE, &FORMANT_ENGINE, &WHEEL_ENGINE,
                                               &PHYS_ENGINE, &PHASE_ENGINE, &HOWL_ENGINE};   /* (by ENG_) */
 

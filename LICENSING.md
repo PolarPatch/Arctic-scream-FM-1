@@ -36,9 +36,9 @@ SLOOP. Everything below that is not marked as a GR!MM change is theirs.
 | The tracks and voices `firmware/src/voices.c` | Copyright (C) 2026 GR!MM: the four tracks, the engine interface, the six shared voices and their stealing. Its envelope is Felucca's `voice.c` `env_tick` (and `dsp.c` `amp_at`), Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments, with GR!MM's drone times and fade |
 | The browser build `web/` (`fm1_web.c`, `worklet.js`, `panel.js`, `index.html`, `build_web.sh`, `test_web.mjs`; the editor page: below) | Copyright (C) 2026 GR!MM. Its design (the app as WebAssembly in an AudioWorklet, the device clock driven by the audio, the screen and lights read back), the page's panel layout and its computer-keyboard map follow Felucca's browser build `web/emu` (Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments, [Felucca](https://github.com/hugelton/Felucca)), which follows [X0X](https://github.com/charlesvestal/fm1-x0x)'s `web/emu` (charlesvestal); both GPL-3.0 |
 
-## Arctic p0lar patches
+## Arctic Scream p0larpatch
 
-Arctic p0lar patches by PolarPatch is a modified version of GR!MM (<https://github.com/GRiMMBIENT/grimm>, GPL-3.0-only). Its
+Arctic Scream p0larpatch by PolarPatch is a modified version of GR!MM (<https://github.com/GRiMMBIENT/grimm>, GPL-3.0-only). Its
 changes are Copyright (C) 2026 PolarPatch, GPL-3.0-only; everything else is as the sections below say.
 
 | What | Notes |
@@ -54,7 +54,7 @@ changes are Copyright (C) 2026 PolarPatch, GPL-3.0-only; everything else is as t
 
 **The PolarPatch logo** (`assets/polarpatch-logo.png`, and in the firmware as `firmware/gen/polarpatch_logo.h`, in the
 browser build's `grimm.wasm` and `web/dist/`): Copyright (C) PolarPatch, all rights reserved, not under the GPL. It
-marks Arctic p0lar patches itself; a fork uses its own.
+marks Arctic Scream p0larpatch itself; a fork uses its own.
 
 ## GR!MM's own parts
 

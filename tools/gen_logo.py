@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 PolarPatch
-"""Arctic p0lar patches' boot logo: the PolarPatch logo (assets/polarpatch-logo.png, Copyright (C) PolarPatch, not under the
+"""Arctic Scream p0larpatch's boot logo: the PolarPatch logo (assets/polarpatch-logo.png, Copyright (C) PolarPatch, not under the
 GPL: see LICENSING.md) at LOGO_W x LOGO_H, 16 greys, two pixels a byte (the high nibble the left one)
 -> firmware/gen/polarpatch_logo.h. The boot screen tints the greys from the background to ice.
 

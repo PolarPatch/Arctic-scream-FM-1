@@ -88,7 +88,7 @@ static void tape_render(const int32_t *in, int32_t *out, int32_t *rev, uint32_t 
     g = 4096 + wear * 26;                       /* the saturation's drive, Q12: 1x .. 1.8x */
     ig = (int32_t)(134217728u / (uint32_t)g);   /* .. and the level made up after it, Q15 */
     fb = fbk <= 100 ? fbk * 284 : 28400 + (fbk - 100) * 769;   /* FEEDBACK, Q15: 0 .. ~0.87 at 100, then on to 1.5 (Arctic
-                                                 * p0lar patches: past unity on purpose, as Audrey II's echo: it grows
+                                                 * p0larpatch: past unity on purpose, as Audrey II's echo: it grows
                                                  * and saturates) */
 
     w = dl.w;

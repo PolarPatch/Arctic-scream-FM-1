@@ -1645,12 +1645,12 @@ static uint32_t ui_pic_key(void)
 
 /* ---- the screen: the boot, then the page, only what changed */
 /* Boot, UI_BOOT_MS at power-on (the project loaded before): the PolarPatch logo comes up out of the night over the first
- * second, ARCTIC p0lar patches under it, and four ribbons of aurora in the tracks' colours drift under the name; only those
+ * second, ARCTIC SCREAM p0larpatch under it, and four ribbons of aurora in the tracks' colours drift under the name; only those
  * two drawn again, a frame every UI_ANIM_MS */
 #include "polarpatch_logo.h"
 #define BOOT_LINE "FOR THE FM-1 / V" APP_VER
-#define BT_NAME1 "ARCTIC"                         /* the name, in two lines */
-#define BT_NAME2 "p0lar patches"
+#define BT_NAME1 "ARCTIC SCREAM"                /* the name, in two lines */
+#define BT_NAME2 "p0larpatch"
 #define BT_LX ((240 - LOGO_W) / 2)              /* the logo, */
 #define BT_LY 6
 #define BT_RY 211                               /* the ribbons' middle line */

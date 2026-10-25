@@ -106,7 +106,7 @@
  * Rules of the road (the chip has no FPU and no libgcc): integers only, no float, no 64-bit division.
  * tests/host.c runs this file on a computer (the screen as a PNG, the sound as a WAV), web/fm1_web.c in a browser.
  * What platform.c offers: docs/API.md. The chip's rules: docs/RULES.md. */
-#define APP_NAME "ARCTIC p0lar patches"         /* the app, the rescue and the crash screen say this */
+#define APP_NAME "ARCTIC SCREAM p0larpatch"     /* the app, the rescue and the crash screen say this */
 #include "platform.c"
 #include "dsp.c"
 #include "wear.c"
@@ -634,7 +634,7 @@ static uint32_t uk_n;                           /* (UK_ONE + a count: an action 
 static int32_t ch_last = -1;                    /* SEL's picture: the note last played (a key, MIDI), its chord shown */
 
 /* ---- the screen: plain text, a row per value; only what changed is drawn */
-#define KEY0 41u                                /* key 0 = F2 (Arctic p0lar patches: an octave down, for drones) */
+#define KEY0 41u                                /* key 0 = F2 (Arctic Scream p0larpatch: an octave down, for drones) */
 #define OCT_BOTH (1u << BTN_OCT_DOWN | 1u << BTN_OCT_UP)
 #define HOLD_MS 600u                            /* a button held this long: its hold function (HOME: SYSTEM) */
 

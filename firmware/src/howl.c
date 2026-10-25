@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 PolarPatch */
-/* Arctic p0lar patches' HOWL source: a feedback loop that wakes on its own, after the design of Audrey II (Nick Donaldson,
+/* Arctic Scream p0larpatch's HOWL source: a feedback loop that wakes on its own, after the design of Audrey II (Nick Donaldson,
  * Infrasonic Audio; Synthux Academy, MIT: github.com/Synthux-Academy/Audrey-II, FeedbackSynthEngine.cpp), written anew in
  * integers for the FM-1 (no FPU); none of its code is copied. A voice's loop:
  *

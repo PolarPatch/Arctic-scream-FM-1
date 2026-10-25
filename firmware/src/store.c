@@ -40,7 +40,7 @@
 #define PK_ENG 7u                               /* a track's sources kept (NENG); bytes 29..31 (an eighth source's
                                                  * room till step 23): TRACK's filter and FX, 0 their defaults */
 #define TRK_PK 56u                              /* a track, packed (OBJ_VERS: older versions' were shorter; Arctic
-                                                 * p0lar patches: + 4, HOWL's, bytes 52..55) */
+                                                 * p0larpatch: + 4, HOWL's, bytes 52..55) */
 #define SEQ_PK 260u                             /* a sequence, packed: 4 + 64 steps x 4 B (the 4th: its chord) */
 #define SEQ_PK5 196u                            /* (version 5 and before: 3 B a step) */
 #define LOCK_PK 288u                            /* a track's step locks: 64 x the four values, 64 x 4 bits which */
@@ -54,7 +54,7 @@
 #define SLOT_ALL (SLOT_PK + FM_ALL)             /* a slot in RAM: SLOT_PK, its FM patches after (the stream's tail) */
 #define WORK_PK WORK_LEN(TRK_PK, SONG_PK, SEQ_PK, LOCK_PK, FM_ALL)
 #define OBJ_HDR 12u                             /* magic, the save count, type, version, length */
-#define OBJ_MAGIC 0x4B504441u                   /* "ADPK" (Arctic p0lar patches' own: its tracks are longer than GR!MM's,
+#define OBJ_MAGIC 0x4B504441u                   /* "ADPK" (Arctic Scream p0larpatch's own: its tracks are longer than GR!MM's,
                                                  * so neither reads the other's saves; GR!MM's was "GRMK") */
 #define OBJ_VER 7u
 #define SLS_VER 6u                              /* the slots' stream (its layout as version 6's) */
@@ -75,7 +75,7 @@ _Static_assert(NENG <= PK_ENG + 1u, "a save keeps every source's settings (the e
 _Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4u * SLOT_ALL <= SLS_N * SLS_P &&
                SAVE_NSECT >= 3u + SLS_N, "the save sectors");
 
-/* the factory sounds: GR!MM's own (first drafts; Arctic p0lar patches' names), records as the user's (no CRC: in the image, read-only), first in
+/* the factory sounds: GR!MM's own (first drafts; Arctic Scream p0larpatch's names), records as the user's (no CRC: in the image, read-only), first in
  * each CATEGORY's list; their names beside them. Bytes: CATEGORY, its number, the source, its four, ENV (ATTACK, DECAY,
  * SUSTAIN, RELEASE), LATCH, CHORD (chord mode off: VOICING << 4 | CHORD TYPE), LFO (RATE, DEPTH, DESTINATION, SHAPE).
  * Sources: 0 VA (WAVE 0 SAW, 1 SQUARE, 2 SUPERSAW), 1 FM (PATCH 0 BELL, 1 ORGAN, 2 SOFT PAD, 3 REED), 3 VOICE, 4 WHEEL,
@@ -132,7 +132,7 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSND(CAT_KEYS, 9, ENG_PHASE, 3, 0, 40, 4, 80, 90, 70, 80, 0, 0x00, 100, 1, 0, 0),       /* NORTHERN LIGHT */
     /* TEXTURES */
     FSND(CAT_TEXTURE, 1, ENG_VOICE, 96, 12, 0, 127, 100, 90, 120, 105, 1, 0x00, 30, 90, 4, 0), /* WIND OVER ICE */
-    /* HOWLS (Arctic p0lar patches: the HOWL source, after Audrey II; LATCH ON, slow in and out; the LFO on BODY, DAMP,
+    /* HOWLS (Arctic Scream p0larpatch: the HOWL source, after Audrey II; LATCH ON, slow in and out; the LFO on BODY, DAMP,
      * FEEDBACK or TRK CUTOFF, wandering) */
     FSND(CAT_DRONE, 7, ENG_HOWL, 92, 70, 50, 40, 90, 90, 127, 110, 1, 0x00, 30, 25, 4, 6),    /* POLAR HOWL */
     FSND(CAT_DRONE, 8, ENG_HOWL, 100, 95, 62, 85, 70, 90, 127, 105, 1, 0x00, 45, 35, 4, 5),   /* WENDIGO */

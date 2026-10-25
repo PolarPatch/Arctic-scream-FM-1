@@ -97,7 +97,7 @@ function key(k, cx, cy, kw, kh, black) {
     at("div", "tray", gx * UX - p, gy * UY - p, (5 * dx + gw) * UX + 2 * p, dy * UY + gh * UX + 2 * p);
     at("div", "tray", ox * UX - p, oy * UY - p, (ex - ox) * UX + 2 * p, oh * UX + 2 * p);
     const n = at("div", "brand", bx * UX, by * UY + bs * UX + 0.3, bs * UX, 2.8);
-    n.innerHTML = "ARCTIC<span>p0lar patches</span>";
+    n.innerHTML = "ARCTIC SCREAM<span>p0larpatch</span>";
   }
   Object.keys(L.knobs).forEach(knob);
   Object.entries(L.oct).forEach(([n, r]) => button(n, r));

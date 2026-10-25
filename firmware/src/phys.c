@@ -19,7 +19,7 @@
 
 #include "phys_dsp.c"
 #include "phys_symp.c"
-#include "howl.h"                              /* (Arctic p0lar patches: HOWL's state shares the slot) */
+#include "howl.h"                              /* (Arctic Scream p0larpatch: HOWL's state shares the slot) */
 
 enum { PM_MODAL, PM_STRING, PM_MEMB, PM_SYMP, PM_COUNT };
 #define PHYS_BRIT 80                            /* Felucca's defaults for the knobs GR!MM leaves out */
