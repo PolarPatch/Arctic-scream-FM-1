@@ -989,9 +989,9 @@ static void pic_phase(void)                     /* the bent waveform of WAVE at 
 
 /* HOWL: the loop as a vortex (Audrey II's big knob, the circles round it): a ring for each step of FEEDBACK (awake:
  * HOWLING), as far apart as BODY is long, fading out as DAMP closes, torn by DRIVE's sparks; each in its knob's colour */
-/* EditHOWL: the loop as aurora, moving (a frame every UI_ANIM_MS, ui_update): FEEDBACK wakes it (one dim, still line
- * asleep; up to four tall ribbons, faster, howling), BODY their length (short: tight waves), DAMP their light, DRIVE
- * their shape (round .. squared, torn); each ribbon in a knob's colour */
+/* EditHOWL: the loop as aurora, moving (a frame every UI_ANIM_MS, ui_update): FEEDBACK wakes it (low, still lines
+ * asleep; tall ribbons, faster, howling), BODY their length (short: tight waves), DAMP their light, DRIVE
+ * their shape (round .. squared, torn); always four, in the knobs' colours (asleep: low, still, close) */
 #define HW_RY (PY0 + 54)                        /* the ribbons' middle line */
 static uint32_t hw_ph;                          /* their phase */
 static int32_t hw_wave(uint32_t p)              /* a soft wave of p (0 .. 255): -64 .. 64, a parabola a half */
@@ -1004,14 +1004,14 @@ static void pic_howl(void)
     static const uint8_t S[4] = {3, 5, 2, 4}, O[4] = {0, 90, 170, 40};
     const volatile int32_t *p = trk[sel].p[ENG_HOWL];
     int32_t fb = clamp(p[0], 0, 127), body = clamp(p[1], 0, 127), dmp = clamp(p[2], 0, 127), drv = clamp(p[3], 0, 127);
-    int32_t n = 1 + fb * 3 / 127, amp = 2 + fb * fb * 30 / (127 * 127), k = 12 - body * 8 / 127, sp = 1 + fb / 32;
+    int32_t n = 4, amp = 2 + fb * fb * 30 / (127 * 127), k = 12 - body * 8 / 127, sp = 1 + fb / 32;
     int32_t y[55], i, j, x;
     uint32_t lit = 16u - (uint32_t)(dmp * 10 / 127);
     char r[8];
     howl_text(p, 0, r);
     ui_caption(fb >= 82 ? "THE LOOP: HOWLING" : "THE LOOP: ASLEEP", r);
     for (j = n - 1; j >= 0; j--) {              /* (the first, FEEDBACK's colour, on top) */
-        int32_t cy = HW_RY + (2 * j - (n - 1)) * 7;
+        int32_t cy = HW_RY + (2 * j - (n - 1)) * (2 + fb * 5 / 127);   /* (asleep: close together) */
         for (i = 0; i < 55; i++) {
             uint32_t ph = (uint32_t)(i * k) + hw_ph * (uint32_t)(S[j] * sp) + O[j];
             int32_t v = hw_wave(ph & 255u) * 3 / 4 + hw_wave((ph / 2u + hw_ph + (uint32_t)j * 37u) & 255u) / 3;   /* (a slow ripple on it) */
