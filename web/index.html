@@ -65,10 +65,10 @@ a { color: inherit; }
 .btn.lit { border-color: var(--lit); color: var(--fg); box-shadow: 0 0 .7cqw rgba(34, 211, 238, .35); }
 .btn.held { background: var(--part-hi); color: var(--fg); }
 .btn.latched { border-style: dashed; border-color: var(--latch); }
-/* REC: a red edge always, its record dot; recording (lit): the edge glows and the dot blinks (BlueWatch's red) */
-.btn.rec { border-color: var(--rec); color: var(--fg); }
-.btn.rec .dot { display: inline-block; width: .85cqw; height: .85cqw; margin: 0 .45cqw .1cqw 0; border-radius: 50%;
-                background: var(--rec); opacity: .5; vertical-align: middle; }
+/* REC: as the others; recording (lit): a red edge that glows and a record dot that blinks (BlueWatch's red) */
+.btn.rec .dot { display: none; width: .85cqw; height: .85cqw; margin: 0 .45cqw .1cqw 0; border-radius: 50%;
+                background: var(--rec); vertical-align: middle; }
+.btn.rec.lit .dot { display: inline-block; }
 .btn.rec.lit { border-color: var(--rec); box-shadow: 0 0 .9cqw rgba(248, 81, 73, .6); }
 .btn.rec.lit .dot { opacity: 1; box-shadow: 0 0 .6cqw var(--rec); animation: rec-blink 1s steps(1) infinite; }
 @keyframes rec-blink { 50% { opacity: .15; box-shadow: none; } }
