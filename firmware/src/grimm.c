@@ -929,6 +929,12 @@ static void brw_at(uint32_t t, const uint8_t *r)   /* PRESETS: track t's place, 
     for (k = 0; cat_item(r[1], k); k++)
         if (cat_item(r[1], k) == r) { brw_pos[t] = (int32_t)k; return; }
 }
+static void snd_default(void)                   /* the four tracks: SND_DEFAULT (first power-on, NEW), its name shown */
+{
+    uint32_t t;
+    brw_forget();
+    for (t = 0; t < NT; t++) snd_apply(SND_FACTORY[SND_DEFAULT], t), brw_at(t, SND_FACTORY[SND_DEFAULT]);
+}
 static void slot_do_save(uint32_t s)            /* the state into slot s (used: asked again first) */
 {
     char m[24];
@@ -995,7 +1001,7 @@ static void sv_do(void)                         /* OCT+ on a SAVE page: its ACTI
     default:
         undo_take(UK_ONE | ++uk_n, -1);
         project_new();
-        brw_forget();
+        snd_default();
         hd_say("NEW");
         return;
     }
@@ -1425,6 +1431,7 @@ static void app_main(void)
     ima_init();                                 /* (samples.c: the decoder's tables, before samples_poll checks a slot) */
     seq_init();
     store_boot();                               /* the working project and the slots, as the FM-1 was left */
+    if (store_fresh) snd_default();             /* (nothing saved: ICE WRAITH) */
     pj_slot = slot_cur;
     sys_load();                                 /* (the settings: the octave, SYSTEM's; the accent before the boot
                                                  * screen) */

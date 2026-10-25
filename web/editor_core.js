@@ -327,7 +327,7 @@ export function emptyRecord() { return new Uint8Array(SND).fill(0xff); }
 export const isEmpty = (r) => r.every((x) => x === 0xff);
 export function recordOk(r) {
   const dv = new DataView(r.buffer, r.byteOffset, SND);
-  return r[0] === 0x54 && r[1] < 9 && r[3] < 7 && dv.getUint32(60, true) === crc32(r.subarray(0, 60));
+  return r[0] === 0x54 && r[1] < 9 && r[3] < 8 && dv.getUint32(60, true) === crc32(r.subarray(0, 60));
 }
 export function parseSound(r, meta) {                        // a record -> a sound (FM: its patch, or the PATCH's as built)
   const fm = r[3] === 1 && r[18] & 0x80 ? r.slice(18, 50) : meta.fmPatches[Math.min(r[4], meta.fmPatches.length - 1)].fm;

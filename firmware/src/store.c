@@ -132,14 +132,14 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSND(CAT_KEYS, 9, ENG_PHASE, 3, 0, 40, 4, 80, 90, 70, 80, 0, 0x00, 100, 1, 0, 0),       /* NORTHERN LIGHT */
     /* TEXTURES */
     FSND(CAT_TEXTURE, 1, ENG_VOICE, 96, 12, 0, 127, 100, 90, 120, 105, 1, 0x00, 30, 90, 4, 0), /* WIND OVER ICE */
-    /* HOWLS (Arctic Scream p0larpatch: the HOWL source, after Audrey II; LATCH ON, slow in and out; the LFO on BODY, DAMP,
+    /* HOWLS (Arctic Scream p0larpatch: the HOWL source, after Audrey II, together at the end of DRONE; LATCH ON, slow in and out; the LFO on BODY, DAMP,
      * FEEDBACK or TRK CUTOFF, wandering) */
     FSND(CAT_DRONE, 7, ENG_HOWL, 92, 70, 50, 40, 90, 90, 127, 110, 1, 0x00, 30, 25, 4, 6),    /* POLAR HOWL */
     FSND(CAT_DRONE, 8, ENG_HOWL, 100, 95, 62, 85, 70, 90, 127, 105, 1, 0x00, 45, 35, 4, 5),   /* WENDIGO */
     FSND(CAT_DRONE, 9, ENG_HOWL, 112, 40, 35, 60, 60, 90, 120, 100, 1, 0x00, 20, 20, 5, 0),   /* FROZEN SCREAM */
-    FSND(CAT_TEXTURE, 2, ENG_HOWL, 88, 115, 95, 20, 110, 90, 127, 115, 1, 0x00, 25, 40, 9, 6), /* WHITEOUT */
-    FSND(CAT_TEXTURE, 3, ENG_HOWL, 104, 8, 30, 105, 40, 90, 110, 90, 1, 0x00, 60, 30, 4, 4),  /* DEAD SIGNAL */
-    FSND(CAT_TEXTURE, 4, ENG_HOWL, 96, 55, 75, 70, 95, 90, 127, 110, 1, 0x00, 35, 30, 3, 6),  /* ICE WRAITH */
+    FSND(CAT_DRONE, 10, ENG_HOWL, 88, 115, 95, 20, 110, 90, 127, 115, 1, 0x00, 25, 40, 9, 6), /* WHITEOUT */
+    FSND(CAT_DRONE, 11, ENG_HOWL, 104, 8, 30, 105, 40, 90, 110, 90, 1, 0x00, 60, 30, 4, 4),  /* DEAD SIGNAL */
+    FSND(CAT_DRONE, 12, ENG_HOWL, 96, 55, 75, 70, 95, 90, 127, 110, 1, 0x00, 35, 30, 3, 6),  /* ICE WRAITH */
 };
 static const char *const SND_FNAME[] = {
     "POLAR NIGHT", "SNOW VEIL", "GLACIER PAD", "MIDNIGHT SUN", "LICHEN", "SNOWDRIFT", "PERMAFROST", "DEEP FJORD",
@@ -151,6 +151,7 @@ static const char *const SND_FNAME[] = {
     "WHITEOUT", "DEAD SIGNAL", "ICE WRAITH",
 };   /* (16 characters at most: the header beside HOME's tempo) */
 #define SND_NFACT (sizeof SND_FACTORY / sizeof SND_FACTORY[0])
+#define SND_DEFAULT (SND_NFACT - 1u)            /* the four tracks' sound at first power-on and at NEW: ICE WRAITH */
 _Static_assert(SND_NFACT == sizeof SND_FNAME / sizeof SND_FNAME[0], "a name a factory sound");
 static const char *snd_fname(const uint8_t *r)  /* a factory sound's name, or 0 (the user's) */
 {
@@ -683,6 +684,7 @@ static void slot_from(uint8_t *d, const uint8_t *q, uint32_t tn)   /* a slot sav
     }
     for (k = 0; k < NT * LOCK_PK; k++) d[k] = 0;
 }
+static uint32_t store_fresh;                    /* store_boot found no working project (a first power-on) */
 static void store_boot(void)                    /* power-on: the newest good copy of the working project, the slots
                                                  * (an older version's: the next autosave writes them as OBJ_VER); the
                                                  * sounds made 64 B ones, if need be */
@@ -698,6 +700,7 @@ static void store_boot(void)                    /* power-on: the newest good cop
         obj_gen[OBJ_WORK] = st_rd32(w + 4);
         obj_crc[OBJ_WORK] = vs[0] == OBJ_VER ? st_crc(w + OBJ_HDR, WORK_PK) : 0;   /* (0: saved again) */
     }
+    store_fresh = !w;
     slot_dirty = slot_lost = slot_up = 0;
     for (i = 0; i < SLS_N; i++) {               /* the stream's sectors: good, or bad (not erased, not good) */
         const uint8_t *f = sls_ok(i);

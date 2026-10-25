@@ -117,7 +117,7 @@ static void howl_block(voice_t *v, const volatile int32_t *p, int32_t *mono, int
         S->body[S->bw] = (int16_t)clamp((y * g) >> 12, -32767, 32767);   /* x FEEDBACK, round again */
         if (++S->bw == HW_BL) S->bw = 0;
         y = clamp(y, -32767, 32767);
-        mono[i] += mulq15(mulq15(y, amp_at(amp0, dmp, (int32_t)i)), VOICE_LV) * 2;
+        mono[i] += mulq15(mulq15(y, amp_at(amp0, dmp, (int32_t)i)), VOICE_LV * 3 / 4);   /* (a chord of it: room left) */
     }
 }
 
