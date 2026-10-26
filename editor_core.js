@@ -347,16 +347,21 @@ export function recordOk(r) {
 export function parseSound(r, meta) {                        // a record -> a sound (FM: its patch, or the PATCH's as built)
   const fm = r[3] === 1 && r[18] & 0x80 ? r.slice(18, 50) : meta.fmPatches[Math.min(r[4], meta.fmPatches.length - 1)].fm;
   const name = String.fromCharCode(...r.slice(50, 60).filter((c) => c >= 32 && c < 127)).trim();
-  return { cat: r[1], num: r[2], eng: r[3], k: [...r.slice(4, 8)], env: [...r.slice(8, 12)], latch: r[12],
-           chordOn: r[13] >> 7, voicing: (r[13] >> 4) & 7, chord: r[13] & 15, lfo: [...r.slice(14, 18)],
+  return { cat: r[1], num: r[2], eng: r[3], k: [...r.slice(4, 8)], env: [...r.slice(8, 12)], latch: r[12] & 1,
+           chordOn: r[13] >> 7, voicing: (r[13] >> 4) & 7, chord: r[13] & 15,
+           lfo: [r[14] & 0x7f, r[15] & 0x7f, r[16] & 15, r[17] & 7],
+           drone: { borga: Math.min(100, r[12] >> 1), storm: Math.min(100, (r[17] >> 3) | (r[16] >> 7) << 5 | (r[15] >> 7) << 6),
+                    rise: Math.min(6, (r[16] >> 4) & 7) },
            fm: { alg: fm[0] & 31, fb: fm[1] & 7, ops: [0, 1, 2, 3, 4, 5].map((i) => [...fm.slice(2 + i * 5, 7 + i * 5)]) }, name };
 }
 export function buildRecord(s) {
   const r = new Uint8Array(SND);
   r[0] = 0x54, r[1] = s.cat, r[2] = Math.max(1, Math.min(99, s.num || 1)), r[3] = s.eng;
-  r.set(s.k, 4), r.set(s.env, 8), r[12] = s.latch ? 1 : 0;
+  const d = s.drone || { borga: 0, storm: 0, rise: 0 }, st = d.storm & 127;
+  r.set(s.k, 4), r.set(s.env, 8), r[12] = (s.latch ? 1 : 0) | (d.borga & 127) << 1;
   r[13] = (s.chordOn ? 0x80 : 0) | (s.voicing & 7) << 4 | (s.chord & 15);
-  r.set(s.lfo, 14);
+  r.set(s.lfo, 14);                                          // DRONE in the top bits (store.c dr_spk)
+  r[15] |= (st >> 6 & 1) << 7, r[16] |= (d.rise & 7) << 4 | (st >> 5 & 1) << 7, r[17] |= (st & 31) << 3;
   if (s.eng === 1) {                                         // FM: its own patch (bit 7: there is one)
     r[18] = 0x80 | (s.fm.alg & 31), r[19] = s.fm.fb & 7;
     s.fm.ops.forEach((o, i) => r.set(o, 20 + i * 5));

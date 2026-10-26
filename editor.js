@@ -14,6 +14,7 @@ import { Client, MidiTransport, VirtualFM1, LiveSender, findFM1, HEAD, CMD, OBJ,
          recordOk, parseSound, buildRecord, soundTitle, makeBackup, checkBackup, restoreBackup, makeSlot, noteFromName,
          sampleName, noteName, pack7, hex, SEQ_N, SEQ_DIV, SEQ_MODE, parseSeq, buildSeq, emptyStep, seqToMidi,
          midiToSeq } from "./editor_core.js";
+const RISE = ["OFF", "1 BAR", "2 BARS", "4 BARS", "8 BARS", "16 BARS", "32 BARS"];   // DRONE's GOHCCAT
 
 const $ = (id) => document.getElementById(id);
 function el(tag, attrs, parent, text) {
@@ -503,6 +504,15 @@ function drawEditor() {
   control(c, "DEPTH", 0, 100, () => s.lfo[1], (v) => { s.lfo[1] = v; changed(); }, (v) => `${v} %`, "var(--gold)");
   choice(c, "destination", meta.lfoDest.map((d, i) => (i >= 3 && i <= 6 ? eng.knobs[i - 3] : d)), () => s.lfo[2], (v) => { s.lfo[2] = v; changed(); }, "var(--teal)");
   choice(c, "shape", meta.lfoShape, () => s.lfo[3], (v) => { s.lfo[3] = v; changed(); }, "var(--sky)");
+
+  g = card(right, "❄", "drone", "var(--ice)");              // (the FM-1's DRONE page: LFO, tapped again)
+  c = el("div", { cls: "ctls" }, g);
+  s.drone = s.drone || { borga: 0, storm: 0, rise: 0 };
+  control(c, "BORGA", 0, 100, () => s.drone.borga, (v) => { s.drone.borga = v; changed(); }, (v) => `${v} %`, "var(--peri)");
+  control(c, "STOARBMA", 0, 100, () => s.drone.storm, (v) => { s.drone.storm = v; changed(); }, (v) => `${v} %`, "var(--teal)");
+  choice(c, "gohccát", RISE, () => s.drone.rise, (v) => { s.drone.rise = v; changed(); }, "var(--amber)");
+  el("p", { style: "grid-column: 1 / -1; margin: 4px 0 0; color: var(--muted); font-size: 11px" }, c,
+    "borga (snowdrift): the sound wanders on its own · stoarbma (storm): the tension · gohccát (to wake): bars to reach it");
   drawFM();
   drawTitle();
 }
@@ -712,6 +722,7 @@ function morph(a, b, m) {                                    // A..B at m (0..1)
   if (a.eng === b.eng) s.k = a.k.map((x, k) => lerp(x, b.k[k]));
   s.env = a.env.map((x, k) => lerp(x, b.env[k]));
   s.lfo[0] = lerp(a.lfo[0], b.lfo[0]), s.lfo[1] = lerp(a.lfo[1], b.lfo[1]);
+  if (a.drone && b.drone) s.drone.borga = lerp(a.drone.borga, b.drone.borga), s.drone.storm = lerp(a.drone.storm, b.drone.storm);
   if (a.eng === 1 && b.eng === 1) s.fm.ops = a.fm.ops.map((o, i) => o.map((x, k) => lerp(x, b.fm.ops[i][k])));
   return s;
 }
@@ -741,6 +752,7 @@ $("b-rand").onclick = () => {                                // a step from here
     if (sc === "knobs" || sc === "all") s.k = s.k.map((v, k) => nudge(v, meta.engines[s.eng].max[k]));
     if (sc === "env" || sc === "all") s.env = s.env.map((v) => nudge(v, 127));
     if (sc === "lfo" || sc === "all") s.lfo[0] = nudge(s.lfo[0], 127), s.lfo[1] = nudge(s.lfo[1], 100);
+    if (sc === "drone" || sc === "all") s.drone.borga = nudge(s.drone.borga, 100), s.drone.storm = nudge(s.drone.storm, 100);
     if (s.eng === 1 && (sc === "knobs" || sc === "all") && s.k[0] !== tracks[selT].k[0]) setPatch(s, s.k[0]);
   }
   cmp = null;
@@ -760,6 +772,10 @@ function diffList() {                                        // what changed sin
   add("LFO DEST", meta.lfoDest[l.lfo[2]], meta.lfoDest[s.lfo[2]]);
   add("LFO SHAPE", meta.lfoShape[l.lfo[3]], meta.lfoShape[s.lfo[3]]);
   add("LATCH", l.latch ? "ON" : "OFF", s.latch ? "ON" : "OFF");
+  const ld = l.drone || { borga: 0, storm: 0, rise: 0 }, sd = s.drone || ld;
+  add("BORGA", `${ld.borga} %`, `${sd.borga} %`);
+  add("STOARBMA", `${ld.storm} %`, `${sd.storm} %`);
+  add("GOHCCÁT", RISE[ld.rise], RISE[sd.rise]);
   add("CHORD", l.chordOn ? meta.chords[l.chord] : "OFF", s.chordOn ? meta.chords[s.chord] : "OFF");
   add("NAME", l.name || "—", s.name || "—");
   if (s.eng === 1 && l.eng === 1 && JSON.stringify(s.fm) !== JSON.stringify(l.fm)) out.push(["FM PATCH", "as loaded", "edited"]);
