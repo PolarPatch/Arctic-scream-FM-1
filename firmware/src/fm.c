@@ -177,7 +177,8 @@ static void fm_block(voice_t *v, const volatile int32_t *e, int32_t *mono, int32
     int32_t bus[FM6_N], lf, lvl, a, da, dc;
     fm_track(t, e);
     p = fm_trk[t].p;
-    lf = fm6_note_logfreq(VP16(v) + (p[FP_TRNSP] - 24) * 16, tune_f);   /* (TUNE: the fine factor) */
+    lf = fm6_note_logfreq(VP16(v) + (p[FP_TRNSP] - 24) * 16, tune_f + vc_fine);   /* (TUNE: the fine factor;
+                                                 * DRONE's detune) */
     lvl = (clamp(e[1], 0, 127) - 64) * 24;                    /* BRIGHT: microsteps (MLVL) */
     if (fm_vgen[v - vc] != fm_trk[t].gen) {                   /* (edited while it sounds) */
         fm_vgen[v - vc] = fm_trk[t].gen;

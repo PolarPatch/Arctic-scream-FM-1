@@ -73,6 +73,12 @@ static int32_t ui_text(int32_t x, int32_t y, const char *s, int32_t sc, uint16_t
     }
     return x;
 }
+static int32_t ui_text_n(int32_t x, int32_t y, const char *s, int32_t adv, uint16_t c)   /* pixfont, adv px a letter */
+{
+    char one[2] = {0, 0};
+    for (; *s; s++, x += adv) one[0] = *s, ui_text(x, y, one, 1, c);
+    return x;
+}
 static int32_t ui_len(const char *s) { int32_t n = 0; while (s[n]) n++; return n; }
 static void ui_region(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t bg, void (*f)(void))
 {
@@ -308,7 +314,8 @@ static void ui_slab_make(uint32_t k, slab_t *S)
     S->acc = S->dim = 0;
     S->val[0] = 0;
     ui_label(S->lab, name[0] ? name : "-");
-    if (page == PG_GRID && k == 3u) put_s(S->lab, "LEN");   /* (Seq's; SAMPLE keeps its LENGTH) */
+    if (page == PG_GRID && k == 3u) put_s(S->lab, "LEN");
+    if (page == PG_DRONE) put_s(S->lab, name);  /* (the Sami names whole: up to 8, narrower, ui_slab_draw) */   /* (Seq's; SAMPLE keeps its LENGTH) */
     if (!PAGES[page].built) {                   /* (named, nothing behind it yet) */
         S->fill = 0;
         S->dim = 1;
@@ -367,6 +374,11 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         else if (k == 1u) ui_3(S->val, (uint32_t)clamp(v, 0, 100));
         else if (k == 2u) ui_label(S->val, lfo_dest_name(v));
         else put_s(S->val, LFO_SHAPE_SHORT[clamp(v, 0, NLFOSHAPE - 1)]);
+        return;
+    case PG_DRONE:                              /* BORGA, STOARBMA %, GOHCCAT ("8BAR"), LATCH */
+        if (k < 2u) ui_3(S->val, (uint32_t)clamp(v, 0, 100));
+        else if (k == 2u) dr_rise_text(S->val, v, "");
+        else put_s(S->val, v ? "ON" : "OFF");
         return;
     case PG_ARP:
         if (k == 0u) put_s(S->val, ARP_MODE_SHORT[clamp(v, 0, NARPMODE - 1)]);
@@ -450,7 +462,8 @@ static void ui_slab_draw(void)
     uint16_t fc = S->acc ? ui_acc : UI_KC[ui_k];   /* (the knob's colour) */
     ui_rect(x, 165, 56, 72, UI_D0);
     ui_rect(x, 165, 56, 2, UI_KC[ui_k]);        /* (its colour along its top) */
-    ui_text(x + 4, 171, S->lab, 1, UI_L0);
+    if (ui_len(S->lab) > 6) ui_text_n(x + 1, 171, S->lab, 7, UI_L0);   /* (8 letters: 7 px each) */
+    else ui_text(x + 4, 171, S->lab, 1, UI_L0);
     for (j = 0; j < 8; j++)                     /* 8 segments: the knob's colour (the accent) filled, black empty */
         ui_rect(x + 4 + j * 6, 190, 5, 14, j < S->fill ? fc : UI_K);
     if (n <= 3) ui_text(x + 4, 214, S->val, 2, S->dim ? UI_M0 : fc);
@@ -477,6 +490,7 @@ static void ui_tint(uint32_t pg)
     switch (pg) {
     case PG_ENV: a = BW_AMBER, b = BW_TEAL, c = BW_PERIWINKLE, x = BW_MAGENTA; break;
     case PG_LFO: a = BW_PINK, b = BW_CYAN, c = BW_AMBER, x = UI_W; break;
+    case PG_DRONE: a = BW_CYAN, b = BW_VIOLET, c = BW_TEAL, x = BW_MAGENTA; break;
     case PG_SOUND: case PG_SOURCE: case PG_FMALGO: case PG_FMOP: a = BW_PERIWINKLE, b = BW_TEAL, c = BW_PINK, x = BW_AMBER; break;
     case PG_GRID: case PG_PATTERN: a = BW_VIOLET, b = BW_CYAN, c = BW_PINK, x = BW_MAGENTA; break;
     case PG_SCALE: case PG_CHORD: a = BW_LAVENDER, b = BW_CYAN, c = BW_AMBER, x = BW_MAGENTA; break;
@@ -1027,6 +1041,35 @@ static void pic_howl(void)
     for (x = 0; x < 54; x += 2) ui_cell(x, 29, UI_D0);
 }
 
+/* Drone: the four walks as aurora (each in its knob colour, risen or sunk as it is now, waving as the tension and
+ * BORGA let it; BORGA 0: still, dim), the tension under them (STOARBMA: the mark, the bar where it is now, rising over
+ * GOHCCAT); moving (a frame every UI_ANIM_MS, ui_update) */
+static void pic_drone(void)
+{
+    static const uint8_t S[4] = {2, 3, 1, 2}, O[4] = {0, 70, 150, 210};
+    const dr_trk_t *D = &dr.t[sel];
+    int32_t bo = clamp(trk[sel].dr_borga, 0, 100), st = clamp(trk[sel].dr_storm, 0, 100), tq = dr_tens15(sel);
+    int32_t amp = bo ? 4 + bo * 6 / 100 + tq * 10 / 32767 : 0, sp = 1 + tq * 3 / 32767, y[55], i, j, w;
+    char l[24], r[16];
+    put_s(put_u(put_s(l, "BORGA "), (uint32_t)bo), "%");
+    dr_rise_text(put_s(r, "> "), trk[sel].dr_rise, " ");
+    ui_caption(l, trk[sel].dr_rise ? r : "NOW");
+    for (j = 3; j >= 0; j--) {
+        int32_t cy = 62 + j * 14 + (D->on ? D->w[j] * 7 / 32767 : 0);
+        for (i = 0; i < 55; i++) {
+            uint32_t ph = (uint32_t)(i * 5) + hw_ph * (uint32_t)(S[j] * sp) + O[j];
+            int32_t v = hw_wave(ph & 255u) * 2 / 3 + hw_wave((ph / 3u + hw_ph + (uint32_t)j * 41u) & 255u) / 3;
+            y[i] = cy + v * amp / 64;
+        }
+        ui_glow(PX0, 4, y, 55, bo ? UI_KC[j] : ui_mix(UI_K, UI_KC[j], 1, 3));
+    }
+    ui_text(PX0, 130, "STOARBMA", 1, UI_M);    /* the tension: now (filled), STOARBMA (the mark) */
+    w = 146;
+    ui_rect(80, 129, w, 10, UI_D0);
+    ui_rect(80, 129, tq * w / 32767, 10, ui_mix(UI_KC[3], BW_MAGENTA, (uint32_t)tq >> 11, 16u));
+    ui_rect(80 + st * (w - 2) / 100, 126, 2, 16, UI_W);
+}
+
 static void pic_source(void)                    /* the eight sources, the track's in the accent; LATCH */
 {
     int32_t i, e = (int32_t)sel_eng();
@@ -1042,104 +1085,149 @@ static void pic_source(void)                    /* the eight sources, the track'
     ui_text(140 + (trk[sel].latch ? 16 : 8), 78, trk[sel].latch ? "ON" : "OFF", 2, trk[sel].latch ? UI_K : UI_L);
 }
 
-static void pic_env(void)                       /* Env: the shape of the track's ATTACK, DECAY, SUSTAIN, RELEASE */
+static void pic_env(void)                       /* Env: the shape of the track's ATTACK, DECAY, SUSTAIN, RELEASE as a
+                                                 * ribbon of aurora, each stage in its knob's colour, its light hanging
+                                                 * down under it as a curtain, swaying (an aurora page: ui_anim_page) */
 {
     const volatile int32_t *e = trk[sel].env;
     int32_t wa = 2 + clamp(e[0], 0, 127) * 18 / 127, wd = 2 + clamp(e[1], 0, 127) * 12 / 127;
     int32_t wr = 2 + clamp(e[3], 0, 127) * 14 / 127, ws = 53 - wa - wd - wr, ys = 28 - clamp(e[2], 0, 127) * 25 / 127;
-    int32_t x, y, ev[55];
+    int32_t x, ev[55], y[55], st[55], i, j;
     for (x = 0; x <= 54; x++) {                 /* the level a column (28: 0, 3: full) */
         if (x <= wa) ev[x] = 28 - 25 * x / wa;
         else if (x <= wa + wd) ev[x] = 3 + (ys - 3) * (x - wa) / wd;
         else if (x <= wa + wd + ws) ev[x] = ys;
         else ev[x] = ys + (28 - ys) * (x - wa - wd - ws) / wr;
         if (ev[x] > 28) ev[x] = 28;
+        st[x] = x < wa ? 0 : x < wa + wd ? 1 : x < wa + wd + ws ? 2 : 3;
+        y[x] = 50 + (ev[x] - 3) * 96 / 25 + hw_wave(((uint32_t)x * 11u + hw_ph * 3u) & 255u) / 40;   /* (a shimmer) */
     }
     ui_text(PX0 + (wa / 2) * 4, 31, "A", 1, UI_KC[0]);   /* (each stage in its knob's colour) */
     ui_text(PX0 + (wa + wd / 2) * 4, 31, "D", 1, UI_KC[1]);
     ui_text(PX0 + (wa + wd + ws / 2) * 4, 31, "S", 1, UI_KC[2]);
     ui_text(PX0 + (wa + wd + ws + wr / 2) * 4, 31, "R", 1, UI_KC[3]);
-    for (y = 0; y < 30; y++)
-        for (x = 0; x < 54; x++) {
-            int32_t n = x < 53 ? ev[x + 1] : ev[x], lo = ev[x] < n ? ev[x] : n, hi = ev[x] < n ? n : ev[x];
-            uint32_t st = x < wa ? 0u : x < wa + wd ? 1u : x < wa + wd + ws ? 2u : 3u;
-            uint16_t c = 0;
-            if (y > ev[x] && y <= 28 && !((x + y) & 1)) c = ui_mix(UI_K, UI_KC[st], 1, 3);
-            if (y >= lo && y <= hi) c = UI_KC[st];
-            if (y == 29 && !(x & 1)) c = UI_D0;
-            if (c) ui_cell(x, y, c);
+    for (x = 0; x < 54; x++) {                  /* the curtain: a ray a column, from the ribbon down, fading */
+        int32_t top = y[x] + 3, len = 146 - top, px = PX0 + x * 4 + 2, py = top, s;
+        for (s = 4; s <= len; s += 4) {
+            int32_t nx = PX0 + x * 4 + 2 + hw_wave(((uint32_t)(s * 4 + x * 19) + hw_ph * 2u) & 255u) * s / (64 * 30);
+            ui_line(px, py, nx, top + s, ui_mix(UI_K, UI_KC[st[x]], (uint32_t)clamp(9 - s * 9 / (len + 8), 1, 9), 16u));
+            px = nx, py = top + s;
         }
-    ui_cell(wa - 1, 3, ui_acc), ui_cell(wa, 3, ui_acc), ui_cell(wa - 1, 4, ui_acc), ui_cell(wa, 4, ui_acc);
+    }
+    for (j = 0, i = 0; i <= 54; i++)            /* the ribbon: a stage at a time, in its colour */
+        if (i == 54 || st[i] != st[j]) {
+            uint32_t n = (uint32_t)(i - j + 1 > 55 - j ? 55 - j : i - j + 1);
+            if (n > 1) ui_glow(PX0 + 2 + j * 4, 4, y + j, n, UI_KC[st[j]]);
+            j = i;
+        }
+    ui_rect(PX0 + wa * 4, y[wa] - 2, 5, 5, ui_acc);   /* (the peak) */
 }
 
-static void pic_mix(void)                       /* FxTrack: the four tracks' columns, LEVEL and the sends (MIXER 2: PAN) */
+static int ui_anim_page(uint32_t p)             /* the pages whose ribbons move (ui_update) */
 {
-    int32_t t, m, j;
-    ui_caption(page == PG_MIX1 ? "LEVEL DLY REV GRAIN" : "PAN", 0);
-    for (t = 0; t < (int32_t)NT; t++) {
-        int32_t x0 = PX0 + t * 54 + 4;
-        char lab[3] = {'T', (char)('1' + t), 0};
-        if (page == PG_MIX1) {
+    return p == PG_DRONE || p == PG_ENV || p == PG_TAPE || p == PG_GRAIN || p == PG_DELAY || p == PG_SPACE || p == PG_LFO ||
+           p == PG_MIX1 || p == PG_MIX2;
+}
+
+/* ---- the aurora pages (Arctic Scream p0larpatch, after the DRONE and Holvut pages): every knob a ribbon of northern
+ * lights, moving (a frame every UI_ANIM_MS, ui_update; hw_ph), drawn in y 44 .. 147 (ui_anim_page's region) */
+static uint16_t au_lit(uint16_t c, int32_t v, int32_t mx)   /* c lit as v of mx: a glow even at 0 */
+{
+    return ui_mix(UI_K, c, 4u + (uint32_t)(clamp(v, 0, mx) * 12 / (mx ? mx : 1)), 16u);
+}
+static void ui_glow_v(int32_t y0, int32_t dy, const int32_t *x, uint32_t n, uint16_t c)   /* ui_glow, standing */
+{
+    uint16_t d = ui_mix(UI_K, c, 1, 3);
+    uint32_t i;
+    for (i = 1; i < n; i++) {
+        int32_t ya = y0 + (int32_t)(i - 1) * dy, yb = ya + dy;
+        ui_line(x[i - 1] - 1, ya, x[i] - 1, yb, d);
+        ui_line(x[i - 1] + 1, ya, x[i] + 1, yb, d);
+    }
+    for (i = 1; i < n; i++) ui_line(x[i - 1], y0 + (int32_t)(i - 1) * dy, x[i], y0 + (int32_t)i * dy, c);
+}
+
+/* MIXER 1: each track a curtain of four standing ribbons (LEVEL, DLY, REV, GRAIN in the knobs' colours), as tall as
+ * they are turned, swaying more at the top; MIXER 2: each track a ribbon across the stereo field, its crest at PAN */
+static void pic_mix(void)
+{
+    int32_t t, m, i;
+    ui_caption(page == PG_MIX1 ? "LEVEL DLY REV GRAIN" : "PAN  L . . . . C . . . . R", 0);
+    if (page == PG_MIX1) {
+        for (t = 0; t < (int32_t)NT; t++) {
+            int32_t x0 = PX0 + t * 54 + 6;
+            char lab[3] = {'T', (char)('1' + t), 0};
             volatile int32_t *const V[4] = {&trk[t].level, &trk[t].dly, &trk[t].rev, &trk[t].grn};
             for (m = 0; m < 4; m++) {
-                int32_t n = (clamp(*V[m], 0, 127) * 8 + 63) / 127;
-                for (j = 0; j < 8; j++)
-                    ui_rect(x0 + m * 12, 44 + j * 12, 9, 10, 7 - j < n ? (m ? UI_M : UI_L) : UI_D);
+                int32_t v = clamp(*V[m], 0, 127), h = 4 + v * 72 / 127, n = h / 4 + 1, x[20];
+                uint16_t c = m ? UI_KC[m] : wv_col((uint32_t)t);
+                for (i = 0; i < n && i < 20; i++) {   /* (from the top down: the top sways most) */
+                    int32_t sw = 1 + (n - i) * 4 / n;
+                    x[i] = x0 + m * 11 + hw_wave((uint32_t)(i * 9 + (int32_t)hw_ph * 2 + t * 60 + m * 37) & 255u) * sw / 64;
+                }
+                ui_glow_v(128 - h, 4, x, (uint32_t)(n < 20 ? n : 20), t == (int32_t)sel ? c : ui_mix(UI_K, c, 2, 3));
+                ui_rect(x[0] - 1, 127 - h, 3, 3, v ? UI_W : UI_M0);   /* (its tip) */
             }
-        } else {
-            int32_t pp = (clamp(trk[t].pan, 0, 127) * 6 + 63) / 127;
-            for (j = 0; j < 7; j++)
-                ui_rect(x0 + j * 7, 80, 6, 20, j == pp ? UI_L : j == 3 ? UI_M : UI_D);
+            ui_text(x0 + 10, 136, lab, 1, t == (int32_t)sel ? ui_acc : UI_M);
         }
-        ui_text(x0 + 14, 145, lab, 1, t == (int32_t)sel ? ui_acc : UI_M);
+        return;
+    }
+    for (i = 0; i < 26; i++) ui_rect(132, 50 + i * 4, 1, 2, UI_D0);   /* (the middle) */
+    for (t = 0; t < (int32_t)NT; t++) {
+        int32_t cy = 62 + t * 22, px = 40 + clamp(trk[t].pan, 0, 127) * 184 / 127, y[48], x;
+        char lab[3] = {'T', (char)('1' + t), 0};
+        for (i = 0; i < 48; i++) {
+            int32_t d = 40 + i * 4 - px, env = d < -40 || d > 40 ? 0 : 1600 - d * d;   /* (the crest: a parabola) */
+            x = hw_wave((uint32_t)(i * 7 + (int32_t)hw_ph * 3 + t * 50) & 255u);
+            y[i] = cy + x * (2 + env * 9 / 1600) / 64 - env * 6 / 1600;
+        }
+        ui_glow(40, 4, y, 48, t == (int32_t)sel ? wv_col((uint32_t)t) : ui_mix(UI_K, wv_col((uint32_t)t), 2, 3));
+        ui_rect(px - 1, cy - 12, 3, 3, UI_W);
+        ui_text(PX0, cy - 4, lab, 1, t == (int32_t)sel ? ui_acc : UI_M);
     }
 }
 
-static void pic_tape(void)                      /* EditTape: the reels and the tape, its wobble WOW */
+/* TAPE: four ribbons, a knob each: WOW wobbles the first, SATURATION squares the second off, TONE ripples and lights
+ * the third, HISS frays the fourth; all 0: bypassed, four still dim lines */
+static void pic_tape(void)
 {
-    static const int16_t SPK[2][3][2] = {{{183, 123}, {107, 141}, {130, 66}}, {{408, 154}, {358, 94}, {435, 81}}};
-    static const int8_t RC[2][2] = {{14, 11}, {40, 11}};
-    int32_t x, y, r, k, on = tf_wow | tf_sat | tf_tone | tf_hiss, amp = (clamp(tf_wow, 0, 127) * 3 + 63) / 127;
+    static const uint8_t S[4] = {1, 2, 3, 2}, O[4] = {0, 80, 160, 30};
+    int32_t on = tf_wow | tf_sat | tf_tone | tf_hiss, wow = clamp(tf_wow, 0, 127), sat = clamp(tf_sat, 0, 127);
+    int32_t tone = clamp(tf_tone, 0, 127), hiss = clamp(tf_hiss, 0, 127), y[55], i, j;
     ui_caption("OVER THE WHOLE MIX", on ? "ON" : "BYPASS");
-    for (y = 0; y < 30; y++)
-        for (x = 0; x < 54; x++) {
-            uint16_t c = 0;
-            for (r = 0; r < 2; r++) {
-                int32_t dx = x - RC[r][0], dy = y - RC[r][1], d = dx * dx + dy * dy;
-                if (d < 58) c = UI_D;
-                if (d >= 58 && d < 88) c = UI_L;
-                if (d < 4) c = UI_L;
-                for (k = 0; k < 3; k++) {
-                    int32_t sx = x * 10 - SPK[r][k][0], sy = y * 10 - SPK[r][k][1];
-                    if (sx * sx + sy * sy < 256) c = UI_M;
-                }
-            }
-            if (y == 21 && x >= 14 && x <= 40) c = UI_L;
-            if (x >= 6 && x <= 48 && y == 26 + ((sine_i((uint32_t)x * 341782637u) * amp + 16384) >> 15)) c = UI_M;
-            if (x >= 25 && x <= 29 && y >= 22 && y <= 24) c = ui_acc;
-            if (c) ui_cell(x, y, c);
+    for (j = 3; j >= 0; j--) {
+        int32_t cy = 62 + j * 18, v = j == 0 ? wow : j == 1 ? sat : j == 2 ? tone : hiss;
+        int32_t amp = on ? 5 + v * 14 / 127 : 1, k = j == 2 ? 3 + tone * 9 / 127 : 4;
+        for (i = 0; i < 55; i++) {
+            uint32_t ph = (uint32_t)(i * k) + hw_ph * (uint32_t)S[j] * (on ? 1u : 0u) + O[j];
+            int32_t w = hw_wave(ph & 255u);
+            if (j == 0) w = w * 2 / 3 + hw_wave((uint32_t)(i * 2 + (int32_t)hw_ph) & 255u) * wow / 254;   /* (WOW: a slow lurch) */
+            if (j == 1) { int32_t kn = 260 - sat * 2; w = w * (64 + kn) / (kn + (w < 0 ? -w : w)); }   /* (SATURATION) */
+            if (j == 3 && on) w += (int32_t)((uint32_t)(i * 7 + (int32_t)hw_ph * 13) % 9u) * hiss / 16 - hiss / 4;   /* (HISS) */
+            y[i] = cy + w * amp / 64;
         }
+        ui_glow(PX0, 4, y, 55, on ? au_lit(UI_KC[j], v, 127) : UI_D0);
+    }
 }
 
-static void pic_grain(void)                     /* EditGrain: the cloud, its grains scattered by SCATTER, DENSITY */
+/* GRAIN: a dim ribbon (the buffer), and grains of light torn off it: as many as DENSITY, as long as SIZE, scattered up
+ * and down by SCATTER, as bright as MIX, drifting by (FREEZE: they stand still) */
+static void pic_grain(void)
 {
-    static const uint8_t AMP[54] = {2, 5, 4, 6, 7, 5, 8, 7, 9, 10, 9, 12, 9, 12, 12, 12, 13, 10, 13, 11, 11, 11, 9, 10,
-                                    7, 9, 7, 6, 7, 3, 6, 4, 4, 4, 2, 4, 2, 3, 3, 2, 3, 1, 3, 2, 2, 3, 1, 3, 1, 2, 2, 1,
-                                    3, 1};
-    int32_t x, y, i, n = 8 + clamp(ge_dens, 0, 127) * 30 / 127, sp = 2 + clamp(ge_scat, 0, 127) * 40 / 127;
+    int32_t n = 6 + clamp(ge_dens, 0, 127) * 24 / 127, len = 2 + clamp(ge_size, 0, 127) * 8 / 127;
+    int32_t sp = clamp(ge_scat, 0, 127) * 36 / 127, i, k, y[55];
+    uint32_t ph = ge_freeze ? 0u : hw_ph;
     char r[12];
     put_s(put_u(r, (pow2_q16(clamp(ge_size, 0, 127) * 8) * 10u + 32768u) >> 16), " MS");
-    ui_caption("BUFFER 1.25 S", ge_freeze ? "FREEZE" : r);
-    for (y = 0; y < 30; y++)
-        for (x = 0; x < 54; x++) {
-            int32_t dy = y < 15 ? 15 - y : y - 15;
-            if (dy <= AMP[x]) ui_cell(x, y, dy == AMP[x] ? UI_M : UI_D);
-            if (x == 21) ui_cell(x, y, ui_acc);
-        }
-    ui_rnd_s = 11;
+    ui_caption("BUFFER 1.0 S", ge_freeze ? "FREEZE" : r);
+    for (k = 0; k < 55; k++) y[k] = 94 + hw_wave((uint32_t)(k * 4 + (int32_t)ph) & 255u) * 4 / 64;
+    ui_glow(PX0, 4, y, 55, UI_D0);
     for (i = 0; i < n; i++) {
-        int32_t gx = 21 + (int32_t)ui_rnd((uint32_t)sp + 1u) - sp / 2, gy = (int32_t)ui_rnd(30);
-        if (gx >= 0 && gx < 54) ui_cell(gx, gy, UI_L);
+        int32_t gx = (int32_t)(((uint32_t)i * 53u + ph * (1u + (uint32_t)i % 3u)) % 52u), gy = 94;
+        if (sp) gy += (int32_t)((uint32_t)i * 37u % (uint32_t)(2 * sp + 1)) - sp;
+        for (k = 0; k < len && gx + k < 55; k++)
+            y[k] = gy + hw_wave((uint32_t)(k * 24 + (int32_t)ph * 4 + i * 31) & 255u) * 3 / 64;
+        if (k > 1) ui_glow(PX0 + gx * 4, 4, y, (uint32_t)k, au_lit(UI_KC[i & 3], ge_mix, 127));
     }
     if (ge_freeze) {
         ui_rect(180, 29, 56, 12, ui_acc);
@@ -1147,28 +1235,55 @@ static void pic_grain(void)                     /* EditGrain: the cloud, its gra
     }
 }
 
-static void pic_delay(void)                     /* Space: the echoes, smaller each time (FEEDBACK), apart by TIME */
+/* DELAY: the sound and its echoes, a ribbon each further down and to the right (TIME), each smaller (FEEDBACK; past
+ * 100 %: growing, burning magenta), more worn and wobbly (WEAR), as bright as MIX */
+static void pic_delay(void)
 {
-    static const int8_t SZ[7] = {24, 20, 17, 14, 11, 8, 5};
-    int32_t n = 1 + clamp(dl_fb, 0, 127) * 6 / 127, gap = 2 + clamp(dl_time, 0, 127) * 8 / 127, w = 0, i, x;
+    int32_t v = clamp(dl_fb, 0, 127), pc = ((v <= 100 ? v * 284 : 28400 + (v - 100) * 769) * 100 + 16384) / 32768;
+    int32_t n = 1 + v * 6 / 127, gap = 10 + clamp(dl_time, 0, 127) * 22 / 127, wear = clamp(dl_wear, 0, 127);
+    int32_t a = 11 << 8, i, k, y[21];
     char r[12];
     ui_time(r, DL_MS[clamp(dl_time, 0, 127)] << 16);
-    ui_caption("DELAY", r);
-    for (i = 0; i < n; i++) w += SZ[i] + (i ? gap : 0);
-    for (i = 0, x = 120 - w / 2; i < n; x += SZ[i] + gap, i++)
-        ui_rect(x, 110 - SZ[i], SZ[i], SZ[i], i < 2 ? UI_L : i < 4 ? UI_M : UI_D);
-}
-static void pic_space(void)                     /* Space: the reverb's tail, as long as SIZE (INF: it never falls) */
-{
-    int32_t v = clamp(rv_size, 0, 127), i, j, tl = 2 + v * 14 / 127;
-    ui_caption("REVERB", 0);
-    for (i = 0; i < 37; i++) {
-        int32_t h = v >= RV_INF ? 18 : (int32_t)((18u * pow2_q16(-(i * 192) / tl) + 32768u) >> 16);
-        h += (i * 7) % 3 - 1;
-        h = h < 1 ? 1 : h > 18 ? 18 : h;
-        for (j = 0; j < h; j++)
-            ui_rect(9 + i * 6, 156 - (h - j) * 4, 3, 3, j == 0 ? UI_L : j < h / 2 ? UI_M : UI_D);
+    ui_caption(pc > 100 ? "DELAY: RUNAWAY" : "DELAY", r);
+    for (i = 0; i < n && i < 7; i++) {
+        int32_t cx = 40 + i * gap, x0 = cx - 40, amp = a >> 8, cy = 58 + i * 12, m = 0;
+        uint16_t c = i ? UI_KC[1 + (i - 1) % 3] : UI_KC[0];
+        if (x0 > 228) break;
+        for (k = 0; k < 21; k++) {
+            int32_t d = k * 4 - 40, env = 1600 - d * d;
+            int32_t w = hw_wave((uint32_t)(k * 12 + (int32_t)hw_ph * 3 + i * 40) & 255u);
+            w += hw_wave((uint32_t)(k * 29 + (int32_t)hw_ph * 7 + i * 13) & 255u) * wear * i / (127 * 4);   /* (WEAR) */
+            y[k] = cy + w * amp * env / (64 * 1600);
+            if (x0 + k * 4 <= 228) m = k + 1;
+        }
+        if (pc > 100) c = ui_mix(c, BW_MAGENTA, (uint32_t)clamp(i * (pc - 100), 0, 64), 64u);
+        if (m > 1) ui_glow(x0, 4, y, (uint32_t)m, ui_mix(UI_K, c, 3u + (uint32_t)(clamp(amp, 0, 12) * (40 + clamp(dl_mix, 0, 127)) / 167), 16u));
+        a = clamp(a * pc / 100, 2 << 8, 13 << 8);
     }
+}
+
+/* SPACE: an aurora curtain: a ribbon across the top, its rays hanging down as long as SIZE (INF: to the ground),
+ * fading faster the more DAMP darkens them, apart from it by PRE-DELAY, as bright as MIX; swaying */
+static void pic_space(void)
+{
+    int32_t v = clamp(rv_size, 0, 127), dmp = clamp(rv_damp, 0, 127), pre = clamp(rv_pre, 0, 127) * 14 / 127;
+    int32_t y[55], i, r, s;
+    ui_caption("REVERB", 0);
+    for (i = 0; i < 55; i++) y[i] = 54 + hw_wave((uint32_t)(i * 4 + (int32_t)hw_ph * 2) & 255u) * 5 / 64;
+    for (r = 0; r < 27; r++) {
+        int32_t rx = PX0 + 2 + r * 8, y0 = y[(r * 8 + 2) / 4] + 4 + pre;
+        int32_t len = v >= RV_INF ? 144 - y0 : 6 + v * 82 / 126 + (r * 7) % 5 * 2 - 4;
+        int32_t px = rx, py = y0;
+        if (len > 144 - y0) len = 144 - y0;
+        for (s = 4; s <= len; s += 4) {
+            int32_t lit = 14 - s * 14 * (64 + dmp) / (64 * (len > 0 ? len : 1) * 2 / (v >= RV_INF ? 2 : 1) + 1);
+            int32_t nx = rx + hw_wave((uint32_t)(s * 3 + (int32_t)hw_ph * 2 + r * 23) & 255u) * 3 * s / (64 * 40);
+            uint16_t c = ui_mix(UI_K, UI_KC[1 + (r & 1)], (uint32_t)clamp(lit * (32 + clamp(rv_mix, 0, 127)) / 159, 1, 15), 16u);
+            ui_line(px, py, nx, y0 + s, c);
+            px = nx, py = y0 + s;
+        }
+    }
+    ui_glow(PX0, 4, y, 55, UI_KC[0]);
     if (v >= RV_INF) {
         ui_rect(180, 29, 56, 12, ui_acc);
         ui_text(184, 31, "FREEZE", 1, UI_K);
@@ -1389,32 +1504,28 @@ static int32_t lfo_row(uint32_t sh, uint32_t x)  /* the picture's SHAPE at colum
     else v = lfo_shape(sh, x * 79536431u, 0, 0);   /* (2^32 / 54) */
     return 15 - v * 11 / 32767;
 }
-static void pic_lfo(void)                       /* Lfo: a cycle of SHAPE, the dot where the LFO is (at its rate), a
-                                                 * cycle's time */
+static void pic_lfo(void)                       /* Lfo: a cycle of SHAPE as a ribbon of aurora, as wide a band as
+                                                 * DEPTH, the dot where the LFO is (at its rate), a cycle's time */
 {
     uint32_t sh = (uint32_t)clamp(trk[sel].lfo_shape, 0, NLFOSHAPE - 1), dx = lfo_dot(), x;
     uint32_t ms = 3932160000u / lfo_hz_q16(trk[sel].lfo_rate);
-    int32_t y, row[54];
-    uint16_t lc = trk[sel].lfo_depth > 0 ? UI_KC[3] : UI_M0;   /* (SHAPE's colour; DEPTH 0: dim) */
-    uint16_t dc = ui_mix(UI_K, UI_KC[1], 1, 3); /* (DEPTH's colour: the swing filled) */
+    int32_t y[54], yb[54], dep = clamp(trk[sel].lfo_depth, 0, 100), b = 2 + dep * 7 / 100, k;
+    uint16_t lc = dep > 0 ? UI_KC[3] : UI_M0;   /* (SHAPE's colour; DEPTH 0: dim) */
     char l[32];
     lfo_rate_text(put_s(l, ms >= 995u ? "1 CYCLE = " : ""), trk[sel].lfo_rate, " ");
     put_s(l + ui_len(l), " / FREE");
     ui_caption(l, 0);
-    for (x = 0; x < 54u; x++) row[x] = lfo_row(sh, x);
-    for (y = 0; y < 30; y++)
-        for (x = 0; x < 54u; x++) {
-            int32_t n = row[x < 53u ? x + 1u : x], lo = row[x] < n ? row[x] : n, hi = row[x] < n ? n : row[x];
-            int32_t mx = 5 * (int32_t)x - 248, my = 5 * y - 20;
-            uint16_t c = 0;
-            if (trk[sel].lfo_depth > 0 && ((y > 15 && y < row[x]) || (y < 15 && y > row[x])) && !((x + (uint32_t)y) & 1u))
-                c = dc;
-            if (y == 15 && x % 3u == 0u) c = UI_KC[2];   /* (the middle: DEST's colour) */
-            if (y >= lo && y <= hi) c = lc;
-            if (((int32_t)x - 48) * ((int32_t)x - 48) + (y - 5) * (y - 5) <= 10 && mx * mx + my * my > 200) c = UI_KC[0];
-            if ((x == dx || x == dx + 1u) && y >= row[dx] - 1 && y <= row[dx]) c = ui_acc;   /* the dot */
-            if (c) ui_cell((int32_t)x, y, c);
+    for (x = 0; x < 54u; x += 2u) ui_rect(PX0 + (int32_t)x * 4, PY0 + 62, 2, 1, UI_KC[2]);   /* (the middle) */
+    for (x = 0; x < 54u; x++) y[x] = PY0 + lfo_row(sh, x) * 4 + 2;
+    if (dep > 0)                                /* (DEPTH: the band around it, rippling) */
+        for (k = -1; k <= 1; k += 2) {
+            for (x = 0; x < 54u; x++)
+                yb[x] = y[x] + k * b + hw_wave((x * 9u + hw_ph * 3u + (uint32_t)(k + 1) * 60u) & 255u) * 2 / 64;
+            ui_glow(PX0 + 2, 4, yb, 54, ui_mix(UI_K, UI_KC[1], 6u + (uint32_t)dep * 6u / 100u, 16u));
         }
+    ui_glow(PX0 + 2, 4, y, 54, lc);
+    ui_rect(PX0 + (int32_t)dx * 4 - 1, y[dx] - 3, 7, 7, ui_mix(UI_K, ui_acc, 1, 3));   /* the dot */
+    ui_rect(PX0 + (int32_t)dx * 4 + 1, y[dx] - 1, 3, 3, UI_W);
 }
 
 static void song_cell(int32_t c, int32_t r, const char *t, uint16_t bg, uint16_t fg)   /* Song: a cell of the grid */
@@ -1597,6 +1708,7 @@ static void ui_pic_draw(void)
     case PG_SCALE: case PG_CHORD: pic_sel(); return;
     case PG_ARP: pic_arp(); return;
     case PG_LFO: pic_lfo(); return;
+    case PG_DRONE: pic_drone(); return;
     case PG_SONG: pic_song(); return;
     case PG_PERFORM: pic_perform(); return;
     case PG_SOUNDS: pic_sounds(); return;
@@ -1761,10 +1873,11 @@ static void ui_update(int32_t oct)
         an_t = fm1_ms;
         ui_home_frame(!all);
     }
-    if (page == PG_SOUND && sel_eng() == ENG_HOWL && fm1_ms - an_t >= UI_ANIM_MS) {   /* EditHOWL: its ribbons move */
+    if (((page == PG_SOUND && sel_eng() == ENG_HOWL) || ui_anim_page(page)) && fm1_ms - an_t >= UI_ANIM_MS) {   /* EditHOWL,
+                                                 * the aurora pages: their ribbons move */
         an_t = fm1_ms;
         hw_ph++;
-        if (!all) ui_region(0, PY0 + 8, 240, 96, UI_K, ui_pic_draw);
+        if (!all) ui_region(0, ui_anim_page(page) ? 44 : PY0 + 8, 240, ui_anim_page(page) ? 104 : 96, UI_K, ui_pic_draw);
     }
     key = ui_pic_key();
     if (key != pic_key && (all || fm1_ms - pic_t >= UI_PIC_MS)) {
@@ -1774,7 +1887,7 @@ static void ui_update(int32_t oct)
         dot_shown = page == PG_LFO ? lfo_dot() : 0xFFFFFFFFu;
         ui_region(0, 24, 240, 141, UI_K, ui_pic_draw);
     }
-    if (page == PG_LFO && lfo_dot() != dot_shown) {   /* LFO: the dot moved: its two columns where it was, and where
+    if (page == PG_LFO && lfo_dot() != dot_shown && 0) {   /* (now drawn with its ribbon, every frame) */   /* LFO: the dot moved: its two columns where it was, and where
                                                  * it is, drawn again */
         if (dot_shown < 54u) ui_region(PX0 + (int32_t)dot_shown * 4, PY0, 8, 120, UI_K, ui_pic_draw);
         dot_shown = lfo_dot();

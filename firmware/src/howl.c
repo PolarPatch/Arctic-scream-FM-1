@@ -153,5 +153,5 @@ static void howl_text(const volatile int32_t *p, uint32_t k, char *s)   /* param
     }
 }
 
-static const engine_t HOWL_ENGINE = {"HOWL", {"FEEDBACK", "BODY", "DAMP", "DRIVE"}, {127, 127, 127, 127}, howl_begin,
+static const engine_t HOWL_ENGINE = {"Holvut", {"FEEDBACK", "BODY", "DAMP", "DRIVE"}, {127, 127, 127, 127}, howl_begin,
                                      howl_block, howl_text};

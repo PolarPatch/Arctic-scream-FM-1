@@ -30,7 +30,10 @@
  *              (kept across sources; a source's own envelope runs inside it)
  *   LFO        LFO (the track's: RATE ~60 s a cycle .. ~20 Hz, free-running; DEPTH 0..100 %, 0 off; DESTINATION PITCH
  *              (+-1 octave), VOLUME, PAN, the source's four knobs by their names, REV SEND, GRAIN SEND: moved around the
- *              knob, the knob not; SHAPE SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT) (lfo.c)
+ *              knob, the knob not; SHAPE SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT) (lfo.c) -> DRONE
+              (Arctic Scream p0larpatch, after Jangada's: BORGA 0..100 %, four slow random walks on the sound and each
+              voice's detune and breath; STOARBMA 0..100 %, the tension; GOHCCAT OFF, 1..32 bars, its rise on the
+              tempo; LATCH as SOURCE's; the sound's, saved with it) (drone.c)
  *   SEL        SCALE (ROOT C .. B, SCALE: OFF and 13 scales; the project's, for all tracks: the keys, MIDI in and what
  *              they record snap to its nearest note, GRID's NOTE steps through it) -> CHORD (the track's CHORD TYPE: SCALE
  *              (the scale's triad on the note: in key), MIN .. CLUSTER; VOICING: CLOSE, OPEN, SPREAD, +OCT, DROP); held:
@@ -118,6 +121,7 @@
 #include "tape.c"
 #include "tapefx.c"
 #include "scale.c"
+#include "drone.c"                              /* (Arctic Scream p0larpatch: DRONE, the sound living on its own) */
 #include "lfo.c"
 
 /* ---- the sound (runs in the audio ISR: keep it short, no flash, no screen): the voices, the mix, the effects, timed.
@@ -204,8 +208,8 @@ static int32_t tf_cs[NT] = {127 << 8, 127 << 8, 127 << 8, 127 << 8}, tf_ic[NT][2
 static uint8_t tf_on[NT];
 static void trk_filter(uint32_t t, int32_t *x, uint32_t n)
 {
-    int32_t tgt = lfo_move(t, LD_CUT, clamp(trk[t].cut, 0, 127), 127) << 8, cs = tf_cs[t], ic1, ic2;
-    int32_t r = clamp(trk[t].res, 0, 127) * 7 / 8;
+    int32_t tgt = clamp((lfo_move(t, LD_CUT, clamp(trk[t].cut, 0, 127), 127) << 8) + dr_cut[t], 0, 127 << 8), cs = tf_cs[t], ic1, ic2;
+    int32_t r = clamp(trk[t].res + dr_res[t], 0, 127) * 7 / 8;   /* (DRONE's on both: drone.c) */
     uint32_t i, j;
     tsvf_t c;
     if (tgt >= 127 << 8 && cs >= (127 << 8) - 64) { /* (open: as it is) */
@@ -239,7 +243,7 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
         g[1] = mulq15(lv, pan >= 64 ? 32767 : pan * 512);
         g[2] = mulq15(lv, pf_held >> PF_ECHO & 1u ? 127 * 258 : fx_send(t, clamp(trk[t].dly, 0, 127)));   /* the sends:
                                                  * after LEVEL (ECHO THROW, REV THROW held: full) */
-        g[3] = mulq15(lv, pf_held >> PF_REV & 1u ? 127 * 258 : fx_send(t, lfo_move(t, LD_REV, clamp(trk[t].rev, 0, 127), 127)));
+        g[3] = mulq15(lv, pf_held >> PF_REV & 1u ? 127 * 258 : fx_send(t, lfo_move(t, LD_REV, clamp(trk[t].rev + dr_rev[t], 0, 127), 127)));
         g[4] = mulq15(lv, fx_send(t, lfo_move(t, LD_GRAIN, clamp(trk[t].grn, 0, 127), 127)));
         if (used >> t & 1u) trk_filter(t, x, n);
         else tf_on[t] = 0;                      /* (silent: from bypassed when it sounds again) */
@@ -541,6 +545,7 @@ static void mute_watch(void)
 static void ctl_hook(void)
 {
     mute_watch();
+    drone_ctl();
     lfo_ctl();
     arp_watch();
     if (nq_w - nq_r > NQ_LEN) nq_r = nq_w - NQ_LEN;   /* (overrun: the oldest asks are gone) */
@@ -666,7 +671,7 @@ static char *put_ms(char *s, uint32_t q16)      /* a time, ms in Q16: "5 ms", "1
  * tap opens its first page, again the next (round); SYSTEM is HOME's, held */
 enum { PG_SOUND, PG_SOURCE, PG_ENV, PG_LFO, PG_SCALE, PG_CHORD, PG_SONG, PG_HOME, PG_MIX1, PG_MIX2, PG_SYSTEM,
        PG_SYS2, PG_SOUNDS, PG_PROJECTS, PG_ARP, PG_GRID, PG_PATTERN, PG_TAPE, PG_GRAIN, PG_DELAY, PG_SPACE, PG_PERFORM,
-       PG_TRACK, PG_FMALGO, PG_FMOP, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
+       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
                                                  * have; in their button's round by pg_key. TRACK: gone in step 25, its
                                                  * number kept: sys_load moves its links onto HOME) */
 typedef struct {
@@ -703,6 +708,9 @@ static const page_t PAGES[NPAGE] = {
     {"TRACK", BTN_HOME, 0, 1, 0, {"", "", "", ""}},   /* (gone: its knobs on HOME) */
     {"FM ALGO", BTN_EDIT, 1, 1, 1, {"ALGO", "FEEDBACK", "OP", "FINE"}},   /* (an FM track's: its own patch, fm.c) */
     {"FM OP", BTN_EDIT, 1, 1, 1, {"RATIO", "LEVEL", "ATTACK", "DECAY"}},  /* (the operator OP selects) */
+    {"DRONE", BTN_LFO, 1, 1, 1, {"BORGA", "STOARBMA", "GOHCCAT", "LATCH"}},   /* (Arctic Scream p0larpatch: LFO's
+                                                 * second; the walks, the tension, its time (drone.c); LATCH as
+                                                 * SOURCE's) */
 };
 static uint32_t pg_key(uint32_t p)              /* its place in its button's round */
 {
@@ -750,6 +758,8 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
                          k == 2u ? &song_rep[clamp(song_sect, 0, SONG_N - 1)] : &song_mode;
     case PG_LFO: return k == 0u ? &trk[sel].lfo_rate : k == 1u ? &trk[sel].lfo_depth : k == 2u ? &trk[sel].lfo_dest :
                         &trk[sel].lfo_shape;
+    case PG_DRONE: return k == 0u ? &trk[sel].dr_borga : k == 1u ? &trk[sel].dr_storm : k == 2u ? &trk[sel].dr_rise :
+                          &trk[sel].latch;
     case PG_SCALE: return k == 0u ? &sc_root : k == 1u ? &sc_scale : 0;
     case PG_CHORD: return k == 0u ? &trk[sel].ch_type : k == 1u ? &trk[sel].ch_voice : 0;
     case PG_ARP: return k == 0u ? &trk[sel].arp_mode : k == 1u ? &trk[sel].arp_rate : k == 2u ? &trk[sel].arp_oct :
@@ -783,6 +793,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_PROJECTS ? 3 : pg == PG_SCALE ? (k ? NSCALE - 1 : 11) : pg == PG_CHORD ? (k ? NVOICING - 1 : NCHORD - 1) :
            pg == PG_ARP ? (k == 0u ? NARPMODE - 1 : k == 1u ? NARPRATE - 1 : k == 2u ? 4 : 100) :
            pg == PG_LFO ? (k == 0u ? 127 : k == 1u ? 100 : k == 2u ? NLFODEST - 1 : NLFOSHAPE - 1) :
+           pg == PG_DRONE ? (k < 2u ? 100 : k == 2u ? DR_NRISE - 1 : 1) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 3 : k == 1u ? MCH_ALL : k == 2u ? 50 : 4) : pg == PG_SYS2 ? (k ? 1 : 2) :
            pg == PG_HOME && k == 3u ? 200 : pg == PG_FMALGO ? (k == 0u ? 31 : k == 1u ? 7 : k == 2u ? 5 : 99) :
@@ -857,6 +868,11 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
         else if (k == 1u) put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
         else if (k == 2u) put_s(s, lfo_dest_name(v));
         else put_s(s, LFO_SHAPE_NAME[clamp(v, 0, NLFOSHAPE - 1)]);
+        return;
+    case PG_DRONE:
+        if (k < 2u) put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
+        else if (k == 2u) dr_rise_text(s, v, " ");
+        else put_s(s, v ? "ON" : "OFF");
         return;
     case PG_ARP:
         if (k == 0u) put_s(s, ARP_MODE_NAME[clamp(v, 0, NARPMODE - 1)]);
@@ -1090,7 +1106,7 @@ static void knob_step(uint32_t pg, uint32_t k, int32_t d)   /* KNOB k + 1 on pag
     if (pg == PG_SOURCE && k == 0u) undo_take(UK_SRC | sel, -1);                       /* a source change, */
     if (pg == PG_SOUND && k == 0u && sel_eng() == ENG_FM) undo_take(UK_SND | sel, -1);   /* FM's PATCH: its edits) */
     if (pg == PG_SOURCE && k == 0u) set_source(*p + d);
-    else if (pg == PG_SOURCE && k == 1u) set_latch(*p + d);
+    else if ((pg == PG_SOURCE && k == 1u) || (pg == PG_DRONE && k == 3u)) set_latch(*p + d);
     else if (pg == PG_GRID && k == 0u && sc_scale > 0) *p = sc_walk(*p, d);   /* (a SCALE: its notes only) */
     else if (pg == PG_GRID && k == 0u && !*p && d > 0) *p = 60;   /* NOTE from OFF: C4, then on from there */
     else *p = clamp(*p + d, lo, hi);

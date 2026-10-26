@@ -47,7 +47,7 @@ Request: none. Reply, in order:
 | 1 | user sound slots (64) |
 | 1 | a sound's size (64) |
 | 1 | factory sounds (40) |
-| 5 | a slot's size, u35 (2532) |
+| 5 | a slot's size, u35 (2548) |
 | 5 | the settings' size, u35 (168) |
 | 1 | sample slots (4) |
 | 1 | sample slots in use (holding a good sample) |
@@ -57,7 +57,7 @@ Request: none. Reply, in order:
 | id | Object | Size | GET | PUT |
 | --- | --- | --- | --- | --- |
 | 0 | the settings | 168 | yes | yes |
-| 1–4 | slots A–D | 2532 | yes | yes |
+| 1–4 | slots A–D | 2548 | yes | yes |
 | 16–79 | user sounds 1–64 (id 16 + slot) | 64 | yes | yes |
 | 80–119 | factory sounds 1–40 (id 80 + index, in the firmware's order) | 64 | yes | no |
 
@@ -149,12 +149,12 @@ sequence now (298 bytes).
 | 0 | `0x54` ("T") |
 | 1 | CATEGORY: 0 DRONE, 1 PAD, 2 BELL, 3 ORGAN, 4 KEYS, 5 BASS, 6 TEXTURE, 7 VOICE, 8 OTHER |
 | 2 | its number in the category (the name "DRONE 03"), 1–99 |
-| 3 | the source: 0 VA, 1 FM, 2 SAMPLE, 3 VOICE, 4 WHEEL, 5 PHYS, 6 PHASE |
+| 3 | the source: 0 VA, 1 FM, 2 SAMPLE, 3 VOICE, 4 WHEEL, 5 PHYS, 6 PHASE, 7 Holvut |
 | 4–7 | the source's four knobs (SOUND page), each 0..its range |
 | 8–11 | ENV: ATTACK, DECAY, SUSTAIN, RELEASE (0–127) |
-| 12 | LATCH (0 / 1) |
+| 12 | bit 0 LATCH; bits 1–7 DRONE's BORGA (0–100) |
 | 13 | the chord byte (below) |
-| 14–17 | LFO: RATE (0–127), DEPTH (0–100), DESTINATION, SHAPE (below) |
+| 14–17 | LFO: RATE (0–127), DEPTH (0–100, bits 0–6), DESTINATION (bits 0–3), SHAPE (bits 0–2) (below); the top bits DRONE's |
 | 18–49 | FM: the track's patch (below), when the source is FM and byte 18 has bit 7 set; else the PATCH as built |
 | 50–59 | its name (ASCII, up to 10, 0-padded; the editor page gives it): PRESETS, SOUNDS and HOME show it instead of "PAD 03" (a byte the font has not as a space). Saving a sound on the FM-1 over a slot keeps the name that slot had; into an empty slot, none |
 | 60–63 | CRC-32 of bytes 0–59 |
@@ -164,7 +164,11 @@ An empty slot is 64 × `0xFF`. A PUT of 64 × `0xFF` empties the slot.
 Source knob ranges: VA WAVE 0–2, DETUNE, CUTOFF, RESONANCE 0–127. FM PATCH 0–3, BRIGHT, DECAY, DETUNE 0–127. SAMPLE
 SLOT 0–3, START, LENGTH 0–127, REVERSE 0–1. VOICE VOWEL 0–127, SHIFT 0–24, BUZZ, BREATH 0–127. WHEEL DRAWBARS 0–15,
 PERC 0–6, CLICK, DRIVE 0–127. PHYS MODEL 0–3, STRUCTURE, DAMP, BOW 0–127. PHASE WAVE 0–7, WAVE2 0–8, DCW, DETUNE
-0–127.
+0–127. Holvut FEEDBACK, BODY, DAMP, DRIVE 0–127.
+
+**DRONE** (Arctic Scream p0larpatch; all 0 in a sound from before it: off): BORGA in byte 12 bits 1–7; GOHCCAT (0 OFF,
+1–6: 1, 2, 4, 8, 16, 32 bars) in byte 16 bits 4–6; STOARBMA (0–100) bits 0–4 in byte 17 bits 3–7, bit 5 in byte 16
+bit 7, bit 6 in byte 15 bit 7.
 
 **The chord byte:** bit 7 chord mode on; bits 4–6 VOICING (0 CLOSE, 1 OPEN, 2 SPREAD, 3 +OCT, 4 DROP); bits 0–3 CHORD
 TYPE (0 SCALE, 1 MIN, 2 MAJ, 3 SUS2, 4 SUS4, 5 FIFTH, 6 MIN7, 7 MAJ7, 8 DIM, 9 ADD9, 10 CLUSTER).
@@ -175,34 +179,35 @@ SHAPE 0 SINE, 1 TRIANGLE, 2 SAW UP, 3 SAW DOWN, 4 SQUARE, 5 RANDOM, 6 DRIFT.
 **An FM patch (32 bytes):** byte 0 ALGO (0–31) + `0x80` (0: none, the PATCH as built), byte 1 FEEDBACK (0–7), then a
 row of 5 an operator, OP1 first: RATIO (0–31, 0 = 0.5), FINE, LEVEL, ATTACK, DECAY (0–99).
 
-## A slot (2532 bytes)
+## A slot (2548 bytes)
 
 | Bytes | |
 | --- | --- |
 | 0 | 1 used, 0 empty |
 | 1–3 | 0 |
-| 4–211 | the four tracks, 52 bytes each (below) |
-| 212–1251 | the four sequences, 260 bytes each (below) |
-| 1252–2403 | the four tracks' step locks, 288 bytes each (below) |
-| 2404–2531 | the four tracks' FM patches, 32 bytes each (as in a sound) |
+| 4–227 | the four tracks, 56 bytes each (below) |
+| 228–1267 | the four sequences, 260 bytes each (below) |
+| 1268–2419 | the four tracks' step locks, 288 bytes each (below) |
+| 2420–2547 | the four tracks' FM patches, 32 bytes each (as in a sound) |
 
-**A track (52 bytes):**
+**A track (56 bytes):**
 
 | Byte | |
 | --- | --- |
 | 0 | the source (as in a sound) |
-| 1–28 | every source's four knobs: source s's knob k at 1 + 4 s + k (all seven kept) |
+| 1–28 | every source's four knobs: source s's knob k at 1 + 4 s + k (the first seven; Holvut's at 52–55) |
 | 29 | 127 − CUTOFF (HOME's filter; 0: open) |
 | 30 | RESONANCE (0–127) |
 | 31 | FX − 100, signed (0: 100 %; −100..100 for 0..200 %) |
-| 32 | 0 |
+| 32 | DRONE's BORGA (0–100) |
 | 33–36 | ENV: ATTACK, DECAY, SUSTAIN, RELEASE |
-| 37 | LATCH |
+| 37 | bit 0 LATCH; bits 1–7 DRONE's STOARBMA (0–100) |
 | 38–42 | LEVEL, DLY SEND, REV SEND, GRAIN SEND, PAN (0–127, PAN 64 the middle) |
 | 43 | the chord byte |
 | 44 | ARP: bit 7 on; bits 0–6 MODE (0 UP, 1 DOWN, 2 UP-DOWN, 3 RANDOM, 4 AS PLAYED, 5 CHORD) |
-| 45–47 | ARP RATE (0–8: 1/1 1/2 1/4 1/8 1/16 1/32 1/4T 1/8T 1/16T), OCTAVES (1–4), GATE (10–100) |
+| 45–47 | ARP RATE (0–8: 1/1 1/2 1/4 1/8 1/16 1/32 1/4T 1/8T 1/16T), OCTAVES (1–4; bits 4–6 of byte 46: DRONE's GOHCCAT), GATE (10–100) |
 | 48–51 | LFO: RATE, DEPTH, DESTINATION, SHAPE |
+| 52–55 | Holvut's four knobs |
 
 **A sequence (260 bytes):** byte 0 STEPS (1–64), 1 DIVISION (0–7), 2 SWING (0–127), 3 PLAY MODE; then 64 steps of 4
 bytes: a 24-bit value, little endian (bits 0–6 NOTE, 0 = OFF; 7–13 CHANCE 0–100; 14–15 RATCHET − 1; 16–21 LENGTH − 1),

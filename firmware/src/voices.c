@@ -67,9 +67,11 @@ typedef struct {
     volatile int32_t fm_alg, fm_fb, fmo[6][5];  /* FM: the track's own patch (FM ALGO, FM OP): ALGO 0..31, FEEDBACK
                                                  * 0..7; an operator's (OP1 first) RATIO 0..31, FINE, LEVEL, ATTACK,
                                                  * DECAY 0..99 (fm.c; a built-in PATCH's: fm_builtin) */
+    volatile int32_t dr_borga, dr_storm, dr_rise;   /* DRONE: BORGA 0..100 %, STOARBMA 0..100 %, GOHCCAT 0 OFF .. 6
+                                                 * (32 bars) (drone.c) */
 } track_t;
 #define TRK_DEF {ENG_VA, {{0, 10, 90, 30}, {0, 64, 64, 20}, {0, 0, 127, 0}, {0, 12, 64, 10}, {4, 0, 40, 0}, {0, 64, 80, 64}, {0, 0, 60, 0}, {96, 64, 50, 40}}, 100, 0, 100, 0, 64, 0, \
-                 {60, 85, 127, 105}, 0, 0, 0, 0, 0, 4, 1, 50, 40, 30, 9, 0, 84, 24, 100, 0, 0, {{0}}}
+                 {60, 85, 51, 105}, 0, 0, 0, 0, 0, 4, 1, 50, 40, 30, 9, 0, 84, 24, 100, 0, 0, {{0}}}
 static track_t trk[NT] = {TRK_DEF, TRK_DEF, TRK_DEF, TRK_DEF};   /* VA: SAW, DETUNE 10, CUTOFF 90, RESONANCE 30
                                                  * (Felucca's ANALOG); FM: BELL as made, DETUNE 20; SAMPLE: slot 1,
                                                  * the whole sample, forward; VOICE: A, SHIFT 0, BUZZ 64, BREATH 10
@@ -77,7 +79,7 @@ static track_t trk[NT] = {TRK_DEF, TRK_DEF, TRK_DEF, TRK_DEF};   /* VA: SAW, DET
                                                  * PHYS: MODAL, STRUCTURE 64, DAMP 80, bowed at 50 %; PHASE: SAW,
                                                  * DCW 60, one line (Felucca's); HOWL: FEEDBACK 96 (awake), BODY 64, DAMP 50, DRIVE 40; LEVEL 100,
                                                  * DLY 0, REV 100, GRN 0, PAN the middle; LATCH OFF; ENV: ATTACK
-                                                 * ~0.2 s, DECAY 1 s, SUSTAIN 100 %, RELEASE ~5 s; chord mode OFF (SCALE, CLOSE); ARP OFF (UP,
+                                                 * ~0.2 s, DECAY 1 s, SUSTAIN 40 %, RELEASE ~5 s; chord mode OFF (SCALE, CLOSE); ARP OFF (UP,
                                                  * 1/16, 1 octave, GATE 50 %); LFO DEPTH 30 % (slow, TRK CUTOFF,
                                                  * SINE); the filter at CUTOFF 84, RESONANCE 24 (Arctic Scream
                                                  * p0larpatch: darker, and every knob of TRACK, ENV, LFO heard from the
@@ -118,10 +120,15 @@ static const volatile int32_t *lfo_params(uint32_t v, uint32_t t, uint32_t e);
 /* SYSTEM's TUNE (main loop): every source's pitch times 1 + tune_f / 4096 (-50 .. +50 cents: -117 .. +120; finer than
  * VP16's 6.25-cent steps); vinc: a pitch's phase increment, tuned */
 static volatile int32_t tune_f;
+static int32_t vc_fine;                         /* audio: the voice being rendered's own detune, as tune_f (DRONE's
+                                                 * BORGA, STOARBMA: dr_fine; 0 between voices) */
+static int32_t dr_fine[NV], dr_gain[NV] = {32767, 32767, 32767, 32767, 32767, 32767};   /* audio: drone.c's, a voice's
+                                                 * detune (tune_f units) and breath (its level, Q15) */
+static int32_t dr_gain_was[NV] = {32767, 32767, 32767, 32767, 32767, 32767};   /* (the last block's: ramped) */
 static inline uint32_t vinc(int32_t p16)
 {
     uint32_t inc = pitch_inc((uint32_t)clamp(p16, 0, 2047));
-    return inc + (uint32_t)((int32_t)(inc >> 12) * tune_f);
+    return inc + (uint32_t)((int32_t)(inc >> 12) * (tune_f + vc_fine));
 }
 
 #include "analog.c"                             /* the engines */
@@ -282,8 +289,12 @@ static uint32_t voices_render(int32_t (*tb)[VB], uint32_t n)
                 for (i = 0; i < n; i++)
                     tb[t][i] = 0;
             }
+            vc_fine = dr_fine[k];               /* (DRONE: its detune and breath, drone.c) */
+            if (dr_gain[k] < 32767 || dr_gain_was[k] < 32767) amp0 = mulq15(amp0, dr_gain_was[k]), amp1 = mulq15(amp1, dr_gain[k]);
+            dr_gain_was[k] = dr_gain[k];
             ENGINES[v->eng]->block(v, lfo_params(k, t, v->eng), tb[t] + b, amp0, amp1);   /* (the engine it began
                                                  * with; the LFO's on one of its knobs) */
+            vc_fine = 0;
         }
     }
     return used;

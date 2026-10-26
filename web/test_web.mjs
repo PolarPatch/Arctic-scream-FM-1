@@ -148,6 +148,9 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   const cl = new Client(vf), info = await cl.info(), meta = vf.meta();
   check(info.proto === 3 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 168 && info.factory === 46,
         `editor: INFO (${info.firmware}, protocol ${info.proto}, ${info.sounds} sounds, slots ${info.slotSize} B)`);
+  const iw = parseSound(Uint8Array.from(meta.factory[45].rec), meta);
+  check(meta.factory[45].name === "ICE WRAITH" && iw.latch === 1 && iw.drone.borga === 65 && iw.drone.storm === 0 && iw.drone.rise === 4 &&
+        iw.lfo.join() === "35,30,3,6", "editor: ICE WRAITH's DRONE (BORGA 65 %, GOHCCAT 8 bars), its LATCH and LFO as they were");
   check(meta.factory.length === 46 && meta.engines.length === 8 && meta.fmAlg.length === 32, "editor: the page's names and tables from the firmware");
   const f2 = await cl.get(OBJ.FACT + 2, 64);
   check(eq([...f2], meta.factory[2].rec) && recordOk(f2), `editor: factory sound 3 (${meta.factory[2].name}) read as the page has it`);
@@ -156,6 +159,7 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   const s = parseSound(Uint8Array.from(meta.factory[2].rec), meta);
   Object.assign(s, { name: "TEST EDIT", chordOn: 1, voicing: 2 });
   s.k[1] = 99, s.env[0] = 20, s.lfo = [50, 30, 9, 1], s.fm.alg = 17, s.fm.fb = 5, s.fm.ops[3][2] = 77;
+  s.drone = { borga: 41, storm: 100, rise: 6 };
   const rec = buildRecord(s);
   await cl.put(OBJ.SND + 5, rec, info.fmt);
   const back = await cl.get(OBJ.SND + 5, 64);
@@ -212,7 +216,8 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   const t0 = await Promise.all([0, 1, 2, 3].map((t) => cl.track(t)));
   check(t0.every((r) => recordOk(r.rec)) && t0.every((r) => r.sel === t0[0].sel), `editor: the four tracks read (track ${t0[0].sel + 1} selected)`);
   const ls = parseSound(Uint8Array.from(meta.factory[2].rec), meta);   // GLACIER PAD (FM) onto T3, then edited
-  ls.env[1] = 77, ls.lfo[1] = 42, ls.fm.ops[1][2] = 55, ls.fm.alg = 9;
+  ls.env[1] = 77, ls.lfo[1] = 100, ls.lfo[2] = 9, ls.lfo[3] = 6, ls.fm.ops[1][2] = 55, ls.fm.alg = 9;
+  ls.drone = { borga: 77, storm: 99, rise: 5 };              // (DRONE: in the top bits of the LATCH and LFO bytes)
   await cl.trackSet(2, buildRecord(ls));
   const lb = (await cl.track(2)).rec, lr = buildRecord(Object.assign(parseSound(lb, meta), { cat: ls.cat, num: ls.num, name: ls.name }));
   check(eq([...lr], [...buildRecord(ls)]), "editor: TRACK: a sound set live on track 3, read back as set (FM patch too)");

@@ -9,8 +9,11 @@ and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.m
 - A GPL-3.0 fork of [GR!MM](https://github.com/GRiMMBIENT/grimm) 1.0 (git remote `upstream`; its tag is kept
   locally as `grimm-v1.0`). GR!MM is built on Felucca (the platform), Dinghy, SLOOP, X0X, msfa, DaisySP, Rings and
   CrispyZebra; all their credits stay in [LICENSING.md](LICENSING.md).
-- HOWL follows the design of Synthux's [Audrey II](https://github.com/Synthux-Academy/Audrey-II) and Audrey Touch
+- Holvut (the HOWL source in the code) follows the design of Synthux's [Audrey II](https://github.com/Synthux-Academy/Audrey-II) and Audrey Touch
   (MIT). It is written from scratch, in integers, and no code is copied.
+- The DRONE page follows the idea of [Jangada](https://github.com/zednaked/jangada)'s DRONE page (zednaked, GPL-3.0:
+  EVOL, TENS, RAMP). It is written from scratch, and no code is copied. Its knob names are North Sami, checked in the
+  dictionary at [sanit.oahpa.no](https://sanit.oahpa.no/).
 - The colours come from PolarPatch's [BlueWatch](https://github.com/PolarPatch/BlueWatch) cyberpunk theme.
 - The PolarPatch logo (`assets/polarpatch-logo.png`, `firmware/gen/polarpatch_logo.h`) is PolarPatch's, not under
   the GPL.
@@ -45,16 +48,37 @@ and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.m
 
 ### Sound
 
-- **HOWL**, the eighth source (`ENG_HOWL`):
+- **Holvut** (North Sami: to howl), the eighth source (`ENG_HOWL`; its name on the screen "Holvut", `howl.c`
+  `HOWL_ENGINE`):
   - Code: `firmware/src/howl.c` and `howl.h`. Its state shares the PHYS slot (`phys.c` `ph_slot`), so it costs no RAM
     of its own.
   - The loop: noise → Karplus-Strong string → DRIVE saturation → DAMP low-pass → ~70 Hz high-pass → two all-passes →
     × FEEDBACK → BODY's delay line → back into the string.
   - FEEDBACK runs from −60 to +12 dB and wakes the loop at about two thirds. A key adds a 50 ms burst.
   - Output level is `VOICE_LV * 3 / 4`, because chords had clipped.
+- **DRONE**, LFO's second page (`PG_DRONE`; `firmware/src/drone.c`):
+  - **BORGA** (snowdrift) 0–100 %: four slow random walks a track (a new target every 4–8 s, 5/8 of the last plus a
+    random step, folded at the ends, glided through two one-poles of ~2.4 s). Walk 0: the track filter's CUTOFF (when
+    it is not open); walk 1 and 2: the source's knobs as `DR_MAP` says (Holvut: FEEDBACK ±5 % around the threshold,
+    BODY, DAMP); walk 3: the REV send. Each voice also gets its own slow detune (±3 cents, `vc_fine` in `vinc`) and
+    breath (its level down to 80 %, in `voices_render`).
+  - **STOARBMA** (storm) 0–100 %: the tension. It opens the filter (+40), adds resonance (+30), pushes the knobs as
+    `DR_MAP` says (Holvut: FEEDBACK +12 %, DRIVE +40 %, DAMP −30 %), spreads the voices to ±12 cents, and makes the
+    walks up to twice as deep and three times as fast.
+  - **GOHCCAT** (to wake) OFF, 1, 2, 4, 8, 16, 32 bars: the time to reach STOARBMA from where the tension is, on the
+    tempo (OFF: ~0.3 s). A drone woken from silence starts at 0.
+  - The fourth knob is LATCH, as on SOURCE.
+  - Everything is added on top of the knobs (`lfo_params`, `trk_filter`, `mix_tracks`). At BORGA and STOARBMA 0 the
+    output is bit for bit as before (checked against the v1.0 build).
+  - Runs in the audio ISR every 8th control step (~172 Hz). State in the pool; main RAM +208 B.
+  - Saved without a format change, in spare bits: a sound's bytes 12 and 15–17 (`dr_spk` / `dr_suk`), a track's bytes
+    32, 37 and 46 (`pk_track`). Older saves read as DRONE off. See `docs/EDITOR_PROTOCOL.md`.
+  - The screen: four aurora ribbons (the walks), and a STOARBMA bar with its mark (`ui.c` `pic_drone`). The slabs show
+    the whole Sami names in a narrow 7 px font (`ui_text_n`).
 - **Presets** (`store.c`):
   - Six HOWLs together at the end of DRONE: POLAR HOWL, WENDIGO, FROZEN SCREAM, WHITEOUT, DEAD SIGNAL, ICE WRAITH.
-  - The HOWLs and SVALBARD CELLO have LATCH on.
+  - The Holvut sounds and SVALBARD CELLO have LATCH on.
+  - The six Holvut sounds start with DRONE on: BORGA 50–75 %, STOARBMA 0, GOHCCAT 8 bars (`FSNDD`).
   - The 46 factory sounds have arctic names.
 - **Default sound:** ICE WRAITH (`SND_DEFAULT`), on all four tracks at the first boot and after NEW (`snd_default()`
   in `grimm.c`).
@@ -79,7 +103,18 @@ and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.m
 - **HOME:**
   - glowing waveforms per track;
   - the slabs show the selected track's VOLUME (MUTE when muted), CUTOFF, RES and FX.
-- **HOWL EDIT:**
+- **The aurora pages** (`ui.c`, after GR!MM's pictures were replaced): every knob a ribbon of northern lights, moving
+  a frame every `UI_ANIM_MS` (`ui_anim_page`, `hw_ph`; the region y 44–147 redrawn):
+  - TAPE: four ribbons, one a knob (WOW wobbles, SATURATION squares off, TONE ripples, HISS frays); bypassed: still and dim.
+  - GRAIN: a dim buffer ribbon and grains of light torn off it (DENSITY, SIZE, SCATTER, MIX); FREEZE stops them.
+  - DELAY: the sound and its echoes as ribbons stepping down and right (TIME), smaller each time (FEEDBACK), more worn
+    (WEAR), as bright as MIX; past 100 % they grow and burn magenta ("DELAY: RUNAWAY").
+  - SPACE: an aurora curtain, its rays as long as SIZE (INF: to the ground), darker with DAMP, below the ribbon by
+    PRE-DELAY, as bright as MIX.
+  - LFO: the SHAPE as a ribbon, a band around it as wide as DEPTH, and the dot.
+  - MIXER 1: each track four standing ribbons (LEVEL, DLY, REV, GRAIN); MIXER 2: each track a ribbon across the stereo
+    field, its crest at PAN.
+- **Holvut EDIT:**
   - Always four aurora ribbons instead of GR!MM's cells: FEEDBACK sets their height, BODY their length, DAMP their
     light, DRIVE their shape.
   - Animated on `PG_SOUND` (`hw_ph`).
@@ -102,6 +137,7 @@ and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.m
     - store A and store B, toggle between them, and morph A → B;
     - randomize knobs, ENV, LFO or everything, by an amount;
     - a list of what changed since the sound was loaded.
+  - **Drone:** BORGA, STOARBMA and GOHCCÁT, live, in morph, randomize and the list of changes.
   - **Sequencer:**
     - pattern settings (LEN, DIV, SWING, PLAY MODE, TEMPO);
     - a 64-step grid, a piano roll and a typed step list;
@@ -118,7 +154,7 @@ and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.m
 
 ```sh
 # host build: screens and sound; PNGs with Pillow (not sips: test_web compares them)
-cc -O2 -Wall -Wno-unused-function '-Dsection(x)=used' -DDINGHY_HOST -DAPP_VER='"1.0"' -Ifirmware/src -Ifirmware/gen \
+cc -O2 -Wall -Wno-unused-function '-Dsection(x)=used' -DDINGHY_HOST -DAPP_VER='"1.1"' -Ifirmware/src -Ifirmware/gen \
    -o build/host/grimm firmware/src/grimm.c
 build/host/grimm build/host/grimm        # (or: tests/run_host.sh)
 build/host/grimm OUT script.txt FPS      # script mode: "3100 keys 0x80", "3500 btn 6", "5000 enc 2 -45", "end"
@@ -189,7 +225,21 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
 
 ## Ideas for later
 
-- Jangada-style EVOL / TENS / RAMP drone evolution, and a generator after Unholy Union.
+- A generator after Unholy Union.
+- **Holvut does not follow the keys or OCT−/OCT+ (found 2026-10-26, kept as it is for now).**
+  - What: the loop howls on the partial its own outer loop favours. F2, F1 (OCT−) and F0 (OCT− twice) all howl around
+    616 Hz; F3 around 353 Hz. VA and the other sources follow the octave correctly.
+  - Why: two loops in one. The string (`HW_SL`, tuned to the note) sits inside an outer loop through DRIVE, DAMP, the
+    high-pass, the two all-passes (`HW_A1`/`HW_A2`, fixed) and BODY's line (fixed ms). With FEEDBACK high the outer
+    loop dominates and the note only nudges which partial wins. Below ~43 Hz the string line (`HW_SL` 1024) folds the
+    note an octave up, so OCT− twice sounds as once.
+  - Possible change: make the whole loop scale with the note's period. BODY as a share of the period (a prototype,
+    `r = 32 + BODY × 480 / 127` in Q8, gave F2 → 436 Hz and F1 → 219 Hz, a clean octave; F3 was still off), and the
+    all-pass lengths scaled too. Reaching ~22 Hz needs `HW_SL` 2048 and longer BODY/all-pass lines: move `ph_slot`
+    (phys.c, ~24 KB) into the pool.
+  - Cost: the character changes (more tonal, less wild), BODY becomes a ratio instead of ms, and the six presets need
+    retuning by ear.
+  - Also: OCT−/OCT+ only move notes played after the press; a latched drone keeps its pitch.
 - Tune the HOME waveform look for ICE WRAITH, and a stronger HOWL burst.
 - Move the redo buffer (`store.c` `redo_b`, 5 KB) into the pool now that the pool has room, to free main RAM.
 - Store `wv_d` (HOME's drawn waves) as 8-bit values instead of 32-bit: saves ~1.2 KB of main RAM.

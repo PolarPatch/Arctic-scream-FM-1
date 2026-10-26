@@ -48,7 +48,7 @@ node web/test_web.mjs                       # after tests/run_host.sh: the brows
 cd web/dist && python3 -m http.server 8000  # then open http://localhost:8000/ (or /editor.html)
 ```
 
-`APP_VER=1.0 web/build_web.sh` puts the version on the browser build's screen.
+`APP_VER=1.1 web/build_web.sh` puts the version on the browser build's screen.
 
 ## The factory samples
 

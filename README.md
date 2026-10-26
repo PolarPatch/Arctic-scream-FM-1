@@ -19,10 +19,15 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
 
 ## What's new
 
-- **HOWL, a feedback-loop sound source.** It is inspired by the Synthux Audrey II and written from scratch for the FM-1. A string and a resonant body sit inside a loop with saturation, filters and diffusion.
+- **Holvut, a feedback-loop sound source.** (*Holvut* is North Sami for to howl.) It is inspired by the Synthux Audrey II and written from scratch for the FM-1. A string and a resonant body sit inside a loop with saturation, filters and diffusion.
   - Below the threshold the loop sleeps. Past it, the loop wakes and grows out of silence into a howl that sustains itself.
   - Each key press sends a short burst into the loop, so a note played near the threshold sets it off.
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
+- **DRONE, a sound that lives on its own.** Press LFO twice. The knobs have North Sami names:
+  - **BORGA** (snowdrift): four slow random walks move the filter, the source's shape and its own most natural knob, and the reverb's distance. Each voice drifts a few cents and breathes, so a held chord sounds like a choir. It never repeats.
+  - **STOARBMA** (storm): the tension. It opens the filter, raises resonance and drive, spreads the voices and makes the walks deeper and faster.
+  - **GOHCCAT** (to wake): 1 to 32 bars for the storm to rise, in tempo. A drone woken from silence starts calm and builds.
+  - At 0 % the sound is exactly as set. The settings are saved with the sound, and all six screaming presets start with BORGA on.
 - **Six screaming presets:** POLAR HOWL, WENDIGO, FROZEN SCREAM, WHITEOUT, DEAD SIGNAL and ICE WRAITH. ICE WRAITH is the sound you start with, and all six hold their notes (LATCH).
 - **The HORROR scale:** close semitones, so every note is wrong in the right way.
 - **Runaway echo:** DELAY feedback goes up to 150 %, so the echo can grow and saturate. Delay times go up to 3 seconds.
@@ -35,7 +40,8 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
 - **A new look:**
   - an arctic cyberpunk palette from PolarPatch's BlueWatch;
   - waveforms that glow on HOME;
-  - aurora ribbons that move with HOWL's knobs;
+  - aurora ribbons that move with Holvut's knobs and with DRONE's walks;
+  - moving northern lights on the FX, LFO and mixer pages too: TAPE's four ribbons, GRAIN's torn-off grains of light, DELAY's echoes (burning magenta when they run away), SPACE's hanging curtain, the LFO's band, and the mixers' curtains and crests;
   - the PolarPatch logo over drifting northern lights at boot.
 - **A one-page [cheat sheet](https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html)** with every button, knob and combo, and a guide to summoning the screams.
 
@@ -73,7 +79,8 @@ It installs over the FM-1's own firmware, GR!MM or any other FM-1 firmware. Don'
 ## Credits
 
 - **[GR!MM](https://github.com/GRiMMBIENT/grimm)** (GPL-3.0): the firmware this is built on, and everything GR!MM itself builds on: Felucca, Dinghy, SLOOP, X0X, msfa, DaisySP, Rings and CrispyZebra.
-- **[Audrey II](https://github.com/Synthux-Academy/Audrey-II)** and **[Audrey Touch](https://github.com/Synthux-Academy/AudreyTouch)** by Nick Donaldson (Infrasonic Audio) and Synthux Academy (MIT): the design behind HOWL and the HORROR scale. No code is copied.
+- **[Audrey II](https://github.com/Synthux-Academy/Audrey-II)** and **[Audrey Touch](https://github.com/Synthux-Academy/AudreyTouch)** by Nick Donaldson (Infrasonic Audio) and Synthux Academy (MIT): the design behind Holvut and the HORROR scale. No code is copied.
+- **[Jangada](https://github.com/zednaked/jangada)** by zednaked (GPL-3.0): the idea behind the DRONE page (its EVOL, TENS and RAMP). Written from scratch; no code is copied.
 - **[BlueWatch](https://github.com/PolarPatch/BlueWatch)** by PolarPatch: the colour palette.
 - **Press Start 2P** font by CodeMan38 and **Terminus** font by Dimitar Zhekov (SIL Open Font License 1.1).
 

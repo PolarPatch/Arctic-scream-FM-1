@@ -82,7 +82,11 @@ _Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4
  * 5 PHYS (MODEL 0 MODAL, 1 STRING, 2 MEMBRANE, 3 SYMPATH), 6 PHASE. LFO DESTINATION 0 PITCH, 1 VOLUME, 3 .. 6 KNOB 1 .. 4;
  * SHAPE 0 SINE, 1 TRIANGLE, 5 RANDOM, 6 DRIFT */
 #define FSND(c, n, e, k0, k1, k2, k3, a, d, s, r, la, ch, lr, ld, lt, ls)                                              \
-    {SND_MAGIC1, c, n, e, k0, k1, k2, k3, a, d, s, r, la, ch, lr, ld, lt, ls}
+    FSNDD(c, n, e, k0, k1, k2, k3, a, d, s, r, la, ch, lr, ld, lt, ls, 0, 0, 0)
+#define FSNDD(c, n, e, k0, k1, k2, k3, a, d, s, r, la, ch, lr, ld, lt, ls, bo, st, go)   /* (+ DRONE: BORGA, STOARBMA,  \
+                                                 * GOHCCAT, as dr_spk packs them) */                                     \
+    {SND_MAGIC1, c, n, e, k0, k1, k2, k3, a, d, s, r, (la) | (bo) << 1, ch, lr, (ld) | ((st) >> 6 & 1) << 7,         \
+     (lt) | (go) << 4 | ((st) >> 5 & 1) << 7, (ls) | ((st) & 31) << 3}
 static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     /* PADS */
     FSND(CAT_PAD, 1, ENG_VA, 2, 70, 62, 20, 105, 100, 110, 100, 1, 0x11, 30, 15, 5, 0),     /* POLAR NIGHT */
@@ -134,12 +138,12 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSND(CAT_TEXTURE, 1, ENG_VOICE, 96, 12, 0, 127, 100, 90, 120, 105, 1, 0x00, 30, 90, 4, 0), /* WIND OVER ICE */
     /* HOWLS (Arctic Scream p0larpatch: the HOWL source, after Audrey II, together at the end of DRONE; LATCH ON, slow in and out; the LFO on BODY, DAMP,
      * FEEDBACK or TRK CUTOFF, wandering) */
-    FSND(CAT_DRONE, 7, ENG_HOWL, 92, 70, 50, 40, 90, 90, 127, 110, 1, 0x00, 30, 25, 4, 6),    /* POLAR HOWL */
-    FSND(CAT_DRONE, 8, ENG_HOWL, 100, 95, 62, 85, 70, 90, 127, 105, 1, 0x00, 45, 35, 4, 5),   /* WENDIGO */
-    FSND(CAT_DRONE, 9, ENG_HOWL, 112, 40, 35, 60, 60, 90, 120, 100, 1, 0x00, 20, 20, 5, 0),   /* FROZEN SCREAM */
-    FSND(CAT_DRONE, 10, ENG_HOWL, 88, 115, 95, 20, 110, 90, 127, 115, 1, 0x00, 25, 40, 9, 6), /* WHITEOUT */
-    FSND(CAT_DRONE, 11, ENG_HOWL, 104, 8, 30, 105, 40, 90, 110, 90, 1, 0x00, 60, 30, 4, 4),  /* DEAD SIGNAL */
-    FSND(CAT_DRONE, 12, ENG_HOWL, 96, 55, 75, 70, 95, 90, 127, 110, 1, 0x00, 35, 30, 3, 6),  /* ICE WRAITH */
+    FSNDD(CAT_DRONE, 7, ENG_HOWL, 92, 70, 50, 40, 90, 90, 127, 110, 1, 0x00, 30, 25, 4, 6, 60, 0, 4),  /* POLAR HOWL */
+    FSNDD(CAT_DRONE, 8, ENG_HOWL, 100, 95, 62, 85, 70, 90, 127, 105, 1, 0x00, 45, 35, 4, 5, 70, 0, 4), /* WENDIGO */
+    FSNDD(CAT_DRONE, 9, ENG_HOWL, 112, 40, 35, 60, 60, 90, 120, 100, 1, 0x00, 20, 20, 5, 0, 50, 0, 4), /* FROZEN SCREAM */
+    FSNDD(CAT_DRONE, 10, ENG_HOWL, 88, 115, 95, 20, 110, 90, 127, 115, 1, 0x00, 25, 40, 9, 6, 75, 0, 4), /* WHITEOUT */
+    FSNDD(CAT_DRONE, 11, ENG_HOWL, 104, 8, 30, 105, 40, 90, 110, 90, 1, 0x00, 60, 30, 4, 4, 55, 0, 4),  /* DEAD SIGNAL */
+    FSNDD(CAT_DRONE, 12, ENG_HOWL, 96, 55, 75, 70, 95, 90, 51, 110, 1, 0x00, 35, 30, 3, 6, 65, 0, 4),  /* ICE WRAITH */
 };
 static const char *const SND_FNAME[] = {
     "POLAR NIGHT", "SNOW VEIL", "GLACIER PAD", "MIDNIGHT SUN", "LICHEN", "SNOWDRIFT", "PERMAFROST", "DEEP FJORD",
@@ -194,10 +198,28 @@ static void lfo_pk(uint8_t *q, uint32_t t)
     q[0] = (uint8_t)clamp(trk[t].lfo_rate, 0, 127), q[1] = (uint8_t)clamp(trk[t].lfo_depth, 0, 100);
     q[2] = (uint8_t)clamp(trk[t].lfo_dest, 0, NLFODEST - 1), q[3] = (uint8_t)clamp(trk[t].lfo_shape, 0, NLFOSHAPE - 1);
 }
-static void lfo_uk(const uint8_t *q, uint32_t t)
+static void lfo_uk(const uint8_t *q, uint32_t t)   /* (a sound's: DRONE in the top bits, dr_suk) */
 {
-    trk[t].lfo_rate = clamp(q[0], 0, 127), trk[t].lfo_depth = clamp(q[1], 0, 100);
-    trk[t].lfo_dest = clamp(q[2], 0, NLFODEST - 1), trk[t].lfo_shape = clamp(q[3], 0, NLFOSHAPE - 1);
+    trk[t].lfo_rate = clamp(q[0] & 0x7Fu, 0, 127), trk[t].lfo_depth = clamp(q[1] & 0x7Fu, 0, 100);
+    trk[t].lfo_dest = clamp(q[2] & 15u, 0, NLFODEST - 1), trk[t].lfo_shape = clamp(q[3] & 7u, 0, NLFOSHAPE - 1);
+}
+
+/* a sound's DRONE (Arctic Scream p0larpatch) in the spare top bits of its bytes 12 .. 17 (a sound from before it: all 0,
+ * DRONE off): BORGA byte 12 bits 1..7 (bit 0: LATCH); GOHCCAT byte 16 bits 4..6; STOARBMA bits 0..4 in byte 17's 3..7,
+ * bit 5 in byte 16's 7, bit 6 in byte 15's 7 (the LFO's DEPTH 0..100 below it) */
+static void dr_spk(uint8_t *r, uint32_t t)
+{
+    uint32_t st = (uint32_t)clamp(trk[t].dr_storm, 0, 100);
+    r[12] = (uint8_t)(r[12] | (uint32_t)clamp(trk[t].dr_borga, 0, 100) << 1);
+    r[15] = (uint8_t)(r[15] | (st >> 6 & 1u) << 7);
+    r[16] = (uint8_t)(r[16] | (uint32_t)clamp(trk[t].dr_rise, 0, DR_NRISE - 1) << 4 | (st >> 5 & 1u) << 7);
+    r[17] = (uint8_t)(r[17] | (st & 31u) << 3);
+}
+static void dr_suk(const uint8_t *r, uint32_t t)
+{
+    trk[t].dr_borga = clamp(r[12] >> 1, 0, 100);
+    trk[t].dr_storm = clamp((int32_t)(r[17] >> 3 | (r[16] >> 7) << 5 | (r[15] >> 7) << 6), 0, 100);
+    trk[t].dr_rise = clamp(r[16] >> 4 & 7u, 0, DR_NRISE - 1);
 }
 
 /* a track's FM patch in FM_PK bytes: ALGO + 0x80 (0: none, the PATCH as built), FEEDBACK, a row an operator (OP1
@@ -299,6 +321,7 @@ static void snd_pack(uint8_t *r, uint32_t t, uint32_t cat, uint32_t num)   /* tr
     r[12] = (uint8_t)(trk[t].latch != 0);
     r[13] = ch_pack(t);
     lfo_pk(r + 14, t);
+    dr_spk(r, t);                               /* (DRONE: the top bits) */
     st_wr32(r + 60, st_crc(r, 60));
 }
 static int snd_save(uint32_t i, uint32_t t, uint32_t cat)   /* track t's sound into slot i, in CATEGORY cat (the name
@@ -326,10 +349,11 @@ static void snd_apply(const uint8_t *r, uint32_t t)   /* a sound record into tra
         trk[t].p[e][k] = r[4 + k];
         trk[t].env[k] = r[8 + k];
     }
-    if (trk[t].latch && !r[12]) nq_put(NQ_RELEASE, t, 0);   /* (LATCH ON -> OFF: its latched notes released) */
-    trk[t].latch = r[12];
+    if (trk[t].latch && !(r[12] & 1u)) nq_put(NQ_RELEASE, t, 0);   /* (LATCH ON -> OFF: its latched notes released) */
+    trk[t].latch = r[12] & 1u;
     ch_unpack(t, r[13]);
     lfo_uk(r + 14, t);                          /* (saved before the LFO: zeros, DEPTH 0) */
+    dr_suk(r, t);                               /* (saved before DRONE: off) */
     if (e == ENG_FM) uk_fm(snd_fname(r) ? 0 : r + 18, t);   /* (FM: its patch; a factory sound's: the PATCH as built) */
     if ((uint32_t)trk[t].eng != e) {
         trk[t].eng = (int32_t)e;
@@ -375,13 +399,17 @@ static uint8_t *pk_track(uint8_t *q, uint32_t t)
     q[29] = (uint8_t)(127 - clamp(trk[t].cut, 0, 127)), q[30] = (uint8_t)clamp(trk[t].res, 0, 127);   /* TRACK (0, 0, 0:
                                                  * open, 0, 100 %: as a save from before it) */
     q[31] = (uint8_t)(int8_t)(clamp(trk[t].fx, 0, 200) - 100);
-    q[37] = (uint8_t)(trk[t].latch != 0);
+    q[37] = (uint8_t)((trk[t].latch != 0) | (uint32_t)clamp(trk[t].dr_storm, 0, 100) << 1);   /* (DRONE, Arctic Scream
+                                                 * p0larpatch: STOARBMA over LATCH, BORGA in byte 32, GOHCCAT over
+                                                 * OCTAVES in 46; saved before it: 0, off) */
+    q[32] = (uint8_t)clamp(trk[t].dr_borga, 0, 100);
     q[38] = (uint8_t)clamp(trk[t].level, 0, 127), q[39] = (uint8_t)clamp(trk[t].dly, 0, 127);
     q[40] = (uint8_t)clamp(trk[t].rev, 0, 127), q[41] = (uint8_t)clamp(trk[t].grn, 0, 127);
     q[42] = (uint8_t)clamp(trk[t].pan, 0, 127);
     q[43] = ch_pack(t);
     q[44] = (uint8_t)((trk[t].arp ? 0x80u : 0u) | (uint32_t)clamp(trk[t].arp_mode, 0, NARPMODE - 1));   /* ARP */
-    q[45] = (uint8_t)clamp(trk[t].arp_rate, 0, NARPRATE - 1), q[46] = (uint8_t)clamp(trk[t].arp_oct, 1, 4);
+    q[45] = (uint8_t)clamp(trk[t].arp_rate, 0, NARPRATE - 1), q[46] = (uint8_t)((uint32_t)clamp(trk[t].arp_oct, 1, 4) |
+                                                                                 (uint32_t)clamp(trk[t].dr_rise, 0, DR_NRISE - 1) << 4);
     q[47] = (uint8_t)clamp(trk[t].arp_gate, 10, 100);
     lfo_pk(q + 48, t);                          /* LFO */
     return q + TRK_PK;
@@ -410,19 +438,20 @@ static const uint8_t *uk_track(const uint8_t *q0, uint32_t t, int isr, uint32_t 
         for (k = 0; k < 4u; k++) trk[t].p[e][k] = q[1 + e * 4u + k];
     for (k = 0; k < 4u; k++) trk[t].p[ENG_HOWL][k] = q[52 + k];
     for (k = 0; k < 4u; k++) trk[t].env[k] = q[33 + k];
-    if (trk[t].latch && !q[37]) {               /* (LATCH ON -> OFF: its latched notes released; at the bar, now) */
+    if (trk[t].latch && !(q[37] & 1u)) {               /* (LATCH ON -> OFF: its latched notes released; at the bar, now) */
         if (!isr) nq_put(NQ_RELEASE, t, 0);
         else {
             release_keys(t);
             if (trk[t].arp) arp_clear(t);
         }
     }
-    trk[t].latch = q[37];
+    trk[t].latch = q[37] & 1u;
+    trk[t].dr_borga = clamp(q[32], 0, 100), trk[t].dr_storm = clamp(q[37] >> 1, 0, 100), trk[t].dr_rise = clamp(q[46] >> 4 & 7u, 0, DR_NRISE - 1);
     trk[t].level = q[38], trk[t].dly = q[39], trk[t].rev = q[40], trk[t].grn = q[41], trk[t].pan = q[42];
     trk[t].cut = 127 - clamp(q[29], 0, 127), trk[t].res = clamp(q[30], 0, 127), trk[t].fx = clamp((int8_t)q[31] + 100, 0, 200);
     ch_unpack(t, q[43]);
     trk[t].arp_mode = clamp(q[44] & 0x7Fu, 0, NARPMODE - 1), trk[t].arp_rate = clamp(q[45], 0, NARPRATE - 1);
-    trk[t].arp_oct = clamp(q[46], 1, 4), trk[t].arp_gate = clamp(q[47], 10, 100);
+    trk[t].arp_oct = clamp(q[46] & 7u, 1, 4), trk[t].arp_gate = clamp(q[47], 10, 100);
     trk[t].arp = (int32_t)(q[44] >> 7 & 1u);    /* (on or off: arp.c's arp_watch starts it empty) */
     lfo_uk(q + 48, t);
     if (trk[t].eng != (int32_t)q[0] && q[0] < NENG) {
@@ -772,6 +801,7 @@ static void project_new(void)                   /* NEW: the four tracks' power-o
         trk[t].arp_oct = T0.arp_oct, trk[t].arp_gate = T0.arp_gate;
         trk[t].lfo_rate = T0.lfo_rate, trk[t].lfo_depth = T0.lfo_depth, trk[t].lfo_dest = T0.lfo_dest;
         trk[t].lfo_shape = T0.lfo_shape;
+        trk[t].dr_borga = T0.dr_borga, trk[t].dr_storm = T0.dr_storm, trk[t].dr_rise = T0.dr_rise;
         fm_builtin(t, T0.p[ENG_FM][0]);
         if (trk[t].eng != T0.eng) {
             trk[t].eng = T0.eng;
