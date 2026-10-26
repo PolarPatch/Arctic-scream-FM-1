@@ -1,6 +1,6 @@
 # Arctic Scream p0larpatch
 
-**Dark ambient drones and feedback screams from the permafrost, for the M-VAVE FM-1.**
+**Dark ambient drones and feedback screams from the arctic tundra, for the M-VAVE FM-1.**
 
 *Wind over the frozen tundra. Ice that groans under its own weight. Something out there in the polar night, howling back.*
 Arctic Scream turns the FM-1 into an instrument for that: slow, cold drones that hum for minutes, and a voice that wakes on its own and screams.
@@ -9,7 +9,7 @@ Arctic Scream turns the FM-1 into an instrument for that: slow, cold drones that
 
 <a href="https://buymeacoffee.com/p0larpatch"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy PolarPatch a coffee" height="42"></a>
 
-Arctic Scream p0larpatch is a drone firmware for the FM-1 by PolarPatch. It is built on [GR!MM](https://github.com/GRiMMBIENT/grimm) and keeps what GR!MM does well: four tracks, long dark effects, a 64-step sequencer, chords, an arpeggiator and song mode. It adds a new voice, an arctic sound, a new look and its own editor.
+Arctic Scream p0larpatch is a drone firmware for the FM-1 by PolarPatch, inspired by [GR!MM](https://github.com/GRiMMBIENT/grimm). It has four tracks, long dark effects, a 64-step sequencer, chords, an arpeggiator and song mode, and comes with its own feedback voice, an arctic sound, a new look and its own editor.
 
 **Try it in your browser first:** the **[demo](https://polarpatch.github.io/Arctic-scream-FM-1/)** runs the same code as the instrument, so you can play it before you install it. Then open the **[editor](https://polarpatch.github.io/Arctic-scream-FM-1/editor.html)** and the **[cheat sheet](https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html)**.
 
@@ -19,7 +19,7 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
 
 ## What's new
 
-- **Holvut, a feedback-loop sound source.** (*Holvut* is North Sami for to howl.) It is inspired by the Synthux Audrey II and written from scratch for the FM-1. A string and a resonant body sit inside a loop with saturation, filters and diffusion.
+- **Howl/Holvut, a feedback-loop sound source.** (*Holvut* is North Sami for to howl.) It is inspired by the Synthux Audrey II and written from scratch for the FM-1. A string and a resonant body sit inside a loop with saturation, filters and diffusion.
   - Below the threshold the loop sleeps. Past it, the loop wakes and grows out of silence into a howl that sustains itself.
   - Each key press sends a short burst into the loop, so a note played near the threshold sets it off.
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
