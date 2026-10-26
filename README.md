@@ -11,6 +11,8 @@ Arctic Scream turns the FM-1 into an instrument for that: slow, cold drones that
 
 Arctic Scream p0larpatch is a drone firmware for the FM-1 by PolarPatch, inspired by [GR!MM](https://github.com/GRiMMBIENT/grimm). It has four tracks, long dark effects, a 64-step sequencer, chords, an arpeggiator and song mode, and comes with its own feedback voice, an arctic sound, a new look and its own editor.
 
+**▶ [Watch the Arctic Scream demo on YouTube](https://youtu.be/MJ53VOVRIG8)**: Holvut, DRONE, the effects and the sequencer, played by the firmware itself.
+
 **Try it in your browser first:** the **[demo](https://polarpatch.github.io/Arctic-scream-FM-1/)** runs the same code as the instrument, so you can play it before you install it. Then open the **[editor](https://polarpatch.github.io/Arctic-scream-FM-1/editor.html)** and the **[cheat sheet](https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html)**.
 
 Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-VAVE or GR!MM. **Install at your own risk.**
