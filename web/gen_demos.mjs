@@ -3,7 +3,7 @@
 // Arctic Scream p0larpatch: the demo page's four demos (A1-A4), as the editor's own frames (docs/EDITOR_PROTOCOL.md:
 // TRACK sets a track's sound, SEQ its sequence, the tempo, PLAY) and the keys to latch. The sounds are the factory's,
 // read from the firmware itself (web/dist/grimm.wasm, after web/build_web.sh), with DRONE turned up, and MANDALORIA,
-// a sound of PolarPatch's own.
+// a sound of PolarPatch's own. The editor loads the same songs (song: the sounds, the sequences, the latched keys).
 //   node web/gen_demos.mjs            -> web/demos.json (the page's), build/demos/*.txt (tests/host.c scripts: hear them)
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { VirtualFM1, HEAD, pack7, parseSound, buildRecord, buildSeq, emptyStep } from "./editor_core.js";
@@ -82,7 +82,11 @@ for (const d of DEMOS) {
   }
   act.push({ sx: F.select(0) });
   if (d.play) act.push({ sx: F.play(1) });
-  out.push({ id: d.id, name: d.name, sub: d.sub, tempo: d.tempo, tracks: d.tracks.map(([t, n]) => [t, n]), act });
+  const sq = [0, 1, 2, 3].map((t) => [...((d.seqs || []).find(([u]) => u === t) || [t, EMPTY])[1]]);
+  const tr = d.tracks.map(([t, name, drone]) => [t, name, [...sound(name, drone)]]);
+  const latch = (d.latch || []).map(([t, ks]) => [t, ks.reduce((m, n) => m | 1 << key(n), 0)]);
+  out.push({ id: d.id, name: d.name, sub: d.sub, tempo: d.tempo, tracks: d.tracks.map(([t, n]) => [t, n]), act,
+             song: { tr, sq, latch, play: !!d.play } });   // (the editor's: the same, as sounds and sequences)
 }
 writeFileSync("web/demos.json", JSON.stringify(out));
 console.log("web/demos.json:", out.map((d) => `${d.id} ${d.name} (${d.act.length})`).join(", "));
