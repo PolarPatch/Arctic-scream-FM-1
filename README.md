@@ -76,7 +76,7 @@ It installs over the FM-1's own firmware, GR!MM or any other FM-1 firmware. Don'
 
 - **Saves:** Arctic Scream keeps its own saves, separate from GR!MM's. If you come from GR!MM, your projects and slots start empty.
 - **Samples:** no samples are built in. The four slots are yours to fill from the editor, and samples already on your FM-1 stay.
-- **Learn it:** [every feature in one overview](FEATURES.md), the [manual](MANUAL.md) (GR!MM's, with Arctic Scream's changes) and the [cheat sheet](https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html).
+- **Learn it:** [every feature in one overview](FEATURES.md), the [manual](MANUAL.md) and the [cheat sheet](https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html).
 
 ## Credits
 
