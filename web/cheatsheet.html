@@ -11,12 +11,14 @@
 <link rel="icon" href="polarpatch-logo.png">
 <meta name="description" content="Arctic Scream p0larpatch at a glance: every button, knob and combo of the FM-1 firmware on one page, and how to summon the screams from the arctic tundra.">
 <style>
+@font-face { font-family: "Press Start 2P"; src: url("PressStart2P-Regular.ttf") format("truetype"); font-display: swap; }
 /* BlueWatch's colours only, as the demo page */
 :root { --bg: #060410; --card: #0d1117; --card-hi: #161b22; --edge: #30363d; --fg: #eaf6fa; --label: #a6afb9;
         --dim: #7fa8b8; --muted: #45606e; --ice: #22d3ee; --aurora: #3fb950; --violet: #a78bfa; --plasma: #ff1a8c;
         --amber: #ffcb47; --pink: #f472b6; --teal: #3fb9a5; --periwinkle: #7c8cf8; --sky: #4fb3e8; --rose: #e0707a;
         --lavender: #b083c9; --gold: #d9a441;
         --mono: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+        --pix: "Press Start 2P", var(--mono);
         color-scheme: dark; }
 html, body { background: var(--bg); }
 body { margin: 0; color: var(--fg); font: 13px/1.5 system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
@@ -26,17 +28,32 @@ body { margin: 0; color: var(--fg); font: 13px/1.5 system-ui, -apple-system, "Se
 main { max-width: 1120px; margin: 0 auto; padding: 20px 16px 32px; }
 a { color: var(--ice); }
 
-/* the title block */
-.mast { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 18px; }
-.mast img { width: 72px; height: 72px; border: 1px solid var(--edge); border-radius: 4px; }
-.mast .t { flex: 1 1 320px; min-width: 0; }
-.mast h1 { margin: 0; font: 700 26px/1.15 var(--mono); letter-spacing: .1em; text-shadow: 0 0 10px rgba(34, 211, 238, .45); }
-.mast h1 span { color: var(--ice); }
-.mast p { margin: 4px 0 0; color: var(--dim); font: 12px/1.45 var(--mono); }
-.actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.actions a, .actions button { font: 600 12px var(--mono); letter-spacing: .08em; color: var(--fg); background: var(--card-hi);
-                              border: 1px solid var(--edge); border-radius: 4px; padding: 7px 12px; text-decoration: none; cursor: pointer; }
-.actions a:hover, .actions button:hover { border-color: var(--ice); }
+/* the title block, as the demo page's: the glitching title (glitch.js), "at a glance" under it, the words and the
+ * links on the right */
+.gl { position: relative; display: inline-block; font-family: var(--pix); font-weight: 400; line-height: 1;
+      color: var(--fg); letter-spacing: .02em; }
+.gl > i { position: absolute; inset: 0; font-style: normal; pointer-events: none; mix-blend-mode: screen;
+          clip-path: inset(100% 0 0 0); transform: translate(calc(var(--gx, 0px) * var(--k)), calc(var(--gy, 0px) * var(--k))); }
+.gl > i:nth-child(1) { color: var(--ice); --k: -1.1; }
+.gl > i:nth-child(2) { color: var(--plasma); --k: 1.2; }
+.gl > i:nth-child(3) { color: var(--violet); --k: .6; }
+@media (prefers-reduced-motion: reduce) { .gl > i { display: none; } }
+.mast { display: flex; flex-wrap: wrap; align-items: center; gap: 22px 3cm; padding: clamp(16px, 4vw, 44px) 0 26px; margin-bottom: 22px;
+        border-bottom: 1px solid var(--edge); }
+.mast h1 { margin: 0; font-size: clamp(30px, 6.4vw, 84px); white-space: nowrap; }
+.mast h1 .gl { display: table; text-shadow: 0 0 18px rgba(34, 211, 238, .25); }
+.mast h1 .gl + .gl { margin-top: .12em; }
+.mast .sub { margin-top: 20px; font: 400 clamp(14px, 2vw, 24px) var(--pix); color: var(--ice); }
+.mast .aurora { display: flex; gap: 6px; margin-top: 18px; }
+.mast .aurora i { flex: 1; height: 3px; border-radius: 2px; background: currentColor; box-shadow: 0 0 8px currentColor; max-width: 110px; }
+.mast .t { flex: 1 1 22em; max-width: 32em; }
+.mast .t p { margin: 0 0 18px; font-size: 17px; line-height: 1.55; color: var(--label); }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.actions a, .actions button { font: 600 12px var(--mono); letter-spacing: .14em; color: var(--fg); background: var(--card-hi);
+                              border: 1px solid var(--edge); border-radius: 4px; padding: 10px 16px; text-decoration: none; cursor: pointer;
+                              transition: border-color .15s, box-shadow .15s; }
+.actions a:hover, .actions button:hover { border-color: var(--ice); box-shadow: 0 0 14px -6px var(--ice); }
+.actions .main { border-color: var(--ice); color: var(--ice); }
 
 /* the cards */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; }
@@ -61,6 +78,21 @@ table.knobs td:first-child { color: var(--fg); font-weight: 600; white-space: no
 .kb.v span { border-color: rgba(167, 139, 250, .55); }
 kbd { font: 600 11px ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--edge); border-radius: 3px; padding: 0 4px; color: var(--fg); }
 
+/* under the pointer a card dithers in from below, in its colour (as the demo page's cards) */
+.card { position: relative; isolation: isolate; overflow: hidden; transition: box-shadow .15s; }
+.card > * { position: relative; z-index: 1; }
+.card::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle, var(--c, var(--ice)) 0 .9px, transparent 1.1px) 0 0 / 4px 4px,
+              radial-gradient(circle, var(--c, var(--ice)) 0 .9px, transparent 1.1px) 2px 2px / 4px 4px;
+  -webkit-mask: linear-gradient(to top, #000 0, rgba(0, 0, 0, .55) 30%, rgba(0, 0, 0, .15) 65%, transparent 100%) 0 100% / 100% 200% no-repeat;
+          mask: linear-gradient(to top, #000 0, rgba(0, 0, 0, .55) 30%, rgba(0, 0, 0, .15) 65%, transparent 100%) 0 100% / 100% 200% no-repeat;
+  transition: opacity .2s; }
+.card:hover { box-shadow: 0 0 18px -8px var(--c, var(--ice)); }
+.card:hover::before { opacity: .2; animation: dither-in .45s steps(6) both, dither-crawl 1.6s steps(4) .45s infinite; }
+@keyframes dither-in { from { -webkit-mask-position: 0 -100%; mask-position: 0 -100%; } to { -webkit-mask-position: 0 100%; mask-position: 0 100%; } }
+@keyframes dither-crawl { 50% { background-position: 2px 0, 0 2px; } }
+@media (prefers-reduced-motion: reduce) { .card:hover::before { animation: none; } }
+
 /* the scream: the page's heart, wide */
 .scream { grid-column: 1 / -1; --c: var(--plasma); background: linear-gradient(180deg, rgba(255, 26, 140, .06), transparent 60%), var(--card); }
 .scream .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 6px 22px; }
@@ -78,7 +110,6 @@ footer { margin-top: 20px; color: var(--dim); font-size: 12px; text-align: cente
 footer p { margin: 4px 0; }
 
 @media (max-width: 560px) {
-  .mast img { width: 48px; height: 48px; } .mast h1 { font-size: 19px; }
   .grid { grid-template-columns: minmax(0, 1fr); }
   dl { grid-template-columns: minmax(0, 1fr); gap: 0; } dd { margin-bottom: 6px; } dt { white-space: normal; }
   .kb span { font-size: 8.5px; }
@@ -90,10 +121,12 @@ footer p { margin: 4px 0; }
   body { background: #fff; font-size: 10.5px; }
   main { max-width: none; padding: 0; }
   .actions { display: none; }
-  .mast h1 { text-shadow: none; }
-  .grid { display: block; columns: 2; column-gap: 10px; }
-  .card { margin: 0 0 10px; }
-  .scream { background: #fff; column-span: all; }
+  .mast { padding: 0 0 8px; gap: 8px 24px; } .mast h1 { font-size: 30px; } .mast h1 .gl { text-shadow: none; color: #0d1117; }
+  .gl > i, .mast .aurora, .card::before { display: none; }
+  .card { position: static; isolation: auto; overflow: visible; box-shadow: none; } .card > * { position: static; }
+  .mast h1 .gl { display: inline; } .mast h1 .gl + .gl { margin: 0 0 0 .5em; } .mast h1 { padding-left: 2px; } .mast .sub { margin-top: 6px; font-size: 13px; } .mast .sub { color: #0d1117; } .mast .t p { font-size: 11px; color: #30363d; }
+  .grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .scream { background: #fff; }
   .meter span { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 </style>
@@ -101,15 +134,19 @@ footer p { margin: 4px 0; }
 <body>
 <main>
 <header class="mast">
-  <img src="polarpatch-logo.png" alt="PolarPatch">
-  <div class="t">
-    <h1>ARCTIC SCREAM <span>at a glance</span></h1>
-    <p>Arctic Scream p0larpatch 1.0 · drone firmware for the M-VAVE FM-1 by PolarPatch · four tracks, eight sources, and a feedback loop that wakes on its own</p>
+  <div>
+    <h1 aria-label="Arctic Scream"><span class="gl" data-t="ARCTIC">ARCTIC</span><span class="gl" data-t="SCREAM">SCREAM</span></h1>
+    <div class="sub">at a glance</div>
+    <div class="aurora" aria-hidden="true"><i style="color: var(--ice)"></i><i style="color: var(--aurora)"></i><i style="color: var(--violet)"></i><i style="color: var(--plasma)"></i></div>
   </div>
-  <div class="actions">
-    <a href="index.html">PLAY THE DEMO</a>
-    <a href="editor.html">EDITOR</a>
-    <button type="button" onclick="print()">PRINT</button>
+  <div class="t">
+    <p>Arctic Scream p0larpatch 1.1, drone firmware for the M-VAVE FM-1 by PolarPatch. Every button, knob and combo on
+      one page: four tracks, eight sources, and a feedback loop that wakes on its own.</p>
+    <div class="actions">
+      <a class="main" href="index.html">PLAY THE DEMO</a>
+      <a href="editor.html">EDITOR</a>
+      <button type="button" onclick="print()">PRINT</button>
+    </div>
   </div>
 </header>
 
@@ -306,7 +343,7 @@ footer p { margin: 4px 0; }
   <dl>
     <dt>factory sounds</dt><dd>46, in PAD, DRONE, BELL, VOICE, ORGAN, KEYS, OTHER, TEXTURE. Your own come after each category's.</dd>
     <dt>Holvut is loud</dt><dd>At full FEEDBACK and DRIVE with DELAY past 100 %, mind MASTER and your ears.</dd>
-    <dt>not GR!MM's saves</dt><dd>Arctic Scream keeps its own saves. Coming from GR!MM, projects and slots start empty; samples stay.</dd>
+    <dt>own saves</dt><dd>Arctic Scream keeps its own saves, apart from other FM-1 firmwares; samples already on the FM-1 stay.</dd>
     <dt>samples</dt><dd>Four slots, your own WAVs from the editor.</dd>
     <dt>stuck?</dt><dd>The Rescue page on the <a href="https://thefirmwarehub.com/">FM-1 Firmware Hub</a>.</dd>
   </dl>
@@ -326,9 +363,10 @@ footer p { margin: 4px 0; }
 </div>
 
 <footer>
-  <p>Arctic Scream p0larpatch by PolarPatch, built on <a href="https://github.com/GRiMMBIENT/grimm">GR!MM</a> (GPL-3.0) · its Holvut source and HORROR scale follow <a href="https://github.com/Synthux-Academy/Audrey-II">Audrey II</a> (Nick Donaldson, Infrasonic Audio; Synthux Academy, MIT), written anew · <a href="LICENSING.md">credits and licences</a></p>
-  <p>M-VAVE and FM-1 are trademarks of their respective owners. Arctic Scream p0larpatch is not affiliated with or endorsed by them, nor by GR!MM.</p>
+  <p>Arctic Scream p0larpatch by PolarPatch, inspired by <a href="https://github.com/GRiMMBIENT/grimm">GR!MM</a> (GPL-3.0) · its Holvut source and HORROR scale follow <a href="https://github.com/Synthux-Academy/Audrey-II">Audrey II</a> (Nick Donaldson, Infrasonic Audio; Synthux Academy, MIT), written anew · <a href="LICENSING.md">credits and licences</a></p>
+  <p>M-VAVE and FM-1 are trademarks of their respective owners. Arctic Scream p0larpatch is not affiliated with or endorsed by them.</p>
 </footer>
 </main>
+<script type="module" src="glitch.js"></script>
 </body>
 </html>
