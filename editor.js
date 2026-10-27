@@ -378,6 +378,42 @@ function loadTo(t) {                                         // the chosen sound
   say(`${pickName()} ON TRACK ${t + 1}` + (conn && conn.live ? " (ON THE FM-1 TOO, NOT SAVED)" : " (HERE)"), "ok");
 }
 for (let t = 0; t < 4; t++) $("b-load" + t).onclick = () => loadTo(t);
+let songs = [];
+async function loadSong(d) {                                 // a demo song: its sounds and names, sequences and tempo on T1..T4
+  const g = d.song;
+  for (const [t, name, rec] of g.tr) {
+    const s = parseSound(Uint8Array.from(rec), meta);
+    s.name = name.slice(0, 10);
+    tracks[t] = s, loaded[t] = JSON.stringify(s), from[t] = `DEMO ${d.id} ${d.name}`;
+    label[t] = name, labelEng[t] = s.eng;
+    resetHistory(t);
+    pushTrack(t);
+  }
+  g.sq.forEach((b, t) => { seqs[t] = parseSeq(Uint8Array.from(b)); seqChanged(t, false); });
+  bpm = d.tempo;
+  engSend([...HEAD, CMD.SEQ, 2, 0, bpm & 0x7f, bpm >> 7]);
+  if (conn && conn.seq) tempoLive.set(0);
+  await startEngine();
+  for (const [t, mask] of g.latch) {                         // (the drones, latched here; on the FM-1 its keys do it)
+    await selectTrack(t);
+    for (let k = 0; k < 32; k++) if (mask >> k & 1) press(k, true);
+    await new Promise((r) => setTimeout(r, 120));
+    for (let k = 0; k < 32; k++) if (mask >> k & 1) press(k, false);
+  }
+  await selectTrack(g.tr[0][0]);
+  if (g.play && !sqPlaying) $("b-sqplay").onclick();
+  drawTracks(), drawEditor(), drawSeqTracks(), drawSeq();
+  const keys = g.latch.map(([t, m]) => `T${t + 1} ` + [...Array(32).keys()].filter((k) => m >> k & 1).map((k) => noteName(k + 41)).join(" "));
+  say(`DEMO ${d.id} ${d.name} ON T1–T4` + (conn && conn.live ? " (ON THE FM-1 TOO, NOT SAVED" + (keys.length ? `; LATCH THERE: ${keys.join(", ")}` : "") + ")" : " (HERE)"), "ok");
+}
+function drawSongs() {
+  const b = $("songs");
+  b.textContent = "";
+  for (const d of songs) {
+    const x = el("div", { cls: "slot", title: d.tracks.map(([t, n]) => `T${t + 1} ${n}`).join(" · "), onclick: () => loadSong(d) }, b);
+    el("span", { cls: "n" }, x, d.id + " "), x.append(`${d.name} · ${d.sub}`);
+  }
+}
 $("b-rename").onclick = () => {
   const s = parseSound(user[pick.i], meta), n = prompt("A NAME (10 CHARACTERS: A-Z 0-9 SPACE); THE FM-1 ITSELF SHOWS \"" +
     `${meta.cats[s.cat]} ${String(s.num).padStart(2, "0")}\"`, s.name || "");
@@ -1220,6 +1256,7 @@ $("f-restore").onchange = async (e) => {
   startEngine();
   drawKeys();
   drawSlots();
+  fetch("demos.json").then((r) => r.json()).then((l) => { songs = l; drawSongs(); }).catch(() => { $("songs").textContent = "(the demo songs could not be loaded)"; });
   drawTracks();
   drawEditor();
   drawSamples();
