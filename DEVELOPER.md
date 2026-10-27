@@ -206,7 +206,7 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
 - **Pictures:**
   - `docs/screens/howl.png` is the 240 × 240 HOWL EDIT screen (from the host build), used for the hub.
   - `docs/screens/demo.png` is the demo's panel, used on the README.
-  - The manual's screens, `docs/screens/*.png` (960 × 960), come from the host build: `python3 tools/make_screens.py`
+  - The manual's screens, `docs/manual/screens/*.png` (960 × 960), come from the host build: `python3 tools/make_screens.py`
     (or a name, e.g. `drone`) takes them again after a change to the screens. `docs/manual/banner.png` is the
     manual's banner.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 PolarPatch
-"""Arctic Scream p0larpatch: the manual's screens (docs/screens/*.png), taken from the firmware itself.
+"""Arctic Scream p0larpatch: the manual's screens (docs/manual/screens/*.png), taken from the firmware itself.
 Each screen is a short run of tests/host.c (the same firmware/src/grimm.c the FM-1 runs): a script presses the
 buttons, turns the knobs and plays the keys, and the screen as it is at the end is saved, 240 x 240 drawn 4 x.
 Run from the repository (Pillow needed):  python3 tools/make_screens.py [name ...]"""
@@ -13,7 +13,7 @@ import tempfile
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "docs", "screens")
+OUT = os.path.join(ROOT, "docs", "manual", "screens")
 HOST = os.path.join(ROOT, "build", "screens", "grimm")
 
 # the panel's ids (firmware/src/platform.c)

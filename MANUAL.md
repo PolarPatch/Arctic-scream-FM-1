@@ -22,7 +22,7 @@
 
 ## 01 · The basics
 
-<img src="docs/screens/boot.png" alt="The boot screen: the PolarPatch logo over northern lights" width="300" align="right">
+<img src="docs/manual/screens/boot.png" alt="The boot screen: the PolarPatch logo over northern lights" width="300" align="right">
 
 Arctic Scream has **four tracks, T1–T4**. Each track plays its own sound, has its own sequence and goes through the
 shared effects. **Six voices** are shared by all four.
@@ -54,7 +54,7 @@ Every track starts with **ICE WRAITH**, a Holvut sound that holds its notes: pre
 
 ## 02 · HOME
 
-<img src="docs/screens/home.png" alt="HOME: T1's wave glowing, ICE WRAITH, 120 BPM" width="360" align="right">
+<img src="docs/manual/screens/home.png" alt="HOME: T1's wave glowing, ICE WRAITH, 120 BPM" width="360" align="right">
 
 Each track's wave glows on HOME as it plays, under a starry sky. The header shows the track, its sound and the tempo.
 
@@ -74,7 +74,7 @@ across the stereo field.
 | MIXER 2 | PAN | | | |
 
 <br clear="right">
-<p align="center"><img src="docs/screens/mixer.png" alt="MIXER 1" width="300"></p>
+<p align="center"><img src="docs/manual/screens/mixer.png" alt="MIXER 1" width="300"></p>
 
 ---
 
@@ -84,7 +84,7 @@ across the stereo field.
 
 | SOUND: Holvut | SOURCE |
 |---|---|
-| <img src="docs/screens/holvut.png" alt="Holvut's SOUND page: the loop howling" width="320"> | <img src="docs/screens/source.png" alt="The SOURCE page" width="320"> |
+| <img src="docs/manual/screens/holvut.png" alt="Holvut's SOUND page: the loop howling" width="320"> | <img src="docs/manual/screens/source.png" alt="The SOURCE page" width="320"> |
 
 **SOURCE:** KNOB 1 picks the source, KNOB 2 sets LATCH.
 
@@ -112,7 +112,7 @@ diffusion. Nothing is struck.
 
 ### The other sources
 
-<img src="docs/screens/va.png" alt="VA's SOUND page: the saw wave" width="300" align="right">
+<img src="docs/manual/screens/va.png" alt="VA's SOUND page: the saw wave" width="300" align="right">
 
 - **SAMPLE:** the four slots are yours: load WAVs from the [editor](#14--the-editor-and-the-demo). An empty slot is
   silent. No samples are built in, and samples already on your FM-1 stay.
@@ -130,13 +130,13 @@ carriers (the ones you hear) outlined, modulators filled, the selected one lit.
 
 | FM ALGO | FM OP |
 |---|---|
-| <img src="docs/screens/fm-algo.png" alt="FM ALGO" width="320"> | <img src="docs/screens/fm-op.png" alt="FM OP" width="320"> |
+| <img src="docs/manual/screens/fm-algo.png" alt="FM ALGO" width="320"> | <img src="docs/manual/screens/fm-op.png" alt="FM OP" width="320"> |
 
 ---
 
 ## 04 · DRONE: a sound that lives on its own
 
-<img src="docs/screens/drone.png" alt="DRONE: BORGA 100 %, the storm rising over 32 bars" width="360" align="right">
+<img src="docs/manual/screens/drone.png" alt="DRONE: BORGA 100 %, the storm rising over 32 bars" width="360" align="right">
 
 **Press LFO twice.** DRONE makes a held sound move by itself, slowly, and never the same way twice. The knobs have
 North Sami names.
@@ -163,7 +163,7 @@ North Sami names.
 
 | ENV | LFO |
 |---|---|
-| <img src="docs/screens/env.png" alt="ENV: the envelope as a ribbon" width="320"> | <img src="docs/screens/lfo.png" alt="LFO: the shape as a ribbon" width="320"> |
+| <img src="docs/manual/screens/env.png" alt="ENV: the envelope as a ribbon" width="320"> | <img src="docs/manual/screens/lfo.png" alt="LFO: the shape as a ribbon" width="320"> |
 
 **ENV** (per track): how each note starts and ends. The envelope hangs as a curtain, each stage in its colour.
 
@@ -186,7 +186,7 @@ North Sami names.
 
 | SCALE | CHORD |
 |---|---|
-| <img src="docs/screens/scale.png" alt="SEL > SCALE: C HORROR" width="320"> | <img src="docs/screens/chord.png" alt="SEL > CHORD" width="320"> |
+| <img src="docs/manual/screens/scale.png" alt="SEL > SCALE: C HORROR" width="320"> | <img src="docs/manual/screens/chord.png" alt="SEL > CHORD" width="320"> |
 
 **SEL** opens **SCALE → CHORD**. **Hold SEL** (and let go) for chord mode on or off: one key, a whole chord.
 
@@ -200,7 +200,7 @@ North Sami names.
 - **CHORD TYPE:** SCALE (the scale's own chord), MIN, MAJ, SUS2, SUS4, FIFTH, MIN7, MAJ7, DIM, ADD9, CLUSTER.
 - **VOICING:** CLOSE, OPEN, SPREAD, +OCT, DROP. Big chords use more of the six voices.
 
-<img src="docs/screens/arp.png" alt="ARP" width="300" align="right">
+<img src="docs/manual/screens/arp.png" alt="ARP" width="300" align="right">
 
 **ARP** opens the arpeggiator; **hold ARP** to switch it on or off for the track.
 
@@ -218,7 +218,7 @@ North Sami names.
 
 ## 07 · Sequencer: SEQ, PLAY, REC
 
-<img src="docs/screens/seq.png" alt="SEQ > GRID: eight steps recorded, playing" width="360" align="right">
+<img src="docs/manual/screens/seq.png" alt="SEQ > GRID: eight steps recorded, playing" width="360" align="right">
 
 Each track has its own **64-step** pattern; all four play together on one tempo (20–300 BPM).
 **SEQ** opens **GRID → PATTERN SETTINGS**, **PLAY/STOP** starts and stops, **REC** records.
@@ -262,7 +262,7 @@ A slot holds the four tracks' sounds, sequences, locks and mix.
 
 ### Your own sounds
 
-<img src="docs/screens/save.png" alt="SAVE > SOUNDS" width="300" align="right">
+<img src="docs/manual/screens/save.png" alt="SAVE > SOUNDS" width="300" align="right">
 
 **SAVE → SOUNDS:** 64 slots for your own sounds. A sound keeps its source and knobs, ENV, LFO, DRONE, LATCH, chord
 and (FM) its patch.
@@ -278,7 +278,7 @@ Name them in the [editor](#14--the-editor-and-the-demo) (up to 10 characters).
 
 ### Songs: GLO
 
-<img src="docs/screens/song.png" alt="GLO > SONG" width="300" align="right">
+<img src="docs/manual/screens/song.png" alt="GLO > SONG" width="300" align="right">
 
 **GLO** opens **SONG**: a chain of up to 16 steps, each a slot and its repeats.
 
@@ -303,9 +303,9 @@ colours the whole mix at the end. Each page has its own northern lights.
 
 | TAPE | GRAIN |
 |---|---|
-| <img src="docs/screens/tape.png" alt="FX > TAPE" width="320"> | <img src="docs/screens/grain.png" alt="FX > GRAIN" width="320"> |
+| <img src="docs/manual/screens/tape.png" alt="FX > TAPE" width="320"> | <img src="docs/manual/screens/grain.png" alt="FX > GRAIN" width="320"> |
 | **DELAY** | **SPACE** |
-| <img src="docs/screens/delay.png" alt="FX > DELAY: runaway" width="320"> | <img src="docs/screens/space.png" alt="FX > SPACE" width="320"> |
+| <img src="docs/manual/screens/delay.png" alt="FX > DELAY: runaway" width="320"> | <img src="docs/manual/screens/space.png" alt="FX > SPACE" width="320"> |
 
 | Page | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 |---|---|---|---|---|
@@ -321,7 +321,7 @@ colours the whole mix at the end. Each page has its own northern lights.
 
 ## 10 · Perform: hold FX
 
-<img src="docs/screens/perform.png" alt="PERFORM" width="360" align="right">
+<img src="docs/manual/screens/perform.png" alt="PERFORM" width="360" align="right">
 
 **Hold FX** for a moment and PERFORM appears. Each trick lasts while you hold its key; the sequencer keeps running,
 and you land back in time when you let go.
@@ -344,7 +344,7 @@ FREEZE is a toggle: tap it to hold the grain cloud, tap again to let go.
 
 | SYSTEM | SYSTEM 2 |
 |---|---|
-| <img src="docs/screens/system.png" alt="SYSTEM" width="320"> | <img src="docs/screens/system2.png" alt="SYSTEM 2" width="320"> |
+| <img src="docs/manual/screens/system.png" alt="SYSTEM" width="320"> | <img src="docs/manual/screens/system2.png" alt="SYSTEM 2" width="320"> |
 
 | Page | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 |---|---|---|---|---|
