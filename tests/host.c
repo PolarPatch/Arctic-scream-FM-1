@@ -171,9 +171,16 @@ static int sysex_get(const uint8_t **p, uint32_t *n)
 }
 static void sysex_done(void) { host_sx_ready = 0; }
 static int sysex_send(const uint8_t *p, uint32_t n) { stress_sysex_out(p, n); return 0; }
-#else
-static int sysex_get(const uint8_t **p, uint32_t *n) { (void)p; (void)n; return 0; }
-static void sysex_done(void) {}
+#else                                           /* (a script's "sysex": a frame as from the editor, e.g. a sound) */
+static const uint8_t *host_sx;
+static uint32_t host_sx_n;
+static int sysex_get(const uint8_t **p, uint32_t *n)
+{
+    if (!host_sx_n) return 0;
+    *p = host_sx, *n = host_sx_n;
+    return 1;
+}
+static void sysex_done(void) { host_sx_n = 0; }
 static int sysex_send(const uint8_t *p, uint32_t n) { (void)p; (void)n; return 0; }
 #endif
 
@@ -183,8 +190,8 @@ static void app_main(void);
 /* the script: at t ms, keys down (bit k = key k, 0 = F3), a button edge, a MIDI message, an encoder turned. A script
  * file (the second argument) replaces it, a line each: "T keys MASK" (hex or decimal), "T btn ID" (a tap: let go the
  * next millisecond), "T down ID" / "T up ID" (held, let go), "T midi ST D1 D2", "T enc ID STEPS" (ENC_ id, + =
- * clockwise), "T end" */
-typedef struct { uint32_t t, keys; int btn; uint8_t st, d1, d2; int enc, steps; } host_ev_t;
+ * clockwise), "T sysex HEX HEX .." (a frame after F0, as the editor sends it: without F0 and F7), "T end" */
+typedef struct { uint32_t t, keys; int btn; uint8_t st, d1, d2; int enc, steps; const uint8_t *sx; uint32_t sxn; } host_ev_t;
 #define CHORD1 (1u << 7 | 1u << 11 | 1u << 14)                  /* C E G (C4 .. G4 at OCTAVE +0) */
 #define CHORD2 (1u << 2 | 1u << 5 | 1u << 9)                   /* G Bb D (G3 .. D4) */
 #define DOWN 0x100                                              /* btn: held from now (a btn alone: a tap, 1 ms) */
@@ -234,12 +241,14 @@ static const uint32_t SHOT[] = {2500, 3500, 6000, 15500};   /* HOME; TAPE; GRAIN
 static void read_script(const char *path)
 {
     static host_ev_t ev[4096];
-    char line[256], what[16];
+    static uint8_t sx[65536];
+    static uint32_t sx_n;
+    char line[1024], what[16];
     FILE *f = fopen(path, "r");
     uint32_t n = 0;
     if (!f) { perror(path); exit(1); }
     while (fgets(line, sizeof line, f) && n < 4096u) {
-        host_ev_t e = {0, 0, -1, 0, 0, 0, 0, 0};
+        host_ev_t e = {0, 0, -1, 0, 0, 0, 0, 0, 0, 0};
         unsigned a = 0, b = 0, c = 0;
         if (line[0] == '#' || sscanf(line, "%u %15s", &e.t, what) != 2) continue;
         if (!strcmp(what, "end")) { end_ms = e.t; continue; }
@@ -248,6 +257,12 @@ static void read_script(const char *path)
         else if (!strcmp(what, "down")) { sscanf(line, "%*u %*s %d", &e.btn); e.btn |= 0x100; }
         else if (!strcmp(what, "up")) { sscanf(line, "%*u %*s %d", &e.btn); e.btn |= 0x200; }
         else if (!strcmp(what, "enc")) { sscanf(line, "%*u %*s %d %d", &e.enc, &e.steps); }
+        else if (!strcmp(what, "sysex")) {
+            char *q = strstr(line, "sysex") + 5, *end;
+            unsigned long v;
+            e.sx = sx + sx_n;
+            while ((v = strtoul(q, &end, 16)), end != q && sx_n < sizeof sx) sx[sx_n++] = (uint8_t)v, e.sxn++, q = end;
+        }
         else if (!strcmp(what, "midi")) { sscanf(line, "%*u %*s %i %u %u", (int *)&a, &b, &c); e.st = (uint8_t)a; e.d1 = (uint8_t)b; e.d2 = (uint8_t)c; }
         else continue;
         ev[n++] = e;
@@ -364,7 +379,11 @@ static void platform_poll(void)                 /* one call = one millisecond */
         host_tap = 0;
     }
     while (step < script_n && script[step].t <= fm1_ms) {
-        if (script[step].st) {
+        if (script[step].sxn) {
+#ifndef GRIMM_STRESS
+            host_sx = script[step].sx, host_sx_n = script[step].sxn;
+#endif
+        } else if (script[step].st) {
             mq[mq_w % 64u][0] = script[step].st; mq[mq_w % 64u][1] = script[step].d1; mq[mq_w % 64u][2] = script[step].d2;
             mq_w++;
         } else if (script[step].btn >= 0) {

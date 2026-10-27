@@ -1,7 +1,8 @@
 <!doctype html>
 <!-- SPDX-License-Identifier: GPL-3.0-only
      Copyright (C) 2026 GR!MM
-     Arctic Scream p0larpatch changes (the name, the look: after PolarPatch BlueWatch's cyberpunk theme): Copyright (C) 2026 PolarPatch
+     Arctic Scream p0larpatch changes (the name, the look: after PolarPatch BlueWatch's cyberpunk theme; the page around
+     the panel: its demos, its numbered sections, its glitching titles): Copyright (C) 2026 PolarPatch
      After Felucca's browser page, web/emu/index.html of hugelton/Felucca (Copyright (C) 2026 Leo Kuroshita
      (@kurogedelic), Hügelton Instruments), which follows X0X's, web/emu/index.html of charlesvestal/fm1-x0x; both
      GPL-3.0. GR!MM in the browser: firmware/src/grimm.c, the code the FM-1 runs, on a fake FM-1 (web/fm1_web.c). -->
@@ -13,37 +14,118 @@
 <link rel="icon" href="polarpatch-logo.png">
 <meta name="description" content="Arctic Scream p0larpatch by PolarPatch, a drone firmware for the M-VAVE FM-1, running in your browser: the same code the instrument runs.">
 <style>
+@font-face { font-family: "Press Start 2P"; src: url("PressStart2P-Regular.ttf") format("truetype"); font-display: swap; }
 /* BlueWatch's colours only: its cyberpunk theme's greys and accents, its dark theme's panel greys */
 :root { --bg: #060410; --body: #161b22; --bed: #0a0d12; --part: #1c232c; --part-hi: #242c37; --edge: #30363d;
         --fg: #eaf6fa; --label: #a6afb9; --dim: #7fa8b8; --muted: #45606e; --lit: #22d3ee; --latch: #22d3ee; --rec: #f85149;
-        --ice: #22d3ee; --aurora: #3fb950; --violet: #a78bfa; --plasma: #ff1a8c;
+        --ice: #22d3ee; --aurora: #3fb950; --violet: #a78bfa; --plasma: #ff1a8c; --blue: #4f8cff; --line: #16222e;
         --mono: "JetBrains Mono", "Fira Code", "SF Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+        --pix: "Press Start 2P", var(--mono);
         --key: #c9d1d9; --key-black: #a6afb9; --key-held: #e6edf3; --key-lit: #a78bfa;
         color-scheme: dark; }
 html, body { background: var(--bg); }
-body { margin: 0; color: var(--fg); font: 13px/1.5 system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; color: var(--fg); font: 14px/1.6 system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
        /* the arctic night: a breath of ice and of plasma in the corners, faint scanlines (BlueWatch's cyberpunk) */
        background-image: radial-gradient(circle at 15% 0%, rgba(34, 211, 238, .07), transparent 45%),
                          radial-gradient(circle at 85% 100%, rgba(255, 26, 140, .05), transparent 45%),
                          repeating-linear-gradient(0deg, rgba(255, 255, 255, .012) 0, rgba(255, 255, 255, .012) 1px, transparent 1px, transparent 3px);
        background-attachment: fixed; }
-/* the masthead: the logo, the name glowing, what it is */
-.mast { width: min(100%, 1000px); margin: 0 auto 14px; display: flex; align-items: center; gap: 16px; }
-.mast img { width: 64px; height: 64px; border: 1px solid var(--edge); border-radius: 4px; }
-.mast h1 { margin: 0; font: 700 26px/1.1 var(--mono); letter-spacing: .12em; color: var(--fg);
-           text-shadow: 0 0 10px rgba(34, 211, 238, .45); }
-.mast h1 span { color: var(--ice); }
-.mast p { margin: 4px 0 0; color: var(--dim); font: 12px/1.4 var(--mono); }
-.mast .aurora { display: flex; gap: 4px; margin-top: 6px; }
-.mast .aurora i { width: 28px; height: 3px; border-radius: 2px; box-shadow: 0 0 6px currentColor; background: currentColor; }
+a { color: inherit; }
+.wrap { width: min(100% - 32px, 1320px); margin: 0 auto; }
+
+/* ---------------------------------------------------------------- the top bar */
+.top { position: sticky; top: 0; z-index: 20; background: rgba(6, 4, 16, .86); backdrop-filter: blur(8px);
+       -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; gap: 14px; min-height: 52px; }
+.top img { width: 30px; height: 30px; border: 1px solid var(--edge); border-radius: 3px; }
+.top .nm { font: 700 13px var(--mono); letter-spacing: .14em; }
+.top .nm span { color: var(--ice); }
+.top nav { margin-left: auto; display: flex; flex-wrap: wrap; gap: 2px 18px; }
+.top nav a { font: 600 11px var(--mono); letter-spacing: .14em; color: var(--dim); text-decoration: none;
+             padding: 4px 0; border-bottom: 2px solid transparent; }
+.top nav a:hover { color: var(--fg); border-bottom-color: var(--plasma); }
+@media (max-width: 760px) { .top .nm { display: none; } .top nav { gap: 2px 12px; } }
+
+/* ---------------------------------------------------------------- the glitching titles: the text, and three ghosts
+ * of it in ice, plasma and violet, each torn into view in thin bands at its own random moments (site.js), leaning
+ * a little toward the pointer (after the CONFIG title of PolarPatch's BlueWatch) */
+.gl { position: relative; display: inline-block; font-family: var(--pix); font-weight: 400; line-height: 1;
+      color: var(--fg); letter-spacing: .02em; }
+.gl > i { position: absolute; inset: 0; font-style: normal; pointer-events: none; mix-blend-mode: screen;
+          clip-path: inset(100% 0 0 0); transform: translate(calc(var(--gx, 0px) * var(--k)), calc(var(--gy, 0px) * var(--k))); }
+.gl > i:nth-child(1) { color: var(--ice); --k: -1.1; }
+.gl > i:nth-child(2) { color: var(--plasma); --k: 1.2; }
+.gl > i:nth-child(3) { color: var(--violet); --k: .6; }
+@media (prefers-reduced-motion: reduce) { .gl > i { display: none; } }
+
+/* ---------------------------------------------------------------- the hero */
+.hero { position: relative; padding: clamp(28px, 6vw, 72px) 0 26px; border-bottom: 1px solid var(--line); overflow: hidden; }
+.hero::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .04;
+               background: repeating-linear-gradient(0deg, #fff 0 1px, transparent 1px 3px); }
+.hero .kicker { font: 600 11px var(--mono); letter-spacing: .4em; color: var(--ice); opacity: .85; margin-bottom: 14px; }
+.hero .head { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 3cm; }
+.hero h1 { margin: 0; font-size: clamp(30px, 7.4vw, 104px); white-space: nowrap; }
+.hero h1 .gl { display: table; }
+.hero h1 .gl + .gl { margin-top: .12em; }
+.hero .head p { flex: 1 1 22em; margin: 0; max-width: 32em; font-size: 18px; line-height: 1.55; color: var(--label); }
+.hero h1 .gl { text-shadow: 0 0 18px rgba(34, 211, 238, .25); }
+.hero .sub { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 18px 40px; margin-top: 22px; }
+.hero .sub b { font: 400 clamp(14px, 2.2vw, 26px) var(--pix); color: var(--ice); }
+.hero .sub p { margin: 0; max-width: 44em; color: var(--label); }
+.aurora { display: flex; gap: 6px; margin-top: 24px; }
+.aurora i { flex: 1; height: 3px; border-radius: 2px; background: currentColor; box-shadow: 0 0 8px currentColor; max-width: 120px; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.cta a, .cta button { font: 600 12px var(--mono); letter-spacing: .14em; padding: 10px 18px; border-radius: 4px;
+                      text-decoration: none; cursor: pointer; background: transparent; color: var(--label);
+                      border: 1px solid var(--edge); }
+.cta a:hover, .cta button:hover { color: var(--fg); border-color: var(--dim); }
+.cta .main { color: var(--ice); border-color: var(--ice); box-shadow: 0 0 12px rgba(34, 211, 238, .3), inset 0 0 12px rgba(34, 211, 238, .12); }
+.cta .main:hover { background: rgba(34, 211, 238, .1); color: var(--fg); }
+
+/* ---------------------------------------------------------------- the player: the panel, and the side beside it */
+.player { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 22px; align-items: start; padding: 30px 0 10px; }
+@media (max-width: 1100px) { .player { grid-template-columns: minmax(0, 1fr); } }
+.side { display: grid; gap: 14px; }
+.box { position: relative; border: 1px solid var(--line); background: rgba(10, 13, 18, .8); border-radius: 4px; }
+.box::before, .box::after { content: ""; position: absolute; width: 9px; height: 9px; pointer-events: none; }
+.box::before { top: -1px; left: -1px; border-top: 2px solid var(--blue); border-left: 2px solid var(--blue); }
+.box::after { bottom: -1px; right: -1px; border-bottom: 2px solid var(--blue); border-right: 2px solid var(--blue); }
+.read { display: grid; grid-template-columns: 1fr 1fr; }
+.read > div { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.read > div:nth-child(odd) { border-right: 1px solid var(--line); }
+.read small { display: block; font: 600 10px var(--mono); letter-spacing: .2em; color: var(--muted); }
+.read output { display: block; font: 400 15px/1.5 var(--pix); color: var(--fg); margin-top: 6px; white-space: nowrap;
+               overflow: hidden; text-overflow: ellipsis; }
+.read .wide { grid-column: 1 / -1; border-right: 0 !important; }
+.lanes { padding: 10px 12px 12px; display: grid; gap: 7px; }
+.lane { display: grid; grid-template-columns: 26px 1fr; align-items: center; gap: 8px; font: 600 11px var(--mono); color: var(--dim); }
+.lane .cells { display: grid; grid-template-columns: repeat(16, 1fr); gap: 3px; }
+.lane .cells i { height: 9px; border-radius: 1px; background: #121a24; }
+.lane .cells i.on { background: var(--c); box-shadow: 0 0 6px var(--c); }
+.demos { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); }
+.demo { all: unset; box-sizing: border-box; cursor: pointer; padding: 10px 12px 12px; background: rgba(10, 13, 18, .95);
+        min-height: 84px; display: flex; flex-direction: column; gap: 4px; }
+.demo:hover { background: #0f1620; }
+.demo:focus-visible { outline: 2px solid var(--fg); outline-offset: -2px; }
+.demo .id { font: 400 15px var(--pix); color: var(--dim); }
+.demo .n { font: 700 12px var(--mono); letter-spacing: .1em; color: var(--fg); }
+.demo .s { font-size: 12px; line-height: 1.35; color: var(--muted); }
+.demo.on { background: var(--fg); }
+.demo.on .id, .demo.on .n { color: var(--bg); }
+.demo.on .s { color: #2b3a46; }
+.side .row { display: flex; gap: 8px; padding: 10px 12px; align-items: center; flex-wrap: wrap; }
+.side .row button { font: 600 11px var(--mono); letter-spacing: .14em; padding: 7px 12px; border-radius: 3px; cursor: pointer;
+                    background: var(--part); color: var(--label); border: 1px solid var(--edge); }
+.side .row button:hover { color: var(--fg); border-color: var(--dim); }
+.side .hint { margin: 0; padding: 0 12px 12px; color: var(--muted); font-size: 12px; }
+
 /* BlueWatch's bracket corners, on the instrument's frame */
 .frame { position: relative; width: min(100%, 1016px); margin: 0 auto; padding: 8px; box-sizing: border-box; }
 .frame::before, .frame::after { content: ""; position: absolute; width: 14px; height: 14px; pointer-events: none; }
 .frame::before { top: 0; left: 0; border-top: 2px solid var(--ice); border-left: 2px solid var(--ice); }
 .frame::after { bottom: 0; right: 0; border-bottom: 2px solid var(--ice); border-right: 2px solid var(--ice); }
-@media (max-width: 560px) { .mast img { width: 44px; height: 44px; } .mast h1 { font-size: 18px; } }
-main { padding: 16px; }
-a { color: inherit; }
 /* the FM-1: 161.5 x 96.5 mm; everything on it is placed in mm by panel.js (percentages of this box). At its widest,
  * 1000 px, the 240 x 240 screen is 240 px: one CSS pixel per LCD pixel */
 .fm1 { position: relative; width: min(100%, 1000px); aspect-ratio: 161.5 / 96.5; margin: 0 auto;
@@ -91,14 +173,14 @@ canvas.big { z-index: 5; outline: 1px solid var(--edge); }
 .start { inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px; z-index: 6;
          background: rgba(6, 4, 16, .6); border-radius: 3.7cqw; }
 .start[hidden] { display: none; }
-.start button { font: 600 15px var(--mono); letter-spacing: .1em; padding: 10px 24px; background: transparent;
+.start button { font: 400 clamp(16px, 3cqw, 30px) var(--pix); letter-spacing: .06em; padding: 18px 30px; background: rgba(6, 4, 16, .7);
                 color: var(--ice); border: 1px solid var(--ice); border-radius: 4px; cursor: pointer;
                 box-shadow: 0 0 12px rgba(34, 211, 238, .35), inset 0 0 12px rgba(34, 211, 238, .15);
                 text-shadow: 0 0 8px rgba(34, 211, 238, .6); }
 .start button:hover { background: rgba(34, 211, 238, .12); }
 .start button:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
 .start button:disabled { opacity: .5; cursor: progress; }
-.start p { margin: 0; max-width: 30em; text-align: center; }
+.start p { margin: 0; max-width: 30em; text-align: center; color: var(--label); font: 600 12px var(--mono); letter-spacing: .1em; }
 .under { width: min(100%, 1000px); margin: 10px auto 0; display: flex; flex-wrap: wrap; align-items: center;
          justify-content: center; gap: 6px 16px; color: var(--dim); }
 .toggle { font: 600 11px system-ui, sans-serif; letter-spacing: .04em; background: var(--part); color: var(--dim);
@@ -109,74 +191,381 @@ canvas.big { z-index: 5; outline: 1px solid var(--edge); }
 .midiin select { font: inherit; letter-spacing: inherit; background: var(--part); color: var(--fg); border: 1px solid var(--edge);
                  border-radius: 4px; padding: 2px 4px; margin-left: 4px; max-width: 16em; }
 .toggle b.on { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; }
-.keys { width: min(100%, 1000px); margin: 8px auto 0; text-align: center; color: var(--dim); line-height: 1.9; }
-.keys span { display: inline-block; max-width: calc(100% - 14px); margin: 0 7px; }   /* (a long one wraps inside the page) */
-.keys kbd { white-space: nowrap; }
-.keys.short { color: var(--fg); }
 kbd { font: 600 11px ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--edge); border-radius: 3px;
-      padding: 0 4px; color: var(--fg); }
-footer { max-width: 1000px; margin: 18px auto 0; text-align: center; color: var(--dim); font-size: 12px; }
+      padding: 0 4px; color: var(--fg); background: var(--bed); white-space: nowrap; }
+
+/* ---------------------------------------------------------------- the numbered sections */
+.sec { border-top: 1px solid var(--line); padding: clamp(40px, 7vw, 90px) 0; }
+.sec, #play { scroll-margin-top: 56px; }                   /* (under the top bar) */
+.sec-head { display: grid; grid-template-columns: minmax(120px, 1fr) 2.2fr; gap: 10px 32px; align-items: end; margin-bottom: 40px; }
+.num { font: 400 clamp(46px, 8vw, 110px)/1 var(--pix); color: transparent; -webkit-text-stroke: 2px var(--muted); }
+.sec h2 { margin: 0; font-size: clamp(26px, 5vw, 64px); }
+.sec-head p { grid-column: 2; margin: 0; max-width: 46em; color: var(--label); font-size: 15px; }
+@media (max-width: 760px) { .sec-head { grid-template-columns: 1fr; } .sec-head p { grid-column: 1; } }
+.cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 32px; }
+@media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+.cols h3 { font: 600 11px var(--mono); letter-spacing: .24em; color: var(--muted); margin: 0 0 4px;
+           padding-bottom: 8px; border-bottom: 2px solid var(--edge); }
+.cols dl { margin: 0 0 28px; }
+.cols dt { font-weight: 700; margin-top: 10px; }
+.cols dd { margin: 2px 0 0; padding-bottom: 10px; color: var(--dim); border-bottom: 1px dashed var(--line); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.card { position: relative; padding: 18px 18px 16px; border: 1px solid var(--line); background: rgba(10, 13, 18, .7);
+        border-radius: 4px; transition: border-color .15s, box-shadow .15s; overflow: hidden; }
+.card:hover { border-color: var(--c, var(--ice)); box-shadow: 0 0 18px -6px var(--c, var(--ice)); }
+.card h3 { margin: 0; font: 400 17px/1.3 var(--pix); color: var(--fg); }
+.card .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.card .tags span { font: 600 10px var(--mono); letter-spacing: .14em; padding: 2px 6px; border: 1px solid var(--edge);
+                   color: var(--label); border-radius: 2px; }
+.card .tags span:first-child { background: var(--c, var(--ice)); border-color: var(--c, var(--ice)); color: var(--bg); }
+.card p { margin: 0; color: var(--dim); }
+.card .k { margin-top: 12px; font: 600 11px var(--mono); letter-spacing: .08em; color: var(--muted); }
+.card svg { position: absolute; right: 14px; top: 14px; width: 74px; height: 34px; opacity: .55; transition: opacity .15s; }
+.card:hover svg { opacity: 1; }
+.card svg path { fill: none; stroke: var(--c, var(--ice)); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.card.star { grid-column: span 2; border-color: rgba(255, 26, 140, .45); }
+@media (max-width: 620px) { .card.star { grid-column: auto; } }
+.card .big { font: 400 clamp(22px, 3vw, 34px)/1.1 var(--pix); color: var(--c, var(--ice)); margin: 4px 0 6px; }
+/* the cards of 02-06 come alive under the pointer: the card dithers in from below, in its colour, and the wave runs */
+:is(#sources, #drone, #sequencer, #destroy, #status) .card { isolation: isolate; }
+:is(#sources, #drone, #sequencer, #destroy, #status) .card > * { position: relative; z-index: 1; }
+:is(#sources, #drone, #sequencer, #destroy, #status) .card > svg { position: absolute; }
+:is(#sources, #drone, #sequencer, #destroy, #status) .card::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle, var(--c) 0 .9px, transparent 1.1px) 0 0 / 4px 4px,
+              radial-gradient(circle, var(--c) 0 .9px, transparent 1.1px) 2px 2px / 4px 4px;
+  -webkit-mask: linear-gradient(to top, #000 0, rgba(0, 0, 0, .55) 30%, rgba(0, 0, 0, .15) 65%, transparent 100%) 0 100% / 100% 200% no-repeat;
+          mask: linear-gradient(to top, #000 0, rgba(0, 0, 0, .55) 30%, rgba(0, 0, 0, .15) 65%, transparent 100%) 0 100% / 100% 200% no-repeat;
+  transition: opacity .2s; }
+:is(#sources, #drone, #sequencer, #destroy, #status) .card:hover::before { opacity: .22; animation: dither-in .45s steps(6) both, dither-crawl 1.6s steps(4) .45s infinite; }
+@keyframes dither-in { from { -webkit-mask-position: 0 -100%; mask-position: 0 -100%; } to { -webkit-mask-position: 0 100%; mask-position: 0 100%; } }
+@keyframes dither-crawl { 50% { background-position: 2px 0, 0 2px; } }
+#sources .card svg { overflow: hidden; }
+#sources .card svg .roll { animation: roll var(--spd, 1.4s) linear infinite paused; }
+#sources .card:hover svg .roll { animation-play-state: running; }
+#sources .card:hover svg path { stroke-width: 2.4; filter: drop-shadow(0 0 3px var(--c)); }
+@keyframes roll { to { transform: translateX(-70px); } }
+@media (prefers-reduced-motion: reduce) { :is(#sources, #drone, #sequencer, #destroy, #status) .card:hover::before { animation: none; } #sources .card svg .roll { animation: none; } }
+.tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1px; background: var(--line);
+         border: 1px solid var(--line); margin-top: 26px; }
+.tools div { background: var(--bg); padding: 12px; }
+.tools b { display: block; font: 400 13px var(--pix); color: var(--ice); margin-bottom: 6px; }
+.tools span { color: var(--dim); font-size: 13px; }
+.tools-title { font: 600 11px var(--mono); letter-spacing: .24em; color: var(--muted); margin: 36px 0 0; }
+.status { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.status pre { margin: 10px 0 0; padding: 10px 12px; background: var(--bed); border: 1px solid var(--line); border-radius: 3px;
+              color: var(--fg); font: 12px/1.5 var(--mono); white-space: pre-wrap; word-break: break-all; }
+.status a { color: var(--ice); }
+footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--muted); font-size: 12px; }
 footer p { margin: 4px 0; }
+footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); margin-bottom: 14px; }
 </style>
 </head>
 <body>
-<main>
-<header class="mast">
-  <img src="polarpatch-logo.png" alt="PolarPatch">
-  <div>
-    <h1>ARCTIC SCREAM <span>p0larpatch</span></h1>
-    <p>Drone firmware for the M-VAVE FM-1 by PolarPatch. Play it here, the same code the instrument runs, before you install it.</p>
-    <div class="aurora" aria-hidden="true"><i style="color: var(--ice)"></i><i style="color: var(--aurora)"></i><i style="color: var(--violet)"></i><i style="color: var(--plasma)"></i></div>
+<header class="top">
+  <div class="wrap">
+    <img src="polarpatch-logo.png" alt="PolarPatch">
+    <span class="nm">ARCTIC SCREAM <span>p0larpatch</span></span>
+    <nav aria-label="On this page and beyond">
+      <a href="#play">PLAY</a><a href="#controls">CONTROLS</a><a href="#sources">SOURCES</a><a href="#drone">DRONE</a>
+      <a href="#sequencer">SEQUENCER</a><a href="#destroy">DESTROY</a><a href="#status">STATUS</a>
+      <a href="editor.html">EDITOR</a><a href="https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html">CHEAT SHEET</a>
+    </nav>
   </div>
 </header>
-<div class="frame">
-<section class="fm1" id="fm1" aria-label="The FM-1">
-  <canvas id="screen" width="240" height="240" role="img" aria-label="The screen"></canvas>
-  <div class="start" id="start"><button id="go" type="button">Switch on</button><p id="error" hidden></p></div>
+
+<main>
+<section class="hero">
+  <div class="wrap">
+    <div class="kicker">DRONE FIRMWARE FOR THE M-VAVE FM-1 · v1.1</div>
+    <div class="head">
+      <h1 aria-label="Arctic Scream"><span class="gl" data-t="ARCTIC">ARCTIC</span><span class="gl" data-t="SCREAM">SCREAM</span></h1>
+      <p>Dark ambient drones and feedback screams from the arctic tundra. Slow, cold drones that hum for minutes, and a
+        voice that wakes on its own and screams. Play it here: the panel below runs the same code as the instrument.
+        Pick a demo, or switch it on and play the keys.<br><em lang="se">Árktalaš holvvas</em></p>
+    </div>
+    <div class="sub"><b>p0larpatch</b></div>
+    <div class="aurora" aria-hidden="true"><i style="color: var(--ice)"></i><i style="color: var(--aurora)"></i><i style="color: var(--violet)"></i><i style="color: var(--plasma)"></i></div>
+    <div class="cta">
+      <button class="main" type="button" id="hero-go">SWITCH ON</button>
+      <a href="https://youtu.be/MJ53VOVRIG8">▶ WATCH THE VIDEO</a>
+      <a href="https://github.com/PolarPatch/Arctic-scream-FM-1/releases">DOWNLOAD</a>
+      <a href="editor.html">EDITOR</a>
+    </div>
+  </div>
 </section>
+
+<div class="wrap player" id="play">
+  <div>
+    <div class="frame">
+    <section class="fm1" id="fm1" aria-label="The FM-1">
+      <canvas id="screen" width="240" height="240" role="img" aria-label="The screen"></canvas>
+      <div class="start" id="start"><button id="go" type="button">START</button><p>SOUND ON · THEN PLAY THE KEYS OR PICK A DEMO</p><p id="error" hidden></p></div>
+    </section>
+    </div>
+    <div class="under">
+      <button class="toggle" id="zoom" type="button" aria-pressed="false" title="Enlarge only the screen, to see its pixels">SCREEN <b data-s="1" class="on">1x</b> / <b data-s="2">2x</b></button>
+      <label class="midiin" hidden>MIDI IN <select id="midi-in" aria-label="The MIDI input the demo listens to"></select></label>
+      <label class="midiin" hidden>CH <select id="midi-ch" aria-label="The MIDI channel the demo listens to"></select></label>
+      <span id="status"></span>
+    </div>
+  </div>
+
+  <aside class="side" aria-label="Demos and the sequencer">
+    <div class="box read">
+      <div class="wide"><small>DEMO</small><output id="r-demo">—</output></div>
+      <div><small>TEMPO</small><output id="r-tempo">120</output></div>
+      <div><small>SEQUENCER</small><output id="r-play">STOP</output></div>
+      <div class="wide lanes" id="lanes" aria-hidden="true"></div>
+    </div>
+    <div class="box">
+      <div class="demos" id="demos"></div>
+      <div class="row"><button type="button" id="d-stop">STOP</button><button type="button" id="d-off">ALL NOTES OFF</button></div>
+      <p class="hint">A demo loads its sounds and sequences into the firmware and latches its notes. Then turn the knobs:
+        EDIT for the sound, LFO twice for DRONE, FX for the effects.</p>
+    </div>
+  </aside>
 </div>
 
-<div class="under">
-  <button class="toggle" id="zoom" type="button" aria-pressed="false" title="Enlarge only the screen, to see its pixels">SCREEN <b data-s="1" class="on">1x</b> / <b data-s="2">2x</b></button>
-  <label class="midiin" hidden>MIDI IN <select id="midi-in" aria-label="The MIDI input the demo listens to"></select></label>
-  <label class="midiin" hidden>CH <select id="midi-ch" aria-label="The MIDI channel the demo listens to"></select></label>
-  <span id="status"></span>
-</div>
+<section class="sec" id="controls">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="num" aria-hidden="true">01</div>
+      <h2><span class="gl" data-t="CONTROLS">CONTROLS</span></h2>
+      <p>Click the panel, or use the computer's keyboard: the keys below are written on the panel too. Drag or scroll a
+        knob to turn it. Right-click or Shift-click a button to hold it.</p>
+    </div>
+    <div class="cols">
+      <div>
+        <h3>KEYS</h3>
+        <dl>
+          <dt><kbd>Z</kbd>–<kbd>/</kbd> <kbd>S</kbd>–<kbd>'</kbd></dt><dd>The keys F2 to A♯3. An octave down, for drones.</dd>
+          <dt><kbd>Q</kbd>–<kbd>O</kbd></dt><dd>B3 to G4, in semitones.</dd>
+          <dt>LATCH ON</dt><dd>Press a key once to start a note, again to stop it. The six Holvut sounds latch.</dd>
+          <dt>hold SEL</dt><dd>Chord mode: one key, a whole chord.</dd>
+          <dt>hold ARP</dt><dd>The arpeggiator plays the keys held (with LATCH: they stay).</dd>
+          <dt>hold GLO + a key</dt><dd>White keys 1–4 mute T1–T4, 5–8 solo them.</dd>
+        </dl>
+      </div>
+      <div>
+        <h3>BUTTONS</h3>
+        <dl>
+          <dt><kbd>1</kbd> FX</dt><dd>TAPE, GRAIN, DELAY, SPACE. Held: PERFORM, eight tricks on the keys.</dd>
+          <dt><kbd>2</kbd> SCL</dt><dd>SCALE (the keys snap to it, HORROR last), then CHORD.</dd>
+          <dt><kbd>3</kbd> ENV</dt><dd>ATTACK, DECAY, SUSTAIN, RELEASE.</dd>
+          <dt><kbd>4</kbd> LFO</dt><dd>RATE, DEPTH, DESTINATION, SHAPE. Again: DRONE.</dd>
+          <dt><kbd>5</kbd> EDIT</dt><dd>The source's four knobs, then SOURCE and LATCH. Held + OCT: undo, redo.</dd>
+          <dt><kbd>6</kbd> GLO</dt><dd>SONG: sections, patterns, repeats.</dd>
+          <dt><kbd>7</kbd> HOME</dt><dd>Every track's wave, then MIXER 1 and 2. Held: SYSTEM.</dd>
+          <dt><kbd>8</kbd> SAVE</dt><dd>SOUNDS (64 slots) and PROJECTS. Held + a key: recall or save slots A–D.</dd>
+          <dt><kbd>9</kbd> ARP · <kbd>0</kbd> SEQ · <kbd>-</kbd> PLAY · <kbd>=</kbd> REC</dt><dd>The arpeggiator, the sequencer's grid, start and stop, record.</dd>
+        </dl>
+      </div>
+      <div>
+        <h3>KNOBS</h3>
+        <dl>
+          <dt>KNOB 1–4</dt><dd>The four values at the bottom of the screen, on every page.</dd>
+          <dt><kbd>←</kbd> <kbd>→</kbd> ALGORITHM</dt><dd>Picks the track, T1–T4. Every page shows that track.</dd>
+          <dt><kbd>↑</kbd> <kbd>↓</kbd> SELECT</dt><dd>HOME: the tempo. The sequencer: the cursor.</dd>
+          <dt>PRESETS</dt><dd>The next sound, by category: 46 factory sounds with arctic names.</dd>
+          <dt>MASTER</dt><dd>The volume.</dd>
+          <dt><kbd>[</kbd> <kbd>]</kbd> OCT− OCT+</dt><dd>Octave down and up. In SAVE's pages: back, and do it.</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
 
-<p class="keys short" aria-label="The keys, in short">
-  <b>Keys:</b>
-  <span><kbd>Z</kbd>–<kbd>/</kbd> <kbd>S</kbd>–<kbd>'</kbd> <kbd>Q</kbd>–<kbd>O</kbd> the keys</span>
-  <span><kbd>1</kbd>–<kbd>6</kbd> FX SCL ENV LFO EDIT GLO</span>
-  <span><kbd>7</kbd>–<kbd>=</kbd> HOME SAVE ARP SEQ PLAY REC</span>
-  <span><kbd>[</kbd> <kbd>]</kbd> OCT− OCT+</span>
-  <span><kbd>↑</kbd> <kbd>↓</kbd> SELECT · <kbd>←</kbd> <kbd>→</kbd> ALGORITHM</span>
-  <span>hold a button's key + other keys: its combos (SAVE + <kbd>Z</kbd>…)</span>
-  <span>right-click or <kbd>Shift</kbd>-click a button: held until clicked again</span>
-</p>
-<p class="keys" aria-label="What the buttons do">
-  <span><kbd>Z</kbd>–<kbd>/</kbd> <kbd>S</kbd>–<kbd>'</kbd> keys F2–A♯3, <kbd>Q</kbd>–<kbd>O</kbd> B3–G4 (an octave down: drones) · ALGORITHM (<kbd>←</kbd> <kbd>→</kbd>): the track</span>
-  <span>EDIT (<kbd>5</kbd>): SOUND, (FM: FM ALGO, FM OP,) again SOURCE (VA, FM, SAMPLE: your own, from the editor, VOICE, WHEEL, PHYS, PHASE, Holvut; LATCH) · Holvut: FEEDBACK wakes the loop (past about two thirds it howls by itself), BODY bends it, DAMP darkens it, DRIVE tears it</span>
-  <span>ENV (<kbd>3</kbd>): ATTACK DECAY SUSTAIN RELEASE · FX (<kbd>1</kbd>): TAPE, GRAIN, DELAY, SPACE; hold FX + <kbd>Z</kbd> (the first white key): FREEZE, + the next seven white keys: REV THROW, ECHO THROW, TAPE STOP, REVERSE, FILTER DOWN, FILTER UP, STUTTER (while held)</span>
-  <span>SEL (<kbd>2</kbd>): SCALE (the keys snap to it), again CHORD (TYPE, VOICING); hold SEL: the track's chord mode on / off</span>
-  <span>ARP (<kbd>9</kbd>): MODE, RATE, OCTAVES, GATE; hold ARP: the track's arp on / off (it plays the keys held; LATCH: they stay)</span>
-  <span>LFO (<kbd>4</kbd>): RATE, DEPTH, DESTINATION (PITCH, VOLUME, PAN, the source's knobs, REV, GRAIN), SHAPE; again DRONE: BORGA (snowdrift: the sound wanders on its own), STOARBMA (storm: the tension), GOHCCAT (to wake: bars to reach it), LATCH</span>
-  <span>GLO (<kbd>6</kbd>): SONG (SECTION, PATTERN, REPEATS, MODE; REC there: song record); hold GLO + white keys 1–4: mute T1–T4, 5–8: solo</span>
-  <span>HOME (<kbd>7</kbd>): HOME (VOLUME, CUTOFF, RESONANCE, FX), MIXER 1, MIXER 2; hold: SYSTEM (COLOUR, MIDI CHANNEL, TUNE, SCREEN OFF), HOME again: SYSTEM 2 (MIDI LEARN, SEQ MIDI OUT, SAMPLES: CLEAR then OCT+ empties the four sample slots)</span>
-  <span>SEQ (<kbd>0</kbd>): GRID, PATTERN SETTINGS · PLAY (<kbd>-</kbd>): start / stop · REC (<kbd>=</kbd>): record · SELECT (<kbd>↑</kbd> <kbd>↓</kbd>): SEQ the step (SEQ held: STEPS), HOME the tempo · PRESETS: SEQ the tempo</span>
-  <span>hold SEQ + white keys: CLEAR, RANDOM, SHIFT ←, SHIFT →, COPY, PASTE, DOUBLE, MUTATE · on SEQ's pages hold SEL + knobs: lock the step's sound (+ OCT−: clear)</span>
-  <span>SAVE (<kbd>8</kbd>): SOUNDS, PROJECTS; OCT+ (<kbd>]</kbd>) does the ACTION, OCT− backs out; hold + white keys 1–4: recall slots A–D, 5–8: save A–D · EDIT held + OCT−/OCT+: undo/redo · PRESETS: the sounds by category (SEQ: the tempo) · the work saves itself when stopped</span>
-  <span>drag or scroll a knob · right-click or <kbd>Shift</kbd>-click holds a button · MIDI in via Web MIDI (pick the input above; the channel is set on the FM-1: hold HOME &gt; SYSTEM &gt; MIDI CHANNEL) · CH filters one channel; to play the selected track from any single channel, set the FM-1's MIDI CHANNEL to ALL &gt; SEL (hold HOME &gt; SYSTEM)</span>
-</p>
+<section class="sec" id="sources">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="num" aria-hidden="true">02</div>
+      <h2><span class="gl" data-t="SOURCES">SOURCES</span></h2>
+      <p>Eight sound sources, one per track, each with four knobs. Six voices are shared by the four tracks. EDIT twice
+        for SOURCE, KNOB 1 to pick.</p>
+    </div>
+    <div class="cards">
+      <article class="card star" style="--c: var(--plasma)">
+        <svg viewBox="0 0 74 34" aria-hidden="true"><path d="M2 17 C8 17 8 4 14 4 S20 30 26 30 32 9 38 9 44 25 50 25 56 12 62 12 68 21 72 17"/></svg>
+        <h3>Holvut</h3>
+        <div class="tags"><span>FEEDBACK</span><span>NEW</span><span>NORTH SAMI: TO HOWL</span></div>
+        <p>A string and a resonant body, trapped in a feedback loop with saturation, filters and diffusion. Nothing is
+          struck. Below the threshold the loop sleeps; past it, it wakes and howls by itself. Each key sends a burst into
+          the loop, so a note near the edge provokes it. After the design of the Synthux Audrey II, written anew.</p>
+        <div class="k">FEEDBACK · BODY · DAMP · DRIVE</div>
+      </article>
+      <article class="card" style="--c: var(--ice)">
+        <svg viewBox="0 0 74 34" aria-hidden="true"><path d="M2 28 L14 6 L14 28 L26 6 L26 28 L38 6 L38 28 L50 6 L50 28 L62 6 L62 28 L72 10"/></svg>
+        <h3>VA</h3><div class="tags"><span>ANALOG</span><span>FILTER</span></div>
+        <p>Saw, square and triangle, detuned, through a resonant filter.</p>
+        <div class="k">WAVE · DETUNE · CUTOFF · RESONANCE</div>
+      </article>
+      <article class="card" style="--c: var(--blue)">
+        <svg viewBox="0 0 74 34" aria-hidden="true"><path d="M2 17 C6 2 10 2 12 17 S16 32 20 17 22 6 26 17 30 28 34 17 36 10 40 17 44 24 48 17 52 13 56 17 62 20 72 17"/></svg>
+        <h3>FM</h3><div class="tags"><span>6-OP</span><span>32 ALGORITHMS</span></div>
+        <p>Six operators, the classic algorithms, a patch of your own per track.</p>
+        <div class="k">PATCH · BRIGHT · DECAY · DETUNE</div>
+      </article>
+      <article class="card" style="--c: var(--aurora)">
+        <svg viewBox="0 0 74 34" aria-hidden="true"><path d="M2 17 L8 17 L10 6 L13 28 L16 10 L19 24 L22 14 L26 20 L32 17 L72 17"/></svg>
+        <h3>SAMPLE</h3><div class="tags"><span>YOURS</span><span>4 SLOTS</span></div>
+        <p>Your own WAVs, uploaded from the editor, played across the keys.</p>
+        <div class="k">SLOT · START · LENGTH · REVERSE</div>
+      </article>
+      <article class="card" style="--c: var(--violet)">
+        <svg viewBox="0 0 74 34" aria-hidden="true"><path d="M2 17 C10 17 12 5 18 5 S24 17 30 17 36 29 42 29 48 17 54 17 58 9 62 9 66 17 72 17"/></svg>
+        <h3>VOICE</h3><div class="tags"><span>FORMANT</span><span>CHOIR</span></div>
+        <p>A singing voice: vowels, a shift, buzz and breath.</p>
+        <div class="k">VOWEL · SHIFT · BUZZ · BREATH</div>
+      </article>
+      <article class="card" style="--c: var(--ice)">
+        <svg viewBox="0 0 74 34" aria-hidden="true"><path d="M2 17 L8 6 L14 17 L20 28 L26 17 L32 10 L38 17 L44 24 L50 17 L56 12 L62 17 L72 17"/></svg>
+        <h3>WHEEL</h3><div class="tags"><span>ORGAN</span><span>TONEWHEEL</span></div>
+        <p>A tonewheel organ: drawbar settings, percussion, key click and drive.</p>
+        <div class="k">DRAWBARS · PERC · CLICK · DRIVE</div>
+      </article>
+      <article class="card" style="--c: var(--aurora)">
+        <svg viewBox="0 0 74 34" aria-hidden="true"><path d="M2 17 C6 2 9 32 13 17 S20 8 24 17 30 24 34 17 40 13 44 17 52 19 58 17 72 17"/></svg>
+        <h3>PHYS</h3><div class="tags"><span>MODELS</span><span>STRINGS · BELLS</span></div>
+        <p>Physical models: plucked, struck and bowed things that ring.</p>
+        <div class="k">MODEL · STRUCTURE · DAMP · BOW</div>
+      </article>
+      <article class="card" style="--c: var(--blue)">
+        <svg viewBox="0 0 74 34" aria-hidden="true"><path d="M2 28 C10 28 12 6 18 6 L20 28 C28 28 30 6 36 6 L38 28 C46 28 48 6 54 6 L56 28 C64 28 66 6 72 6"/></svg>
+        <h3>PHASE</h3><div class="tags"><span>CZ</span><span>PHASE DISTORTION</span></div>
+        <p>Phase distortion: two waves and a DCW that opens them.</p>
+        <div class="k">WAVE · WAVE2 · DCW · DETUNE</div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="drone">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="num" aria-hidden="true">03</div>
+      <h2><span class="gl" data-t="DRONE">DRONE</span></h2>
+      <p>Press LFO twice: a sound with a life of its own. The knobs have North Sami names. At 0 % the sound is exactly as
+        set; the settings are saved with the sound.</p>
+    </div>
+    <div class="cards">
+      <article class="card" style="--c: var(--ice)">
+        <div class="tags"><span>KNOB 1</span><span>SNOWDRIFT</span></div>
+        <div class="big">BORGA</div>
+        <p>Four slow random walks move the filter, the source's shape and its most natural knob, and the reverb's
+          distance. Each voice drifts a few cents and breathes, so a held chord sounds like a choir. It never repeats.</p>
+      </article>
+      <article class="card" style="--c: var(--plasma)">
+        <div class="tags"><span>KNOB 2</span><span>STORM</span></div>
+        <div class="big">STOARBMA</div>
+        <p>The tension. It opens the filter, raises resonance and drive, spreads the voices and makes the walks deeper
+          and faster.</p>
+      </article>
+      <article class="card" style="--c: var(--violet)">
+        <div class="tags"><span>KNOB 3</span><span>TO WAKE</span></div>
+        <div class="big">GOHCCÁT</div>
+        <p>1 to 32 bars for the storm to rise, in tempo. A drone woken from silence starts calm and builds.</p>
+      </article>
+      <article class="card" style="--c: var(--aurora)">
+        <div class="tags"><span>KNOB 4</span><span>HOLD</span></div>
+        <div class="big">LATCH</div>
+        <p>Press once to start a note, again to stop it. For drones that hum for minutes.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="sequencer">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="num" aria-hidden="true">04</div>
+      <h2><span class="gl" data-t="SEQUENCER">SEQUENCER</span></h2>
+      <p>Sixty-four steps on every track, chords and an arpeggiator, and a song mode that chains the slots.</p>
+    </div>
+    <div class="cards">
+      <article class="card" style="--c: var(--ice)"><h3>GRID</h3><div class="tags"><span>SEQ</span><span>64 STEPS</span></div>
+        <p>NOTE, CHANCE, RATCHET and LENGTH per step. Hold SEL and turn a knob to lock the sound to a step.</p></article>
+      <article class="card" style="--c: var(--violet)"><h3>RECORD</h3><div class="tags"><span>REC</span><span>LIVE · STEP</span></div>
+        <p>Stopped + REC: each key fills the next step. Playing + REC: notes land on the nearest step.</p></article>
+      <article class="card" style="--c: var(--aurora)"><h3>PATTERN</h3><div class="tags"><span>SEQ TWICE</span></div>
+        <p>STEPS, DIVISION (1/4 to 1/32T), SWING and PLAY MODE: forward, backward, ping-pong, random.</p></article>
+      <article class="card" style="--c: var(--plasma)"><h3>SONG</h3><div class="tags"><span>GLO</span><span>SLOTS A–D</span></div>
+        <p>Chain your patterns into a song: sections, patterns and repeats. REC + PLAY records the slots you switch to.</p></article>
+    </div>
+    <div class="tools-title">HOLD SEQ + A WHITE KEY</div>
+    <div class="tools">
+      <div><b>1</b><span>CLEAR</span></div><div><b>2</b><span>RANDOM</span></div><div><b>3</b><span>SHIFT ←</span></div>
+      <div><b>4</b><span>SHIFT →</span></div><div><b>5</b><span>COPY</span></div><div><b>6</b><span>PASTE</span></div>
+      <div><b>7</b><span>DOUBLE</span></div><div><b>8</b><span>MUTATE</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="destroy">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="num" aria-hidden="true">05</div>
+      <h2><span class="gl" data-t="DESTROY">DESTROY</span></h2>
+      <p>Four long, dark effects that every track sends to, each with its own moving northern lights, and eight tricks to
+        break it all live.</p>
+    </div>
+    <div class="cards">
+      <article class="card" style="--c: var(--aurora)"><h3>TAPE</h3><div class="tags"><span>FX</span><span>OVER EVERYTHING</span></div>
+        <p>Wow, saturation, tone and hiss.</p><div class="k">WOW · SATURATION · TONE · HISS</div></article>
+      <article class="card" style="--c: var(--violet)"><h3>GRAIN</h3><div class="tags"><span>FX ×2</span><span>FREEZE</span></div>
+        <p>Tears the sound into grains of light. FREEZE holds the cloud still.</p><div class="k">SIZE · DENSITY · SCATTER · MIX</div></article>
+      <article class="card" style="--c: var(--plasma)"><h3>DELAY</h3><div class="tags"><span>FX ×3</span><span>TO 150 %</span></div>
+        <p>Up to 3 seconds. Past 100 % feedback the echo runs away and burns.</p><div class="k">TIME · FEEDBACK · WEAR · MIX</div></article>
+      <article class="card" style="--c: var(--ice)"><h3>SPACE</h3><div class="tags"><span>FX ×4</span><span>TO INF</span></div>
+        <p>A reverb that lasts half a minute, or forever.</p><div class="k">SIZE · DAMP · MIX · PRE-DELAY</div></article>
+    </div>
+    <div class="tools-title">HOLD FX + A WHITE KEY: PERFORM</div>
+    <div class="tools">
+      <div><b>1</b><span>FREEZE</span></div><div><b>2</b><span>REV THROW</span></div><div><b>3</b><span>ECHO THROW</span></div>
+      <div><b>4</b><span>TAPE STOP</span></div><div><b>5</b><span>REVERSE</span></div><div><b>6</b><span>FILTER DOWN</span></div>
+      <div><b>7</b><span>FILTER UP</span></div><div><b>8</b><span>STUTTER</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="status">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="num" aria-hidden="true">06</div>
+      <h2><span class="gl" data-t="STATUS">STATUS</span></h2>
+      <p>Version 1.1. Free and open source, GPL-3.0. Unofficial firmware, not made or endorsed by M-VAVE or GR!MM:
+        install at your own risk.</p>
+    </div>
+    <div class="status">
+      <article class="card" style="--c: var(--ice)"><h3>INSTALL</h3>
+        <p>Download <code>arctic-scream-1.1.fwsc</code> from the <a href="https://github.com/PolarPatch/Arctic-scream-FM-1/releases">releases</a>, connect the FM-1 over USB, then:</p>
+        <pre>pip install mido python-rtmidi
+python3 tools/fm1_install.py arctic-scream-1.1.fwsc</pre>
+        <p style="margin-top: 10px">Stuck? The Rescue page on the <a href="https://thefirmwarehub.com/">FM-1 Firmware Hub</a> brings it back.</p></article>
+      <article class="card" style="--c: var(--violet)"><h3>LEARN IT</h3>
+        <p><a href="https://youtu.be/MJ53VOVRIG8">The demo video</a> · <a href="https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html">the cheat sheet</a> ·
+          <a href="https://github.com/PolarPatch/Arctic-scream-FM-1/blob/main/FEATURES.md">every feature</a> ·
+          <a href="https://github.com/PolarPatch/Arctic-scream-FM-1/blob/main/MANUAL.md">the manual</a></p>
+        <p style="margin-top: 10px"><a href="editor.html">The editor</a>: every setting live over USB in Chrome or Edge,
+          a sound library, samples and backup.</p></article>
+      <article class="card" style="--c: var(--plasma)"><h3>SOURCE</h3>
+        <p><a href="https://github.com/PolarPatch/Arctic-scream-FM-1">github.com/PolarPatch/Arctic-scream-FM-1</a>.
+          Bugs and questions: open an issue.</p>
+        <p style="margin-top: 10px">Free, and always will be. <a href="https://buymeacoffee.com/p0larpatch">Buy PolarPatch a coffee</a>.</p></article>
+    </div>
+  </div>
+</section>
+</main>
 
 <footer>
-  <p><b><a href="cheatsheet.html">The cheat sheet</a></b>: every button, knob and combo on one page, and how to wake Holvut</p>
-  <p><b><a href="editor.html">Open the editor</a></b>: edit sounds live, load samples, back up your FM-1 (Chrome or Edge)</p>
-  <p>Arctic Scream p0larpatch by PolarPatch, built on <a href="https://github.com/GRiMMBIENT/grimm">GR!MM</a> (GPL-3.0) · its Holvut source and HORROR scale follow <a href="https://github.com/Synthux-Academy/Audrey-II">Audrey II</a> (Nick Donaldson, Infrasonic Audio; Synthux Academy, MIT), written anew · the PolarPatch logo is PolarPatch's own, not under the GPL</p>
-  <p>The same <code>firmware/src/grimm.c</code> the FM-1 runs, compiled to WebAssembly · <a href="LICENSE">GPL-3.0-only</a> · <a href="https://github.com/PolarPatch/Arctic-scream-FM-1">source</a> · <a href="https://github.com/PolarPatch/Arctic-scream-FM-1/blob/main/LICENSING.md">credits and licences</a> (<a href="LICENSING.md">as text</a>) · fonts: Press Start 2P, <a href="LICENSES/OFL-PressStart2P.txt">SIL OFL 1.1</a>; Terminus, <a href="Terminus-LICENSE.txt">SIL OFL 1.1</a> · built with Emscripten (<a href="LICENSES/MIT-Emscripten.txt">MIT</a>, musl <a href="LICENSES/MIT-musl.txt">MIT</a>)</p>
-  <p>Built on <a href="https://github.com/zvenson/dinghy">Dinghy</a> by zvenson, on the platform of <a href="https://github.com/hugelton/Felucca">Felucca</a> by Leo Kuroshita, Hügelton Instruments, and <a href="https://github.com/isod89/sloop-fm1">SLOOP</a> by isod89 · the browser build and the panel's layout follow Felucca's and charlesvestal's <a href="https://github.com/charlesvestal/fm1-x0x">X0X</a> (GPL-3.0) · </p>
-  <p>M-VAVE and FM-1 are trademarks of their respective owners. Arctic Scream p0larpatch (like GR!MM) is not affiliated with or endorsed by them, nor by GR!MM.</p>
+  <div class="wrap">
+    <div class="big">ARCTIC SCREAM p0larpatch</div>
+    <p>Arctic Scream p0larpatch by PolarPatch, inspired by and built on <a href="https://github.com/GRiMMBIENT/grimm">GR!MM</a> (GPL-3.0) · its Holvut source and HORROR scale follow <a href="https://github.com/Synthux-Academy/Audrey-II">Audrey II</a> (Nick Donaldson, Infrasonic Audio; Synthux Academy, MIT), written anew · DRONE after the idea of <a href="https://github.com/zednaked/jangada">Jangada</a> (zednaked), written anew · the colours and the glitching titles after <a href="https://github.com/PolarPatch/BlueWatch">BlueWatch</a> by PolarPatch · the PolarPatch logo is PolarPatch's own, not under the GPL</p>
+    <p>The same <code>firmware/src/grimm.c</code> the FM-1 runs, compiled to WebAssembly · <a href="LICENSE">GPL-3.0-only</a> · <a href="https://github.com/PolarPatch/Arctic-scream-FM-1">source</a> · <a href="https://github.com/PolarPatch/Arctic-scream-FM-1/blob/main/LICENSING.md">credits and licences</a> (<a href="LICENSING.md">as text</a>) · fonts: Press Start 2P, <a href="LICENSES/OFL-PressStart2P.txt">SIL OFL 1.1</a>; Terminus, <a href="Terminus-LICENSE.txt">SIL OFL 1.1</a> · built with Emscripten (<a href="LICENSES/MIT-Emscripten.txt">MIT</a>, musl <a href="LICENSES/MIT-musl.txt">MIT</a>)</p>
+    <p>Built on <a href="https://github.com/zvenson/dinghy">Dinghy</a> by zvenson, on the platform of <a href="https://github.com/hugelton/Felucca">Felucca</a> by Leo Kuroshita, Hügelton Instruments, and <a href="https://github.com/isod89/sloop-fm1">SLOOP</a> by isod89 · the browser build and the panel's layout follow Felucca's and charlesvestal's <a href="https://github.com/charlesvestal/fm1-x0x">X0X</a> (GPL-3.0)</p>
+    <p>M-VAVE and FM-1 are trademarks of their respective owners. Arctic Scream p0larpatch (like GR!MM) is not affiliated with or endorsed by them, nor by GR!MM.</p>
+  </div>
 </footer>
-</main>
 <script type="module" src="panel.js"></script>
+<script type="module" src="site.js"></script>
 </body>
 </html>

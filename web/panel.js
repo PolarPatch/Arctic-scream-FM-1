@@ -20,6 +20,18 @@ const STORE = "grimm-web-settings";
 
 let node = null, btnMask = 0, keyMask = 0, latched = 0, master = 700;
 const send = (m) => { if (node) node.port.postMessage(m); };
+// (Arctic Scream p0larpatch) the page around the panel: its demos (A1-A4) send the editor's frames and tap keys; it
+// hears the sequencer's state (bit 28 playing, 7 bits a track: its step + 1)
+let started = null;
+window.fm1 = {
+  start: () => started || (started = switchOn()),
+  sysex: (data) => send({ type: "sysex", data }),
+  panic: () => send({ type: "panic" }),
+  tap(mask, ms = 120) {                                    // keys pressed a moment, as a hand would (LATCH: they stay)
+    send({ type: "keys", mask: keyMask | mask });
+    return new Promise((res) => setTimeout(() => { send({ type: "keys", mask: keyMask }); res(); }, ms));
+  },
+};
 const btnBy = new Map(), keyBy = new Map();                // pointer / computer key -> button id or key
 const buttons = [], keys = [], knobs = [];
 const $ = (id) => document.getElementById(id);
@@ -351,6 +363,7 @@ async function switchOn() {
         else if (m.type === "frame") {
           if (m.fb) drawScreen(m.fb);
           if (m.leds) drawLights(m.leds);
+          if (m.seq !== undefined) dispatchEvent(new CustomEvent("fm1-seq", { detail: m.seq }));
           if (m.settings && !saveSettings(m.settings) && !warned) {
             warned = true;
             console.warn("GR!MM: this browser does not keep the settings; they last until the page closes.");
@@ -367,12 +380,15 @@ async function switchOn() {
     syncButtons();
     syncKeys();
     midiOn();
+    dispatchEvent(new Event("fm1-on"));
   } catch (e) {
     node = null;
+    started = null;
     go.disabled = false;
     go.textContent = "Switch on";
     err.textContent = "Could not start: " + ((e && e.message) || e) + ". A current Chrome, Edge, Firefox or Safari should work.";
     err.hidden = false;
+    throw e;
   }
 }
-$("go").addEventListener("click", switchOn);
+$("go").addEventListener("click", () => window.fm1.start().catch(() => {}));
