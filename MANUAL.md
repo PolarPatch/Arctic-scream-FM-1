@@ -360,6 +360,13 @@ FREEZE is a toggle: tap it to hold the grain cloud, tap again to let go.
 - **SAMPLES:** CLEAR and **OCT+** empties all four sample slots (stop and let the sound die out first).
 - SYSTEM 2 shows the processor load, NOW and PEAK. OCT− + OCT+ together resets PEAK.
 
+### USB audio
+
+Over USB the FM-1 is also an audio input for your computer, phone or tablet: class compliant, so no driver,
+16-bit stereo at 44.1 or 48 kHz (the computer picks). Choose the FM-1 as the input in your DAW and record. It is the
+stereo mix with all its effects, as the speaker plays it, not each track apart; to record the tracks one by one, solo
+each in turn (**hold GLO + keys 5–8**) and record a pass per track.
+
 ---
 
 ## 12 · Factory sounds
