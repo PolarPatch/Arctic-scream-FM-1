@@ -31,8 +31,8 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **BORGA** (snowdrift): four slow random walks move the filter, the source's shape and its own most natural knob, and the reverb's distance. Each voice drifts a few cents and breathes, so a held chord sounds like a choir. It never repeats.
   - **STOARBMA** (storm): the tension. It opens the filter, raises resonance and drive, spreads the voices and makes the walks deeper and faster.
   - **GOHCCAT** (to wake): 1 to 32 bars for the storm to rise, in tempo. A drone woken from silence starts calm and builds.
-  - At 0 % the sound is exactly as set. The settings are saved with the sound, and all six screaming presets start with BORGA on.
-- **Six screaming presets:** POLAR HOWL, WENDIGO, FROZEN SCREAM, WHITEOUT, DEAD SIGNAL and ICE WRAITH. ICE WRAITH is the sound you start with, and all six hold their notes (LATCH).
+  - At 0 % the sound is exactly as set. The settings are saved with the sound, and all seven screaming presets start with BORGA on.
+- **Seven screaming presets:** POLAR HOWL, WENDIGO, FROZEN SCREAM, WHITEOUT, DEAD SIGNAL, III and ICE WRAITH. ICE WRAITH is the sound you start with, and all seven hold their notes (LATCH). III is a horrorscape: a cluster of three howling voices a semitone apart, dark and slowly waking.
 - **The HORROR scale:** close semitones, so every note is wrong in the right way.
 - **Runaway echo:** DELAY feedback goes up to 150 %, so the echo can grow and saturate. Delay times go up to 3 seconds.
 - **Built for drones:**
@@ -40,7 +40,7 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - The track defaults are darker.
   - The knobs on HOME, EDIT and LFO all audibly change the sound from the start.
   - HOME's knobs set the selected track's VOLUME, CUTOFF, RESONANCE and FX, and show their values.
-- **46 factory sounds** with arctic names, such as POLAR NIGHT, PERMAFROST, SVALBARD CELLO and NORTHERN LIGHT.
+- **47 factory sounds** with arctic names, such as POLAR NIGHT, PERMAFROST, SVALBARD CELLO and NORTHERN LIGHT.
 - **A new look:**
   - an arctic cyberpunk palette from PolarPatch's BlueWatch;
   - waveforms that glow on HOME;

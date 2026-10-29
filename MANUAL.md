@@ -109,6 +109,8 @@ diffusion. Nothing is struck.
 - **Each key sends a burst into the loop**, so a note played near the threshold sets it off.
 - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, **DRIVE** tears it.
 - Its four aurora ribbons move with the knobs.
+- **III** is a horrorscape: three Holvut voices in a CLUSTER chord, a semitone rubbing in it, dark and slowly waking.
+  Hold a key around C4. Turn **DAMP** down to let it scream, **BODY** to bend it, **FEEDBACK** to wake or calm it.
 
 ### The other sources
 
@@ -152,7 +154,7 @@ North Sami names.
   walks deeper and faster.
 - **GOHCCÁT, OFF or 1–32 bars:** how long the storm takes to rise, in tempo. A drone woken from silence starts calm
   and builds.
-- **At 0 % nothing is added.** The settings are saved with the sound. The six Holvut presets start with BORGA on.
+- **At 0 % nothing is added.** The settings are saved with the sound. The seven Holvut presets start with BORGA on.
 - The screen draws the four walks as aurora ribbons and the storm as a bar with its target.
 
 <br clear="right">
@@ -371,12 +373,12 @@ each in turn (**hold GLO + keys 5–8**) and record a pass per track.
 
 ## 12 · Factory sounds
 
-46 sounds with arctic names. Turn **PRESETS** to step through them by category, then your own.
+47 sounds with arctic names. Turn **PRESETS** to step through them by category, then your own.
 
 | Category | Sounds |
 |---|---|
 | DRONE | Permafrost, Deep Fjord, Cracking Ice, Arctic Hum, Solar Wind, Under the Ice |
-| DRONE · Holvut | Polar Howl, Wendigo, Frozen Scream, Whiteout, Dead Signal, **Ice Wraith** |
+| DRONE · Holvut | Polar Howl, Wendigo, Frozen Scream, Whiteout, Dead Signal, III, **Ice Wraith** |
 | PAD | Polar Night, Snow Veil, Glacier Pad, Midnight Sun, Lichen, Snowdrift |
 | BELL | Ice Bell, Frost Chime, Iceberg Gong, Crystal Harp, Bowed Icicle, Starlight |
 | VOICE | Aurora Choir, Tundra Voices, Blizzard Breath, Northern Call, Empty Horizon |
@@ -385,7 +387,7 @@ each in turn (**hold GLO + keys 5–8**) and record a pass per track.
 | OTHER | Tundra Strings, Icebreaker, Fog Horn, Svalbard Cello, North Strings |
 | TEXTURE | Wind over Ice |
 
-The six Holvut sounds hold their notes (LATCH) and start with DRONE on.
+The seven Holvut sounds hold their notes (LATCH) and start with DRONE on.
 
 ---
 
@@ -428,7 +430,7 @@ the sequencer while nothing plays, a latched note is still howling: set LATCH OF
 ### The demo
 
 **[polarpatch.github.io/Arctic-scream-FM-1](https://polarpatch.github.io/Arctic-scream-FM-1/)**: the FM-1's panel in
-your browser, running the same firmware, with four demos (A1–A4) to start from. Press **SWITCH ON**, then play with the
+your browser, running the same firmware, with five demos (A1–A5) to start from. Press **SWITCH ON**, then play with the
 mouse or the computer keyboard.
 
 | Key | Does |

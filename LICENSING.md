@@ -50,7 +50,7 @@ changes are Copyright (C) 2026 PolarPatch, GPL-3.0-only; everything else is as t
 | The DRONE page (`firmware/src/drone.c`; `ui.c` `pic_drone`; BORGA, STOARBMA, GOHCCAT, saved in a sound's and a track's spare bits, `store.c` `dr_spk`) | Its idea follows Jangada's DRONE page (<https://github.com/zednaked/jangada>, EVOL, TENS and RAMP: slow random walks per part, a tension macro, its rise in bars; zednaked, GPL-3.0), written anew for this firmware; none of its code is copied. The knobs' names are North Sami (from the dictionary at <https://sanit.oahpa.no/>) |
 | The page colours and the knobs' colours (`ui.c` `ui_tint`, `UI_KC`), BlueWatch's palette only; the track defaults for drones (`voices.c` `TRK_DEF`); the keys an octave down (`grimm.c` `KEY0`) | |
 | The saves' own magic ("ADPK", "ADLS"; `store.c`) and a track of 56 B (Holvut's four values at 52..55) | |
-| The web page's look (`web/index.html`, `web/site.js`: the glitching titles, after BlueWatch's CONFIG title) and its demos A1–A4 (`web/gen_demos.mjs`, `web/demos.json`; MANDALORIA is PolarPatch's own sound) | |
+| The web page's look (`web/index.html`, `web/site.js`: the glitching titles, after BlueWatch's CONFIG title) and its demos A1–A5 (`web/gen_demos.mjs`, `web/demos.json`; MANDALORIA is PolarPatch's own sound) | |
 | The manual `MANUAL.md`, written anew for Arctic Scream (its order and many of its facts follow GR!MM's manual), its banner `docs/manual/banner.png`, and the screens `docs/manual/screens/`, rendered from this firmware by `tools/make_screens.py` | `docs/manual/screens/boot.png` shows the PolarPatch logo (below) |
 | `tools/gen_logo.py` (its output `firmware/gen/polarpatch_logo.h`) | |
 

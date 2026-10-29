@@ -77,7 +77,7 @@ _Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4
 
 /* the factory sounds: GR!MM's own (first drafts; Arctic Scream p0larpatch's names), records as the user's (no CRC: in the image, read-only), first in
  * each CATEGORY's list; their names beside them. Bytes: CATEGORY, its number, the source, its four, ENV (ATTACK, DECAY,
- * SUSTAIN, RELEASE), LATCH, CHORD (chord mode off: VOICING << 4 | CHORD TYPE), LFO (RATE, DEPTH, DESTINATION, SHAPE).
+ * SUSTAIN, RELEASE), LATCH, CHORD (0x80 chord mode on, VOICING << 4 | CHORD TYPE), LFO (RATE, DEPTH, DESTINATION, SHAPE).
  * Sources: 0 VA (WAVE 0 SAW, 1 SQUARE, 2 SUPERSAW), 1 FM (PATCH 0 BELL, 1 ORGAN, 2 SOFT PAD, 3 REED), 3 VOICE, 4 WHEEL,
  * 5 PHYS (MODEL 0 MODAL, 1 STRING, 2 MEMBRANE, 3 SYMPATH), 6 PHASE. LFO DESTINATION 0 PITCH, 1 VOLUME, 3 .. 6 KNOB 1 .. 4;
  * SHAPE 0 SINE, 1 TRIANGLE, 5 RANDOM, 6 DRIFT */
@@ -143,6 +143,9 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSNDD(CAT_DRONE, 9, ENG_HOWL, 112, 40, 35, 60, 60, 90, 120, 100, 1, 0x00, 20, 20, 5, 0, 50, 0, 4), /* FROZEN SCREAM */
     FSNDD(CAT_DRONE, 10, ENG_HOWL, 88, 115, 95, 20, 110, 90, 127, 115, 1, 0x00, 25, 40, 9, 6, 75, 0, 4), /* WHITEOUT */
     FSNDD(CAT_DRONE, 11, ENG_HOWL, 104, 8, 30, 105, 40, 90, 110, 90, 1, 0x00, 60, 30, 4, 4, 55, 0, 4),  /* DEAD SIGNAL */
+    /* III: three Holvut voices in a CLUSTER chord (SPREAD), their semitone rubbing, dark (DAMP), BODY drifting on the LFO,
+     * waking over 8 bars; a horrorscape for a held key around C4 */
+    FSNDD(CAT_DRONE, 13, ENG_HOWL, 95, 62, 88, 55, 100, 90, 127, 115, 1, 0xAA, 14, 30, 4, 6, 65, 35, 4), /* III */
     FSNDD(CAT_DRONE, 12, ENG_HOWL, 96, 55, 75, 70, 95, 90, 51, 110, 1, 0x00, 35, 30, 3, 6, 65, 0, 4),  /* ICE WRAITH */
 };
 static const char *const SND_FNAME[] = {
@@ -152,7 +155,7 @@ static const char *const SND_FNAME[] = {
     "EMPTY HORIZON", "ICE ORGAN", "BASE CAMP", "FROST KEYS", "SNOW GLOBE", "POLAR KEYS", "ICE PIANO",
     "TUNDRA STRINGS", "ICEBREAKER", "FOG HORN", "SVALBARD CELLO", "NORTH STRINGS", "SNOW OWL", "SIGNAL FLARE",
     "ICICLE PLUCK", "FROST LUTE", "NORTHERN LIGHT", "WIND OVER ICE", "POLAR HOWL", "WENDIGO", "FROZEN SCREAM",
-    "WHITEOUT", "DEAD SIGNAL", "ICE WRAITH",
+    "WHITEOUT", "DEAD SIGNAL", "III", "ICE WRAITH",
 };   /* (16 characters at most: the header beside HOME's tempo) */
 #define SND_NFACT (sizeof SND_FACTORY / sizeof SND_FACTORY[0])
 #define SND_DEFAULT (SND_NFACT - 1u)            /* the four tracks' sound at first power-on and at NEW: ICE WRAITH */

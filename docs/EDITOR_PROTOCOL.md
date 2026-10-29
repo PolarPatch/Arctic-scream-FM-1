@@ -46,7 +46,7 @@ Request: none. Reply, in order:
 | n + 1 | the firmware version, ASCII, 0-terminated ("1.0") |
 | 1 | user sound slots (64) |
 | 1 | a sound's size (64) |
-| 1 | factory sounds (40) |
+| 1 | factory sounds (47) |
 | 5 | a slot's size, u35 (2548) |
 | 5 | the settings' size, u35 (168) |
 | 1 | sample slots (4) |
@@ -59,7 +59,7 @@ Request: none. Reply, in order:
 | 0 | the settings | 168 | yes | yes |
 | 1–4 | slots A–D | 2548 | yes | yes |
 | 16–79 | user sounds 1–64 (id 16 + slot) | 64 | yes | yes |
-| 80–119 | factory sounds 1–40 (id 80 + index, in the firmware's order) | 64 | yes | no |
+| 80–126 | factory sounds 1–47 (id 80 + index, in the firmware's order) | 64 | yes | no |
 
 A factory sound reads as a user sound's record, so it can be written into a user slot as it comes.
 

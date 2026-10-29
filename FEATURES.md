@@ -24,7 +24,7 @@ feedback screams: slow, cold sounds that hum for minutes, and a voice that wakes
 - Four tracks, six voices shared between them.
 - Eight sound sources, among them **Holvut**, a feedback loop that howls by itself.
 - **DRONE**: a sound that lives on its own (BORGA, STOARBMA, GOHCCAT).
-- 46 factory sounds with arctic names, and 64 slots for your own.
+- 47 factory sounds with arctic names, and 64 slots for your own.
 - Four effects (TAPE, GRAIN, DELAY, SPACE) and eight performance tricks.
 - A 64-step sequencer per track, an arpeggiator, chords, scales and song mode.
 - An arctic cyberpunk screen with moving northern lights.
@@ -85,7 +85,7 @@ New in 1.1. The idea follows Jangada's DRONE page; it is written from scratch. T
 | **LATCH** | | As on SOURCE. |
 
 - At 0 % the sound is exactly as set: nothing is added.
-- The settings are saved with the sound. All six Holvut presets start with BORGA on and GOHCCAT at 8 bars.
+- The settings are saved with the sound. All seven Holvut presets start with BORGA on and GOHCCAT at 8 bars.
 - The screen shows the four walks as aurora ribbons and the storm as a bar with its target mark.
 
 ## ENV and LFO
@@ -149,10 +149,11 @@ HOME draws each track's wave as it plays. The header shows the track, its sound 
 
 ## Sounds and saving (SAVE)
 
-- **46 factory sounds** with arctic names, in PAD, DRONE, BELL, VOICE, ORGAN, KEYS, OTHER and TEXTURE. Among them
+- **47 factory sounds** with arctic names, in PAD, DRONE, BELL, VOICE, ORGAN, KEYS, OTHER and TEXTURE. Among them
   POLAR NIGHT, PERMAFROST, GLACIER PAD, SVALBARD CELLO, NORTHERN LIGHT, WIND OVER ICE.
-- **Six Holvut presets** at the end of DRONE: POLAR HOWL, WENDIGO, FROZEN SCREAM, WHITEOUT, DEAD SIGNAL and
-  **ICE WRAITH**, the sound every track starts with. All six latch and have DRONE on.
+- **Seven Holvut presets** at the end of DRONE: POLAR HOWL, WENDIGO, FROZEN SCREAM, WHITEOUT, DEAD SIGNAL, III and
+  **ICE WRAITH**, the sound every track starts with. All seven latch and have DRONE on. III is a horrorscape: three
+  Holvut voices in a cluster chord, rubbing a semitone apart, dark and slowly waking.
 - **PRESETS** (the knob) steps through the selected category's sounds, factory first, then your own.
 - **SAVE → SOUNDS**: 64 slots for your own sounds (SLOT, CATEGORY, TYPE, ACTION LOAD / SAVE / CLEAR). A sound keeps its
   source, knobs, ENV, LATCH, chord, LFO, DRONE and (FM) its patch.

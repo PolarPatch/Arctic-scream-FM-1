@@ -146,12 +146,16 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   const vf = await VirtualFM1.create(readFileSync("web/dist/grimm.wasm"));
   vf.warmUp();
   const cl = new Client(vf), info = await cl.info(), meta = vf.meta();
-  check(info.proto === 3 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 168 && info.factory === 46,
+  check(info.proto === 3 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 168 && info.factory === 47,
         `editor: INFO (${info.firmware}, protocol ${info.proto}, ${info.sounds} sounds, slots ${info.slotSize} B)`);
-  const iw = parseSound(Uint8Array.from(meta.factory[45].rec), meta);
-  check(meta.factory[45].name === "ICE WRAITH" && iw.latch === 1 && iw.drone.borga === 65 && iw.drone.storm === 0 && iw.drone.rise === 4 &&
+  const iw = parseSound(Uint8Array.from(meta.factory[46].rec), meta);
+  check(meta.factory[46].name === "ICE WRAITH" && iw.latch === 1 && iw.drone.borga === 65 && iw.drone.storm === 0 && iw.drone.rise === 4 &&
         iw.lfo.join() === "35,30,3,6", "editor: ICE WRAITH's DRONE (BORGA 65 %, GOHCCAT 8 bars), its LATCH and LFO as they were");
-  check(meta.factory.length === 46 && meta.engines.length === 8 && meta.fmAlg.length === 32, "editor: the page's names and tables from the firmware");
+  const iii = parseSound(Uint8Array.from(meta.factory[45].rec), meta);
+  check(meta.factory[45].name === "III" && iii.eng === 7 && iii.latch === 1 && iii.chordOn === 1 && iii.chord === 10 &&
+        iii.voicing === 2 && iii.drone.borga === 65 && iii.drone.storm === 35 && iii.drone.rise === 4 &&
+        iii.lfo.join() === "14,30,4,6", "editor: III, a Holvut CLUSTER (SPREAD), its DRONE, LATCH and LFO");
+  check(meta.factory.length === 47 && meta.engines.length === 8 && meta.fmAlg.length === 32, "editor: the page's names and tables from the firmware");
   const f2 = await cl.get(OBJ.FACT + 2, 64);
   check(eq([...f2], meta.factory[2].rec) && recordOk(f2), `editor: factory sound 3 (${meta.factory[2].name}) read as the page has it`);
   const b0 = await makeBackup(cl, info);

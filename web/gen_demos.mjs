@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 PolarPatch
-// Arctic Scream p0larpatch: the demo page's four demos (A1-A4), as the editor's own frames (docs/EDITOR_PROTOCOL.md:
+// Arctic Scream p0larpatch: the demo page's five demos (A1-A5), as the editor's own frames (docs/EDITOR_PROTOCOL.md:
 // TRACK sets a track's sound, SEQ its sequence, the tempo, PLAY) and the keys to latch. The sounds are the factory's,
-// read from the firmware itself (web/dist/grimm.wasm, after web/build_web.sh), with DRONE turned up, and MANDALORIA,
+// read from the firmware itself (web/dist/grimm.wasm, after web/build_web.sh), with DRONE turned up (III as it is), and MANDALORIA,
 // a sound of PolarPatch's own. The editor loads the same songs (song: the sounds, the sequences, the latched keys).
 //   node web/gen_demos.mjs            -> web/demos.json (the page's), build/demos/*.txt (tests/host.c scripts: hear them)
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
@@ -67,6 +67,11 @@ const DEMOS = [
     seqs: [[1, seq(2, ["C5*90", "-", "G4*60", "E5*80", "-", "B4*50", "-", "G5*40x2", "D5*80", "-", "A4*60", "-", "E5*70",
                        "-", "C5*50x2", "-"])]],
     latch: [[0, ["C3", "G3", "D4"]], [2, ["G3"]]], play: true },
+  { id: "A5", name: "III", sub: "a horrorscape: a cluster that wakes", tempo: 60,
+    tracks: [[0, "III"], [1, "UNDER THE ICE", { borga: 40 }], [2, "STARLIGHT"]],
+    seqs: [[2, seq(2, ["-", "-", "-", "-", "C6*30", "-", "-", "-", "-", "-", "C#6*25", "-", "-", "-", "-", "-",
+                       "-", "-", "G5*20", "-", "-", "-", "-", "-", "-", "-", "-", "F#5*25", "-", "-", "-", "-"])]],
+    latch: [[0, ["C4"]], [1, ["A3"]]], play: true },
 ];
 
 const out = [];
