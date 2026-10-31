@@ -3,8 +3,8 @@
 /* GR!MM V2's GENERATE: a track plays random notes of the SCALE (its chord in chord mode, as a key's) on the tempo, the
  * sequencer's clock or a MIDI clock (arp.c's arp_tick, a tick of each track: gen_tick), with rests, lengths, a volume
  * and an attack of their own each note (voices.c: gen_vel, gen_atk), within its own range (gen_lo, gen_hi: its chord's
- * notes past it folded in by octaves, grimm.c note_on). FX held + the black keys (grimm.c): F#3 G#3 A#3 C#4 tapped
- * (let go, nothing else pressed meanwhile): T1 .. T4 on, off; D#4 MODE, F#4 G#4 its OCTAVE down, up, A#4 its RANGE:
+ * notes past it folded in by octaves, grimm.c note_on). FX held + the black keys (grimm.c): F#2 G#2 A#2 C#3 tapped
+ * (let go, nothing else pressed meanwhile): T1 .. T4 on, off; D#3 MODE, F#3 G#3 its OCTAVE down, up, A#3 its RANGE:
  * the tracks' black keys held, theirs; none, all four's. Each track's own:
  *   MODE   DRIFT: a few notes, long (2 .. 8 beats), soft, slow attacks (ambient); PULSE: a melody walking the scale on
  *          eighths, mostly on the beat, steadier; STORM: dense sixteenths, short, the volume swinging wildly

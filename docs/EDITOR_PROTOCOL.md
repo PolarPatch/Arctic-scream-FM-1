@@ -2,13 +2,14 @@
 
 How an editor (a web page, `tools/fm1_editor_test.py`) talks to GR!MM on the FM-1 over USB-MIDI SysEx: read and
 write the user's sounds, the slots A–D and the settings, read the factory sounds, set the tracks' sounds live, and
-upload samples. The device side is `firmware/src/editor.c` (commands 20–25) and `firmware/src/samples.c` (11–15). The
+upload samples. The device side is `firmware/src/editor.c` (commands 20–26) and `firmware/src/samples.c` (11–16). The
 read/write scheme follows SLOOP's editor backup ([sloop-fm1](https://github.com/isod89/sloop-fm1)
 `web/EDITOR_PROTOCOL.md`, commands 34–36, GPL-3.0): objects by id, read by offset and count, written as BEGIN → DATA →
 COMMIT. The live one (23 TRACK) follows SLOOP's live SET: values at once, while playing, never saved.
 
 Protocol 1 (step 26a) has commands 20–22; protocol 2 (step 26b2) adds 23 TRACK; protocol 3 (Arctic Scream p0larpatch)
-adds 24 SEQ. INFO says which.
+adds 24 SEQ. INFO says which. 1.3 adds GR!MM V2's CPU and FX as 25 and 26 (GR!MM's 24 and 25: its 24 is SEQ here), and
+the sample slots as objects 5–8, without a protocol number of their own.
 
 ## Frames
 
@@ -48,7 +49,7 @@ Request: none. Reply, in order:
 | 1 | a sound's size (64) |
 | 1 | factory sounds (47) |
 | 5 | a slot's size, u35 (2548) |
-| 5 | the settings' size, u35 (168) |
+| 5 | the settings' size, u35 (170; 1.2: 168) |
 | 1 | sample slots (4) |
 | 1 | sample slots in use (holding a good sample) |
 
@@ -56,12 +57,15 @@ Request: none. Reply, in order:
 
 | id | Object | Size | GET | PUT |
 | --- | --- | --- | --- | --- |
-| 0 | the settings | 168 | yes | yes |
+| 0 | the settings | 170 (1.2: 168) | yes | yes |
 | 1–4 | slots A–D | 2548 | yes | yes |
+| 5–8 | sample slots 1–4 (1.3, GR!MM V2's): the slot's header, 32 bytes of nothing, the data | 512 + the data's length | yes | no |
 | 16–79 | user sounds 1–64 (id 16 + slot) | 64 | yes | yes |
 | 80–126 | factory sounds 1–47 (id 80 + index, in the firmware's order) | 64 | yes | no |
 
-A factory sound reads as a user sound's record, so it can be written into a user slot as it comes.
+A factory sound reads as a user sound's record, so it can be written into a user slot as it comes. An object is one
+7-bit byte (0–127): the 47 factory sounds end at 126. An empty sample slot is no object (rc 1); a restore writes a
+sample back as an upload (11–13).
 
 ## 21 GET
 
@@ -216,7 +220,7 @@ then the step's chord byte (0: a plain note; bit 7 set: a chord step).
 **Step locks (288 bytes):** 64 × 4 values (step n's lock of the source's knob k at 4 n + k), then 32 bytes of masks:
 step n's 4 bits in byte 256 + n / 2, the low nibble for even n, the high for odd (bit k: knob k locked).
 
-## The settings (169 bytes; GR!MM 1.0: 168)
+## The settings (170 bytes; 1.2: 168)
 
 | Byte | |
 | --- | --- |
@@ -228,20 +232,21 @@ step n's 4 bits in byte 256 + n / 2, the low nibble for even n, the high for odd
 | 5 | SEQ MIDI OUT (0 / 1) |
 | 6 | MIDI LEARN's links in use (0–32) |
 | 7–166 | 32 links of 5 bytes, the oldest first: CC, page, knob (0–3), track (0–3), x (SOUND: the source; GRID: the step; SONG: the section; FM ALGO's FINE, FM OP: the operator) |
-| 167 | the settings' version (2; GR!MM 1.0's: 1) |
-| 168 | CLOCK (V2): 0 INT, 1 INT+OUT, 2 USB, 3 TRS |
+| 167 | the settings' version (3; 1.2's: 1) |
+| 168 | CLOCK (1.3, GR!MM V2's): 0 INT, 1 INT+OUT, 2 USB, 3 TRS |
+| 169 | SYSTEM 3's LATCH (1.3, GR!MM V2's; version 3): 0 FROM SOUND (a sound loaded brings its own LATCH), 1 ALWAYS OFF (a sound loaded sets the track's LATCH off) |
 
-A PUT of the settings also takes GR!MM 1.0's 168 bytes (version 1): they apply with CLOCK INT, so a backup of then
-restores.
+A PUT of the settings also takes 1.2's 168 bytes (version 1): they apply with CLOCK INT and LATCH FROM SOUND, so a
+backup of then restores; and version 2's 169 bytes (LATCH FROM SOUND).
 
 Pages (a link's page): 0 SOUND, 1 SOURCE, 2 ENV, 3 LFO, 4 SCALE, 5 CHORD, 6 SONG, 7 HOME, 8 MIXER 1, 9 MIXER 2,
-14 ARP, 15 GRID, 16 PATTERN SETTINGS, 17 TAPE, 18 GRAIN, 19 DELAY, 20 SPACE, 23 FM ALGO, 24 FM OP (the others can't be
-learned).
+14 ARP, 15 GRID, 16 PATTERN SETTINGS, 17 TAPE, 18 GRAIN, 19 DELAY, 20 SPACE, 23 FM ALGO, 24 FM OP, 25 DRONE, 26 MASTER,
+27 DRIVE (the others can't be learned; 28 is SYSTEM 3).
 
-## 24 CPU (GR!MM V2, a diagnostic)
+## 25 CPU (GR!MM V2's 24, a diagnostic)
 
 Where the audio time goes, as SYSTEM 2's CPU row measures it; `tools/fm1_cpu.py` prints it. It has no protocol number
-of its own (INFO stays 2); a GR!MM before V2 does not answer it.
+of its own (INFO stays 3); an Arctic Scream before 1.3 does not answer it.
 
 Request: none. Reply: `n` (the stages, 10), then u35 values in the FM-1's timer ticks (24 a microsecond): the budget of a
 256-frame block (139320, 5.8 ms), NOW, PEAK, then NOW's split over the same ~0.5 s: the sources (VOICES), the tracks'
@@ -249,10 +254,9 @@ filters, levels and sends (MIX), GRAIN, DELAY, SPACE, TAPE, PERFORM, MASTER, DRI
 interrupts that land inside the audio, taken out of the stages they interrupt). NOW minus them all is the rest of the
 audio callback.
 
-## 25 FX (GR!MM V2)
+## 26 FX (GR!MM V2's 25)
 
-The project's effects, live, for the editor page's FX section (no protocol number of its own; a GR!MM before V2 does
-not answer it). A value set here acts at once and is kept by the project (the FM-1's autosave), as a knob's turn.
+The project's effects, live (no protocol number of its own; an Arctic Scream before 1.3 does not answer it). A value set here acts at once and is kept by the project (the FM-1's autosave), as a knob's turn.
 
 Request: `op`, then for SET `i`, `v`.
 
@@ -285,5 +289,8 @@ are all erased (0xFF) gets its own, a slot that holds anything is never touched 
 
 ## A backup
 
-All sounds, slots and settings: GET objects 0, 1–4, 16–79 (256 bytes a GET). To restore, PUT each one (an empty sound
-as 64 × `0xFF`), each COMMIT while stopped and silent. `tools/fm1_editor_test.py` does both and checks the result.
+All sounds, slots and settings: GET objects 0, 1–4, 16–79 (256 bytes a GET), and (1.3) the sample slots, objects 5–8.
+To restore, PUT each one (an empty sound as 64 × `0xFF`), each COMMIT while stopped and silent, and upload each sample
+that is not in its slot already (11–13; one empty in the backup: ERASE). A reply that does not come in 3 s is asked
+again, up to three times. `tools/fm1_editor_test.py` and the editor page do both and check the result; a backup without
+samples (1.2 and before) leaves the sample slots as they are.

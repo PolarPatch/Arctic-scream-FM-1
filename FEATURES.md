@@ -134,12 +134,20 @@ New in 1.1. The idea follows Jangada's DRONE page; it is written from scratch. T
 | GRAIN | SIZE (10–390 ms) | DENSITY | SCATTER | MIX |
 | DELAY | TIME (20 ms–3 s) | FEEDBACK (to 150 %) | WEAR | MIX |
 | SPACE | SIZE (0.4 s–~32 s, then INF) | DAMP | MIX | PRE-DELAY (0–250 ms) |
+| MASTER (1.3) | CUTOFF | RESONANCE | TYPE (LP / HP / BP) | POSITION (PRE FX / POST REVERB / END) |
+| DRIVE (1.3) | AMOUNT (0: off) | TYPE (SOFT / FUZZ / CLIP / FOLD) | TONE | MIX |
 
 - **Runaway echo**: DELAY FEEDBACK past 100 % lets the echo grow and saturate.
 - **Hold FX ~0.3 s: PERFORM.** While FX is held, the white keys play eight tricks: FREEZE (a toggle: holds the grain
   cloud), REV THROW, ECHO THROW, TAPE STOP, REVERSE, FILTER DOWN, FILTER UP, STUTTER.
-- Signal flow: each track → LEVEL and PAN → out. Its sends go to GRAIN, DELAY and SPACE. Then TAPE over everything,
-  the tricks, and MASTER.
+- **DRIVE**: AMOUNT drives the whole mix 1x to ~8x into the TYPE's curve; each TYPE about as loud as the others at the
+  same AMOUNT, at most ~6 dB louder, then a limiter. **MASTER**: a stereo filter on the whole mix, at its POSITION.
+- **Hold FX + a black key: GENERATE.** That track plays by itself, random notes (or chords) of its SCALE, on the tempo
+  or the MIDI clock: DRIFT (long, soft), PULSE (a melody on eighths), STORM (dense sixteenths). Each track its own MODE,
+  OCTAVE and RANGE; several tracks share the six voices fairly; the pattern runs on silently underneath. Not saved.
+- Signal flow: each track → its filter (PRE or POST its sends) → LEVEL and PAN → out. Its sends go to GRAIN, DELAY and
+  SPACE. Then MASTER (at its POSITION), DRIVE, TAPE over everything, the tricks, MASTER's END, and the output stage:
+  6 dB of headroom, the MASTER knob and a limiter, so nothing clips.
 
 ## HOME and the mixer
 
@@ -147,7 +155,7 @@ New in 1.1. The idea follows Jangada's DRONE page; it is written from scratch. T
 | --- | --- | --- | --- | --- |
 | HOME | VOLUME | CUTOFF | RESONANCE | FX (the three sends together, 0–200 %) |
 | MIXER 1 | LEVEL | DLY SEND | REV SEND | GRAIN SEND |
-| MIXER 2 | PAN | | | |
+| MIXER 2 | PAN | TYPE (LP / HP / BP) | POS (PRE / POST) | |
 
 HOME draws each track's wave as it plays. The header shows the track, its sound and the tempo.
 
@@ -164,7 +172,8 @@ HOME draws each track's wave as it plays. The header shows the track, its sound 
 - **SAVE → PROJECTS**: slots A–D, each the four tracks, their sequences and locks (LOAD, SAVE, ERASE, NEW).
 - **Hold SAVE + a white key**: keys 1–4 recall A–D (at the next bar when playing), keys 5–8 save into them.
 - **Autosave**: the work saves itself when stopped and silent, and comes back at power-on as it was left.
-- **Undo / redo**: EDIT + OCT− / OCT+.
+- **Undo / redo**: EDIT + OCT− / OCT+. **Hold REC ~1 s** clears the selected track's pattern (undoable).
+- **Hold SEL + OCT+**: the selected track's LATCH on or off, from any page.
 - Arctic Scream keeps its own saves, separate from GR!MM's. Samples already on the FM-1 stay.
 
 ## Settings (hold HOME)
@@ -172,11 +181,15 @@ HOME draws each track's wave as it plays. The header shows the track, its sound 
 | Page | K1 | K2 | K3 | K4 |
 | --- | --- | --- | --- | --- |
 | SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF |
-| SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES (CLEAR) | |
+| SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES (CLEAR) | CLOCK (INT, INT+OUT, USB, TRS) |
+| SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | | | |
 
-- **MIDI**: notes in and out over USB on each track's channel (or ALL > SEL). MIDI LEARN links up to 32 CCs to any knob.
-  SEQ MIDI OUT also sends the sequencer's and the arpeggiator's notes.
-- SYSTEM 2 shows the CPU load (NOW and PEAK).
+- **MIDI**: notes in and out over USB on each track's channel (or ALL > SEL, or CH n > SEL: channel n alone to the
+  selected track). MIDI in on the TRS jack too, with a TRS-to-DIN adapter. MIDI LEARN links up to 32 CCs to any knob.
+  SEQ MIDI OUT also sends the sequencer's, the arpeggiator's and GENERATE's notes.
+- **MIDI clock**: follow one from USB or the TRS jack (START, CONTINUE, STOP), or send one over USB (INT+OUT).
+- SYSTEM 2 shows the CPU load (NOW and PEAK) and USB REC DROPS (gaps in the USB recording); the header says CPU FULL:
+  NOTE DROPPED when the FM-1 had to let a note go, and WATCHDOG RESET or LOW VOLTAGE RESET after such a restart.
 
 ## The screen
 
@@ -234,7 +247,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 | --- | --- | --- |
 | 1.0 | 2026-10-25 | The fork of GR!MM: HOWL (now Holvut), six screaming presets, the HORROR scale, runaway echo, keys an octave down, 46 arctic factory sounds, the new look, the web editor with sound tools and sequencer, the demo and cheat sheet |
 | 1.1 | 2026-10-26 | DRONE (BORGA, STOARBMA, GOHCCAT); HOWL renamed Holvut; moving northern lights on ENV, LFO, FX and the mixers; SUSTAIN 40 % by default; DRONE in the editor |
-| 1.3 | 2026-10-31 | Holvut overblows: FEEDBACK's last steps lift a high-pass in the loop, and the howl leaps up its overtones; MIDI aftertouch pushes FEEDBACK (press harder, it screams and climbs); BODY to ~92 ms; SAMPLE and Holvut share a voice's scratch memory |
+| 1.3 | 2026-11-01 | Holvut overblows: FEEDBACK's last steps lift a high-pass in the loop, and the howl leaps up its overtones; MIDI aftertouch pushes FEEDBACK (press harder, it screams and climbs); BODY to ~92 ms; SAMPLE and Holvut share a voice's scratch memory. From GR!MM V2.0: GENERATE, MASTER and DRIVE, the track filter's TYPE and POS, MIDI clock in and out, TRS MIDI IN, CH n > SEL, SYSTEM 3's LATCH, SEL + OCT+, REC held to clear, 6 dB of headroom and a limiter, the voice rule, backups with the samples, the USB audio ring, saves under endless tails, reset reasons; ~6.5 KB of RAM freed. The editor: projects A–D to files, SETTINGS. Clearer page colours |
 | 1.2 | 2026-10-31 | III, a Holvut horrorscape (47 factory sounds) and demo A5; Holvut deeper: BODY to ~45 ms, four all-passes in the loop; WHITEOUT retuned to keep its sound; the host tests run on macOS |
 
 ## Credits

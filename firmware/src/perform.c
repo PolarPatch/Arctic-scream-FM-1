@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
 /* GR!MM's FX performance layer: FX held + the white keys G3 .. F4, each trick on while its key is held (several at
- * once), over the whole output, after TAPE (app_audio: perform_render); FREEZE (F3) is GRAIN's (grain.c).
+ * once), over the whole output, after TAPE (app_audio: perform_render); FREEZE (the first white key, F2) is GRAIN's (grain.c).
  *   REV THROW, ECHO THROW: every track's REV / DLY send full (grimm.c's mix, its gains ramped); the tails ring on
  *   TAPE STOP: the output slows to a stop over ~1 s (its pitch falling); let go: back up to speed in ~0.3 s, in time
  *   REVERSE: the last beat (at most the history's 0.6 s) backwards, round and round

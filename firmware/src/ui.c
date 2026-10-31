@@ -1640,7 +1640,8 @@ static uint32_t gen_flash(void)                 /* main loop: the tiles' flashes
 static void pic_perform(void)                   /* FxLayer: the eight tricks (FX held + the white keys), on in the
                                                  * accent (its mutes: GLO's); (V2) GENERATE's four tracks under them */
 {
-    static const char *const KEY[8] = {"F3", "G3", "A3", "B3", "C4", "D4", "E4", "F4"};
+    static const char *const KEY[8] = {"F2", "G2", "A2", "B2", "C3", "D3", "E3", "F3"};   /* (the white keys 1-8: Arctic
+                                                 * Scream's keys start at F2) */
     static const char *const NM[8][2] = {{"FREEZE", ""}, {"REV", "THROW"}, {"ECHO", "THROW"}, {"TAPE", "STOP"},
                                          {"REVER-", "SE"}, {"FILTER", "DOWN"}, {"FILTER", "UP"}, {"STUT-", "TER"}};
     int32_t i;

@@ -42,7 +42,8 @@ Every track starts with **ICE WRAITH**, a Holvut sound that holds its notes: pre
 - **Pages:** tap a button for its first page, again for the next. The header shows where you are, e.g. `FX > DELAY`.
   Many buttons do more when **held** while you press a key or turn a knob (see [13 · Combos](#13--combos-at-a-glance)).
 - **Knobs speed up:** turn slowly for fine steps, fast to sweep.
-- **LATCH ON:** a key starts its note, the same key again stops it.
+- **LATCH ON:** a key starts its note, the same key again stops it. **Hold SEL + OCT+** switches the selected track's
+  LATCH on or off from any page (off lets go of all its latched notes).
 - **Saving is automatic.** When the sequencer is stopped and everything is silent, your work saves itself, and it comes
   back at power-on as you left it. A latched note never goes silent: the header says `SAVES WHEN SILENT` until you let
   it go.
@@ -74,7 +75,7 @@ across the stereo field.
 | MIXER 2 | PAN | TYPE | POS | |
 
 - **TYPE** (MIXER 2): the track filter is a low-pass (`LP`), high-pass (`HP`) or band-pass (`BP`). `LP` open (CUTOFF at the top) or `HP` open (CUTOFF at the bottom) means no filtering. A band-pass is gentle at RESONANCE 0 and narrows as you turn it up.
-- **POS** (MIXER 2): `PRE`: the effect sends hear the filtered sound (as GR!MM 1.0). `POST`: only the track's dry sound is filtered; GRAIN, DELAY and SPACE hear it unfiltered (a dark track with a bright reverb, say).
+- **POS** (MIXER 2): `PRE`: the effect sends hear the filtered sound (as before 1.3). `POST`: only the track's dry sound is filtered; GRAIN, DELAY and SPACE hear it unfiltered (a dark track with a bright reverb, say).
 
 <br clear="right">
 <p align="center"><img src="docs/manual/screens/mixer.png" alt="MIXER 1" width="300"></p>
@@ -251,6 +252,7 @@ Each track has its own **64-step** pattern; all four play together on one tempo 
 - **SELECT** moves the cursor; **hold SEQ + turn SELECT** sets the length. **PRESETS** sets the tempo.
 - **Stopped + REC:** each key fills a step and moves on. **Playing + REC:** notes land on the nearest step.
 - **Step locks:** hold **SEL** and turn a knob to lock that value to the step. **SEL + OCT−** clears them.
+- **Hold REC ~1 s:** clears the selected track's pattern (undoable).
 - **Hold SEQ + a white key** (all undoable):
 
 | key 1 | key 2 | key 3 | key 4 | key 5 | key 6 | key 7 | key 8 |
@@ -357,17 +359,17 @@ FREEZE is a toggle: tap it to hold the grain cloud, tap again to let go.
 
 A track can play by itself: random notes of the **SCALE** (with chord mode on: random chords, the track's chord on each), on the tempo (or the MIDI clock it follows, SYSTEM 2's CLOCK), whether the sequencer plays or not. It rests now and then and varies its note lengths, so it breathes, and every note gets a volume and an attack of its own. Each track has its own **MODE**, **OCTAVE** and **RANGE**.
 
-| Hold FX + | F#3 | G#3 | A#3 | C#4 | D#4 | F#4 | G#4 | A#4 |
+| Hold FX + | F#2 | G#2 | A#2 | C#3 | D#3 | F#3 | G#3 | A#3 |
 |---|---|---|---|---|---|---|---|---|
 | | T1 | T2 | T3 | T4 | MODE | OCTAVE − | OCTAVE + | RANGE |
 
-- **A track's key (F#3, G#3, A#3, C#4), tapped:** GENERATE on or off for that track. It switches when you let the key go, and only if you pressed no other key while holding it.
-- **D#4, F#4, G#4, A#4 with a track's key held:** that track's MODE, OCTAVE or RANGE only (its on/off stays as it is). **Alone** (no track's key held): all four tracks together, all set to the same value (the next one after T1's).
+- **A track's key (F#2, G#2, A#2, C#3), tapped:** GENERATE on or off for that track. It switches when you let the key go, and only if you pressed no other key while holding it.
+- **D#3, F#3, G#3, A#3 with a track's key held:** that track's MODE, OCTAVE or RANGE only (its on/off stays as it is). **Alone** (no track's key held): all four tracks together, all set to the same value (the next one after T1's).
 - **MODE** steps through **DRIFT → PULSE → STORM**:
   - **DRIFT:** few notes, long (2–8 beats), soft, slow attacks: ambient.
   - **PULSE:** a melody on eighths, mostly on the beat, walking the scale in small steps: steadier.
   - **STORM:** dense, short sixteenths, the volume swinging wildly.
-- **OCTAVE** (−3 … +3) is the generator's own, separate from the keyboard's OCT: at 0 its notes start at C3. **RANGE** (1, 2 or 3 OCT) is how far up from there it may play: OCTAVE 0 with RANGE 2 plays C3–B4.
+- **OCTAVE** (−3 … +3) is the generator's own, separate from the keyboard's OCT: at 0 its notes start at C3. **RANGE** (1, 2 or 3 OCT) is how far up from there it may play: OCTAVE 0 with RANGE 2 plays C3–B4; OCTAVE −1 takes it down among the drones.
 - Every note stays in the SCALE and in the range. A chord's notes that would go past the range are folded back into it by whole octaves (they stay in the scale and the chord stays the same chord, voiced closer); two notes landing on the same pitch sound once.
 - The header shows what changed for a moment: `T1 GENERATE PULSE`, `T1 GENERATE OFF`, `T2 PULSE`, `T1 OCT -1`, `ALL RANGE 2 OCT`.
 - **The PERFORM screen** (FX held) shows a tile for each track under the tricks: lit while it generates, its MODE, its range (`C3-B4`), and a small square that flashes each time it plays a note.
@@ -382,7 +384,8 @@ A track can play by itself: random notes of the **SCALE** (with chord mode on: r
 
 ## 11 · System: hold HOME
 
-**Hold HOME** for **SYSTEM**; press HOME again for **SYSTEM 2**. These settings belong to the FM-1, not the project.
+**Hold HOME** for **SYSTEM**; press HOME again for **SYSTEM 2**, again for **SYSTEM 3**. These settings belong to the
+FM-1, not the project.
 
 | SYSTEM | SYSTEM 2 |
 |---|---|
@@ -391,7 +394,8 @@ A track can play by itself: random notes of the **SCALE** (with chord mode on: r
 | Page | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 |---|---|---|---|---|
 | SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF |
-| SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES | |
+| SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES | CLOCK (INT, I+OUT, USB, TRS) |
+| SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | | | |
 
 - **COLOUR:** pick the one that matches your FM-1.
 - **MIDI CHANNEL:** `1-4` puts T1–T4 on channels 1–4 (or higher, up to `13-16`); `ALL > SEL` sends everything to the
@@ -400,7 +404,31 @@ A track can play by itself: random notes of the **SCALE** (with chord mode on: r
 - **MIDI LEARN:** set LEARN, turn a knob on the FM-1, then move one on your controller. Up to 32 links.
 - **SEQ MIDI OUT:** sends the sequencer's and the arpeggiator's notes out over USB.
 - **SAMPLES:** CLEAR and **OCT+** empties all four sample slots (stop and let the sound die out first).
-- SYSTEM 2 shows the processor load, NOW and PEAK. OCT− + OCT+ together resets PEAK.
+- **CLOCK:** `INT`, the FM-1's own tempo. `I+OUT`, the same, and its MIDI clock out over USB (START, STOP and 24 pulses a
+  beat) for a DAW or another instrument to follow. `USB` or `TRS`: the FM-1 follows a MIDI clock from there: START plays
+  from step 1, CONTINUE from where STOP left it, STOP stops; HOME shows `EXT` and the tempo. Without pulses for half a
+  second it goes on at its own tempo.
+- **LATCH** (SYSTEM 3): `FROM SOUND`, a sound you load brings the LATCH it was saved with (the seven Holvut sounds latch).
+  `ALWAYS OFF`, a sound you load sets the track's LATCH off; EDIT's LATCH and **SEL + OCT+** still switch it.
+- SYSTEM 2 shows the processor load, NOW and PEAK, and over it **USB REC DROPS**: gaps in the sound sent to a computer
+  over USB (stopping or pausing your DAW adds to it too). OCT− + OCT+ together sets both to 0.
+
+### MIDI in
+
+USB, or the 3.5 mm TRS jack with a TRS-to-DIN MIDI adapter (type A). Notes on MIDI CHANNEL's channels play the tracks as
+their keys do, a CC its MIDI LEARN link, and the MIDI clock is followed when CLOCK says so. A DAW's ALL NOTES OFF lets
+go of the notes MIDI holds (a latched note stays). Aftertouch pushes a Holvut track's FEEDBACK (see Holvut).
+
+### Good to know
+
+- **CPU FULL: NOTE DROPPED** in the header: the FM-1 had more to play than it can; it let go of a fading or a generated
+  note first, your held and latched notes last.
+- **WATCHDOG RESET** or **LOW VOLTAGE RESET** in the header after a start: why it restarted (the power dipped, or
+  it stood still).
+- A delay that feeds back for ever, SPACE on INF or a frozen GRAIN never fall silent: saves, sample uploads and the
+  editor's writes go ahead 10 s after the last note anyway.
+- While a computer records the FM-1 over USB, it saves only after you have left it alone for a minute (a save stops
+  the sound ~50 ms), and at once when the recording stops.
 
 ### USB audio
 
@@ -437,16 +465,19 @@ The seven Holvut sounds hold their notes (LATCH) and start with DRONE on.
 |---|---|---|
 | EDIT | OCT− / OCT+ | Undo / redo |
 | FX | white keys 1–8 | PERFORM: FREEZE … STUTTER |
+| FX | black keys | GENERATE: T1–T4 on / off, MODE, OCTAVE, RANGE |
 | SEL | (alone, let go) | Chord mode on / off |
 | SEL | a knob (sequencer pages) | Lock that value to the step |
 | SEL | OCT− (sequencer pages) | Clear the step's locks |
+| SEL | OCT+ | The track's LATCH on / off |
 | SEQ | white keys 1–8 | Sequencer tools |
 | SEQ | turn SELECT | Pattern length |
 | SAVE | white keys 1–4 / 5–8 | Recall / save slots A–D |
 | GLO | white keys 1–4 / 5–8 | Mute / solo T1–T4 |
 | ARP | (alone) | Arpeggiator on / off |
+| REC | (alone, ~1 s) | Clear the track's pattern |
 | HOME | (alone) | SYSTEM |
-| — | OCT− + OCT+ | Reset CPU PEAK |
+| — | OCT− + OCT+ | Reset CPU PEAK and USB REC DROPS |
 
 ---
 
@@ -462,7 +493,9 @@ runs the firmware itself.
   compare, A/B and morph, randomize.
 - **Sequencer:** a step grid, a piano roll or a typed list; MIDI files in and out.
 - **Library:** the factory sounds and your 64 slots: load, name, store, import and export.
-- **Samples:** WAVs into the four slots. **Backup:** everything in one file, and restore.
+- **Samples:** WAVs into the four slots. **Backup:** everything in one file, the samples too, and restore.
+  **Projects:** each slot A–D saved to a file of its own and loaded back, on a computer or an Android phone.
+- **Settings:** MIDI CHANNEL, CLOCK and SYSTEM 3's LATCH, read and written.
 
 The FM-1 only writes to its memory while the sequencer is stopped and nothing sounds. If the editor asks you to stop
 the sequencer while nothing plays, a latched note is still howling: set LATCH OFF, let it die out, then store.

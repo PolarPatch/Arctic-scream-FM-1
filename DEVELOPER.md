@@ -156,6 +156,25 @@ and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.m
   - `web/editor_web.c` exports `web_seq_state` for the playhead when the page itself plays.
   - `web/worklet.js` keeps only the newest SEQ SET per track while one is waiting.
 
+- **GR!MM V2.0 in 1.3** (cherry-picked onto the branch with `-x`, so `git log` names each upstream commit; local tags
+  `grimm-v1.0`, `grimm-v2.0` are GR!MM's own, kept apart from ours so a `v*` push never starts our release):
+  - Taken: the RAM savings (steps as bytes, TAPE's curve in 16 bits), the CPU meter's split (`tools/fm1_cpu.py`), MIDI
+    CHANNEL's CH n > SEL, TRS MIDI IN (`midi_uart.c`), the MIDI clock (`clock.c`), the track filter's TYPE and POS,
+    MASTER and DRIVE (`master.c`), SYSTEM 3's LATCH, SEL + OCT+, REC held, the editor's settings and sample backups,
+    the voice rule and PHYS at most four, GENERATE (`gen.c`), the gain staging, and from rc9–rc12: the USB audio ring
+    (`uac_ring.h`), the saves under endless tails, no flash step while a computer records, the reset reasons, values
+    loaded within range, the overload guard's order.
+  - Not taken: the choirs, MIXER 1's six tiles and TAPE per track, PHASE's LINE 2, GLIDE, VELOCITY, the new boot and
+    HOME pictures, the 24-bit output path (`PB`) and the rest of 4a25a02.
+  - Ours, where they met: the editor's commands CPU and FX are **25** and **26** (24 is SEQ); the sample objects are
+    **5–8** (our 47 factory sounds end at 126); the track filter's TYPE and POS sit in bits 4–6 of a track's byte 45 (ARP's
+    RATE, 0..8; GR!MM's byte 32 is DRONE's BORGA here), no size change; MASTER and DRIVE in the working project, version
+    **8** (ours; 7 is 1.0–1.2); the page enum keeps DRONE at 25, then MASTER 26, DRIVE 27, SYSTEM 3 28 (MIDI LEARN's
+    links); DRIVE's gain is `drv_gain` (DRONE has a `dr_gain`); DRIVE's level table is made for our quieter mix
+    (`tools/gen_drive_levels.py`, RMS 1000–4000).
+  - GR!MM's tests run with `GRIMM_PLAIN=1` (host mode: the plain VA tracks GR!MM starts with, not ICE WRAITH) and our
+    keys an octave down; `tests/compat.c`'s saves are Arctic Scream 1.2's (`tests/data/a1.2-*`).
+
 ## Build and test
 
 ```sh
@@ -168,6 +187,8 @@ build/host/grimm OUT script.txt FPS      # script mode: "3100 keys 0x80", "3500 
 # web: the demo, the editor, the cheat sheet into web/dist, then the tests (wasm against host mode, the editor's core)
 source ~/emsdk/emsdk_env.sh; bash web/build_web.sh
 node web/test_web.mjs                     # must say "test_web: all ok"
+
+# tests/run_host.sh also runs GR!MM's tests: clock, fx, quick, latch, gen, level, the USB ring, rc11 (all "passed")
 
 # stress test, seeds 1-3: each must print STRESS OK (see tests/stress.sh for the build line)
 python3 tests/stress_gen.py 1 build/stress/script.txt build/stress/checks.txt

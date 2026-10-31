@@ -1267,9 +1267,9 @@ static void hd_say(const char *m)               /* the header says m a moment (c
     hd_until = fm1_ms + 1500u;
 }
 
-/* (V2) GENERATE's keys, FX held: the black keys from F#3 (BK's): T1 .. T4's tapped (let go, no other key pressed
- * meanwhile): on, off; D#4 MODE, F#4 OCTAVE down, G#4 up, A#4 RANGE: for the tracks' keys held, none held: all four
- * (the same for all: the first one's next) */
+/* (V2) GENERATE's keys, FX held: the black keys from F#2 (Arctic Scream's keys; BK's): T1 .. T4's tapped (let go, no
+ * other key pressed meanwhile): on, off; D#3 MODE, F#3 OCTAVE down, G#3 up, A#3 RANGE: for the tracks' keys held, none
+ * held: all four (the same for all: the first one's next) */
 static const uint8_t BK[8] = {1, 3, 5, 8, 10, 13, 15, 17};
 static uint8_t gen_kd, gen_ku;                  /* the tracks' keys down (FX held), used with another (bit t) */
 static int32_t gen_bk(uint32_t k)               /* key k: GENERATE's key (BK's), -1 none */

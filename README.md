@@ -29,6 +29,13 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
   - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
   - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
+- **New in 1.3, from GR!MM V2.0:**
+  - **GENERATE:** hold FX and tap a black key, and that track plays by itself, always in its SCALE (in chords with chord mode on), in three moods: DRIFT, PULSE and STORM. It sits beside DRONE: one moves the sound, the other the notes.
+  - **MASTER and DRIVE:** two new FX pages. MASTER is a filter on the whole mix (LP, HP or BP, before the effects, after the reverb or at the very end). DRIVE's AMOUNT tears the whole mix (SOFT, FUZZ, CLIP or FOLD), each type about as loud as the others, a limiter after it.
+  - **The track filter** gets a TYPE (LP, HP, BP) and a POS (PRE or POST the effects) on MIXER 2.
+  - **MIDI clock** in (USB or the TRS jack) and out (USB), **MIDI in on the TRS jack** with a TRS-to-DIN adapter, and one MIDI channel to the selected track (CH n > SEL).
+  - **6 dB of headroom and a safety limiter**, so loud screams no longer clip; a drone keeps its voices when another track plays a big chord.
+  - LATCH from any page (SEL + OCT+), REC held to clear a pattern, backups with your samples, cleaner USB recording (USB REC DROPS on SYSTEM 2), and saves that no longer wait for ever under a delay that feeds back for ever.
 - **DRONE, a sound that lives on its own.** Press LFO twice. The knobs have North Sami names:
   - **BORGA** (snowdrift): four slow random walks move the filter, the source's shape and its own most natural knob, and the reverb's distance. Each voice drifts a few cents and breathes, so a held chord sounds like a choir. It never repeats.
   - **STOARBMA** (storm): the tension. It opens the filter, raises resonance and drive, spreads the voices and makes the walks deeper and faster.
@@ -84,7 +91,7 @@ It installs over the FM-1's own firmware, GR!MM or any other FM-1 firmware. Don'
 
 ## Credits
 
-- **[GR!MM](https://github.com/GRiMMBIENT/grimm)** (GPL-3.0): the firmware this is built on, and everything GR!MM itself builds on: Felucca, Dinghy, SLOOP, X0X, msfa, DaisySP, Rings and CrispyZebra.
+- **[GR!MM](https://github.com/GRiMMBIENT/grimm)** (GPL-3.0): the firmware this is built on, and everything GR!MM itself builds on: Felucca, Dinghy, SLOOP, X0X, msfa, DaisySP, Rings and CrispyZebra. 1.3 brings in much of GR!MM V2.0: GENERATE, MASTER, DRIVE, the track filter's TYPE and POS, the MIDI clock and TRS MIDI IN, the gain staging and its fixes.
 - **[Audrey II](https://github.com/Synthux-Academy/Audrey-II)** and **[Audrey Touch](https://github.com/Synthux-Academy/AudreyTouch)** by Nick Donaldson (Infrasonic Audio) and Synthux Academy (MIT): the design behind Holvut and the HORROR scale. No code is copied.
 - **[Jangada](https://github.com/zednaked/jangada)** by zednaked (GPL-3.0): the idea behind the DRONE page (its EVOL, TENS and RAMP). Written from scratch; no code is copied.
 - **[BlueWatch](https://github.com/PolarPatch/BlueWatch)** by PolarPatch: the colour palette.
