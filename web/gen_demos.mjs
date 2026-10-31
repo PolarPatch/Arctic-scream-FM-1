@@ -67,7 +67,7 @@ const DEMOS = [
     seqs: [[1, seq(2, ["C5*90", "-", "G4*60", "E5*80", "-", "B4*50", "-", "G5*40x2", "D5*80", "-", "A4*60", "-", "E5*70",
                        "-", "C5*50x2", "-"])]],
     latch: [[0, ["C3", "G3", "D4"]], [2, ["G3"]]], play: true },
-  { id: "A5", name: "III", sub: "a horrorscape: a cluster that wakes", tempo: 60,
+  { id: "A5", name: "III", sub: "golbma bohcco", tempo: 60,
     tracks: [[0, "III"], [1, "UNDER THE ICE", { borga: 40 }], [2, "STARLIGHT"]],
     seqs: [[2, seq(2, ["-", "-", "-", "-", "C6*30", "-", "-", "-", "-", "-", "C#6*25", "-", "-", "-", "-", "-",
                        "-", "-", "G5*20", "-", "-", "-", "-", "-", "-", "-", "-", "F#5*25", "-", "-", "-", "-"])]],
