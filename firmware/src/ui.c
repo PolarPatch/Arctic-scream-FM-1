@@ -500,12 +500,12 @@ static void ui_tint(uint32_t pg)
     case PG_MIX1: case PG_MIX2: case PG_TRACK: a = BW_CYAN, b = BW_GREEN, c = BW_VIOLET, x = BW_MAGENTA; break;
     case PG_SONG: a = BW_GOLD, b = BW_MAGENTA, c = BW_PERIWINKLE, x = BW_CYAN; break;
     case PG_SOUNDS: case PG_PROJECTS: a = BW_BLUE, b = BW_AMBER, c = BW_TEAL, x = BW_MAGENTA; break;
-    case PG_SYSTEM: case PG_SYS2: a = BW_MAGENTA, b = BW_CYAN, c = BW_AMBER, x = BW_CYAN; break;
+    case PG_SYSTEM: case PG_SYS2: a = BW_MAGENTA, b = BW_CYAN, c = BW_BLUE, x = BW_CYAN; break;
     default:
         ui_d = UI_D0, ui_m = UI_M0, ui_l = UI_L0, ui_acc = ui_hd = ui_acc_user;
         return;
     }
-    ui_hd = a, ui_l = a, ui_m = ui_mix(UI_K, b, 3, 4), ui_d = ui_mix(UI_K, c, 2, 5), ui_acc = x;
+    ui_hd = a, ui_l = a, ui_m = ui_mix(UI_K, b, 3, 4), ui_d = ui_mix(UI_K, c, 1, 5), ui_acc = x;   /* (dark: the light on it reads, 3.8:1 or more) */
 }
 static void ui_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c) { cv_line(x0 - ui_ox, y0, x1 - ui_ox, y1, c); }
 static int ui_in(int32_t x, int32_t y, int32_t w, int32_t h)   /* does (x, y, w, h) reach into the region being drawn */
