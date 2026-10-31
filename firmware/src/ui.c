@@ -1338,7 +1338,7 @@ static void pic_drive(void)                     /* (V2) Drive: a sine through it
                                       -28378, -30792, -32270, -32767, -32270, -30792, -28378, -25102, -21063, -16384,
                                       -11207, -5690, 0};
     uint32_t ty = (uint32_t)clamp(dr_type, 0, NDTYPE - 1);
-    int32_t a = clamp(dr_amt, 0, 127), g = dr_gain(ty, a), lv = dr_level(ty, a), i;
+    int32_t a = clamp(dr_amt, 0, 127), g = drv_gain(ty, a), lv = dr_level(ty, a), i;
     char r[8];
     ui_3(r, ui_pc(a));
     ui_caption(DT_NAME[ty], a ? r : "OFF");

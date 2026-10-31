@@ -91,7 +91,7 @@ static void master_filter(int32_t *out, uint32_t n, uint32_t at)   /* audio: MAS
     mf_cs[at] = cs;
 }
 
-static int32_t dr_gain(uint32_t ty, int32_t a)  /* AMOUNT a's gain into TYPE ty (Q8): SOFT 2^(a / 42.7), ~8x; the others
+static int32_t drv_gain(uint32_t ty, int32_t a)  /* (drv_: DRONE has a dr_gain) AMOUNT a's gain into TYPE ty (Q8): SOFT 2^(a / 42.7), ~8x; the others
                                                  * 2^(a / 21.3), ~62x */
 {
     return (int32_t)(pow2_q16(a * 9 / (ty == DT_SOFT ? 2 : 1)) >> 8);
@@ -139,7 +139,7 @@ static void drive_render(int32_t *out, uint32_t n)   /* audio: DRIVE and its lim
         dr_env = dr_lp[0] = dr_lp[1] = 0;
         return;
     }
-    g = dr_gain(ty, a), lv = dr_level(ty, a);
+    g = drv_gain(ty, a), lv = dr_level(ty, a);
     tc = dr_tone >= 127 ? 32768 : (int32_t)(pow2_q16((clamp(dr_tone, 0, 127) - 127) * 12) >> 1) + 160;   /* (Q15:
                                                  * open, then down an octave every 16 steps, ~100 Hz at 0) */
     mx = clamp(dr_mix, 0, 127) * 258;           /* (Q15: 127 is 32766, the dry all but gone) */
