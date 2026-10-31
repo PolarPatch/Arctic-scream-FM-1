@@ -33,7 +33,7 @@ from fm1_sample_upload import (BUSY, BUSY_TEXT, CMD_BEGIN, CMD_END, CMD_ERASE, C
 
 INFO, GET, PUT, TRACK = 20, 21, 22, 23
 BEGIN, DATA, COMMIT, ABORT = 0, 1, 2, 3
-O_SET, O_SLOT, O_SND, O_FACT, O_SMP = 0, 1, 16, 80, 120   # (O_SMP: GR!MM V2, the sample slots, GET only)
+O_SET, O_SLOT, O_SND, O_FACT, O_SMP = 0, 1, 16, 80, 5   # (O_SMP: GR!MM V2, the sample slots 5..8, GET only)
 SET_V1, SET_V2 = 168, 169                       # the settings of GR!MM 1.0 (version 1), of V2's version 2: a V2 takes them
 SMP_RC = {1: "bad arguments", 2: "flash erase failed", 3: "flash write failed", 4: "out of order", 5: "header or CRC",
           7: "no flash"}
@@ -78,8 +78,8 @@ def info(link):
     d = dict(proto=r[0], fmt=r[1], firmware=bytes(r[2:j]).decode("ascii", "replace"), sounds=r[i],
              sound_size=r[i + 1], factory=r[i + 2], slot_size=rd35(r[i + 3:i + 8]), set_size=rd35(r[i + 8:i + 13]),
              sample_slots=r[i + 13], samples_used=r[i + 14])
-    if d["proto"] not in (1, 2):
-        sys.exit(f"the FM-1 speaks editor protocol {d['proto']}; this tool knows 1 and 2")
+    if d["proto"] not in (1, 2, 3):
+        sys.exit(f"the FM-1 speaks editor protocol {d['proto']}; this tool knows 1 to 3")
     return d
 
 
