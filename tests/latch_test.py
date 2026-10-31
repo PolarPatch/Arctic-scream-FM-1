@@ -126,7 +126,8 @@ p = run("midilatch", ev, 1700, ENV[0])
 check("LATCH ON: a MIDI note latches; ALL NOTES OFF leaves it; the note again lets it go",
       p[900]["notes"] == ["1:64"] and p[1200]["notes"] == ["1:64"] and not p[1600]["notes"],
       {t: p[t]["notes"] for t in sorted(p)})
-# (V2) whichever latched a note (Arctic Scream: the MIDI notes an octave down, as its keys play), its key or the MIDI note again lets it go; LATCH OFF lets go of all the track's notes
+# (V2) whichever latched a note, its key or the MIDI note again lets it go; LATCH OFF lets go of all the track's notes
+# (Arctic Scream: the MIDI notes an octave down, as its keys play them)
 # (a DAW's notes on channel 1: T1; its STOP's note-offs ignored, as LATCH ON does)
 ev = SEL_OCT(300) + [(600, "midi 0x90 48 100"), (650, "midi 0x80 48 0"), (700, "midi 0x90 52 100"),
                      (750, "midi 0x80 52 0"), (900, "probe")] + tap(1000, C4) + [(1300, "probe")]

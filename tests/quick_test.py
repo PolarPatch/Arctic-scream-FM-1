@@ -218,12 +218,12 @@ ev = [(300, "btn 6"), (350, "btn 6"), (400, "enc 2 5"), (600, f"keys {SIX:#x}"),
 pr, _ = run("voicephys", ev, 1000)
 check("PHYS: at most four notes still (the fifth, sixth not played)", n1(pr[900], 1) == 4, pr[900]["notes"])
 ev = [(300, "down 3"), (350, "btn 1"), (400, "up 3"), (500, "keys 0x10"), (560, "keys 0"), (700, "enc 1 1"),
-      (900, f"keys {SIX:#x}"), (1200, "keys 0"), (1500, "probe")]   # (T1's drone; T2: six keys, five played, let go)
+      (900, f"keys {SIX:#x}"), (1200, "keys 0"), (1500, "probe")]   # (T1's drone, A2 here; T2: six keys, five played)
 pr, out = run("voiceecho", ev, 1600)
 mo = [ln.split("MIDI out ")[1].split() for ln in out.splitlines() if " MIDI out 9" in ln or " MIDI out 8" in ln]
 on2 = sorted(m[1] for m in mo if m[0] == "91" and m[2] != "0")
 off2 = sorted(m[1] for m in mo if m[0] == "81" or (m[0] == "91" and m[2] == "0"))
 check("a key's note not played (no voice): no note-on out over USB either, so none is left on out there",
-      len(on2) == 5 and on2 == off2 and pr[1500]["notes"] == ["1:57"], f"on {on2} off {off2} {pr[1500]['notes']}")
+      len(on2) == 5 and on2 == off2 and pr[1500]["notes"] == ["1:45"], f"on {on2} off {off2} {pr[1500]['notes']}")
 print("quick test: passed" if not bad else "quick test: FAILED")
 sys.exit(1 if bad else 0)
