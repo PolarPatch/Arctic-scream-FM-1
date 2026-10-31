@@ -107,6 +107,7 @@ a { color: inherit; }
 .demos { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); }
 .demo { all: unset; box-sizing: border-box; cursor: pointer; padding: 10px 12px 12px; background: rgba(10, 13, 18, .95);
         min-height: 84px; display: flex; flex-direction: column; gap: 4px; }
+.demo:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .demo:hover { background: #0f1620; }
 .demo:focus-visible { outline: 2px solid var(--fg); outline-offset: -2px; }
 .demo .id { font: 400 15px var(--pix); color: var(--dim); }
@@ -276,7 +277,7 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
 <main>
 <section class="hero">
   <div class="wrap">
-    <div class="kicker">DRONE FIRMWARE FOR THE M-VAVE FM-1 · v1.1</div>
+    <div class="kicker">DRONE FIRMWARE FOR THE M-VAVE FM-1 · v1.2</div>
     <div class="head">
       <h1 aria-label="Arctic Scream"><span class="gl" data-t="ARCTIC">ARCTIC</span><span class="gl" data-t="SCREAM">SCREAM</span></h1>
       <p>Dark ambient drones and feedback screams from the arctic tundra. Slow, cold drones that hum for minutes, and a
@@ -340,7 +341,7 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
         <dl>
           <dt><kbd>Z</kbd>–<kbd>/</kbd> <kbd>S</kbd>–<kbd>'</kbd></dt><dd>The keys F2 to A♯3. An octave down, for drones.</dd>
           <dt><kbd>Q</kbd>–<kbd>O</kbd></dt><dd>B3 to G4, in semitones.</dd>
-          <dt>LATCH ON</dt><dd>Press a key once to start a note, again to stop it. The six Holvut sounds latch.</dd>
+          <dt>LATCH ON</dt><dd>Press a key once to start a note, again to stop it. The seven Holvut sounds latch.</dd>
           <dt>hold SEL</dt><dd>Chord mode: one key, a whole chord.</dd>
           <dt>hold ARP</dt><dd>The arpeggiator plays the keys held (with LATCH: they stay).</dd>
           <dt>hold GLO + a key</dt><dd>White keys 1–4 mute T1–T4, 5–8 solo them.</dd>
@@ -366,7 +367,7 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
           <dt>KNOB 1–4</dt><dd>The four values at the bottom of the screen, on every page.</dd>
           <dt><kbd>←</kbd> <kbd>→</kbd> ALGORITHM</dt><dd>Picks the track, T1–T4. Every page shows that track.</dd>
           <dt><kbd>↑</kbd> <kbd>↓</kbd> SELECT</dt><dd>HOME: the tempo. The sequencer: the cursor.</dd>
-          <dt>PRESETS</dt><dd>The next sound, by category: 46 factory sounds with arctic names.</dd>
+          <dt>PRESETS</dt><dd>The next sound, by category: 47 factory sounds with arctic names.</dd>
           <dt>MASTER</dt><dd>The volume.</dd>
           <dt><kbd>[</kbd> <kbd>]</kbd> OCT− OCT+</dt><dd>Octave down and up. In SAVE's pages: back, and do it.</dd>
         </dl>
@@ -532,7 +533,7 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
     <div class="sec-head">
       <div class="num" aria-hidden="true">06</div>
       <h2><span class="gl" data-t="STATUS">STATUS</span></h2>
-      <p>Version 1.1. Free and open source, GPL-3.0. Unofficial firmware, not made or endorsed by M-VAVE or GR!MM:
+      <p>Version 1.2. Free and open source, GPL-3.0. Unofficial firmware, not made or endorsed by M-VAVE or GR!MM:
         install at your own risk.</p>
     </div>
     <div class="status">

@@ -50,7 +50,8 @@ changes are Copyright (C) 2026 PolarPatch, GPL-3.0-only; everything else is as t
 | The DRONE page (`firmware/src/drone.c`; `ui.c` `pic_drone`; BORGA, STOARBMA, GOHCCAT, saved in a sound's and a track's spare bits, `store.c` `dr_spk`) | Its idea follows Jangada's DRONE page (<https://github.com/zednaked/jangada>, EVOL, TENS and RAMP: slow random walks per part, a tension macro, its rise in bars; zednaked, GPL-3.0), written anew for this firmware; none of its code is copied. The knobs' names are North Sami (from the dictionary at <https://sanit.oahpa.no/>) |
 | The page colours and the knobs' colours (`ui.c` `ui_tint`, `UI_KC`), BlueWatch's palette only; the track defaults for drones (`voices.c` `TRK_DEF`); the keys an octave down (`grimm.c` `KEY0`) | |
 | The saves' own magic ("ADPK", "ADLS"; `store.c`) and a track of 56 B (Holvut's four values at 52..55) | |
-| The web page's look (`web/index.html`) | |
+| The web page's look (`web/index.html`, `web/site.js`: the glitching titles, after BlueWatch's CONFIG title) and its demos A1–A5 (`web/gen_demos.mjs`, `web/demos.json`; MANDALORIA is PolarPatch's own sound) | |
+| The manual `MANUAL.md`, written anew for Arctic Scream (its order and many of its facts follow GR!MM's manual), its banner `docs/manual/banner.png`, and the screens `docs/manual/screens/`, rendered from this firmware by `tools/make_screens.py` | `docs/manual/screens/boot.png` shows the PolarPatch logo (below) |
 | `tools/gen_logo.py` (its output `firmware/gen/polarpatch_logo.h`) | |
 
 **The PolarPatch logo** (`assets/polarpatch-logo.png`, and in the firmware as `firmware/gen/polarpatch_logo.h`, in the
@@ -82,7 +83,7 @@ Copyright (C) 2026 GR!MM, GPL-3.0-only, unless a line says otherwise.
 | The track filter (step 23, HOME's CUTOFF and RESONANCE) and the FM editor (step 24, FM ALGO and FM OP: each track its own patch) in `firmware/src/grimm.c`, `voices.c`, `fm.c` (GR!MM changes) and `ui.c` | The FM ALGO drawing follows the 32 algorithms' wiring in `fm6_core.c` (msfa, below) |
 | The battery icon (step 26a2): `batt_poll` in `firmware/src/grimm.c`, `ui_bat_draw` in `ui.c` | The thresholds (531, 561, 591 on ADC channel 3) are the stock firmware's, as Felucca has them |
 | The editor's sound names, live TRACK, the factory samples' install and RESTORE (steps 26b2, 26c): `firmware/src/editor.c`, `store.c`, `samples.c`, `grimm.c`, `web/editor*.js` | |
-| `README.md`, `MANUAL.md`, `docs/BUILDING.md`, `docs/EDITOR_PROTOCOL.md`, `docs/screens/` (rendered from the firmware by host mode), `docs/ui-concept/` | |
+| `docs/BUILDING.md`, `docs/EDITOR_PROTOCOL.md`, `docs/ui-concept/`; the first versions of `README.md` and `MANUAL.md` | |
 
 ## The factory samples
 

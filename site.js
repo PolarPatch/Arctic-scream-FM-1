@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 PolarPatch
-// Arctic Scream p0larpatch: the demo page around the panel (panel.js): the demos A1-A4
+// Arctic Scream p0larpatch: the demo page around the panel (panel.js): the demos A1-A5
 // (web/demos.json, made by web/gen_demos.mjs) and the sequencer's state beside the panel.
 
 import "./glitch.js";                                    // (the glitching titles)

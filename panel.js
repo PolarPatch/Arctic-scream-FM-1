@@ -20,7 +20,7 @@ const STORE = "grimm-web-settings";
 
 let node = null, btnMask = 0, keyMask = 0, latched = 0, master = 700;
 const send = (m) => { if (node) node.port.postMessage(m); };
-// (Arctic Scream p0larpatch) the page around the panel: its demos (A1-A4) send the editor's frames and tap keys; it
+// (Arctic Scream p0larpatch) the page around the panel: its demos (A1-A5) send the editor's frames and tap keys; it
 // hears the sequencer's state (bit 28 playing, 7 bits a track: its step + 1)
 let started = null;
 window.fm1 = {
