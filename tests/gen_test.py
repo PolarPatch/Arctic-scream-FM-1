@@ -218,7 +218,7 @@ if OLD:
     check("one track generating (STORM, chord mode on): to the byte as before",
           (OUT / "one-new.wav").read_bytes() == (OUT / "one-old.wav").read_bytes())
 
-# a SAMPLE track's notes: up to its loop (URCHIN, 6.64 s: ~1275 ticks at 120 BPM), past STORM's longest (48 ticks); a VA
+# a SAMPLE track's notes: up to its loop (a full slot, 6.64 s: ~1275 ticks at 120 BPM), past STORM's longest (48 ticks); a VA
 # track's: STORM's
 SAMPLE = [(300, "btn 6"), (400, "btn 6"), (500, "enc 2 2"), (600, "btn 8")]
 for src, ev in (("SAMPLE", SAMPLE), ("VA", [])):
@@ -226,7 +226,7 @@ for src, ev in (("SAMPLE", SAMPLE), ("VA", [])):
              [(3000 + 50 * i, "probe") for i in range(600)], 33100)
     mx = max(p["left"][0] for p in pr.values())
     if src == "SAMPLE":                         # (Arctic Scream has no factory samples: slot 1 empty, nothing to loop;
-        pass                                    # GR!MM's check, on URCHIN, left out)
+        pass                                    # the check on a factory sample left out)
     else:
         check(f"STORM on a VA track: the MODE's lengths (longest seen {mx} ticks, at most 48)", 0 < mx <= 48)
 

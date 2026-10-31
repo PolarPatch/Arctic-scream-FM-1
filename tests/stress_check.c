@@ -450,8 +450,9 @@ static void stress_fsamples(void)               /* x_editor: power-on's factory 
         stress_fail("x_editor: RESTORE did not write all four", st_sxn);
     for (k = 0; k < SMP_SLOTS; k++)
         while (smp[k].state == SS_SCAN) smp_scan(k);
-    if (!smp[0].ready || strcmp(smp[0].name, "URCHIN") || !smp[3].ready || strcmp(smp[3].name, "M-SOFT"))
-        stress_fail("x_editor: the factory samples do not check out", 0);
+    for (k = 0; k < SMP_FACT_N; k++)
+        if (!smp[k].ready || strncmp(smp[k].name, (const char *)SMP_FACT_HDR[k] + 8, 8u))   /* (its name: header 8..15) */
+            stress_fail("x_editor: the factory samples do not check out (slot)", k);
 #endif
     memcpy(fake_flash, keep, sizeof keep);      /* (back as it was, checked and indexed again) */
     for (k = 0; k < SMP_SLOTS; k++) {

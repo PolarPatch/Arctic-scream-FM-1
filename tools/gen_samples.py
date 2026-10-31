@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import fm1_sample_upload as up  # noqa: E402
 
-# Arctic Scream p0larpatch: none for now (GR!MM's four, URCHIN, LEAVE, NIKOLAI and M-SOFT, are out: ~290 KB of flash).
+# Arctic Scream p0larpatch: none for now (no factory samples are built in).
 # Own ones go here, (file in assets/samples/, NAME up to 8), slot 1 first; a slot without one stays empty.
 SAMPLES = []
 ROOT_NOTE = 60                                  # C4, as an upload without a note in its name
