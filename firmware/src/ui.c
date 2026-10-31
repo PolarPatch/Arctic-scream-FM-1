@@ -1741,6 +1741,21 @@ static void sys2_cpu(void)                      /* SYSTEM 2's last row: CPU NOW,
     ui_text(PX0 + 6, 148, l, 1, UI_L);
     ui_text(PX0 + 210 - 8 * ui_len(r), 148, r, 1, UI_W);
 }
+static uint32_t sys2_drops(void)                /* (GR!MM rc9) the USB recording's dropouts since PEAK was set to 0 */
+{
+    static uint32_t base, seen;
+    if (seen != cpu_reset) seen = cpu_reset, base = usb_drops();
+    return usb_drops() - base;
+}
+static void sys2_usb(void)                      /* (rc9) the row over CPU's: USB REC DROPS (the computer recording the
+                                                 * FM-1 over USB: frames repeated or dropped; OCT- + OCT+: to 0 too) */
+{
+    char r[12];
+    put_u(r, sys2_drops());
+    ui_rect(PX0, 127, 216, 15, UI_D);
+    ui_text(PX0 + 6, 131, "USB REC DROPS", 1, UI_L);
+    ui_text(PX0 + 210 - 8 * ui_len(r), 131, r, 1, UI_W);
+}
 static void pic_sys2(void)
 {
     int32_t i, n = set.nlk;
@@ -1748,6 +1763,7 @@ static void pic_sys2(void)
     put_s(put_u(v, (uint32_t)n), "/32");
     ui_caption("MIDI LEARN: LINKS", v);
     sys2_cpu();
+    sys2_usb();
     if (!n) { ui_text(120 - 4 * 8, 84, "NO LINKS", 1, UI_M); return; }
     for (i = 0; i < 5 && i < n; i++) {
         int32_t y = 42 + i * 17;
@@ -1999,10 +2015,10 @@ static void ui_update(int32_t oct)
         ui_region(PX0 + (int32_t)dot_shown * 4, PY0, 8, 120, UI_K, ui_pic_draw);
     }
     if (page == PG_SYS2) {                      /* SYSTEM 2's CPU row (every ~0.5 s) */
-        st = pct10(cpu_now) << 16 ^ pct10(cpu_peak);
+        st = pct10(cpu_now) << 16 ^ pct10(cpu_peak) ^ sys2_drops() * 2654435761u;   /* (GR!MM rc9: and USB's drops) */
         if (st != stat_key) {
             stat_key = st;
-            ui_region(PX0, 144, 216, 15, UI_K, ui_pic_draw);
+            ui_region(PX0, 127, 216, 32, UI_K, ui_pic_draw);   /* (rc9: USB's row too) */
         }
     }
     for (k = 0; k < 4u; k++) {

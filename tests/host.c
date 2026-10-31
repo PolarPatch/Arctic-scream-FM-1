@@ -149,8 +149,12 @@ static int save_flash_erase(uint32_t i)
     if (i >= SAVE_NSECT) return -8;
     (void)save_flash(0);
     memset(fake_save[i], 0xFF, 4096u);
+    printf("%6u ms  flash sector %u erased (a save)\n", fm1_ms, i);   /* (tests/rc11_test.py: when) */
     return 0;
 }
+static uint32_t usb_drops(void) { return 0u; }   /* (GR!MM rc9: no USB audio here) */
+static uint32_t host_rec_from = 1, host_rec_to;   /* (GRIMM_USB_REC=FROM,TO: a computer reads the USB audio from FROM to TO ms) */
+static int usb_recording(void) { return fm1_ms >= host_rec_from && fm1_ms < host_rec_to; }
 static void compat_exit(void);                  /* (tests/compat.c) */
 static int save_flash_write(uint32_t i, uint32_t off, const void *p, uint32_t n)   /* NOR: a write only clears bits */
 {
@@ -534,6 +538,7 @@ int main(int argc, char **argv)
         fclose(f);
         host_store[0] = 1, host_store[1] = (uint8_t)n, host_store[2] = (uint8_t)(n >> 8);
     }
+    if (getenv("GRIMM_USB_REC")) sscanf(getenv("GRIMM_USB_REC"), "%u,%u", &host_rec_from, &host_rec_to);
     if (getenv("GRIMM_SAVE_IN")) {              /* (tests/compat.c: the save sectors an older GR!MM wrote) */
         FILE *f = fopen(getenv("GRIMM_SAVE_IN"), "rb");
         (void)save_flash(0);

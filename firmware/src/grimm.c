@@ -67,8 +67,10 @@
  *              again within 3 s to overwrite); the header shows the slots in use (store.c)
  *   autosave   the work (all of it: tracks, mixer, FX, tempo, sequences, slots) saves itself when stopped and untouched
  *              2.5 s, at most every 20 s, only if changed, never while playing nor while a voice sounds (a release, a
- *              latched note: SAVES WHEN SILENT, as SOUNDS' SAVE / CLEAR); at power-on it comes back as left. A watchdog
- *              restart says WATCHDOG RESET at boot (a fault: platform.c's red crash screen, its PC)
+ *              latched note: SAVES WHEN SILENT, as SOUNDS' SAVE / CLEAR); at power-on it comes back as left. (GR!MM
+ *              rc11) A computer recording the USB audio: the hands at rest a minute first (a save stops the key scan,
+ *              the LEDs and the stream for ~50 ms). A watchdog restart says WATCHDOG RESET at boot, a supply that
+ *              sagged LOW VOLTAGE RESET (a fault: platform.c's red crash screen, its PC)
  *   ARP        ARP (the track's: MODE UP, DOWN, UP-DOWN, RANDOM, AS PLAYED, CHORD; RATE 1/1 .. 1/32, 1/4T .. 1/16T of
  *              the tempo; OCTAVES 1..4; GATE 10..100 %); held: the track's arp on / off (no page change): its keys and
  *              MIDI notes (their chords) arpeggiated, on the sequencer's clock while it plays (arp.c)
@@ -692,26 +694,48 @@ static int voices_silent(void)                  /* no voice sounds: no note on (
         if (!voice_idle(v)) return 0;
     return 1;
 }
-static int quiet(void)                          /* nothing sounds, not even a release or an effect's tail */
+#define QUIET_TAIL_MS 10000u                    /* (GR!MM rc9) an effect still sounding this long after the last voice: as
+                                                 * quiet */
+static int quiet(void)                          /* nothing sounds, not even a release or an effect's tail (main loop) */
 {
-    return voices_silent() && tape_idle() && hall_idle() && grain_idle();   /* (TAPE's hiss is not a sound that
-                                                 * waits: it stops a moment) */
+    static uint32_t loud_t;                     /* (rc9) when a voice last sounded */
+    if (!voices_silent()) {
+        loud_t = fm1_ms;
+        return 0;
+    }
+    if (tape_idle() && hall_idle() && grain_idle()) return 1;   /* (TAPE's hiss is not a sound that waits: it stops a
+                                                 * moment) */
+    return fm1_ms - loud_t >= QUIET_TAIL_MS;    /* (rc9: a tail that never ends, DELAY's FEEDBACK past unity, SPACE's INF,
+                                                 * a GRAIN freeze: 10 s after the last voice the saves, uploads and the
+                                                 * editor's writes go on; the flash's ~50 ms stops it a moment. Before,
+                                                 * they waited for ever) */
 }
 /* audio: the overload guard. Blocks that run over their time (6 voices of the heaviest sources, chords, all the
  * effects) leave the main loop no time: the screen stops, then the watchdog restarts the FM-1. Eight blocks in a row
  * over their time (~46 ms behind, not a block near it: the key scan's interrupt counts in a block's time, the FX
- * layer's glowing keys too, and a near one is no harm): the oldest note (none: a release) fades out in ~10 ms; then
- * ~4 blocks' wait */
+ * layer's glowing keys too, and a near one is no harm): a voice fades out in ~10 ms; then ~4 blocks' wait. (GR!MM rc9)
+ * Which: a release first (the quietest), then the oldest note the sequencer, an arp or GENERATE played, the hands' (a
+ * latched drone) last; each counted (shed_n: the header says so, the main loop) */
+static volatile uint32_t shed_n;                /* audio: voices the guard let go */
 static void shed_voice(void)
 {
     static uint32_t hold;
-    uint32_t v = 0;
+    uint32_t v = NV, w, i;
+    int32_t lv = 0x7FFFFFFF;
     if (hold) { hold--; return; }
     if (cpu_over < 8u) return;
-    if (nlat) v = drop_oldest();
-    else
-        while (v < NV && (voice_idle(v) || vc[v].stage == ST_FADE)) v++;
-    if (v < NV) voice_fade(v);
+    for (w = 0; w < NV; w++)                    /* (a release: the quietest) */
+        if (vc[w].stage == ST_REL && !voice_latched(w) && voice_level(w) < lv) lv = voice_level(w), v = w;
+    if (v == NV) {
+        for (i = 0; i < nlat && lat_src[i] == SRC_KEY; i++)   /* (a note no hand plays: the oldest) */
+            ;
+        if (i < nlat) v = drop_at(i);
+        else if (nlat) v = drop_oldest();       /* (the hands' oldest) */
+        else
+            for (v = 0; v < NV && (voice_idle(v) || vc[v].stage == ST_FADE); v++)
+                ;
+    }
+    if (v < NV) voice_fade(v), shed_n++;
     hold = 4u * (VB / CTL);                     /* (ctl_hook runs a control step: 8 a block) */
 }
 
@@ -885,6 +909,10 @@ static char *link_name(char *s, const uint8_t *L);
 static char hd_msg[24];                         /* (ui.c: in the header's place until hd_until) */
 static int32_t bat_lvl = -1;                    /* the battery's level (batt_poll; ui.c's header) */
 static uint32_t hd_until, as_err;               /* (as_err: an autosave failed, it is tried again) */
+#define SAVE_REST_REC_MS 60000u                 /* (GR!MM rc11) the hands at rest this long before an autosave, or the
+                                                 * settings' save, while a computer reads the USB audio (a flash step stops
+                                                 * the key scan, the LEDs and the stream ~50 ms: the lights flickered, the
+                                                 * recording had a hole); else 2.5 s, 2 s */
 static uint32_t as_wait, sv_wait;               /* an autosave waits for the voices to fall silent; that, or a SOUNDS
                                                  * SAVE / CLEAR, waits (ui.c: SAVES WHEN SILENT) */
 static uint32_t sv_said;                        /* (V2) when that wait began: the header says so SV_SAY_MS, then gives
@@ -1859,9 +1887,14 @@ static void app_main(void)
         hd_until = 15000u;
     }
 #if !defined DINGHY_HOST && !defined GRIMM_WEB
-    if (fm1_boot.p3_rst & 4u) {                 /* the watchdog restarted it (the main loop stood 8 s; a fault shows
-                                                 * the red crash screen instead): said for ~15 s */
+    if (hl_boot.kind == 1u) {                   /* the watchdog restarted it (the main loop stood 8 s; a fault shows
+                                                 * the red crash screen instead): said for ~15 s (GR!MM rc11: not when only
+                                                 * the chip's flag is left from an earlier one: platform.c hl_boot) */
         put_s(hd_msg, "WATCHDOG RESET");
+        hd_until = 15000u;
+    } else if (hl_boot.kind == 2u) {            /* (rc11) the supply sagged below what the chip runs on (VDDIO, VCM, 1.2 V
+                                                 * low): it restarted itself, not a power-on */
+        put_s(hd_msg, "LOW VOLTAGE RESET");
         hd_until = 15000u;
     }
 #endif
@@ -2282,9 +2315,15 @@ static void app_main(void)
             if (w && !sv_wait) sv_said = fm1_ms;
             sv_wait = w;
         }
-        if (set_dirty && quiet() && !playing && fm1_ms - set_t > 2000u) {   /* 2 s after the change, when silent */
+        if (set_dirty && quiet() && !playing && fm1_ms - set_t > (usb_recording() ? SAVE_REST_REC_MS : 2000u)) {   /* 2 s
+                                                 * after the change, when silent (rc11: a computer recording from the USB
+                                                 * audio: a minute, SAVE_REST_REC_MS) */
             settings_save(&set, sizeof set);
             set_dirty = 0;
+        }
+        {                                       /* (GR!MM rc9) the overload guard let a voice go: said */
+            static uint32_t shed_seen;
+            if (shed_n != shed_seen) shed_seen = shed_n, hd_say("CPU FULL: NOTE DROPPED");
         }
         if (!playing && sv_pend >= 0 && voices_silent()) {   /* SOUNDS: a SAVE or CLEAR that waited (the stop, silence) */
             sv_sound((uint32_t)sv_pend, sv_pend_slot, sv_pend_cat, sv_pend_trk);
@@ -2294,7 +2333,8 @@ static void app_main(void)
          * sounding (a release, a latched note: it waits, the header says so); a failed one: again in 3 s, the header
          * says so */
         if (playing) as_wait = 0;
-        if (!playing && !ed_open() && fm1_ms - t_touch >= 2500u && (!as_last || fm1_ms - as_last >= 20000u) &&
+        if (!playing && !ed_open() && fm1_ms - t_touch >= (usb_recording() ? SAVE_REST_REC_MS : 2500u) &&
+            (!as_last || fm1_ms - as_last >= 20000u) &&
             fm1_ms >= as_next) {                /* (an editor's PUT open: its bytes are in st_img) */
             uint32_t g = st_gen;
             as_next = fm1_ms + 500u;

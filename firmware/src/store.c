@@ -355,10 +355,11 @@ static uint8_t snd_latch_off;                   /* (V2) SYSTEM 3's LATCH ALWAYS 
                                                  * LATCH OFF (grimm.c's sys_sync) */
 static void snd_apply(const uint8_t *r, uint32_t t)   /* a sound record into track t (a new source: its notes go over) */
 {
-    uint32_t k, e = r[3], la;
-    for (k = 0; k < 4u; k++) {
-        trk[t].p[e][k] = r[4 + k];
-        trk[t].env[k] = r[8 + k];
+    uint32_t k, e = r[3] < NENG ? r[3] : 0u, la;
+    for (k = 0; k < 4u; k++) {                  /* (GR!MM rc9: within the knobs' ranges: a sound the editor wrote, a
+                                                 * broken one, can't put a value past them, nor a filter out of control) */
+        trk[t].p[e][k] = clamp(r[4 + k], 0, ENGINES[e]->max[k]);
+        trk[t].env[k] = clamp(r[8 + k], 0, 127);
     }
     la = snd_latch_off ? 0u : r[12] & 1u;       /* (V2: SYSTEM 3's ALWAYS OFF: LATCH OFF, whatever the sound's; the
                                                  * byte's rest: DRONE's) */
@@ -450,10 +451,11 @@ static const uint8_t *uk_track(const uint8_t *q0, uint32_t t, int isr, uint32_t 
     uint32_t e, k;
     for (k = 0; k < TRK_PK && k < n; k++) q[k] = q0[k];
     trk_def(q, n);                              /* (what an older save has not: as at power-on) */
-    for (e = 0; e < PK_ENG; e++)
-        for (k = 0; k < 4u; k++) trk[t].p[e][k] = q[1 + e * 4u + k];
-    for (k = 0; k < 4u; k++) trk[t].p[ENG_HOWL][k] = q[52 + k];
-    for (k = 0; k < 4u; k++) trk[t].env[k] = q[33 + k];
+    for (e = 0; e < PK_ENG; e++)                /* (GR!MM rc9: every value loaded within its knob's range: a broken save
+                                                 * can't put one past it) */
+        for (k = 0; k < 4u; k++) trk[t].p[e][k] = clamp(q[1 + e * 4u + k], 0, ENGINES[e]->max[k]);
+    for (k = 0; k < 4u; k++) trk[t].p[ENG_HOWL][k] = clamp(q[52 + k], 0, ENGINES[ENG_HOWL]->max[k]);
+    for (k = 0; k < 4u; k++) trk[t].env[k] = clamp(q[33 + k], 0, 127);
     if (trk[t].latch && !(q[37] & 1u)) {               /* (LATCH ON -> OFF: its latched notes released; at the bar, now) */
         if (!isr) nq_put(NQ_RELEASE, t, 0);
         else {
@@ -463,7 +465,8 @@ static const uint8_t *uk_track(const uint8_t *q0, uint32_t t, int isr, uint32_t 
     }
     trk[t].latch = q[37] & 1u;
     trk[t].dr_borga = clamp(q[32], 0, 100), trk[t].dr_storm = clamp(q[37] >> 1, 0, 100), trk[t].dr_rise = clamp(q[46] >> 4 & 7u, 0, DR_NRISE - 1);
-    trk[t].level = q[38], trk[t].dly = q[39], trk[t].rev = q[40], trk[t].grn = q[41], trk[t].pan = q[42];
+    trk[t].level = clamp(q[38], 0, 127), trk[t].dly = clamp(q[39], 0, 127), trk[t].rev = clamp(q[40], 0, 127);
+    trk[t].grn = clamp(q[41], 0, 127), trk[t].pan = clamp(q[42], 0, 127);
     trk[t].cut = 127 - clamp(q[29], 0, 127), trk[t].res = clamp(q[30], 0, 127), trk[t].fx = clamp((int8_t)q[31] + 100, 0, 200);
     trk[t].ftype = clamp(q[45] >> 4 & 3u, 0, NFTYPE - 1), trk[t].fpos = q[45] >> 6 & 1u;   /* (saved before 1.3: LP PRE) */
     ch_unpack(t, q[43]);
@@ -562,7 +565,7 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
     int globals = (f & UW_GLOBALS) != 0;
     for (t = 0; t < NT; t++) q = uk_track(q, t, 0, tn);
     if (globals) {
-        for (k = 0; k < 16u; k++) *PK_FX[k] = q[k];
+        for (k = 0; k < 16u; k++) *PK_FX[k] = clamp(q[k], 0, 127);   /* (GR!MM rc9: within the knobs' range) */
         seq_bpm = clamp(q[16] | q[17] << 8, 20, 300);
         slot_cur = q[18] & 3u;
         sel = q[19] & 3u;
@@ -831,12 +834,17 @@ static void project_new(void)                   /* NEW: the four tracks' power-o
         trk[t].lfo_rate = T0.lfo_rate, trk[t].lfo_depth = T0.lfo_depth, trk[t].lfo_dest = T0.lfo_dest;
         trk[t].lfo_shape = T0.lfo_shape;
         trk[t].dr_borga = T0.dr_borga, trk[t].dr_storm = T0.dr_storm, trk[t].dr_rise = T0.dr_rise;
+        trk[t].level = T0.level, trk[t].dly = T0.dly, trk[t].rev = T0.rev, trk[t].grn = T0.grn, trk[t].pan = T0.pan;   /* (GR!MM
+                                                 * rc9: the mix too, as at power-on: a track left at VOLUME 0, its filter
+                                                 * closed, its FX 0 came out of NEW silent) */
+        trk[t].cut = T0.cut, trk[t].res = T0.res, trk[t].fx = T0.fx, trk[t].ftype = T0.ftype, trk[t].fpos = T0.fpos;
         fm_builtin(t, T0.p[ENG_FM][0]);
         if (trk[t].eng != T0.eng) {
             trk[t].eng = T0.eng;
             nq_put(NQ_RESTART, t, 0);
         }
     }
+    trk_mute = trk_solo = 0;                    /* (GR!MM rc9: no track left muted or soloed) */
     seq_clear();
 }
 

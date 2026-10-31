@@ -42,3 +42,9 @@ python3 tests/latch_test.py build/host/grimm
 python3 tests/gen_test.py build/host/grimm
 # GR!MM V2: the gain staging: no clip at any MASTER, SPACE and DELAY under their knee (tests/level_test.py)
 python3 tests/level_test.py build/host/grimm
+# GR!MM V2 rc9: the USB audio ring (firmware/src/uac_ring.h) in time: no dropout at any CPU load
+cc -O2 -Wall -Ifirmware/src -o build/host/uac_ring_test tests/uac_ring_test.c
+build/host/uac_ring_test
+# GR!MM V2.0 rc11: no flash step (autosave, the settings' save) while a computer reads the USB audio: it stopped the key
+# scan, the LEDs and the stream ~50 ms (tests/rc11_test.py)
+python3 tests/rc11_test.py build/host/grimm

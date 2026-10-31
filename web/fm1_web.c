@@ -124,6 +124,8 @@ static void midi_send(uint32_t st, uint32_t d1, uint32_t d2) { (void)st; (void)d
 static uint32_t midi_room(void) { return 64u; }
 static int32_t batt_raw(void) { return -1; }   /* (no battery in a browser: no icon) */
 static int usb_powered(void) { return 0; }
+static uint32_t usb_drops(void) { return 0u; }   /* (GR!MM rc9: no USB audio here) */
+static int usb_recording(void) { return 0; }
 
 /* GR!MM: the sample area (platform.c's, 288 KiB), here RAM, erased as a new FM-1's: at boot the firmware writes its four
  * factory samples in (samples.c), as on the device */
