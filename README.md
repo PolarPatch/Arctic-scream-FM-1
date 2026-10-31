@@ -1,4 +1,4 @@
-# Arctic Scream p0larpatch
+# Árktalaš holvvas // Arctic Scream
 
 **Dark ambient drones and feedback screams from the arctic tundra, for the M-VAVE FM-1.**
 
