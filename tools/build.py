@@ -51,7 +51,7 @@ SDK_SHA256 = {
 PRODUCT = "FM-1_977"                # Arctic Scream 1.x: 977, every release (GR!MM's is 966) (FM-1_9NN: the installers resume its loader; the hub's
                                     # other firmwares hold 950, 95x, 961, so not Dinghy's 9 + minor); Dinghy is 99N
 VERSION = None                      # APP_VER for release builds (else DEFAULT_VERSION)
-DEFAULT_VERSION = "1.1"
+DEFAULT_VERSION = "1.2"
 
 
 def toolchain():

@@ -50,10 +50,11 @@ and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.m
 
 - **Holvut** (North Sami: to howl), the eighth source (`ENG_HOWL`; its name on the screen "Holvut", `howl.c`
   `HOWL_ENGINE`):
-  - Code: `firmware/src/howl.c` and `howl.h`. Its state shares the PHYS slot (`phys.c` `ph_slot`), so it costs no RAM
-    of its own.
-  - The loop: noise → Karplus-Strong string → DRIVE saturation → DAMP low-pass → ~70 Hz high-pass → two all-passes →
+  - Code: `firmware/src/howl.c` and `howl.h`. Its state shares the PHYS slot (`phys.c` `ph_slot`); only BODY's line
+    (2048 frames a voice, 24 KB for the six) lives apart, in the pool (`hw_bl`).
+  - The loop: noise → Karplus-Strong string → DRIVE saturation → DAMP low-pass → ~70 Hz high-pass → four all-passes →
     × FEEDBACK → BODY's delay line → back into the string.
+  - BODY runs from ~1 to ~45 ms: as 1.1's up to 100 (~9 ms), then twice as fast to the long, beating end.
   - FEEDBACK runs from −60 to +12 dB and wakes the loop at about two thirds. A key adds a 50 ms burst.
   - Output level is `VOICE_LV * 3 / 4`, because chords had clipped.
 - **DRONE**, LFO's second page (`PG_DRONE`; `firmware/src/drone.c`):
@@ -154,7 +155,7 @@ and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.m
 
 ```sh
 # host build: screens and sound; PNGs with Pillow (not sips: test_web compares them)
-cc -O2 -Wall -Wno-unused-function '-Dsection(x)=used' -DDINGHY_HOST -DAPP_VER='"1.1"' -Ifirmware/src -Ifirmware/gen \
+cc -O2 -Wall -Wno-unused-function '-Dsection(x)=used' -DDINGHY_HOST -DAPP_VER='"1.2"' -Ifirmware/src -Ifirmware/gen \
    -o build/host/grimm firmware/src/grimm.c
 build/host/grimm build/host/grimm        # (or: tests/run_host.sh)
 build/host/grimm OUT script.txt FPS      # script mode: "3100 keys 0x80", "3500 btn 6", "5000 enc 2 -45", "end"

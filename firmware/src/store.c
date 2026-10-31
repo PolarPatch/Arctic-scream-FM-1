@@ -141,7 +141,7 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSNDD(CAT_DRONE, 7, ENG_HOWL, 92, 70, 50, 40, 90, 90, 127, 110, 1, 0x00, 30, 25, 4, 6, 60, 0, 4),  /* POLAR HOWL */
     FSNDD(CAT_DRONE, 8, ENG_HOWL, 100, 95, 62, 85, 70, 90, 127, 105, 1, 0x00, 45, 35, 4, 5, 70, 0, 4), /* WENDIGO */
     FSNDD(CAT_DRONE, 9, ENG_HOWL, 112, 40, 35, 60, 60, 90, 120, 100, 1, 0x00, 20, 20, 5, 0, 50, 0, 4), /* FROZEN SCREAM */
-    FSNDD(CAT_DRONE, 10, ENG_HOWL, 88, 115, 95, 20, 110, 90, 127, 115, 1, 0x00, 25, 40, 9, 6, 75, 0, 4), /* WHITEOUT */
+    FSNDD(CAT_DRONE, 10, ENG_HOWL, 88, 106, 95, 20, 110, 90, 127, 115, 1, 0x00, 25, 40, 9, 6, 75, 0, 4), /* WHITEOUT */
     FSNDD(CAT_DRONE, 11, ENG_HOWL, 104, 8, 30, 105, 40, 90, 110, 90, 1, 0x00, 60, 30, 4, 4, 55, 0, 4),  /* DEAD SIGNAL */
     /* III: three Holvut voices in a CLUSTER chord (SPREAD), their semitone rubbing, dark (DAMP), BODY drifting on the LFO,
      * waking over 8 bars; a horrorscape for a held key around C4 */

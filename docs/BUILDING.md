@@ -26,7 +26,7 @@ For the browser build: the [Emscripten SDK](https://emscripten.org) in `~/emsdk`
 
 ```sh
 ./build.sh                                  # -> build/arctic-scream.fwsc (identity FM-1_977, version 1.0)
-./build.sh --release 1.1                    # -> build/arctic-scream-1.1.fwsc, the version "1.1" on the screen
+./build.sh --release 1.2                    # -> build/arctic-scream-1.2.fwsc, the version "1.2" on the screen
 py tools/fm1_install.py build/arctic-scream.fwsc    # install it over USB (asks first); --info: what the FM-1 runs
 ```
 
@@ -48,7 +48,7 @@ node web/test_web.mjs                       # after tests/run_host.sh: the brows
 cd web/dist && python3 -m http.server 8000  # then open http://localhost:8000/ (or /editor.html)
 ```
 
-`APP_VER=1.1 web/build_web.sh` puts the version on the browser build's screen.
+`APP_VER=1.2 web/build_web.sh` puts the version on the browser build's screen.
 
 ## The factory samples
 

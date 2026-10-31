@@ -2,7 +2,7 @@
 
 # Arctic Scream p0larpatch: the manual
 
-**Version 1.1, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
+**Version 1.2, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
 (`tools/make_screens.py`).
 
 > **Try it as you read:** the [demo](https://polarpatch.github.io/Arctic-scream-FM-1/) runs the same code in your
@@ -108,9 +108,11 @@ diffusion. Nothing is struck.
   and howls by itself. The screen says `THE LOOP: ASLEEP` or `HOWLING`.
 - **Each key sends a burst into the loop**, so a note played near the threshold sets it off.
 - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, **DRIVE** tears it.
+- **BODY** runs from ~1 to ~45 ms. Past 100 it goes faster, to slow, beating howls at the top.
 - Its four aurora ribbons move with the knobs.
 - **III** is a horrorscape: three Holvut voices in a CLUSTER chord, a semitone rubbing in it, dark and slowly waking.
   Hold a key around C4. Turn **DAMP** down to let it scream, **BODY** to bend it, **FEEDBACK** to wake or calm it.
+  Step by step: [how to play III](docs/iii/iii_en.md).
 
 ### The other sources
 

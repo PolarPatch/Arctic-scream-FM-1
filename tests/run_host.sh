@@ -5,7 +5,9 @@
 set -e
 cd "$(dirname "$0")/.."
 mkdir -p build/host
-cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DAPP_VER="\"${APP_VER:-1.1}\"" -Ifirmware/src -Ifirmware/gen -o build/host/grimm firmware/src/grimm.c
+MACHO=                                          # (macOS: Mach-O has no ".pool" section; the pool is plain .bss there)
+[ "$(uname -s)" = Darwin ] && MACHO="-Dsection(x)=used"
+cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DAPP_VER="\"${APP_VER:-1.2}\"" ${MACHO:+"$MACHO"} -Ifirmware/src -Ifirmware/gen -o build/host/grimm firmware/src/grimm.c
 build/host/grimm build/host/grimm
 python3 - <<'PY'
 from pathlib import Path
