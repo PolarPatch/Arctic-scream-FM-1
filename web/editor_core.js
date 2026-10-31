@@ -491,6 +491,18 @@ export function checkBackup(b, info) {                       // -> [{id, data, w
     return { id: o.id, data: d, what: s[1] };
   });
 }
+// ------------------------------------------------------------------ a project (slot A..D) as a file of its own
+export function makeProject(d, k, info) {
+  return { format: "arctic-project", version: 1, fmt: info.fmt, firmware: info.firmware, slot: "ABCD"[k],
+           date: new Date().toISOString().replace("T", " ").slice(0, 19), len: d.length, crc: crc32(d), data: b64(d) };
+}
+export function checkProject(p, info) {                      // -> the slot's bytes, or throws (nothing written)
+  if (!p || p.format !== "arctic-project" || p.version !== 1) throw new EditorError("not an Arctic Scream project file", 90);
+  if (p.fmt !== info.fmt) throw new EditorError(`the project's format is ${p.fmt}, the FM-1's is ${info.fmt}`, 90);
+  const d = unb64(p.data);
+  if (d.length !== info.slotSize || crc32(d) !== p.crc) throw new EditorError("the project file is damaged or not this firmware's", 90);
+  return d;
+}
 export async function restoreBackup(client, objs, info, progress) {
   for (let i = 0; i < objs.length; i++) {
     await client.put(objs[i].id, objs[i].data, info.fmt);

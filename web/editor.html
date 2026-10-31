@@ -125,6 +125,9 @@ input[type=range]:focus-visible::-webkit-slider-thumb { outline: 1px solid var(-
 }
 table.kv td { padding: 3px 16px 3px 0; }
 table.kv td:first-child { color: var(--dim); }
+.proj { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-bottom: 8px; }
+.proj > div { display: flex; align-items: center; gap: 6px; }
+.proj b { font-size: 1.3em; min-width: 1.2em; }
 .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 3px; }
 .slot { background: var(--part); padding: 6px 8px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         border: 1px solid transparent; border-radius: 2px; }
@@ -364,6 +367,15 @@ footer p { margin: 4px 0; max-width: 90em; }
     </section>
 
     <section id="s-backup">
+      <div class="card" style="--c:var(--plasma)">
+        <h2><i>♫</i>projects</h2>
+        <div class="proj" id="proj"></div>
+        <input type="file" id="f-proj" accept=".arcticproject,.json" hidden>
+        <p class="note">A project is a song as SAVE → PROJECTS keeps it in slot A–D: the four tracks' sounds, their
+          sequences, the effects and the tempo. SAVE downloads one to a file (on a phone: to its downloads); LOAD writes a
+          file into a slot, then reads it back to check. Save what you are playing into a slot on the FM-1 first (SAVE,
+          keys 5–8), and recall a loaded one there (SAVE, keys 1–4). Samples are not in it.</p>
+      </div>
       <div class="card" style="--c:var(--aurora)">
         <h2><i>▤</i>backup</h2>
         <div class="row">

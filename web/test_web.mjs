@@ -19,7 +19,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { inflateSync } from "node:zlib";
 import { execFileSync } from "node:child_process";
 import { Client, VirtualFM1, LiveSender, MidiTransport, findFM1, OBJ, parseSound, buildRecord, makeBackup, checkBackup,
-         restoreBackup, makeSlot, recordOk, unpack7, hex, sampleName, parseSeq, buildSeq, seqToMidi, midiToSeq,
+         restoreBackup, makeProject, checkProject, makeSlot, recordOk, unpack7, hex, sampleName, parseSeq, buildSeq, seqToMidi, midiToSeq,
          SEQ_DIV } from "./editor_core.js";
 
 let ex, data, size, started = false, rewinding = false;
@@ -174,6 +174,12 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   await restoreBackup(cl, checkBackup(JSON.parse(JSON.stringify(b1)), info), info);
   const b2 = await makeBackup(cl, info);
   check(b2.objects.every((o, i) => o.data === b1.objects[i].data), "editor: a backup restored reads back as it was");
+  const pa = await cl.get(OBJ.SLOT + 0, info.slotSize), pf = JSON.parse(JSON.stringify(makeProject(pa, 0, info)));
+  await cl.put(OBJ.SLOT + 2, checkProject(pf, info), info.fmt);
+  const pc = await cl.get(OBJ.SLOT + 2, info.slotSize);
+  let pbad = 0;
+  try { checkProject({ ...pf, crc: pf.crc ^ 1 }, info); } catch { pbad = 1; }
+  check(eq([...pc], [...pa]) && pf.slot === "A" && pbad, "editor: project A saved to a file, loaded into C, read back; a damaged file refused");
   const fr = 48000, n = 38400, wav = new Uint8Array(44 + n * 4), dv = new DataView(wav.buffer);   // 0.8 s, 16 bit stereo
   [..."RIFF"].forEach((c, i) => { wav[i] = c.charCodeAt(0); }), dv.setUint32(4, 36 + n * 4, true);
   [..."WAVEfmt "].forEach((c, i) => { wav[8 + i] = c.charCodeAt(0); });

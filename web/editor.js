@@ -11,7 +11,7 @@
 // factory sounds (LOAD TO T1..T4), samples the sample slots, backup everything. The protocol, the records, the WAV
 // conversion: editor_core.js. Without an FM-1 the same, with the "virtual FM-1" (grimm.wasm here) in its place.
 import { Client, MidiTransport, VirtualFM1, LiveSender, findFM1, HEAD, CMD, OBJ, PROTOS, EditorError, emptyRecord, isEmpty,
-         recordOk, parseSound, buildRecord, soundTitle, makeBackup, checkBackup, restoreBackup, makeSlot, noteFromName,
+         recordOk, parseSound, buildRecord, soundTitle, makeBackup, checkBackup, restoreBackup, makeProject, checkProject, makeSlot, noteFromName,
          sampleName, noteName, pack7, hex, SEQ_N, SEQ_DIV, SEQ_MODE, parseSeq, buildSeq, emptyStep, seqToMidi,
          midiToSeq } from "./editor_core.js";
 const RISE = ["OFF", "1 BAR", "2 BARS", "4 BARS", "8 BARS", "16 BARS", "32 BARS"];   // DRONE's GOHCCAT
@@ -329,6 +329,7 @@ function drawSlots() {
 function refreshButtons() {
   const c = !!conn && !busy, u = !pick.fact, empty = u && isEmpty(user[pick.i]);
   ["b-readall", "b-store", "b-backup", "b-restore", "b-sinfo", "b-sfactory"].forEach((id) => { $(id).disabled = !c; });
+  document.querySelectorAll("#proj button").forEach((b) => { b.disabled = !c; });
   $("b-disconnect").disabled = !conn || busy;
   $("b-connect").disabled = $("b-try").disabled = $("b-connect2").disabled = $("b-try2").disabled = busy;
   for (let t = 0; t < 4; t++) $("b-load" + t).disabled = empty;
@@ -1230,6 +1231,35 @@ $("f-restore").onchange = async (e) => {
     for (const o of objs) if (o.id >= OBJ.SND && o.id < OBJ.SND + 64) { user[o.id - OBJ.SND] = o.data; dirty[o.id - OBJ.SND] = false; }
     drawSlots();
     return "RESTORED AND READ BACK: EVERYTHING AS IN THE FILE (THE BACKUP FROM BEFORE IS DOWNLOADED)";
+  });
+};
+
+// ------------------------------------------------------------------ projects: a slot A–D to a file and back
+let projSlot = 0;
+for (let k = 0; k < 4; k++) {
+  const row = el("div", {}, $("proj"));
+  el("b", {}, row, "ABCD"[k]);
+  el("button", {}, row, "SAVE").onclick = () => job("SAVE PROJECT", async () => {
+    say(`READING PROJECT ${"ABCD"[k]}…`);
+    const d = await conn.client.get(OBJ.SLOT + k, conn.info.slotSize, progress);
+    download(`arctic-scream-project-${"ABCD"[k]}-${stamp()}.arcticproject`, JSON.stringify(makeProject(d, k, conn.info)));
+    return `PROJECT ${"ABCD"[k]} SAVED (DOWNLOADED)`;
+  });
+  el("button", {}, row, "LOAD").onclick = () => { projSlot = k; $("f-proj").click(); };
+}
+$("f-proj").onchange = async (e) => {
+  const f = e.target.files[0], k = projSlot, s = "ABCD"[k];
+  e.target.value = "";
+  if (!f) return;
+  let d;
+  try { d = checkProject(JSON.parse(await f.text()), conn.info); } catch (err) { say(`LOAD PROJECT: ${errText(err)} (NOTHING WRITTEN)`, "err"); return; }
+  if (!confirm(`LOAD ${f.name} INTO PROJECT ${s}?\n\nWhat is in slot ${s} on the FM-1 now is replaced. Stop the sequencer and let the notes end first.`)) return;
+  await job("LOAD PROJECT", async () => {
+    say(`WRITING PROJECT ${s}…`);
+    await conn.client.put(OBJ.SLOT + k, d, conn.info.fmt, progress);
+    const r = await conn.client.get(OBJ.SLOT + k, d.length);
+    if (r.some((x, i) => x !== d[i])) throw new EditorError(`PROJECT ${s} DID NOT READ BACK AS WRITTEN`, 0);
+    return `PROJECT ${s} LOADED AND READ BACK: RECALL IT ON THE FM-1 (SAVE, KEY ${k + 1})`;
   });
 };
 
