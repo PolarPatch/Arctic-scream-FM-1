@@ -27,7 +27,8 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - Below the threshold the loop sleeps. Past it, the loop wakes and grows out of silence into a howl that sustains itself.
   - Each key press sends a short burst into the loop, so a note played near the threshold sets it off.
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
-  - New in 1.2: BODY reaches ~45 ms, for slow, beating howls at the top of its range, and four all-passes in the loop smear the scream like a small reverb.
+  - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
+  - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
 - **DRONE, a sound that lives on its own.** Press LFO twice. The knobs have North Sami names:
   - **BORGA** (snowdrift): four slow random walks move the filter, the source's shape and its own most natural knob, and the reverb's distance. Each voice drifts a few cents and breathes, so a held chord sounds like a choir. It never repeats.
   - **STOARBMA** (storm): the tension. It opens the filter, raises resonance and drive, spreads the voices and makes the walks deeper and faster.
@@ -68,10 +69,10 @@ The **[editor](https://polarpatch.github.io/Arctic-scream-FM-1/editor.html)** ru
 Download `arctic-scream-X.Y.fwsc` (the newest) from [Releases](../../releases). Then, with Python 3 and `pip install mido python-rtmidi`, connect the FM-1 over USB and run:
 
 ```
-python3 tools/fm1_install.py arctic-scream-1.2.fwsc
+python3 tools/fm1_install.py arctic-scream-1.3.fwsc
 ```
 
-Every release is built and signed on GitHub from the tagged source (the FM-1 Firmware Hub's [fm1-build](https://github.com/zvenson/fm1-build)); check a file with `gh attestation verify arctic-scream-1.2.fwsc --repo PolarPatch/Arctic-scream-FM-1 --signer-workflow zvenson/fm1-build/.github/workflows/build.yml`.
+Every release is built and signed on GitHub from the tagged source (the FM-1 Firmware Hub's [fm1-build](https://github.com/zvenson/fm1-build)); check a file with `gh attestation verify arctic-scream-1.3.fwsc --repo PolarPatch/Arctic-scream-FM-1 --signer-workflow zvenson/fm1-build/.github/workflows/build.yml`.
 
 It installs over the FM-1's own firmware, GR!MM or any other FM-1 firmware. Don't unplug the FM-1 while it writes. If anything goes wrong, the **Rescue** page on the [FM-1 Firmware Hub](https://thefirmwarehub.com/) brings a stuck FM-1 back, and M-VAVE's own updater puts the original firmware back.
 

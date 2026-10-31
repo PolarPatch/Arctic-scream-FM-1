@@ -14,7 +14,8 @@
  *   START     where the loop begins: 0 .. 100 % of the sample
  *   LENGTH    the loop: 50 ms .. the rest of the sample (squared: fine at the short end)
  *   REVERSE   OFF / ON: the loop backward
- * State: sp[voice]: the loop playing and the next one, the heads, the windows' keys; sp_w: the windows (in the pool). */
+ * State: sp[voice]: the loop playing and the next one, the heads, the windows' keys; sp_w: the windows (in the voice's
+ * pool scratch, voices.c vx_pool). */
 
 #define SP_MIN_LEN 1102u                        /* the shortest loop: 50 ms at 22050 Hz */
 #define SP_XF_MAX 2205u                         /* the crossing: at most 100 ms (a quarter of a short loop) */
@@ -38,7 +39,9 @@ typedef struct {
                                                  * (Q16), how far it is (Q16, 0 .. 256) */
 } sp_voice_t;
 static sp_voice_t sp[NV];
-static int16_t sp_w[NV][SP_NW][SMP_SEG + 1u] __attribute__((section(".pool")));   /* a segment and the next sample */
+#define sp_w(vi) ((int16_t (*)[SMP_SEG + 1u])vx_pool[vi])   /* the windows: a segment and the next sample (the voice's
+                                                 * pool scratch, voices.c vx_pool) */
+_Static_assert(SP_NW * (SMP_SEG + 1u) <= VX_POOL, "SAMPLE's windows fit in a voice's pool scratch");
 
 static uint32_t sp_slot(const volatile int32_t *p) { return (uint32_t)clamp(p[0], 0, SMP_SLOTS - 1); }
 
@@ -80,7 +83,7 @@ static uint32_t sp_win(sp_voice_t *t, uint32_t vi, uint32_t slot, int32_t seg, u
             return k;
     k = t->wnext == keep ? (keep + 1u) % SP_NW : t->wnext;
     t->wnext = (uint8_t)((k + 1u) % SP_NW);
-    w = sp_w[vi][k];
+    w = sp_w(vi)[k];
     pred = smp_ipred[slot][seg];                /* from the index: a segment starts on a whole byte */
     idx = smp_iidx[slot][seg];
     q = (uint32_t)seg << SMP_SEG_LOG2;
@@ -203,7 +206,7 @@ static void sampler_block(voice_t *v, const volatile int32_t *p, int32_t *mono, 
         a = t->a, ui = t->ui, uf = t->uf, ev = t->ev, kq = t->kq;                                                      \
         kinc = ((step >> 4) * (t->xinv >> 4)) >> 8;                                                                    \
         ra = t->r[a], rb = t->r[a ^ 1u];                                                                               \
-        wa = sp_w[vi][t->hw[a]], wb = sp_w[vi][t->hw[a ^ 1u]];                                                         \
+        wa = sp_w(vi)[t->hw[a]], wb = sp_w(vi)[t->hw[a ^ 1u]];                                                         \
         dsa = t->cur.rev ? -(int32_t)step : (int32_t)step, dsb = t->nxt.rev ? -(int32_t)step : (int32_t)step;          \
     } while (0)
 #define SP_STORE() (t->ui = ui, t->uf = uf, t->kq = kq, t->r[a] = ra, t->r[a ^ 1u] = rb)

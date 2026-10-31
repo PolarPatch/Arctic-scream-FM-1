@@ -1748,6 +1748,11 @@ static void app_main(void)
             t_touch = fm1_ms;
             d1 &= 0x7Fu;
             if (ty == 0xB0u) { midi_cc(d1, d2 & 0x7Fu); continue; }
+            if (ty == 0xD0u || ty == 0xA0u) {   /* pressure (channel, poly: the last key's): the track's Holvut */
+                t = set.mch >= MCH_ALL ? sel : c - set.mch;
+                if (t < NT) hw_press[t] = (uint8_t)(ty == 0xD0u ? d1 : d2 & 0x7Fu);
+                continue;
+            }
             if (!(on || off) || (echo_on[d1] >> c & 1u)) continue;   /* (our own notes come back: a computer's MIDI
                                                  * thru; never played again) */
             if (set.mch >= MCH_ALL) t = sel;

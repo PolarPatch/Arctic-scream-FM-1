@@ -204,6 +204,9 @@ def burst(ms):
                 c = rnd.choice([0, 1, 2, 3, 4, rnd.randrange(16)])
                 n = rnd.choice([0, 1, 12, 36, 60, 61, 63, 66, 100, 120, 126, 127, rnd.randrange(128)])
                 at(rnd.randint(5, 80), f"midi {0x90 | c} {n} 100"); midi_on.add((c, n))
+                if rnd.random() < 0.3:          # pressure on it (channel or poly): Holvut's FEEDBACK pushed
+                    at(rnd.randint(5, 80), f"midi {rnd.choice([0xD0, 0xA0]) | c} {rnd.choice([n, 0, 127])} "
+                                           f"{rnd.choice([0, 64, 127, rnd.randrange(128)])}")
         elif x < 0.52:                          # the octave: the lowest, the highest, the middle
             page(HOME)
             d = rnd.choice([OCTD, OCTU])

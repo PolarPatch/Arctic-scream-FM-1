@@ -5,24 +5,31 @@
  * integers for the FM-1 (no FPU); none of its code is copied. A voice's loop:
  *
  *   a breath of noise (inaudible) + BODY's line -> a Karplus-Strong string at the note -> DRIVE's saturation -> DAMP's
- *   low-pass, a high-pass (~70 Hz) -> four all-passes (Audrey's reverb in the loop, small) -> x FEEDBACK -> BODY's line
+ *   low-pass, a high-pass (~70 Hz; FEEDBACK's top end lifts it) -> four all-passes (Audrey's reverb in the loop, small)
+ *   -> x FEEDBACK -> BODY's line
  *
  * Nothing is struck: the string only hears the noise and what comes round, so the voice is near silent until FEEDBACK
  * lifts the loop's gain past one; then the sound grows out of the noise by itself and howls (the saturation holds it).
  * A key adds a short burst, so a note near the threshold provokes it. The filters in the loop pick which overtones scream;
  * BODY glides (~0.2 s, Audrey's smoothing), so turning it bends the whole sound, and a slow random wander moves it a
  * little all the time (after Audrey Touch's sample-and-hold on its body).
- *   FEEDBACK   the loop's gain, -60 .. +12 dB (it wakes around 2/3 of the way)
- *   BODY       the second line, ~1 .. ~45 ms: a resonance of its own beside the note's, metal at the short end; past
- *              ~9 ms (100) faster, to slow, beating tones at the long end (Audrey's goes to 250 ms)
+ *   FEEDBACK   the loop's gain, -60 .. +12 dB (it wakes around 2/3 of the way); its last steps (120 .. 127) also
+ *              lift the loop's high-pass, ~70 Hz .. ~1.6 kHz, so the howl overblows: it leaps up the note's overtones
+ *              (after Audrey III's high-pass in the loop). MIDI pressure (channel or poly aftertouch, on the track's
+ *              channel) pushes FEEDBACK toward its top: press harder, it screams and climbs (Audrey III's plates)
+ *   BODY       the second line, ~1 .. ~92 ms: a resonance of its own beside the note's, metal at the short end; past
+ *              ~9 ms (100) faster, to slow, beating tones at the long end, past ~22 ms (115) slow pulses (Audrey III's
+ *              goes to 100 ms)
  *   DAMP       the loop's low-pass, ~18 kHz .. ~100 Hz: a scream .. a growl under the ice
  *   DRIVE      the saturation, 1x .. 7x: clean .. torn
- * State: howl_t (howl.h) in the voice's PHYS slot; BODY's line in the pool (24 KB for the six). */
+ * State: howl_t (howl.h) in the voice's PHYS slot; BODY's line in the voice's pool scratch (voices.c vx_pool, shared with
+ * SAMPLE's windows); hw_press: the tracks' MIDI pressure (grimm.c, the MIDI in). */
 
 #define HW_KICK 2205u                           /* a note's burst: 50 ms */
 #define HW_NOISE 28                             /* the breath: >> this of the noise (~-90 dB) */
 
-static int16_t hw_bl[NV][HW_BL] __attribute__((section(".pool")));   /* BODY's lines, a voice's */
+_Static_assert(HW_BL <= VX_POOL, "BODY's line fits in a voice's pool scratch");
+static uint8_t hw_press[NT];                    /* a track's MIDI pressure, 0 .. 127 (the main loop writes it) */
 static howl_t *hw_of(voice_t *v) { return &ph_slot[v - vc].u.h; }
 static uint32_t hw_rnd(howl_t *S)
 {
@@ -30,15 +37,32 @@ static uint32_t hw_rnd(howl_t *S)
     s ^= s << 13, s ^= s >> 17, s ^= s << 5;
     return S->rng = s;
 }
-static int32_t hw_body(int32_t body)            /* BODY: its delay, frames Q8, ~1 .. ~45 ms (44 x 2^(0 .. 5.48)): as 1.1's
-                                                 * to 100 (~9 ms), then twice as fast (the presets keep their sound) */
+static int32_t hw_body(int32_t body)            /* BODY: its delay, frames Q8, ~1 .. ~92 ms (44 x 2^(0 .. 6.53)): as 1.1's
+                                                 * to 100 (~9 ms), as 1.2's to 115 (~22 ms), then on to ~92 ms (the
+                                                 * sounds saved keep theirs) */
 {
-    int32_t b = clamp(body, 0, 127), d = b <= 100 ? b * 784 / 127 : 617 + (b - 100) * 435 / 27;
+    int32_t b = clamp(body, 0, 127);
+    int32_t d = b <= 100 ? b * 784 / 127 : b <= 115 ? 617 + (b - 100) * 435 / 27 : 858 + (b - 115) * 33;
     return (int32_t)((44u * pow2_q16(d)) >> 8);
 }
-static int32_t hw_gain(int32_t fb)              /* FEEDBACK: -60 .. +12 dB, Q16 */
+static int32_t hw_gain(int32_t fb)              /* FEEDBACK (Q8): -60 .. +12 dB, Q16 */
 {
-    return (int32_t)(pow2_q16(clamp(fb, 0, 127) * 2297 / 127) >> 10);
+    return (int32_t)(pow2_q16(clamp(fb, 0, 127 << 8) * 2297 / (127 << 8)) >> 10);
+}
+static int32_t hw_hpc(int32_t fb)               /* FEEDBACK (Q8): the high-pass's coefficient, Q15: ~70 Hz, and over 119
+                                                 * up to ~1.6 kHz (2^4.51) */
+{
+    int32_t u = fb > 119 << 8 ? (clamp(fb, 0, 127 << 8) - (119 << 8)) * 866 / (8 << 8) : 0;
+    return (int32_t)((327u * pow2_q16(u)) >> 16);
+}
+static int32_t hw_glide(int32_t x, int32_t t)   /* an eighth of the way a block, and there when near */
+{
+    return t - x > 7 || x - t > 7 ? x + ((t - x) >> 3) : t;
+}
+static int32_t hw_fb(const voice_t *v, int32_t fb)   /* FEEDBACK with the track's pressure (Q8): toward 127 */
+{
+    fb = clamp(fb, 0, 127);
+    return (fb << 8) + (127 - fb) * 2 * (int32_t)hw_press[v->trk < NT ? v->trk : 0];
 }
 static uint32_t hw_cut(int32_t dmp)             /* DAMP: the low-pass's corner, Hz: ~18 kHz .. ~100 Hz */
 {
@@ -50,11 +74,13 @@ static void howl_begin(voice_t *v)              /* a note from silence: the loop
     howl_t *S = hw_of(v);
     uint32_t i, *w = (uint32_t *)S;
     for (i = 0; i < sizeof *S / 4u; i++) w[i] = 0;
-    for (w = (uint32_t *)hw_bl[v - vc], i = 0; i < HW_BL / 2u; i++) w[i] = 0;
+    for (w = (uint32_t *)vx_pool[v - vc], i = 0; i < HW_BL / 2u; i++) w[i] = 0;
     ph_slot[v - vc].model = 0xFF;               /* (not a PHYS model: PHYS begins anew) */
     S->rng = (uint32_t)v->rng | 1u;
     S->kick = HW_KICK;
     S->bd = hw_body(trk[v->trk].p[ENG_HOWL][1]);
+    S->fb = hw_fb(v, trk[v->trk].p[ENG_HOWL][0]);
+    S->hc = hw_hpc(S->fb);
 }
 
 /* the saturation: tanh's rational fit x (27 + x^2) / (27 + 9 x^2), flat from 3; Q15 in and out */
@@ -76,11 +102,15 @@ static inline int32_t hw_ap(int16_t *b, uint16_t *ix, uint32_t n, int32_t x)   /
 static void howl_block(voice_t *v, const volatile int32_t *p, int32_t *mono, int32_t amp0, int32_t amp1)
 {
     howl_t *S = hw_of(v);
-    int16_t *body = hw_bl[v - vc];
+    int16_t *body = vx_pool[v - vc];
     uint32_t inc = vinc(VP16(v)) >> 8, per, fc = hw_cut(p[2]), i;
-    int32_t g = hw_gain(p[0]) >> 4, drv = 256 + clamp(p[3], 0, 127) * 12, dmp = amp1 - amp0;
+    int32_t g, hc, mk, drv = 256 + clamp(p[3], 0, 127) * 12, dmp = amp1 - amp0;
     int32_t x = (int32_t)(fc * 4669u / 1000u), a = x * 16384 / (32768 + x);   /* (DAMP's one-pole, Q14) */
     int32_t tgt, bd0 = S->bd, dbd;
+    S->fb = hw_glide(S->fb, hw_fb(v, p[0]));    /* (FEEDBACK and the pressure glide: ~6 ms) */
+    g = hw_gain(S->fb) >> 4;
+    hc = S->hc = hw_glide(S->hc, hw_hpc(S->fb));
+    mk = 256 + (hc - 327) * 1024 / 7146;        /* (overblown, the high-pass thins it: up to 5x back, Q8) */
     per = 0xFFFFFFFFu / (inc ? inc : 1u);      /* the note's period, frames Q8 */
     while (per > (HW_SL - 4u) << 8) per >>= 1;  /* (below ~43 Hz: an octave up) */
     if (per < 4u << 8) per = 4u << 8;
@@ -117,13 +147,15 @@ static void howl_block(voice_t *v, const volatile int32_t *p, int32_t *mono, int
         y = hw_sat((s * drv) >> 8);             /* DRIVE */
         S->lp += ((y - S->lp) * a) >> 14;       /* DAMP */
         y = S->lp;
-        S->hl += ((y - S->hl) * 327) >> 15;     /* (~70 Hz) */
+        S->hl += ((y - S->hl) * hc) >> 15;      /* (~70 Hz .. ~1.6 kHz) */
         y -= S->hl;
+        S->h2 += ((y - S->h2) * (hc - 327)) >> 15;   /* (overblown: a second pole, steeper, so the howl leaps) */
+        y -= S->h2;
         n = hw_ap(S->ap2, &S->a2, HW_A2, hw_ap(S->ap1, &S->a1, HW_A1, y));
         y = (y + hw_ap(S->ap4, &S->a4, HW_A4, hw_ap(S->ap3, &S->a3, HW_A3, n))) >> 1;   /* the diffusion */
         body[S->bw] = (int16_t)clamp((y * g) >> 12, -32767, 32767);   /* x FEEDBACK, round again */
         if (++S->bw == HW_BL) S->bw = 0;
-        y = clamp(y, -32767, 32767);
+        y = clamp((y * mk) >> 8, -32767, 32767);
         mono[i] += mulq15(mulq15(y, amp_at(amp0, dmp, (int32_t)i)), VOICE_LV * 3 / 4);   /* (a chord of it: room left) */
     }
 }

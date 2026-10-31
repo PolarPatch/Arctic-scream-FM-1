@@ -131,6 +131,11 @@ static inline uint32_t vinc(int32_t p16)
     return inc + (uint32_t)((int32_t)(inc >> 12) * (tune_f + vc_fine));
 }
 
+/* a voice's scratch in the pool, for the source it plays (a voice plays one at a time, and each begins anew on it):
+ * SAMPLE's windows (sampler.c sp_w), Holvut's BODY line (howl.c) */
+#define VX_POOL 4096u
+static int16_t vx_pool[NV][VX_POOL] __attribute__((section(".pool")));
+
 #include "analog.c"                             /* the engines */
 #include "fm.c"
 #include "sampler.c"

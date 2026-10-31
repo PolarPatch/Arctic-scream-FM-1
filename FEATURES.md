@@ -1,6 +1,6 @@
 # Arctic Scream p0larpatch: features
 
-A complete overview of what Arctic Scream p0larpatch does, version 1.2. For the short version see the
+A complete overview of what Arctic Scream p0larpatch does, version 1.3. For the short version see the
 [README](README.md); for every button on one page, the [cheat sheet](https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html);
 for how it is built, [DEVELOPER.md](DEVELOPER.md).
 
@@ -12,9 +12,9 @@ feedback screams: slow, cold sounds that hum for minutes, and a voice that wakes
 
 | | |
 | --- | --- |
-| Version | 1.2 |
+| Version | 1.3 |
 | Firmware identity | `FM-1_977` (USB name "Arctic Scream" by "PolarPatch") |
-| Package | `arctic-scream-1.2.fwsc`, built and attested on GitHub |
+| Package | `arctic-scream-1.3.fwsc`, built and attested on GitHub |
 | Source | <https://github.com/PolarPatch/Arctic-scream-FM-1> |
 | Demo, editor, cheat sheet | <https://polarpatch.github.io/Arctic-scream-FM-1/> |
 | Licence | GPL-3.0 (the PolarPatch logo excepted) |
@@ -68,8 +68,12 @@ scratch for the FM-1.
 - Below the threshold the loop sleeps. Past it (about two thirds of FEEDBACK) it wakes, grows out of silence and howls
   by itself. The saturation keeps it from blowing up.
 - Each key sends a short burst into the loop, so a note played near the threshold provokes it.
-- **FEEDBACK** (−60 to +12 dB) wakes it. **BODY** (1–45 ms) bends it, gliding when turned and wandering a little by
+- **FEEDBACK** (−60 to +12 dB) wakes it. **BODY** (1–92 ms) bends it, gliding when turned and wandering a little by
   itself. **DAMP** (18 kHz to 100 Hz) turns the scream into a growl. **DRIVE** (1× to 7×) tears it.
+- **Overblowing:** FEEDBACK's last steps (120–127) also lift a high-pass inside the loop, so the howl leaps up the
+  note's overtones and screams higher. Below 120 the sound is as before.
+- **Pressure:** MIDI aftertouch (channel or poly) on a track's channel pushes its Holvut's FEEDBACK toward the top.
+  Press harder and the note feeds back more, then overblows; ease off and it falls back.
 - The howl's pitch comes mostly from the loop itself, not the key, so OCT− and OCT+ do not move it by an octave.
   [DEVELOPER.md](DEVELOPER.md) describes a possible change.
 
@@ -217,7 +221,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 
 1. Download `arctic-scream-X.Y.fwsc` from [Releases](https://github.com/PolarPatch/Arctic-scream-FM-1/releases).
 2. `pip install mido python-rtmidi`, connect the FM-1 over USB, run
-   `python3 tools/fm1_install.py arctic-scream-1.2.fwsc`.
+   `python3 tools/fm1_install.py arctic-scream-1.3.fwsc`.
 
 - It installs over the original firmware, GR!MM or any other FM-1 firmware.
 - An interrupted install resumes: the FM-1 comes back in update mode and the same command finishes it.
@@ -230,6 +234,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 | --- | --- | --- |
 | 1.0 | 2026-10-25 | The fork of GR!MM: HOWL (now Holvut), six screaming presets, the HORROR scale, runaway echo, keys an octave down, 46 arctic factory sounds, the new look, the web editor with sound tools and sequencer, the demo and cheat sheet |
 | 1.1 | 2026-10-26 | DRONE (BORGA, STOARBMA, GOHCCAT); HOWL renamed Holvut; moving northern lights on ENV, LFO, FX and the mixers; SUSTAIN 40 % by default; DRONE in the editor |
+| 1.3 | 2026-10-31 | Holvut overblows: FEEDBACK's last steps lift a high-pass in the loop, and the howl leaps up its overtones; MIDI aftertouch pushes FEEDBACK (press harder, it screams and climbs); BODY to ~92 ms; SAMPLE and Holvut share a voice's scratch memory |
 | 1.2 | 2026-10-31 | III, a Holvut horrorscape (47 factory sounds) and demo A5; Holvut deeper: BODY to ~45 ms, four all-passes in the loop; WHITEOUT retuned to keep its sound; the host tests run on macOS |
 
 ## Credits
