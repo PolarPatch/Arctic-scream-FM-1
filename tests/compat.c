@@ -8,8 +8,8 @@
  *   GRIMM_STATE_OUT=file  what was loaded, as text: each step's values, the packed project, the slots, the settings and
  *                         the sounds (hex)
  * and at the start, GRIMM_SAVE_IN=file: the save sectors from file (tests/host.c main).
- * tests/data/v1.0-saves.bin was made by GR!MM 1.0 (the v1.0 tag) with this file and GRIMM_FILL; v1.0-state.txt is what
- * 1.0 loaded from it. The same source works on both: the steps' fields are assigned, never pointed to. */
+ * tests/data/a1.2-saves.bin was made by Arctic Scream p0larpatch 1.2 (its saves as 1.2 makes them, after the v1.2 tag's
+ * Holvut work) with this file and GRIMM_FILL; a1.2-state.txt is what it loaded from it. The same source works on both: the steps' fields are assigned, never pointed to. */
 static uint32_t cp_rng = 0x2468ACE1u;
 static uint32_t cp_r(uint32_t n)
 {
