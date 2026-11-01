@@ -89,6 +89,10 @@ def va(s):                                   # T1 (ICE WRAITH, Holvut) to VA, LA
     return s.tap(EDIT, EDIT).turn(K1, -7).turn(K2, -1).tap(EDIT)
 
 
+def src(s, d):                               # T1 to the source d steps down from Holvut, LATCH OFF; its SOUND page
+    return s.tap(EDIT, EDIT).turn(K1, -d).turn(K2, -1).tap(EDIT)
+
+
 SHOTS = {
     "boot": lambda: S(1600),
     "home": lambda: S().keys("C3").keys("G3").w(2500),
@@ -117,6 +121,16 @@ SHOTS = {
     "perform": lambda: S().keys("C3").w(500).down(FX).w(1200),
     "system": lambda: S().down(HOME).w(900).up(HOME).w(500),
     "system2": lambda: S().down(HOME).w(900).up(HOME).tap(HOME).w(500),
+    "system3": lambda: S().down(HOME).w(900).up(HOME).tap(HOME, HOME).w(500),
+    "mixer2": lambda: S().keys("C3").tap(HOME, HOME).w(1500),
+    "pattern": lambda: S().tap(SEQ, SEQ).w(800),
+    "projects": lambda: S().tap(SAVE, SAVE).w(800),
+    "generate": lambda: S().down(FX).w(900).keys("F#2").w(2500),
+    "sample": lambda: src(S(), 5).hold("C3", "G3").w(1500),
+    "voice": lambda: src(S(), 4).hold("C3", "G3").w(1500),
+    "wheel": lambda: src(S(), 3).hold("C3", "G3").w(1500),
+    "phys": lambda: src(S(), 2).hold("C3", "G3").w(1500),
+    "phase": lambda: src(S(), 1).hold("C3", "G3").w(1500),
 }
 
 
