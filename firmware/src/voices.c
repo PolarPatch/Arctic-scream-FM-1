@@ -71,6 +71,7 @@ typedef struct {
                                                  * (32 bars) (drone.c) */
     volatile int32_t ftype, fpos;               /* (V2) MIXER 2: the track filter's TYPE (FT_: LP, HP, BP), POS (0 PRE:
                                                  * the sends hear it filtered; 1 POST: only the dry sound filtered) */
+    volatile int32_t chaos, morph;              /* HOME: CHAOS, MORPH 0..127 (chaos.c) */
 } track_t;
 #define TRK_DEF {ENG_VA, {{0, 10, 90, 30}, {0, 64, 64, 20}, {0, 0, 127, 0}, {0, 12, 64, 10}, {4, 0, 40, 0}, {0, 64, 80, 64}, {0, 0, 60, 0}, {96, 64, 50, 40}}, 100, 0, 100, 0, 64, 0, \
                  {60, 85, 51, 105}, 0, 0, 0, 0, 0, 4, 1, 50, 40, 30, 9, 0, 84, 24, 100, 0, 0, {{0}}}
@@ -117,7 +118,7 @@ static inline int32_t amp_at(int32_t amp0, int32_t damp, int32_t i)
 /* the LFO's (lfo.c, the audio ISR a control step): a track's pitch offset (1/16 semitones: VP16, a voice's pitch, every
  * engine's), and a voice's parameters, one of them moved (else the track's own) */
 static volatile int32_t lfo_p16[NT];
-#define VP16(v) ((int32_t)(v)->note * 16 + lfo_p16[(v)->trk % NT])
+#define VP16(v) ((int32_t)(v)->note * 16 + lfo_p16[(v)->trk % NT] + ch_p16[(v) - vc])
 static const volatile int32_t *lfo_params(uint32_t v, uint32_t t, uint32_t e);
 /* SYSTEM's TUNE (main loop): every source's pitch times 1 + tune_f / 4096 (-50 .. +50 cents: -117 .. +120; finer than
  * VP16's 6.25-cent steps); vinc: a pitch's phase increment, tuned */
@@ -127,6 +128,8 @@ static int32_t vc_fine;                         /* audio: the voice being render
 static int32_t dr_fine[NV], dr_gain[NV] = {32767, 32767, 32767, 32767, 32767, 32767};   /* audio: drone.c's, a voice's
                                                  * detune (tune_f units) and breath (its level, Q15) */
 static int32_t dr_gain_was[NV] = {32767, 32767, 32767, 32767, 32767, 32767};   /* (the last block's: ramped) */
+static int32_t ch_p16[NV], ch_gain[NV] = {32767, 32767, 32767, 32767, 32767, 32767};   /* audio: chaos.c's, a voice's
+                                                 * leap (1/16 semitones: VP16) and silence (Q15, with DRONE's breath) */
 static inline uint32_t vinc(int32_t p16)
 {
     uint32_t inc = pitch_inc((uint32_t)clamp(p16, 0, 2047));
@@ -297,7 +300,7 @@ static uint32_t voices_render(int32_t (*tb)[VB], uint32_t n)
         }
         for (k = 0; k < NV; k++) {
             voice_t *v = &vc[k];
-            int32_t amp0 = v->amp, amp1 = env_tick(v);
+            int32_t amp0 = v->amp, amp1 = env_tick(v), g;
             uint32_t t = v->trk;
             v->amp = amp1;
             if (!amp0 && !amp1)
@@ -308,8 +311,9 @@ static uint32_t voices_render(int32_t (*tb)[VB], uint32_t n)
                     tb[t][i] = 0;
             }
             vc_fine = dr_fine[k];               /* (DRONE: its detune and breath, drone.c) */
-            if (dr_gain[k] < 32767 || dr_gain_was[k] < 32767) amp0 = mulq15(amp0, dr_gain_was[k]), amp1 = mulq15(amp1, dr_gain[k]);
-            dr_gain_was[k] = dr_gain[k];
+            g = ch_gain[k] < 32767 ? mulq15(dr_gain[k], ch_gain[k]) : dr_gain[k];   /* (and CHAOS's silences) */
+            if (g < 32767 || dr_gain_was[k] < 32767) amp0 = mulq15(amp0, dr_gain_was[k]), amp1 = mulq15(amp1, g);
+            dr_gain_was[k] = g;
             ENGINES[v->eng]->block(v, lfo_params(k, t, v->eng), tb[t] + b, amp0, amp1);   /* (the engine it began
                                                  * with; the LFO's on one of its knobs) */
             vc_fine = 0;

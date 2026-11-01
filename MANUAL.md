@@ -62,10 +62,12 @@ Each track's wave glows on HOME as it plays, under a starry sky. The header show
 
 | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 |---|---|---|---|
-| VOLUME | CUTOFF | RESONANCE | FX |
+| VOLUME | CUTOFF | CHAOS | MORPH |
 
-- **CUTOFF / RESONANCE:** a low-pass filter at the end of the track, for every source.
-- **FX:** all three effect sends of the track together: 0 dry, 100 % as set on MIXER 1, 200 % twice as wet.
+- **CUTOFF:** the track filter at the end of the track, for every source (its RESONANCE is on MIXER 2).
+- **CHAOS:** the sound will not sit still. At random moments, from about once a second to ~20 a second as you turn it up, the source's four knobs jump (MODEL and the other stepped ones too), the filter jumps and its resonance rises, and voices leap octaves and fifths; past 3/4 any interval, a little out of tune, and short silences. Low it stirs, full it is havoc. Holvut's FEEDBACK and DRIVE only ever go up, so the howl never falls asleep.
+- **MORPH:** one knob through all four of the source's knobs at once (on PHYS: MODEL, STRUCTURE, DAMP and BOW together), on a path of its own for each track and source, always the same. At 0 the sound is as set; turn it for new combinations.
+- CHAOS and MORPH sit on top of the knobs (the knobs themselves never move) and are saved with the project.
 
 Press **HOME** again for the mixers. MIXER 1 draws each track as a curtain of standing ribbons, MIXER 2 as a ribbon
 across the stereo field.
@@ -73,7 +75,7 @@ across the stereo field.
 | Page | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 |---|---|---|---|---|
 | MIXER 1 | LEVEL | DLY SEND | REV SEND | GRAIN SEND |
-| MIXER 2 | PAN | TYPE | POS | |
+| MIXER 2 | PAN | TYPE | POS | RESONANCE |
 
 - **TYPE** (MIXER 2): the track filter is a low-pass (`LP`), high-pass (`HP`) or band-pass (`BP`). `LP` open (CUTOFF at the top) or `HP` open (CUTOFF at the bottom) means no filtering. A band-pass is gentle at RESONANCE 0 and narrows as you turn it up.
 - **POS** (MIXER 2): `PRE`: the effect sends hear the filtered sound (as before 1.3). `POST`: only the track's dry sound is filtered; GRAIN, DELAY and SPACE hear it unfiltered (a dark track with a bright reverb, say).
@@ -332,6 +334,8 @@ colours the whole mix at the end. Each page has its own northern lights.
 
 - **Runaway echo:** past 100 % FEEDBACK the echo grows and saturates, and burns magenta on the screen.
 - GRAIN and DELAY both pour into SPACE. All four TAPE knobs at 0 switch TAPE off.
+- GRAIN and DELAY only hear what the tracks send them (MIXER 1). Turn a GRAIN or DELAY knob up while the selected track sends nothing, and its send goes to 50 % (the header says so), so you hear the page at once.
+- TAPE goes far: WOW to a seasick ±2 % of pitch, SATURATION to 12x drive, TONE down to ~500 Hz, HISS loud. DELAY's WEAR wobbles up to ~11 ms and drives the loop to 4x.
 
 - **MASTER** filters everything, in stereo. **POSITION** says where: `PRE FX` filters the tracks' dry mix before the effects return (the reverb and echoes stay bright), `POST REVERB` filters the tracks and the effects together (before DRIVE and TAPE), `END` filters the very end, after TAPE and the PERFORM tricks. `LP` with CUTOFF at the top or `HP` at the bottom switches it off completely.
 - **DRIVE** distorts everything after SPACE, before TAPE. **AMOUNT** is how hard (0 = off completely), **TYPE** the character: `SOFT` (warm saturation), `FUZZ` (lopsided, buzzy), `CLIP` (hard), `FOLD` (a wavefolder: the harder you drive it, the more it folds back into new overtones). All four are about equally loud at the same AMOUNT, so switching TYPE doesn't jump in volume, and turning AMOUNT all the way up makes it at most ~6 dB louder. **TONE** darkens it (`OPEN` at the top), **MIX** blends it with the clean sound. A limiter after it keeps even the loudest settings from blowing up the output.

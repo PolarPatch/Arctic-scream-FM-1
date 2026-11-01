@@ -12,7 +12,7 @@
  *   voices (every other sample, 1 2 1) -> the line (66432 samples) -> read TIME back, plus the wow (two slow sines,
  *   0.5 and 0.19 Hz: not quite periodic) and a little flutter (6.1 Hz), between samples, gliding over the block; the
  *   right side 9 ms later -> the loop: a one-pole low-pass (WEAR: ~7 kHz .. ~1.2 kHz), FEEDBACK (0 .. 150 %), a tanh
- *   saturation (WEAR: 1x .. 1.8x drive, the level made up), the DC block -> back into the line with the input,
+ *   saturation (WEAR: 1x .. 4x drive, the level made up; and WEAR's wow up to ~11 ms: Arctic Scream 1.3), the DC block -> back into the line with the input,
  *   through a soft knee: no sum can clip. Each repeat: darker, a little saturated, a little more wobbly.
  *   TIME glides to a new value (~50 ms): the pitch bends, as a tape's does.
  *   MIX: the return (the echoes' level: the tracks' DLY sends set how much goes in); the echoes also go into the REV
@@ -23,7 +23,7 @@
  * sets the four parameters. The line and the state are in the pool (zero at boot): ~157 KB. */
 
 #define DL_NC 128u                              /* a block at half the rate: app_audio's 256 frames */
-#define DL_LEN 66432u                           /* 3000 ms (66150 samples) + the wow's reach + the right side's 9 ms */
+#define DL_LEN 66688u                           /* 3000 ms (66150 samples) + the wow's reach (1.3: ~11 ms) + the right side's 9 ms */
 #define DL_SPREAD (198 << 8)                    /* the right side reads 9 ms further back (Q8 samples) */
 #define DL_IN 8192                              /* the voices into the line, Q15: a quarter (headroom for the loop; V2:
                                                  * half of 1.0's, its return twice: loud chords never reach its knee) */
@@ -83,10 +83,11 @@ static void tape_render(const int32_t *in, int32_t *out, int32_t *rev, uint32_t 
     d1 = d0 + ((target - d0) >> 3);             /* ~50 ms to a new TIME */
     dl.d = d1;
     dl.p1 += DL_W1, dl.p2 += DL_W2, dl.p3 += DL_W3;
-    a = (10 + wear) * 94;                       /* the wow's reach, Q8 samples: ~0.17 .. ~2.3 ms */
+    a = (10 + wear) * 94 + wear * wear * 3;     /* the wow's reach, Q8 samples: ~0.17 .. ~11 ms (Arctic Scream 1.3: was
+                                                 * 2.3 ms; a worn-out tape at the top) */
     m1 = wear_wow(dl.p1, dl.p2, dl.p3, a);      /* (wear.c) */
     tc = 28300 - wear * 148;                    /* the loop's low-pass, Q15: ~7 kHz .. ~1.2 kHz */
-    g = 4096 + wear * 26;                       /* the saturation's drive, Q12: 1x .. 1.8x */
+    g = 4096 + wear * 97;                       /* the saturation's drive, Q12: 1x .. 4x (1.3: was 1.8x) */
     ig = (int32_t)(134217728u / (uint32_t)g) >> 1;   /* .. and the level made up after it, Q15 (GR!MM V2: the line at
                                                  * half: driven twice as hard, half back: saturating where it did) */
     g *= 2;

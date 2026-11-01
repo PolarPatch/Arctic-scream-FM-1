@@ -135,6 +135,7 @@ static uint32_t lv_rvk, lv_dlk, lv_pre;         /* (host: tests/level_test.py: S
 #include "tapefx.c"
 #include "scale.c"
 #include "drone.c"                              /* (Arctic Scream p0larpatch: DRONE, the sound living on its own) */
+#include "chaos.c"                              /* (Arctic Scream p0larpatch: HOME's CHAOS and MORPH) */
 #include "lfo.c"
 
 /* ---- the sound (runs in the audio ISR: keep it short, no flash, no screen): the voices, the mix, the effects, timed.
@@ -229,9 +230,9 @@ static int32_t tf_cs[NT] = {127 << 8, 127 << 8, 127 << 8, 127 << 8}, tf_ic[NT][2
                                                  * the states */
 static uint8_t tf_on[NT];
 static int32_t tf_tgt(uint32_t t)               /* the track filter's cutoff to glide to (<< 8): CUTOFF, its LFO, DRONE's
-                                                 * (drone.c) */
+                                                 * (drone.c), CHAOS's (chaos.c) */
 {
-    return clamp((lfo_move(t, LD_CUT, clamp(trk[t].cut, 0, 127), 127) << 8) + dr_cut[t], 0, 127 << 8);
+    return clamp((lfo_move(t, LD_CUT, clamp(trk[t].cut, 0, 127), 127) << 8) + dr_cut[t] + ch_cut[t], 0, 127 << 8);
 }
 static int32_t tf_px[NT];                       /* audio: POS's share of the sends taken before the filter, 0 (PRE) ..
                                                  * TF_PX1 (POST): a switch crosses over in 8 blocks (~46 ms), no click */
@@ -245,7 +246,7 @@ static int tf_open(uint32_t t)                   /* the track filter bypassed no
 static void trk_filter(uint32_t t, int32_t *x, uint32_t n)
 {
     int32_t tgt = tf_tgt(t), cs = tf_cs[t], ic1, ic2;
-    int32_t r = clamp(trk[t].res + dr_res[t], 0, 127) * 7 / 8;   /* (DRONE's on both: drone.c) */
+    int32_t r = clamp(trk[t].res + dr_res[t] + ch_res[t], 0, 127) * 7 / 8;   /* (DRONE's on both: drone.c; CHAOS's) */
     uint32_t ty = (uint32_t)clamp(trk[t].ftype, 0, NFTYPE - 1), i, j;
     tsvf_t c;
     if (tf_open(t)) {                           /* (open: as it is) */
@@ -816,6 +817,7 @@ static void ctl_hook(void)
 {
     mute_watch();
     drone_ctl();
+    chaos_ctl();
     lfo_ctl();
     arp_watch();
     if (nq_w - nq_r > NQ_LEN) nq_r = nq_w - NQ_LEN;   /* (overrun: the oldest asks are gone) */
@@ -977,10 +979,11 @@ static const page_t PAGES[NPAGE] = {
     {"SCALE", BTN_SEL, 1, 0, 1, {"ROOT", "SCALE", "", ""}},
     {"CHORD", BTN_SEL, 1, 0, 1, {"CHORD TYPE", "VOICING", "", ""}},
     {"SONG", BTN_GLO, 1, 0, 1, {"SECTION", "PATTERN", "REPEATS", "MODE"}},
-    {"HOME", BTN_HOME, 1, 1, 1, {"VOLUME", "CUTOFF", "RESONANCE", "FX"}},   /* (the track's: its LEVEL, its filter, its
-                                                 * sends together; its sound's name in the header) */
+    {"HOME", BTN_HOME, 1, 1, 1, {"VOLUME", "CUTOFF", "CHAOS", "MORPH"}},   /* (the track's: its LEVEL, its filter,
+                                                 * CHAOS and MORPH (chaos.c); its sound's name in the header) */
     {"MIXER 1", BTN_HOME, 1, 1, 1, {"LEVEL", "DLY SEND", "REV SEND", "GRAIN SEND"}},
-    {"MIXER 2", BTN_HOME, 1, 1, 1, {"PAN", "TYPE", "POS", ""}},   /* (V2: the track filter's TYPE and POS) */
+    {"MIXER 2", BTN_HOME, 1, 1, 1, {"PAN", "TYPE", "POS", "RESONANCE"}},   /* (V2: the track filter's TYPE and POS;
+                                                 * its RESONANCE, HOME's before 1.3) */
     {"SYSTEM", BTN_HOME, 1, 0, 0, {"COLOUR", "MIDI CHANNEL", "TUNE", "SCREEN OFF"}},   /* (HOME held; HOME again: */
     {"SYSTEM 2", BTN_HOME, 1, 0, 0, {"MIDI LEARN", "SEQ MIDI OUT", "SAMPLES", "CLOCK"}},       /* SYSTEM 2, SYSTEM 3, and
                                                  * back) */
@@ -1070,9 +1073,9 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_CHORD: return k == 0u ? &trk[sel].ch_type : k == 1u ? &trk[sel].ch_voice : 0;
     case PG_ARP: return k == 0u ? &trk[sel].arp_mode : k == 1u ? &trk[sel].arp_rate : k == 2u ? &trk[sel].arp_oct :
                         &trk[sel].arp_gate;
-    case PG_HOME: return k == 0u ? &trk[sel].level : k == 1u ? &trk[sel].cut : k == 2u ? &trk[sel].res : &trk[sel].fx;
+    case PG_HOME: return k == 0u ? &trk[sel].level : k == 1u ? &trk[sel].cut : k == 2u ? &trk[sel].chaos : &trk[sel].morph;
     case PG_MIX1: return MIX[k];
-    case PG_MIX2: return k == 0u ? &trk[sel].pan : k == 1u ? &trk[sel].ftype : k == 2u ? &trk[sel].fpos : 0;
+    case PG_MIX2: return k == 0u ? &trk[sel].pan : k == 1u ? &trk[sel].ftype : k == 2u ? &trk[sel].fpos : &trk[sel].res;
     case PG_FMALGO: return k == 0u ? &trk[sel].fm_alg : k == 1u ? &trk[sel].fm_fb : k == 2u ? &fm_op :
                            &trk[sel].fmo[clamp(fm_op, 0, 5)][FO_FINE];
     case PG_FMOP: return &trk[sel].fmo[clamp(fm_op, 0, 5)][k == 0u ? FO_RATIO : k == 1u ? FO_LEVEL : k == 2u ? FO_ATK : FO_DEC];
@@ -1107,7 +1110,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 3 : k == 1u ? MCH_MAX : k == 2u ? 50 : 4) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
            pg == PG_SYS3 ? 1 :
-           pg == PG_HOME && k == 3u ? 200 : pg == PG_FMALGO ? (k == 0u ? 31 : k == 1u ? 7 : k == 2u ? 5 : 99) :
+           pg == PG_FMALGO ? (k == 0u ? 31 : k == 1u ? 7 : k == 2u ? 5 : 99) :
            pg == PG_FMOP ? (k ? 99 : 31) : pg == PG_MIX2 ? (k == 1u ? NFTYPE - 1 : k == 2u ? 1 : 127) :
            pg == PG_MASTER ? (k == 2u ? NFTYPE - 1 : k == 3u ? NMPOS - 1 : 127) :
            pg == PG_DRIVE && k == 1u ? NDTYPE - 1 : 127;
@@ -1213,6 +1216,7 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
     case PG_MIX2:
         if (k == 1u) { put_s(s, FT_NAME[clamp(v, 0, NFTYPE - 1)]); return; }
         if (k == 2u) { put_s(s, v ? "POST" : "PRE"); return; }
+        if (k == 3u) { put_pc(s, v); return; }
         if (k) return;
         if (v == 64) { put_s(s, "C"); return; }
         put_u(put_s(s, v < 64 ? "L " : "R "), (uint32_t)(v < 64 ? 64 - v : v - 64));
@@ -1696,18 +1700,26 @@ static void sys_load(void)                      /* the settings at power-on into
         }
     set.ver = SET_VER, set_t = fm1_ms;
 }
+/* GRAIN's or DELAY's knobs turned up while the selected track sends nothing to it (MIXER 1's GRAIN SEND, DLY SEND at 0,
+ * as a track starts): its send to half, said in the header, so the page is heard at once (Arctic Scream 1.3) */
+static void fx_send_on(uint32_t pg)
+{
+    volatile int32_t *s = pg == PG_GRAIN ? &trk[sel].grn : pg == PG_DELAY ? &trk[sel].dly : 0;
+    if (!s || *s) return;
+    *s = 64;
+    put_s(put_s(put_u(put_s(hd_msg, "T"), sel + 1u), pg == PG_GRAIN ? " GRAIN" : " DLY"), " SEND 50%");
+    hd_until = fm1_ms + 1500u;
+}
 /* HOME's KNOB k + 1 turned: what it changed in the header ~1.5 s ("T2 VOL 090", "T2 CUTOFF 824", "T2 CUTOFF 2.4K",
- * "T2 RES 040", "T2 FX 140%"; then the track and its sound again): its slabs show the four tracks */
+ * "T2 CHAOS 040", "T2 MORPH 100"; then the track and its sound again): its slabs show the four tracks */
 static void home_say(uint32_t k)
 {
-    static const char *const W[4] = {" VOL ", " CUTOFF ", " RES ", " FX "};
+    static const char *const W[4] = {" VOL ", " CUTOFF ", " CHAOS ", " MORPH "};
     char *e = put_s(put_u(put_s(hd_msg, "T"), sel + 1u), W[k & 3u]);
     if (k == 1u)
         hz_text(e, trk[sel].cut, trk[sel].ftype);
-    else if (k == 3u)
-        put_s(put_u(e, (uint32_t)clamp(trk[sel].fx, 0, 200)), "%");
     else {
-        uint32_t v = k ? (uint32_t)clamp(trk[sel].res, 0, 127) : (uint32_t)clamp(trk[sel].level, 0, 127);
+        uint32_t v = (uint32_t)clamp(k == 2u ? trk[sel].chaos : k == 3u ? trk[sel].morph : trk[sel].level, 0, 127);
         v = (v * 100u + 63u) / 127u;
         e[0] = (char)('0' + v / 100u), e[1] = (char)('0' + v / 10u % 10u), e[2] = (char)('0' + v % 10u), e[3] = 0;
     }
@@ -2168,6 +2180,7 @@ static void app_main(void)
                 if ((b_down >> BTN_SEL & 1u) && PAGES[page].btn == BTN_SEQ) lock_turn(k, d);
                 else knob_turn(page, k, d), learn_knob(page, k);   /* (LEARN: this one's parameter) */
                 if (page == PG_HOME) home_say(k);   /* (HOME: what it changed, in the header a moment) */
+                if (d > 0) fx_send_on(page);    /* (GRAIN, DELAY turned up, the track sending nothing: its send on) */
                 if (b_down >> BTN_SEL & 1u) b_used |= 1u << BTN_SEL;
                 t_touch = fm1_ms;
             }

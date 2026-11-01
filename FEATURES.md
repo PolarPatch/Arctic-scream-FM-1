@@ -153,11 +153,15 @@ New in 1.1. The idea follows Jangada's DRONE page; it is written from scratch. T
 
 | Page | K1 | K2 | K3 | K4 |
 | --- | --- | --- | --- | --- |
-| HOME | VOLUME | CUTOFF | RESONANCE | FX (the three sends together, 0–200 %) |
+| HOME | VOLUME | CUTOFF | CHAOS (1.3) | MORPH (1.3) |
 | MIXER 1 | LEVEL | DLY SEND | REV SEND | GRAIN SEND |
-| MIXER 2 | PAN | TYPE (LP / HP / BP) | POS (PRE / POST) | |
+| MIXER 2 | PAN | TYPE (LP / HP / BP) | POS (PRE / POST) | RESONANCE |
 
 HOME draws each track's wave as it plays. The header shows the track, its sound and the tempo.
+
+- **CHAOS** (1.3): the sound will not sit still. At random moments, from about once a second to ~20 a second, the source's four knobs jump (MODEL and the other stepped ones too), the filter jumps and screams, and voices leap octaves and fifths; past 3/4 any interval and short silences. Low it stirs, full it is havoc. Holvut's FEEDBACK only ever goes up, so the howl never falls asleep.
+- **MORPH** (1.3): one knob through all four of the source's knobs at once, on a path of its own for each track and source, always the same. At 0 the sound is as set.
+- Both sit on top of the knobs, as DRONE does, and are saved with the project.
 
 ## Sounds and saving (SAVE)
 

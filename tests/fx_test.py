@@ -64,7 +64,7 @@ _, hb, lb, _ = measure(run("base_open", HOME)[0])   # (the filters' checks again
 lp, _, _ = run("lp", HOME + [(800, "enc 3 -70")])   # (Arctic Scream: ~600 Hz, its VA already darker)
 hp, _, _ = run("hp", MIX2 + [(400, "enc 3 1")] + HOME + [(800, "enc 3 -63")])
 # (BP with RESONANCE 80: at 0 a band-pass's Q is 0.5, wide and mild)
-bp, _, _ = run("bp", MIX2 + [(400, "enc 3 2")] + HOME + [(800, "enc 3 -63"), (850, "enc 4 80")])
+bp, _, _ = run("bp", MIX2 + [(400, "enc 3 2"), (450, "enc 5 56")] + HOME + [(800, "enc 3 -63")])   # (RESONANCE: MIXER 2's KNOB 4, 24 -> 80)
 r, h, lo_, _ = measure(lp)
 check("track LP: the highs down, the lows kept", h < hb * 0.6 and lo_ > lb * 0.8, f"hi {h:.0f}/{hb:.0f} lo {lo_:.0f}/{lb:.0f}")
 r, h, lo_, _ = measure(hp)

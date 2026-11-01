@@ -427,7 +427,7 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         return;
     case PG_HOME:                               /* the selected track's, as the knobs (Arctic Scream p0larpatch; GR!MM's
                                                  * showed the four tracks' LEVELs here): VOLUME (MUTE), CUTOFF ("OPEN",
-                                                 * "2.4K", "450"), RESONANCE, FX to 200 % */
+                                                 * "2.4K", "450"), CHAOS, MORPH */
         if (k == 0u && (trk_quiet >> sel & 1u)) { put_s(S->val, "MUTE"); S->dim = 1; return; }
         if (k == 1u) {
             uint32_t hz = CUTOFF_HZ[clamp(v, 0, 127)];
@@ -437,10 +437,11 @@ static void ui_slab_make(uint32_t k, slab_t *S)
             else put_s(put_u(S->val, (hz + 500u) / 1000u), "K");
             return;
         }
-        ui_3(S->val, k == 3u ? (uint32_t)clamp(v, 0, 200) : ui_pc(v));
+        ui_3(S->val, ui_pc(v));
         return;
-    case PG_MIX2:                               /* PAN; (V2) the track filter's TYPE, POS */
-        if (k == 1u) put_s(S->val, FT_NAME[clamp(v, 0, NFTYPE - 1)]);
+    case PG_MIX2:                               /* PAN; (V2) the track filter's TYPE, POS; RESONANCE */
+        if (k == 3u) ui_3(S->val, ui_pc(v));
+        else if (k == 1u) put_s(S->val, FT_NAME[clamp(v, 0, NFTYPE - 1)]);
         else if (k == 2u) put_s(S->val, v ? "POST" : "PRE");
         else if (v == 64) put_s(S->val, "C");
         else put_u(put_s(S->val, v < 64 ? "L" : "R"), (uint32_t)(v < 64 ? 64 - v : v - 64));

@@ -3,20 +3,20 @@
 /* GR!MM's TAPE effect: the whole mix (the tracks and every effect's return) through a worn tape, the last stage before
  * MASTER. GR!MM's own, from DELAY's wear (wear.c: the wow and flutter, the saturation; the design after X0X's TAPE, see
  * tape.c):
- *   WOW         the read of a short line (~2 ms) moves with DELAY's wow (0.5 and 0.19 Hz, not quite periodic) and its
- *               flutter (6.1 Hz): up to ~+-0.6 % of pitch, as a tired transport
- *   SATURATION  DELAY's tanh, driven 1x .. 4x, the level made up after it, blended in with the knob: 0 = clean. One
+ *   WOW         the read of a short line (~5 ms) moves with DELAY's wow (0.5 and 0.19 Hz, not quite periodic) and its
+ *               flutter (6.1 Hz): up to ~+-2 % of pitch, a seasick transport (Arctic Scream 1.3: 3 x GR!MM's)
+ *   SATURATION  DELAY's tanh, driven 1x .. 12x (1.3: was 4x), the level made up after it, blended in with the knob: 0 = clean. One
  *               curve (tf_curve), made by the main loop when the knob moves (tapefx_poll), crossed over to from the
  *               last within a block: no step in the sound, and nothing heavy in the audio ISR
- *   TONE        a one-pole low-pass, darker as it turns: open .. ~1.8 kHz
+ *   TONE        a one-pole low-pass, darker as it turns: open .. ~500 Hz (1.3: was ~1.8 kHz)
  *   HISS        noise (a draw every two frames: a little darker than white), under the low-pass (TONE darkens it
- *               too): up to ~ -41 dB rms
+ *               too): up to ~ -29 dB rms (1.3: was -41)
  * All four at 0: bypassed, nothing runs. Turning on or off crosses over within a block (from the dry once the line has
  * filled, ~2.5 ms): no click. The stages that are at 0 are left out. The main loop sets the four and calls tapefx_poll;
  * the audio ISR calls tapefx_render on the mix, after SPACE. */
 
-#define TF_LEN 256u                             /* the line, a side (a power of two) */
-#define TF_BASE (96 << 8)                       /* the read, ~2.2 ms back (Q8 samples): the wow moves it around that */
+#define TF_LEN 512u                             /* the line, a side (a power of two) */
+#define TF_BASE (240 << 8)                      /* the read, ~5.4 ms back (Q8 samples): the wow moves it around that */
 #define TF_FILL 112u                            /* turning on: the dry alone this long, then the cross-over */
 #define TF_NC 768u                              /* SATURATION's curve: x -98304 .. 98304 in steps of 256 */
 #define TF_CQ 2                                 /* its values kept >> TF_CQ (int16: |y| <= |x| <= 98304, so <= 24576;
@@ -38,10 +38,10 @@ static volatile uint32_t tf_pub, tf_ack;        /* main loop: + 1, the other cur
                                                  * crossed over to it */
 static volatile int32_t tf_psat;
 
-/* a SATURATION curve into c: DELAY's tanh (wear.c), driven 1x .. 4x, made up, blended in with the knob (0: x itself) */
+/* a SATURATION curve into c: DELAY's tanh (wear.c), driven 1x .. 12x, made up, blended in with the knob (0: x itself) */
 static void tf_make(int16_t *c, int32_t sat)
 {
-    int32_t g = 4096 + sat * 97, ig = (int32_t)(134217728u / (uint32_t)g), sw = sat * 129, x, y;   /* sw: Q14 */
+    int32_t g = 4096 + sat * 355, ig = (int32_t)(134217728u / (uint32_t)g), sw = sat * 129, x, y;   /* sw: Q14 */
     uint32_t j;
     for (j = 0; j <= TF_NC / 2u; j++) {         /* (odd: one half, mirrored) */
         x = (int32_t)(j << 8);
@@ -79,7 +79,7 @@ static void tapefx_render(int32_t *out, uint32_t n)
     int32_t wow = clamp(tf_wow, 0, 127), sat = clamp(tf_sat, 0, 127), tone = clamp(tf_tone, 0, 127),
             hiss = clamp(tf_hiss, 0, 127);
     uint32_t on = (wow | sat | tone | hiss) != 0, i, w = tf.w, rng = tf.rng ? tf.rng : 0x9E3779B9u;
-    int32_t glide, m1, D0, dD, hl = (hiss * hiss) >> 5, tc = 32767 - ((tone * tone * 1606) >> 10), l, r, shape;
+    int32_t glide, m1, D0, dD, hl = (hiss * hiss) >> 3, tc = 32767 - ((tone * tone * 1965) >> 10), l, r, shape;
     uint32_t fade = tf_pub != tf_ack, pub = tf_pub;
     const int16_t *c0, *c1;
     if (!on && !tf.on)
@@ -103,9 +103,9 @@ static void tapefx_render(int32_t *out, uint32_t n)
     c0 = tf_curve[tf.ci ^ 1];
     shape = tf.csat || fade;
 
-    /* the wow: the read glides over the block to this block's wow (wear.c; up to ~80 samples, Q8) */
+    /* the wow: the read glides over the block to this block's wow (wear.c; up to ~220 samples, Q8) */
     tf.p1 += DL_W1, tf.p2 += DL_W2, tf.p3 += DL_W3;
-    m1 = wear_wow(tf.p1, tf.p2, tf.p3, wow * 161);
+    m1 = wear_wow(tf.p1, tf.p2, tf.p3, wow * 161) * 3;
     D0 = TF_BASE + tf.m;
     dD = (TF_BASE + m1) - D0;
     tf.m = m1;

@@ -200,8 +200,8 @@ C("02", "HOME and the mixers", "var(--aurora)",
   P("HOME", "Tap HOME", "home", K(
     ["VOLUME", "The selected track's level (MUTE when muted).", "0–100 %"],
     ["CUTOFF", "The track filter's cutoff (MIXER 2's TYPE), for every source.", "~30 Hz – OPEN"],
-    ["RESONANCE", "The track filter's resonance.", "0–100 %"],
-    ["FX", "All three effect sends of the track together: 0 dry, 100 % as set on MIXER 1, 200 % twice as wet.", "0–200 %"]).concat([
+    ["CHAOS " + NEW, "The sound will not sit still: at random moments the source's knobs jump (MODEL too), the filter jumps and screams, voices leap octaves and fifths; past 3/4 any interval and short silences. Low it stirs, full it is havoc.", "0–100 %"],
+    ["MORPH " + NEW, "One knob through all four of the source's knobs at once, on a path of its own for each track and source. At 0 the sound is as set.", "0–100 %"]).concat([
     ["SELECT", "The tempo (following a MIDI clock: EXT and its tempo).", "20–300 BPM"]])),
   P("MIXER 1", "Tap HOME twice", "mixer", K(
     ["LEVEL", "The track's level.", "0–100 %"],
@@ -212,7 +212,7 @@ C("02", "HOME and the mixers", "var(--aurora)",
     ["PAN", "Where the track sits.", "L64 – C – R63"],
     ["TYPE " + NEW, "The track filter: low-pass, high-pass or band-pass. LP open (CUTOFF at the top) or HP open (at the bottom): no filtering. BP is gentle at RESONANCE 0 and narrows as you turn it up.", "LP / HP / BP"],
     ["POS " + NEW, "PRE: the effect sends hear the filtered sound. POST: only the dry sound is filtered; GRAIN, DELAY and SPACE hear it unfiltered (a dark track with a bright reverb).", "PRE / POST"],
-    ["", "", ""]))]),
+    ["RESONANCE", "The track filter's resonance (on HOME before 1.3).", "0–100 %"]))]),
 
 C("03", "Sources: EDIT", "var(--violet)",
   "EDIT opens the track's SOUND page, the source's four knobs, then SOURCE. Eight sources, each with its own picture.", [
@@ -345,21 +345,21 @@ C("08", "Sounds, slots and songs: SAVE, GLO", "var(--periwinkle)",
 C("09", "Destroy: FX", "var(--plasma)",
   "Tracks feed GRAIN, DELAY and SPACE through their sends; MASTER, DRIVE and TAPE work on the whole mix. Each page has its own northern lights.", [
   P("TAPE", "Tap FX", "tape", K(
-    ["WOW", "Slow wobble.", "0–100 %"],
-    ["SATURATION", "Tape saturation.", "0–100 %"],
-    ["TONE", "Darker, brighter.", "0–100 %"],
-    ["HISS", "Tape hiss.", "0–100 %"]),
+    ["WOW", "Slow wobble and flutter, up to a seasick ±2 % of pitch.", "0–100 %"],
+    ["SATURATION", "Tape saturation, up to 12x drive.", "0–100 %"],
+    ["TONE", "Darker, down to ~500 Hz.", "0–100 %"],
+    ["HISS", "Tape hiss, up to loud.", "0–100 %"]),
     ["All four at 0 switch TAPE off (BYPASS). It colours the whole mix at the very end."]),
   P("GRAIN", "Tap FX twice", "grain", K(
     ["SIZE", "How long each grain is.", "10–390 ms"],
     ["DENSITY", "How many grains a second.", ""],
     ["SCATTER", "How far they scatter.", "0–100 %"],
     ["MIX", "How loud the cloud is.", "0–100 %"]),
-    ["FREEZE (PERFORM, F2) holds the grain cloud. GRAIN pours into SPACE."]),
+    ["FREEZE (PERFORM, F2) holds the grain cloud. GRAIN pours into SPACE.", "GRAIN hears what the tracks send it (MIXER 1). Turn a knob up while the selected track sends nothing and its send goes to 50 %."]),
   P("DELAY", "Tap FX three times", "delay", K(
     ["TIME", "The echo's time.", "20 ms – 3 s"],
     ["FEEDBACK", "Past 100 % the echo grows and saturates, and burns magenta on the screen: runaway.", "0–150 %"],
-    ["WEAR", "Worn, wobbly echoes.", "0–100 %"],
+    ["WEAR", "Worn, wobbly echoes: darker, driven to 4x, wobbling up to ~11 ms.", "0–100 %"],
     ["MIX", "How loud they are.", "0–100 %"])),
   P("SPACE", "Tap FX four times", "space", K(
     ["SIZE", "The reverb's length; at the top it holds for ever (INF, FREEZE).", "to ~32 s, INF"],

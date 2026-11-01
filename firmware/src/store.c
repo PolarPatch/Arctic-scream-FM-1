@@ -401,6 +401,7 @@ static uint32_t cat_len(uint32_t c)
 }
 
 /* ---- packing: a track (52 B), a sequence (260 B), a track's step locks (288 B) */
+static const uint8_t CH_PKB[7] = {29, 30, 32, 33, 34, 35, 36}, MO_PKB[7] = {38, 39, 40, 41, 42, 45, 47};
 static uint8_t *pk_track(uint8_t *q, uint32_t t)
 {
     uint32_t e, k;
@@ -428,6 +429,11 @@ static uint8_t *pk_track(uint8_t *q, uint32_t t)
     q[46] = (uint8_t)((uint32_t)clamp(trk[t].arp_oct, 1, 4) |
                                                                                  (uint32_t)clamp(trk[t].dr_rise, 0, DR_NRISE - 1) << 4);
     q[47] = (uint8_t)clamp(trk[t].arp_gate, 10, 100);
+    for (k = 0; k < 7u; k++) {                  /* (Arctic Scream 1.3: HOME's CHAOS and MORPH, a bit each in the top bits
+                                                 * of 29, 30, 32 .. 36 and 38 .. 42, 45, 47; saved before it: 0) */
+        q[CH_PKB[k]] = (uint8_t)(q[CH_PKB[k]] | ((uint32_t)clamp(trk[t].chaos, 0, 127) >> k & 1u) << 7);
+        q[MO_PKB[k]] = (uint8_t)(q[MO_PKB[k]] | ((uint32_t)clamp(trk[t].morph, 0, 127) >> k & 1u) << 7);
+    }
     lfo_pk(q + 48, t);                          /* LFO */
     return q + TRK_PK;
 }
@@ -451,6 +457,11 @@ static const uint8_t *uk_track(const uint8_t *q0, uint32_t t, int isr, uint32_t 
     uint32_t e, k;
     for (k = 0; k < TRK_PK && k < n; k++) q[k] = q0[k];
     trk_def(q, n);                              /* (what an older save has not: as at power-on) */
+    trk[t].chaos = trk[t].morph = 0;            /* (CHAOS, MORPH: out of the top bits, then those cleared) */
+    for (k = 0; k < 7u; k++) {
+        trk[t].chaos |= (int32_t)(q[CH_PKB[k]] >> 7) << k, q[CH_PKB[k]] &= 127u;
+        trk[t].morph |= (int32_t)(q[MO_PKB[k]] >> 7) << k, q[MO_PKB[k]] &= 127u;
+    }
     for (e = 0; e < PK_ENG; e++)                /* (GR!MM rc9: every value loaded within its knob's range: a broken save
                                                  * can't put one past it) */
         for (k = 0; k < 4u; k++) trk[t].p[e][k] = clamp(q[1 + e * 4u + k], 0, ENGINES[e]->max[k]);
@@ -838,6 +849,7 @@ static void project_new(void)                   /* NEW: the four tracks' power-o
                                                  * rc9: the mix too, as at power-on: a track left at VOLUME 0, its filter
                                                  * closed, its FX 0 came out of NEW silent) */
         trk[t].cut = T0.cut, trk[t].res = T0.res, trk[t].fx = T0.fx, trk[t].ftype = T0.ftype, trk[t].fpos = T0.fpos;
+        trk[t].chaos = trk[t].morph = 0;
         fm_builtin(t, T0.p[ENG_FM][0]);
         if (trk[t].eng != T0.eng) {
             trk[t].eng = T0.eng;

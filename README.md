@@ -35,6 +35,7 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **The track filter** gets a TYPE (LP, HP, BP) and a POS (PRE or POST the effects) on MIXER 2.
   - **MIDI clock** in (USB or the TRS jack) and out (USB), **MIDI in on the TRS jack** with a TRS-to-DIN adapter, and one MIDI channel to the selected track (CH n > SEL).
   - **6 dB of headroom and a safety limiter**, so loud screams no longer clip; a drone keeps its voices when another track plays a big chord.
+  - **CHAOS and MORPH** on HOME (RESONANCE moved to MIXER 2), and bigger FX: TAPE's wow, saturation, tone and hiss reach much further, DELAY's WEAR wobbles and drives harder, and turning GRAIN or DELAY up on a track that sends nothing turns its send on.
   - LATCH from any page (SEL + OCT+), REC held to clear a pattern, backups with your samples, cleaner USB recording (USB REC DROPS on SYSTEM 2), and saves that no longer wait for ever under a delay that feeds back for ever.
 - **DRONE, a sound that lives on its own.** Press LFO twice. The knobs have North Sami names:
   - **BORGA** (snowdrift): four slow random walks move the filter, the source's shape and its own most natural knob, and the reverb's distance. Each voice drifts a few cents and breathes, so a held chord sounds like a choir. It never repeats.
@@ -48,7 +49,7 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - The keys sit an octave down, starting at F2.
   - The track defaults are darker.
   - The knobs on HOME, EDIT and LFO all audibly change the sound from the start.
-  - HOME's knobs set the selected track's VOLUME, CUTOFF, RESONANCE and FX, and show their values.
+  - HOME's knobs set the selected track's VOLUME and CUTOFF, and two knobs that wreck it: **CHAOS** (the sound jumps, leaps octaves, screams; from a stir to havoc) and **MORPH** (one knob through all four of the source's knobs at once).
 - **47 factory sounds** with arctic names, such as POLAR NIGHT, PERMAFROST, SVALBARD CELLO and NORTHERN LIGHT.
 - **A new look:**
   - an arctic cyberpunk palette from PolarPatch's BlueWatch;
