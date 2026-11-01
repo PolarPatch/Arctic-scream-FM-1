@@ -107,19 +107,23 @@ static uint32_t ed_commit(uint32_t o)
         __typeof__(set) s;
         uint32_t i;
         memcpy(&s, ED_RX, sizeof s);
-        if (ed_len == sizeof s - 2u) {          /* (V1.0's: version 1, no CLOCK: INT, no LATCH: OFF) */
+        if (ed_len == sizeof s - 3u) {          /* (V1.0's: version 1, no CLOCK: INT, no LATCH: OFF) */
             if (s.ver != 1u) return ER_BAD;
-            s.ver = SET_VER, s.clk = CK_INT, s.latch = 0;
-        } else if (ed_len == sizeof s - 1u) {   /* (V2's version 2: no LATCH, OFF) */
+            s.ver = SET_VER, s.clk = CK_INT, s.latch = 0, s.usb = USB_L0;
+        } else if (ed_len == sizeof s - 2u) {   /* (V2's version 2: no LATCH, OFF) */
             if (s.ver != 2u) return ER_BAD;
-            s.ver = SET_VER, s.latch = 0;
+            s.ver = SET_VER, s.latch = 0, s.usb = USB_L0;
+        } else if (ed_len == sizeof s - 1u) {   /* (version 3's, 1.3.1 and before: no USB LEVEL, 0 dB) */
+            if (s.ver != 3u) return ER_BAD;
+            s.ver = SET_VER, s.usb = USB_L0;
         }
         if (s.ver != SET_VER || s.oct < -2 || s.oct > 2 || s.tune < -50 || s.tune > 50 || s.col > 3u ||
-            s.mch > MCH_MAX || s.scr > 4u || s.out > 1u || s.nlk > NLINK || s.clk >= CK_N || s.latch > 1u)
+            s.mch > MCH_MAX || s.scr > 4u || s.out > 1u || s.nlk > NLINK || s.clk >= CK_N || s.latch > 1u || s.usb > USB_LMAX)
             return ER_BAD;
         for (i = 0; i < s.nlk; i++)
             if (s.lk[i][1] >= NPAGE || s.lk[i][2] > 3u || s.lk[i][3] > 3u) return ER_BAD;
         sy_col = s.col, sy_mch = s.mch, sy_tune = s.tune, sy_scr = s.scr, sy_out = s.out, sy_clk = s.clk, sy_latch = s.latch;
+        sy_usb = s.usb;
         sys_sync();                             /* (a new MIDI CHANNEL: what is on out there let go first) */
         set.oct = s.oct, set.nlk = s.nlk, set.ver = SET_VER;
         memcpy(set.lk, s.lk, sizeof set.lk);
@@ -278,8 +282,8 @@ static int ed_frame(const uint8_t *f, uint32_t n, int silent)
         if (op == 0u) {                         /* BEGIN: fmt, len (5), crc (5) */
             uint32_t len = n >= 13u ? ed_rd35(f + 3) : 0u;
             if (n < 13u || !ed_size(o) || o >= EO_FACT || (o >= EO_SMP && o < EO_SND) || f[2] != ED_FMT ||
-                (len != ed_size(o) && !(o == EO_SET && len + 2u >= sizeof set && len < sizeof set))) rc = ER_ARGS;
-                                                /* (the settings: V1.0's, V2's version 2 too, a backup of then) */
+                (len != ed_size(o) && !(o == EO_SET && len + 3u >= sizeof set && len < sizeof set))) rc = ER_ARGS;
+                                                /* (the settings: V1.0's, V2's version 2, 1.3.1's version 3 too, a backup of then) */
             else if (!silent) rc = ER_STOP;
             else ed_obj = (int32_t)o, ed_len = len, ed_crc = ed_rd35(f + 8), ed_got = 0, ed_t = fm1_ms;
         } else if (op == 1u) {                  /* DATA: off (5), pack7, where the last ended */

@@ -41,9 +41,9 @@ def run(name, ev, end, env=None):
     return pr, out
 
 
-def settings(name, out=0, latch=0):             # version 3's settings (170 B): SEQ MIDI OUT, SYSTEM 3's LATCH
-    b = bytearray(170)
-    b[5], b[167], b[169] = out, 3, latch
+def settings(name, out=0, latch=0, usb=2):      # version 4's settings (171 B): SEQ MIDI OUT, SYSTEM 3's LATCH, USB LEVEL
+    b = bytearray(171)
+    b[5], b[167], b[169], b[170] = out, 4, latch, usb
     f = OUT / f"set_{name}.bin"
     f.write_bytes(bytes(b))
     return dict(os.environ, GRIMM_SETTINGS_IN=str(f))
@@ -59,14 +59,14 @@ def probes(*ts):
     return [(t, "probe") for t in ts]
 
 
-# SYSTEM 3: HOME held (SYSTEM), HOME, HOME; LATCH turned to ALWAYS OFF (saved: 170 B); HOME: SYSTEM again
+# SYSTEM 3: HOME held (SYSTEM), HOME, HOME; LATCH turned to ALWAYS OFF (saved: 171 B); HOME: SYSTEM again
 ev = [(300, "down 8"), (1000, "up 8"), (1200, "btn 8"), (1400, "btn 8"), (1600, "enc 2 1"), (4000, "btn 8")]
 pr, out = run("sys3", ev + probes(1100, 1300, 1500, 1700, 4100), 4200)
 check("HOME held, HOME, HOME: SYSTEM, SYSTEM 2, SYSTEM 3; HOME again: SYSTEM",
       [pr[t]["page"] for t in (1100, 1300, 1500, 4100)] == [PG_SYSTEM, PG_SYS2, PG_SYS3, PG_SYSTEM],
       [pr[t]["page"] for t in (1100, 1300, 1500, 4100)])
-check("SYSTEM 3's LATCH: FROM SOUND as set out; turned to ALWAYS OFF, saved with the settings (170 B)",
-      pr[1500]["new"] == 0 and pr[1700]["new"] == 1 and "settings saved (170 B)" in out)
+check("SYSTEM 3's LATCH: FROM SOUND as set out; turned to ALWAYS OFF, saved with the settings (171 B)",
+      pr[1500]["new"] == 0 and pr[1700]["new"] == 1 and "settings saved (171 B)" in out)
 # a sound loaded (PRESETS: CRYPT PAD, saved with LATCH ON)
 PRESET = [(300, "enc 6 1")]
 pr, _ = run("snd_from", PRESET + probes(500), 600)

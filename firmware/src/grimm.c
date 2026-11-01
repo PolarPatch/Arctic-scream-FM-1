@@ -58,8 +58,9 @@
  *              arps' notes out on their tracks' channels too; SAMPLES: RESTORE + OCT+ writes the four factory
  *              samples over the slots, OCT- keeps them; none built in: CLEAR, the slots emptied), HOME again:
  *              SYSTEM 3 (GR!MM V2: LATCH: FROM SOUND, a sound loaded brings its own LATCH, as before; ALWAYS OFF, a
- *              sound loaded sets the track's LATCH OFF; at the load only: EDIT's LATCH, SEL + OCT+ as ever); the
- *              FM-1's settings, not the project's
+ *              sound loaded sets the track's LATCH OFF; at the load only: EDIT's LATCH, SEL + OCT+ as ever;
+ *              Arctic Scream p0larpatch: USB LEVEL, -12 .. +24 dB in 6 dB steps, the computer's recording over USB,
+ *              a limiter after it); the FM-1's settings, not the project's
  *   SAVE       SOUNDS (64 slots: a track's source, its four, ENV, LATCH (FM: its own patch); SLOT, CATEGORY, TYPE (the list by source),
  *              ACTION; playing: SAVE / CLEAR wait for the stop) -> PROJECTS (the slots A..D: the four tracks' sounds,
  *              sequences and the mixer; SLOT, ACTION LOAD / SAVE / ERASE / NEW); OCT+ does the ACTION, OCT- backs out;
@@ -340,7 +341,12 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
  * (platform.c's knob, squared; its top quarter up to 6 dB more: at the top, the level before V2), then a limiter: a
  * peak past OUT_LIM (just under full scale) at once, let go over ~90 ms: nothing reaches the clip.
  * (Arctic Scream p0larpatch) A computer recording over USB gets the mix as at MASTER's top, through a limiter of its
- * own: the knob sets the speaker and the headphones, not the recording (at a quarter it was ~30 dB down) */
+ * own: the knob sets the speaker and the headphones, not the recording (at a quarter it was ~30 dB down); SYSTEM 3's
+ * USB LEVEL moves it -12 .. +24 dB (USB_G, Q12: 4092 at 0 dB, MASTER's top) */
+#define USB_L0 2u                               /* USB LEVEL 0 dB (MASTER's top) */
+#define USB_LMAX 6u
+static const int32_t USB_G[USB_LMAX + 1u] = {1027, 2051, 4092, 8165, 16291, 32505, 64856};
+static volatile uint8_t usb_lvl = USB_L0;       /* set.usb, for the audio (sys_sync) */
 #define OUT_LIM 32440                           /* (-0.09 dBFS) */
 #define OUT_MQ 2304                             /* (MASTER at 3/4: 768^2 / 256) */
 static int32_t out_env;                         /* audio: the limiter's peak (its gain: OUT_LIM / it) */
@@ -363,14 +369,14 @@ static inline void out_lim(int32_t *l, int32_t *r, int32_t *env)
 }
 static void out_stage(int32_t *out, uint32_t n)
 {
-    int32_t g = out_gain(), env = out_env, ue = usb_env, u[64];
+    int32_t g = out_gain(), env = out_env, ue = usb_env, ug = USB_G[usb_lvl <= USB_LMAX ? usb_lvl : USB_L0], u[64];
     uint32_t i, rec = (uint32_t)usb_feeding();
     for (i = 0; i < n; i++) {
         int32_t x = clamp(out[2u * i], -500000, 500000), y = clamp(out[2u * i + 1u], -500000, 500000);
         int32_t l = (x * g) >> 12, r = (y * g) >> 12;
         out_lim(&l, &r, &env);
-        if (rec) {                              /* (the USB recording: MASTER at its top, 4092) */
-            int32_t ul = (x * 4092) >> 12, ur = (y * 4092) >> 12;
+        if (rec) {                              /* (the USB recording: MASTER at its top, USB LEVEL's gain) */
+            int32_t ul = (int32_t)(((int64_t)x * ug) >> 12), ur = (int32_t)(((int64_t)y * ug) >> 12);
             out_lim(&ul, &ur, &ue);
             u[2u * (i & 31u)] = ul, u[2u * (i & 31u) + 1u] = ur;
             if ((i & 31u) == 31u || i + 1u == n)
@@ -913,10 +919,12 @@ static struct {
     uint8_t clk;                                /* (V2, SET_VER 2) CLOCK: CK_INT .. CK_TRS; V1.0's settings: INT */
     uint8_t latch;                              /* (V2, SET_VER 3) SYSTEM 3's LATCH: 0 FROM SOUND (before: so), 1
                                                  * ALWAYS OFF */
+    uint8_t usb;                                /* (Arctic Scream p0larpatch, SET_VER 4) SYSTEM 3's USB LEVEL: 0 .. 6,
+                                                 * -12 .. +24 dB; USB_L0 (0 dB) before */
 } set;
-#define SET_VER 3u
+#define SET_VER 4u
 static uint32_t set_dirty, set_t;               /* the settings changed, when */
-static volatile int32_t sy_col, sy_mch, sy_tune, sy_scr, sy_learn, sy_out, sy_fac, sy_clk, sy_latch;   /* SYSTEM's,
+static volatile int32_t sy_col, sy_mch, sy_tune, sy_scr, sy_learn, sy_out, sy_fac, sy_clk, sy_latch, sy_usb;   /* SYSTEM's,
                                                  * SYSTEM 2's, SYSTEM 3's knobs (sy_fac: SAMPLES, 1 RESTORE: OCT+
                                                  * writes the factory ones) */
 static uint32_t fac_at;                         /* RESTORE confirmed: when it writes (the header said first), 0 none */
@@ -1023,7 +1031,7 @@ static const page_t PAGES[NPAGE] = {
                                                  * SOURCE's) */
     {"MASTER", BTN_FX, 1, 0, 1, {"CUTOFF", "RESONANCE", "TYPE", "POSITION"}},   /* (GR!MM V2: FX's 5th and 6th, master.c) */
     {"DRIVE", BTN_FX, 1, 0, 1, {"AMOUNT", "TYPE", "TONE", "MIX"}},
-    {"SYSTEM 3", BTN_HOME, 1, 0, 0, {"LATCH", "", "", ""}},   /* (V2: a NEW project's tracks' LATCH) */
+    {"SYSTEM 3", BTN_HOME, 1, 0, 0, {"LATCH", "USB", "", ""}},   /* (V2: a NEW project's tracks' LATCH) */
 };
 static uint32_t pg_key(uint32_t p)              /* its place in its button's round */
 {
@@ -1109,7 +1117,7 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_PROJECTS: return k == 0u ? &pj_slot : k == 3u ? &pj_act : 0;   /* (CATEGORY, TYPE: "-") */
     case PG_SYSTEM: return k == 0u ? &sy_col : k == 1u ? &sy_mch : k == 2u ? &sy_tune : &sy_scr;
     case PG_SYS2: return k == 0u ? &sy_learn : k == 1u ? &sy_out : k == 2u ? &sy_fac : &sy_clk;
-    case PG_SYS3: return k == 0u ? &sy_latch : 0;
+    case PG_SYS3: return k == 0u ? &sy_latch : k == 1u ? &sy_usb : 0;
     default: return 0;                          /* (not built yet: the knobs do nothing) */
     }
 }
@@ -1126,7 +1134,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_DRONE ? (k < 2u ? 100 : k == 2u ? DR_NRISE - 1 : 1) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 3 : k == 1u ? MCH_MAX : k == 2u ? 50 : 4) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
-           pg == PG_SYS3 ? 1 :
+           pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_LMAX : 1) :
            pg == PG_FMALGO ? (k == 0u ? 31 : k == 1u ? 7 : k == 2u ? 5 : 99) :
            pg == PG_FMOP ? (k ? 99 : 31) : pg == PG_MIX2 ? (k == 1u ? NFTYPE - 1 : k == 2u ? 1 : 127) :
            pg == PG_MASTER ? (k == 2u ? NFTYPE - 1 : k == 3u ? NMPOS - 1 : 127) :
@@ -1182,6 +1190,14 @@ static char *tune_text(char *s, int32_t v)      /* TUNE: "+00", "-12" */
     s[0] = v < 0 ? '-' : '+', v = v < 0 ? -v : v;
     s[1] = (char)('0' + v / 10 % 10), s[2] = (char)('0' + v % 10), s[3] = 0;
     return s + 3;
+}
+static char *usb_db(char *s, int32_t v, const char *sp)   /* USB LEVEL: "-12DB" .. "+24DB" (sp between); returns s */
+{
+    int32_t d = (clamp(v, 0, (int32_t)USB_LMAX) - (int32_t)USB_L0) * 6;
+    char *e = s;
+    if (d) *e++ = d < 0 ? '-' : '+';
+    put_s(put_s(put_u(e, (uint32_t)(d < 0 ? -d : d)), sp), "DB");
+    return s;
 }
 static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on page pg, as the screen shows it */
 {
@@ -1663,6 +1679,7 @@ static void sys_sync(void)
     int8_t tn = (int8_t)clamp(sy_tune, -50, 50);
     uint8_t col = (uint8_t)clamp(sy_col, 0, 3), mch = (uint8_t)clamp(sy_mch, 0, MCH_MAX), scr = (uint8_t)clamp(sy_scr, 0, 4);
     uint8_t out = (uint8_t)clamp(sy_out, 0, 1), clk = (uint8_t)clamp(sy_clk, 0, CK_N - 1), la = (uint8_t)clamp(sy_latch, 0, 1);
+    uint8_t ul = (uint8_t)clamp(sy_usb, 0, (int32_t)USB_LMAX);
     uint32_t n, t;
     if (mch != set.mch || (set.out && !out)) mo_flush = 1;
     if (mch != set.mch)
@@ -1673,14 +1690,15 @@ static void sys_sync(void)
                     midi_held[n] &= (uint8_t)~(0x11u << t);
                 }
     if (tn != set.tune || col != set.col || mch != set.mch || scr != set.scr || out != set.out || clk != set.clk ||
-        la != set.latch) {
+        la != set.latch || ul != set.usb) {
         set.tune = tn, set.col = col, set.mch = mch, set.scr = scr, set.out = out, set.clk = clk, set.latch = la;
+        set.usb = ul;
         set_dirty = 1, set_t = fm1_ms;
     }
     ck_mode = set.clk, rt_usb_fast = set.clk == CK_USB;   /* (CLOCK: the audio ISR's, platform.c's) */
     ui_acc_user = UI_ACCENTS[set.col & 3u];
     tune_f = (set.tune * 23666 + set.tune * set.tune * 7) / 10000;   /* (2^(c / 1200) - 1, x 4096) */
-    mo_seq = set.out, snd_latch_off = set.latch;
+    mo_seq = set.out, snd_latch_off = set.latch, usb_lvl = set.usb;
 }
 static void sys_load(void)                      /* the settings at power-on into SYSTEM's knobs (version 19's: the
                                                  * octave alone; steps 20..24's: no ver, their links to HOME's T1..T4
@@ -1688,25 +1706,30 @@ static void sys_load(void)                      /* the settings at power-on into
 {
     int8_t o = 0;
     uint32_t i;
+    set.usb = USB_L0;                           /* (the older ones' below: no USB LEVEL, 0 dB) */
     if (!settings_load(&set, sizeof set))
         ;
-    else if (!settings_load(&set, sizeof set - 1u))   /* (V2's before SET_VER 3: no LATCH, OFF) */
-        set.latch = 0;
-    else if (!settings_load(&set, sizeof set - 2u))   /* (V1.0's: no CLOCK, INT) */
-        set.clk = CK_INT, set.latch = 0;
-    else if (!settings_load(&set, sizeof set - 3u))   /* (steps 20..24's: no version either) */
-        set.ver = 0, set.clk = CK_INT, set.latch = 0;
+    else if (!settings_load(&set, sizeof set - 1u))   /* (SET_VER 3's: no USB LEVEL) */
+        set.usb = USB_L0;
+    else if (!settings_load(&set, sizeof set - 2u))   /* (V2's before SET_VER 3: no LATCH, OFF) */
+        set.latch = 0, set.usb = USB_L0;
+    else if (!settings_load(&set, sizeof set - 3u))   /* (V1.0's: no CLOCK, INT) */
+        set.clk = CK_INT, set.latch = 0, set.usb = USB_L0;
+    else if (!settings_load(&set, sizeof set - 4u))   /* (steps 20..24's: no version either) */
+        set.ver = 0, set.clk = CK_INT, set.latch = 0, set.usb = USB_L0;
     else {
         set.oct = settings_load(&o, 1) ? 0 : o;
         set.tune = 0, set.col = set.mch = set.scr = set.out = set.nlk = 0, set.ver = 0, set.clk = CK_INT, set.latch = 0;
+        set.usb = USB_L0;
     }
     if (set.mch > MCH_MAX) set.mch = 0;
     if (set.clk >= CK_N) set.clk = CK_INT;
     if (set.latch > 1u) set.latch = 0;
+    if (set.usb > USB_LMAX) set.usb = USB_L0;
     if (set.oct < -2 || set.oct > 2) set.oct = 0;
     if (set.nlk > NLINK) set.nlk = 0;
     sy_col = set.col, sy_mch = set.mch, sy_tune = set.tune, sy_scr = set.scr, sy_out = set.out, sy_clk = set.clk;
-    sy_latch = set.latch;
+    sy_latch = set.latch, sy_usb = set.usb;
     sys_sync();
     set_dirty = 0;
     if (!set.ver)                               /* (steps 20..24's; V1.0's are version 1: as they are) */

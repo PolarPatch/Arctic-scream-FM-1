@@ -363,7 +363,10 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         put_s(S->val, k == 2u ? (v ? SMP_FACT_N ? "RESTORE" : "CLEAR" : "KEEP") : k ? (v ? "ON" : "OFF") :
               v == LEARN_CLEAR ? "CLEAR" : LEARN_NAME[clamp(v, 0, 2)]);
         return;
-    case PG_SYS3: put_s(S->val, v ? "OFF" : "SOUND"); return;   /* (V2) LATCH: FROM SOUND, ALWAYS OFF */
+    case PG_SYS3:                               /* (V2) LATCH: FROM SOUND, ALWAYS OFF; USB LEVEL: -12DB .. +24DB */
+        if (k == 1u) { usb_db(S->val, v, ""); return; }
+        put_s(S->val, v ? "OFF" : "SOUND");
+        return;
     case PG_SOUNDS:
         if (k == 0u) { ui_3(S->val, (uint32_t)v + 1u); return; }
         if (k == 1u) { ui_squeeze(S->val, CAT_NAME[clamp(v, 0, NCAT - 1)]); return; }
@@ -1930,14 +1933,24 @@ static void pic_sys2(void)
     }
 }
 
-static void pic_sys3(void)                      /* (V2) SYSTEM 3: LATCH, what it does; the combo for the track's */
+static void sys3_row(int32_t y, const char *l, const char *v)
 {
-    ui_caption("LOADING A SOUND", 0);
-    sys_row(0, "LATCH", set.latch ? "ALWAYS OFF" : "FROM SOUND");
-    ui_text(PX0 + 6, 98, set.latch ? "A SOUND LOADED: THE" : "A SOUND BRINGS ITS OWN", 1, UI_M);
-    ui_text(PX0 + 6, 110, set.latch ? "TRACK'S LATCH OFF" : "LATCH WITH IT", 1, UI_M);
-    ui_text(PX0 + 6, 140, "SEL + OCT+: THE TRACK'S", 1, UI_M);
-    ui_text(PX0 + 6, 152, "LATCH ON, OFF", 1, UI_M);
+    ui_rect(PX0, y, 216, 15, UI_D);
+    ui_text(PX0 + 6, y + 4, l, 1, UI_L);
+    ui_text(PX0 + 210 - 8 * ui_len(v), y + 4, v, 1, UI_W);
+}
+static void pic_sys3(void)                      /* (V2) SYSTEM 3: LATCH, what it does; the combo for the track's;
+                                                 * (Arctic Scream p0larpatch) USB LEVEL, the computer's recording */
+{
+    char v[12];
+    ui_caption("LATCH, USB RECORDING", 0);
+    sys3_row(42, "LATCH", set.latch ? "ALWAYS OFF" : "FROM SOUND");
+    ui_text(PX0 + 6, 62, set.latch ? "A SOUND LOADED: THE" : "A SOUND BRINGS ITS OWN", 1, UI_M);
+    ui_text(PX0 + 6, 74, set.latch ? "TRACK'S LATCH OFF" : "LATCH WITH IT", 1, UI_M);
+    ui_text(PX0 + 6, 90, "SEL + OCT+: TRACK'S LATCH", 1, UI_M);
+    sys3_row(110, "USB LEVEL", usb_db(v, set.usb, " "));
+    ui_text(PX0 + 6, 130, "THE COMPUTER RECORDS AT", 1, UI_M);
+    ui_text(PX0 + 6, 142, "THIS LEVEL, NOT THE KNOB'S", 1, UI_M);
 }
 
 static void pic_notbuilt(void) { ui_text(120 - 4 * 13, 96, "NOT BUILT YET", 1, UI_M); }
@@ -2025,7 +2038,7 @@ static uint32_t ui_pic_key(void)
     }
     if (page == PG_TAPE) UI_H(tf_wow), UI_H(tf_sat), UI_H(tf_tone), UI_H(tf_hiss);
     if (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3) {   /* the settings, the links */
-        UI_H(set.col), UI_H(set.mch), UI_H(set.tune), UI_H(set.scr), UI_H(set.out), UI_H(set.nlk), UI_H(set.latch);
+        UI_H(set.col), UI_H(set.mch), UI_H(set.tune), UI_H(set.scr), UI_H(set.out), UI_H(set.nlk), UI_H(set.latch), UI_H(set.usb);
         for (k = 0; k < NLINK * 5u; k++) UI_H(set.lk[k / 5u][k % 5u]);
     }
     if (PAGES[page].btn == BTN_SEQ) {           /* the pattern, its settings, the cursor, the step playing */

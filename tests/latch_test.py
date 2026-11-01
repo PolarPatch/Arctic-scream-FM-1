@@ -24,8 +24,8 @@ bad = 0
 
 
 def settings(latch):
-    b = bytearray(170)
-    b[167], b[169] = 3, latch
+    b = bytearray(171)
+    b[167], b[169], b[170] = 4, latch, 2
     f = OUT / f"set{latch}.bin"
     f.write_bytes(bytes(b))
     return dict(os.environ, GRIMM_SETTINGS_IN=str(f), GRIMM_PLAIN="1")   # (Arctic Scream: plain VA tracks)
