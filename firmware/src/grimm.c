@@ -338,7 +338,9 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
 
 /* (V2) the output: 6 dB of headroom after every effect (the mix at half: six loud voices, four tracks fit), MASTER
  * (platform.c's knob, squared; its top quarter up to 6 dB more: at the top, the level before V2), then a limiter: a
- * peak past OUT_LIM (just under full scale) at once, let go over ~90 ms: nothing reaches the clip */
+ * peak past OUT_LIM (just under full scale) at once, let go over ~90 ms: nothing reaches the clip.
+ * (Arctic Scream p0larpatch) A computer recording over USB gets the mix as at MASTER's top, through a limiter of its
+ * own: the knob sets the speaker and the headphones, not the recording (at a quarter it was ~30 dB down) */
 #define OUT_LIM 32440                           /* (-0.09 dBFS) */
 #define OUT_MQ 2304                             /* (MASTER at 3/4: 768^2 / 256) */
 static int32_t out_env;                         /* audio: the limiter's peak (its gain: OUT_LIM / it) */
@@ -347,22 +349,37 @@ static int32_t out_gain(void)                   /* MASTER: Q12, half up to 3/4, 
     int32_t m = clamp(fm1_master(), 0, 4092);
     return m <= OUT_MQ ? m >> 1 : (m >> 1) + m * (m - OUT_MQ) / (2 * (4092 - OUT_MQ));
 }
+static int32_t usb_env;                         /* audio: the USB recording's limiter peak */
+static inline void out_lim(int32_t *l, int32_t *r, int32_t *env)
+{
+    int32_t a = *l < 0 ? -*l : *l, b = *r < 0 ? -*r : *r, e = *env;
+    a = a > b ? a : b;
+    e = a > e - (e >> 12) ? a : e - (e >> 12);  /* (let go, never under this sample) */
+    if (e > OUT_LIM) {
+        int32_t k = (int32_t)(((uint32_t)OUT_LIM << 15) / (uint32_t)e);   /* (Q15) */
+        *l = (int32_t)(((int64_t)*l * k) >> 15), *r = (int32_t)(((int64_t)*r * k) >> 15);
+    }
+    *env = e;
+}
 static void out_stage(int32_t *out, uint32_t n)
 {
-    int32_t g = out_gain(), env = out_env;
-    uint32_t i;
+    int32_t g = out_gain(), env = out_env, ue = usb_env, u[64];
+    uint32_t i, rec = (uint32_t)usb_feeding();
     for (i = 0; i < n; i++) {
-        int32_t l = (clamp(out[2u * i], -500000, 500000) * g) >> 12, r = (clamp(out[2u * i + 1u], -500000, 500000) * g) >> 12;
-        int32_t a = l < 0 ? -l : l, b = r < 0 ? -r : r;
-        a = a > b ? a : b;
-        env = a > env - (env >> 12) ? a : env - (env >> 12);   /* (let go, never under this sample) */
-        if (env > OUT_LIM) {
-            int32_t k = (int32_t)(((uint32_t)OUT_LIM << 15) / (uint32_t)env);   /* (Q15) */
-            l = (int32_t)(((int64_t)l * k) >> 15), r = (int32_t)(((int64_t)r * k) >> 15);
+        int32_t x = clamp(out[2u * i], -500000, 500000), y = clamp(out[2u * i + 1u], -500000, 500000);
+        int32_t l = (x * g) >> 12, r = (y * g) >> 12;
+        out_lim(&l, &r, &env);
+        if (rec) {                              /* (the USB recording: MASTER at its top, 4092) */
+            int32_t ul = (x * 4092) >> 12, ur = (y * 4092) >> 12;
+            out_lim(&ul, &ur, &ue);
+            u[2u * (i & 31u)] = ul, u[2u * (i & 31u) + 1u] = ur;
+            if ((i & 31u) == 31u || i + 1u == n)
+                usb_feed(u, (i & 31u) + 1u);
         }
         out[2u * i] = l, out[2u * i + 1u] = r;
     }
     out_env = env;
+    usb_env = ue;
 }
 
 static void app_audio(int32_t *out, uint32_t n)

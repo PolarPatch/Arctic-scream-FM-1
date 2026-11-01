@@ -348,6 +348,9 @@ static void hl_clear(void)                      /* the peaks and counts since no
 static int usb_recording(void) { return usb.config && !usb.suspended && uac.alt && uac.flowing; }   /* (rc11) a computer
                                                  * reads the USB audio now (a DAW with the FM-1 as its input, recording
                                                  * or not): the stream goes on all the time */
+static int usb_feeding(void) { return uac.feed; }   /* (Arctic Scream p0larpatch) this render feeds the USB audio ring:
+                                                 * out_stage hands it the mix at MASTER's top (usb_feed) */
+static void usb_feed(const int32_t *x, uint32_t n) { uac_tap(x, n); }
 static int usb_powered(void) { return usb.config && !usb.suspended; }   /* a USB host has it (and powers it); there is
                                                  * no charger line: a charger alone is not seen */
 static uint32_t midi_room(void)                 /* messages midi_send can still queue (0: one more would be dropped;
@@ -424,16 +427,13 @@ void fm1_alnk0_irq(void)                       /* via isr_alnk0 (hal/fm1_isr.S) 
     fm1_audio_ack_aux(p);
     if (p & FM1_AUDIO_HALF) {
         int32_t *o = &abuf[fm1_audio_free_half() * HALF_WORDS];
-        uint32_t i, b;
+        uint32_t i;
         for (i = 0; i < HALF_WORDS; i++)
             o[i] = 0;
         uac_render_start();
         app_audio(o, HALF_FRAMES);
         for (i = 0; i < HALF_WORDS; i++)        /* (V2: MASTER applied by the app) */
             o[i] = o[i] > 32767 ? 32767 : o[i] < -32767 ? -32767 : o[i];
-        for (b = 0; uac.feed && b < HALF_FRAMES; b += 32u)
-            uac_tap(o + 2u * b, 32u);           /* the computer records what the speaker plays (not recording: nothing
-                                                 * to make; GR!MM rc9) */
         for (i = 0; i < HALF_WORDS; i++)
             o[i] <<= 7;
         fm1_audio_ack_half();
