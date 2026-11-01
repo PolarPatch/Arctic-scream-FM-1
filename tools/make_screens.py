@@ -30,7 +30,7 @@ def key(n):                                  # "C3" -> the key's bit (0 = F2)
 class S:
     """a script for tests/host.c"""
 
-    def __init__(self, t=4000):
+    def __init__(self, t=6200):
         self.t, self.lines, self.mask = t, [], 0
 
     def w(self, ms):
@@ -94,7 +94,7 @@ def src(s, d):                               # T1 to the source d steps down fro
 
 
 SHOTS = {
-    "boot": lambda: S(1600),
+    "boot": lambda: S(3400),
     "home": lambda: S().keys("C3").keys("G3").w(2500),
     "holvut": lambda: S().keys("C3").w(800).tap(EDIT).turn(K1, 24).w(6000),
     "source": lambda: S().tap(EDIT, EDIT).w(800),

@@ -23,7 +23,7 @@
 
 ## 01 · The basics
 
-<img src="docs/manual/screens/boot.png" alt="The boot screen: the PolarPatch logo over northern lights" width="300" align="right">
+<img src="docs/manual/screens/boot.png" alt="The boot screen: ARCTIC SCREAM, glitched as on the banner" width="300" align="right">
 
 Arctic Scream has **four tracks, T1–T4**. Each track plays its own sound, has its own sequence and goes through the
 shared effects. **Six voices** are shared by all four.

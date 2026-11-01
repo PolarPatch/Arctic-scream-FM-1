@@ -55,7 +55,7 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - waveforms that glow on HOME;
   - aurora ribbons that move with Holvut's knobs and with DRONE's walks;
   - moving northern lights on the FX, LFO and mixer pages too: TAPE's four ribbons, GRAIN's torn-off grains of light, DELAY's echoes (burning magenta when they run away), SPACE's hanging curtain, the LFO's band, and the mixers' curtains and crests;
-  - the PolarPatch logo over drifting northern lights at boot.
+  - at power-on, ARCTIC SCREAM tears itself out of the dark in a glitch storm and settles into the banner's glitch.
 - **A one-page [cheat sheet](https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html)** with every button, knob and combo, and a guide to summoning the screams.
 
 ## The editor

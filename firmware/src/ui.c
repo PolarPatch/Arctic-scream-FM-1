@@ -51,7 +51,7 @@ static uint16_t ui_hd = RGB(0x22, 0xd3, 0xee);  /* the header's block */
 static const uint16_t UI_KC[4] = {BW_PERIWINKLE, BW_TEAL, BW_AMBER, BW_PINK};
 #define UI_PIC_MS 40u                           /* the picture redrawn at most this often */
 #define UI_BAT_W 16                             /* the header's battery (and its tip) */
-#define UI_BOOT_MS 3000u                        /* the boot screen this long */
+#define UI_BOOT_MS 5600u                        /* the boot screen this long */
 #define UI_ANIM_MS 55u                          /* a frame of the moving pictures (the boot screen, HOME): ~18 a second */
 #define PX0 12                                  /* the picture grid: 54 x 30 cells of 4 px from (PX0, PY0) */
 #define PY0 40
@@ -2041,73 +2041,108 @@ static uint32_t ui_pic_key(void)
 }
 
 /* ---- the screen: the boot, then the page, only what changed */
-/* Boot, UI_BOOT_MS at power-on (the project loaded before): the PolarPatch logo comes up out of the night over the first
- * second, "Arctic scream" under it, and four ribbons of aurora in the tracks' colours drift under the name; only those
- * two drawn again, a frame every UI_ANIM_MS */
-#include "polarpatch_logo.h"
-#define BT_NAME "Arctic scream"                 /* the name */
-#define BT_LX ((240 - LOGO_W) / 2)              /* the logo, */
-#define BT_LY 12
-#define BT_NY 180                               /* the name's line */
-#define BT_RY 214                               /* the ribbons' middle line */
-static uint32_t ui_boot_t, bt_k, bt_ph;         /* from when; the logo's light (0 .. 4); the ribbons' phase */
+/* Boot, UI_BOOT_MS at power-on (the project loaded before): ARCTIC SCREAM as on the banner.  It comes out of the night in
+ * a storm of torn pixel rows that settles into the banner's glitch (SCREAM's two top rows torn and split into ice, plasma and
+ * violet, ARCTIC's through its middle, the other way), with a short burst now and then; p0larpatch fades in under it and
+ * the four tracks' lines draw out.  The title drawn again a frame every UI_ANIM_MS while it moves */
+#define BT_X 24                                 /* the title: 6 letters of 32 px (the font x 4) from x 24, */
+#define BT_Y1 66                                /* ARCTIC's top, */
+#define BT_Y2 110                               /* SCREAM's */
+#define BT_PY 162                               /* p0larpatch's line */
+#define BT_LY 196                               /* the lines' */
+#define BT_TY (BT_Y1 - 4)                       /* the region the title is drawn again in */
+#define BT_TH (BT_Y2 + 36 - BT_TY)
+typedef struct { int8_t ya, yb, dx; uint8_t k; } bt_slice;   /* a word's rows ya .. yb (px), shifted dx, colour k */
+static const uint16_t BT_K[] = {UI_W, RGB(0xff, 0xff, 0xff), BW_CYAN, BW_MAGENTA, BW_VIOLET, RGB(0xff, 0xe4, 0xf3),
+                                RGB(0xe2, 0xf7, 0xff)};   /* white, bright white, ice, plasma, violet, rose, frost */
+static const bt_slice BT_ARCTIC[] = {{16, 20, -3, 2}, {16, 20, 4, 3}, {16, 20, 2, 1}, {20, 22, -4, 4}, {20, 24, 1, 6}};
+static const bt_slice BT_SCREAM[] = {{0, 4, -2, 3}, {0, 4, 4, 2}, {0, 4, 0, 1}, {6, 8, 4, 4}, {4, 8, -3, 2}, {4, 8, -2, 5}};
+static uint32_t ui_boot_t, bt_k, bt_pk, bt_ln;  /* from when; the title's light (0 .. 64); p0larpatch's (0 .. 8); the lines' length */
+static int8_t bt_dx[2][16];                     /* this frame's tears: each word's 2 px bands, their shift */
+static uint8_t bt_gk[2][16];                    /* (and their ghosts' colour) */
+static int bt_torn;                             /* (a tear this frame or the last: the title drawn again) */
 static const char *bt_note;                     /* the boot screen's last line, if any ("INSTALLING SAMPLES") */
-static int32_t bt_wave(uint32_t p)              /* a soft wave of p (0 .. 255): -64 .. 64, a parabola a half */
+static void bt_rows(int32_t y, const char *s, int32_t ya, int32_t yb, int32_t dx, uint16_t c)   /* a word's rows ya .. yb */
 {
-    int32_t q = (int32_t)(p & 127u), v = q * (128 - q) / 64;
-    return p & 128u ? -v : v;
-}
-static void bt_logo(void)                       /* the logo, its greys from the background to white, bt_k of 4 */
-{
-    uint16_t pal[16];
-    int32_t r, c, c0;
-    for (c = 0; c < 16; c++) pal[c] = ui_mix(UI_K, UI_W, (uint32_t)c * bt_k, 60u);
-    for (r = 0; r < LOGO_H; r++) {
-        if (!ui_in(BT_LX, BT_LY + r, LOGO_W, 1)) continue;
-        for (c = 0; c < LOGO_W; c = c0) {       /* (a run of one grey: one rect) */
-            uint32_t v = LOGO[(r * LOGO_W + c) / 2] >> (c & 1 ? 0 : 4) & 15u, w;
-            for (c0 = c + 1; c0 < LOGO_W; c0++) {
-                w = LOGO[(r * LOGO_W + c0) / 2] >> (c0 & 1 ? 0 : 4) & 15u;
-                if (w != v) break;
+    int32_t x = BT_X + dx, r, b, b0, t, u;
+    for (; *s; s++, x += 32) {
+        const uint8_t *g = PIXFONT[(uint8_t)*s - 32u];
+        for (r = ya / 4; r < 8 && r * 4 < yb; r++) {
+            t = r * 4 > ya ? r * 4 : ya, u = r * 4 + 4 < yb ? r * 4 + 4 : yb;
+            for (b = 0; b < 8; b = b0) {        /* (a run of pixels: one rect) */
+                for (b0 = b; b0 < 8 && g[r] & (0x80u >> b0); b0++) ;
+                if (b0 > b) ui_rect(x + b * 4, y + t, (b0 - b) * 4, u - t, c);
+                else b0++;
             }
-            if (v) ui_rect(BT_LX + c, BT_LY + r, c0 - c, 1, pal[v]);
         }
     }
 }
-static void bt_ribbons(void)                    /* four ribbons, each its speed and length, fading in with the logo */
+static uint16_t bt_c(uint32_t k) { return ui_mix(UI_K, BT_K[k], bt_k, 64u); }
+static void bt_word(uint32_t w, int32_t y, const char *s, const bt_slice *sl, uint32_t n)
 {
-    static const uint8_t K[NT] = {3, 5, 2, 4}, S[NT] = {5, 3, 7, 4}, A[NT] = {7, 5, 6, 4};
-    int32_t y[52];
-    uint32_t t, i;
-    for (t = 0; t < NT; t++) {
-        for (i = 0; i < 52u; i++) y[i] = BT_RY + bt_wave((i * K[t] + bt_ph * S[t] + t * 64u) & 255u) * A[t] / 64;
-        ui_glow(16, 4, y, 52, ui_mix(UI_K, UI_ACCENTS[t], bt_k, 4u));
+    uint32_t i, b, keep = 0;
+    int32_t dx;
+    for (i = 0; i < n; i++) keep |= (0xFFFFu >> (16 - (sl[i].yb - sl[i].ya + 1) / 2)) << sl[i].ya / 2;
+    for (b = 0; b < 16u; b++) {                 /* the word, but for the banner's torn rows: its bands, torn or not */
+        if (keep >> b & 1u) continue;
+        dx = bt_dx[w][b];
+        if (dx) bt_rows(y, s, (int32_t)b * 2, (int32_t)b * 2 + 2, dx + (dx > 0 ? 3 : -3), bt_c(bt_gk[w][b]));
+        bt_rows(y, s, (int32_t)b * 2, (int32_t)b * 2 + 2, dx, bt_c(dx ? 1u : 0u));
     }
+    for (i = 0; i < n; i++)                     /* the banner's torn rows, behind first */
+        bt_rows(y, s, sl[i].ya, sl[i].yb, sl[i].dx + bt_dx[w][sl[i].ya / 2], bt_c(sl[i].k));
 }
-static void ui_boot_draw(void)                  /* Boot: the logo, the name, the aurora */
+static void ui_boot_draw(void)                  /* Boot: the title, p0larpatch, the lines */
 {
-    if (ui_in(BT_LX, BT_LY, LOGO_W, LOGO_H)) bt_logo();
-    ui_text(120 - 8 * ui_len(BT_NAME), BT_NY, BT_NAME, 2, UI_W);
-    bt_ribbons();
+    uint32_t t;
+    if (ui_in(0, BT_TY, 240, BT_TH))
+        bt_word(0, BT_Y1, "ARCTIC", BT_ARCTIC, 5), bt_word(1, BT_Y2, "SCREAM", BT_SCREAM, 6);
+    if (bt_pk) ui_text(120 - 80, BT_PY, "p0larpatch", 2, ui_mix(UI_K, BW_CYAN, bt_pk, 8u));
+    for (t = 0; t < NT && bt_ln; t++)           /* four lines, 44 px, growing from their middles */
+        ui_rect(23 + (int32_t)t * 50 + 22 - (int32_t)bt_ln / 2, BT_LY, (int32_t)bt_ln, 2, UI_ACCENTS[t]);
     if (bt_note) ui_text(120 - 4 * ui_len(bt_note), 231, bt_note, 1, ui_acc);
+}
+static void bt_state(uint32_t e)                /* the boot screen at e ms: the light, the storm's tears */
+{
+    static const uint16_t BURST[] = {2750, 3900, 4650, 5200};   /* (short bursts once it settled, 140 ms each) */
+    uint32_t g = 0, i, n, w, b, m;
+    int32_t dx;
+    if (e < 1700u) g = e < 300u ? 64u : 64u - (e - 300u) * 64u / 1400u;   /* the storm, dying down */
+    for (i = 0; i < sizeof BURST / sizeof BURST[0]; i++)
+        if (e >= BURST[i] && e < BURST[i] + 140u) g = 36u;
+    bt_k = e < 250u ? 0u : e < 1100u ? (e - 250u) * 64u / 850u : 64u;
+    if (g && ui_rnd(80) < g) bt_k = bt_k * (1u + ui_rnd(3)) / 4u;   /* (it flickers in the storm) */
+    bt_torn = 0;
+    for (w = 0; w < 2u; w++)
+        for (b = 0; b < 16u; b++) bt_torn |= bt_dx[w][b], bt_dx[w][b] = 0;
+    n = g ? 1u + g * 8u / 64u : ui_rnd(14) == 0;   /* (settled: a band jumps a pixel or two now and then) */
+    m = g ? 3u + g * 22u / 64u : 2u;
+    for (i = 0; i < n; i++) {
+        w = ui_rnd(2), b = ui_rnd(16), dx = (int32_t)ui_rnd(2u * m + 1u) - (int32_t)m;
+        bt_dx[w][b] = (int8_t)dx, bt_gk[w][b] = (uint8_t)(2u + ui_rnd(3));
+        if (b < 15u && ui_rnd(2)) bt_dx[w][b + 1] = (int8_t)dx, bt_gk[w][b + 1] = bt_gk[w][b];
+        bt_torn = 1;
+    }
+    bt_torn |= g != 0;
+    bt_pk = e < 1300u ? 0u : e < 2100u ? (e - 1300u) * 8u / 800u : 8u;
+    bt_ln = e < 2000u ? 0u : e < 2800u ? (e - 2000u) * 44u / 800u : 44u;
 }
 static void ui_boot(void)
 {
-    ui_boot_t = fm1_ms, bt_k = bt_ph = 0;
+    ui_boot_t = fm1_ms;
+    bt_state(0);
     ui_region(0, 0, 240, 240, UI_K, ui_boot_draw);
 }
 static void ui_boot_frame(void)
 {
     static uint32_t t;
-    uint32_t e = fm1_ms - ui_boot_t, k = e >= 1000u ? 4u : e * 4u / 1000u;
+    uint32_t k = bt_k, pk = bt_pk, ln = bt_ln;
     if (fm1_ms - t < UI_ANIM_MS) return;
     t = fm1_ms;
-    if (k != bt_k) {
-        bt_k = k;
-        ui_region(BT_LX, BT_LY, LOGO_W, LOGO_H, UI_K, ui_boot_draw);
-    }
-    bt_ph++;
-    ui_region(0, BT_RY - 10, 240, 20, UI_K, ui_boot_draw);
+    bt_state(fm1_ms - ui_boot_t);
+    if (bt_torn || bt_k != k) ui_region(0, BT_TY, 240, BT_TH, UI_K, ui_boot_draw);
+    if (bt_pk != pk) ui_region(40, BT_PY, 160, 16, UI_K, ui_boot_draw);
+    if (bt_ln != ln) ui_region(0, BT_LY, 240, 2, UI_K, ui_boot_draw);
 }
 
 static void ui_update(int32_t oct)

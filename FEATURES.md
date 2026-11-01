@@ -194,7 +194,7 @@ HOME draws each track's wave as it plays. The header shows the track, its sound 
 ## The screen
 
 - An arctic cyberpunk palette after PolarPatch's BlueWatch: a colour per page and per knob.
-- **Boot**: the PolarPatch logo over drifting northern lights.
+- **Boot**: ARCTIC SCREAM out of the dark in a glitch storm, settling into the banner's torn rows, with p0larpatch and the four tracks' lines (about 5.6 s).
 - **HOME**: each track's wave glowing as it plays, under a starry sky.
 - **Moving northern lights** (new in 1.1), a ribbon per knob:
   - **Holvut EDIT**: four ribbons that follow FEEDBACK, BODY, DAMP and DRIVE.
