@@ -32,15 +32,15 @@ b { color: var(--fg); }
          text-align: center; gap: 26px; padding: 4vh 0 2vh; }
 .cover .top, .cover .mid { display: flex; flex-direction: column; align-items: center; gap: 22px; }
 .cover img.logo { width: min(260px, 60vw); image-rendering: pixelated; }
-.cover h1 { margin: 0; font: 400 clamp(34px, 10vw, 88px)/1.2 var(--pix); text-shadow: 0 0 18px rgba(34, 211, 238, .3); }
-/* the title's glitch (as the README's banner): slices of it torn sideways in ice, plasma and violet */
-.gt { position: relative; display: inline-block; }
-.gt i { position: absolute; left: 0; top: 0; font-style: normal; pointer-events: none; }
-.gt i:nth-child(1) { color: var(--ice); clip-path: inset(9% 0 85% 0); transform: translateX(-.05em); }
-.gt i:nth-child(2) { color: var(--plasma); clip-path: inset(13% 0 82% 0); transform: translateX(.04em); }
-.gt i:nth-child(3) { color: var(--violet); clip-path: inset(18% 0 79% 0); transform: translateX(-.03em); }
-.gt i:nth-child(4) { color: #fff; clip-path: inset(63% 0 33% 0); transform: translateX(.03em); opacity: .85; }
-.gt + br + .gt i:nth-child(4) { display: none; }
+.cover h1 { margin: 0; font: 400 clamp(34px, 10vw, 88px)/1.2 var(--pix); }
+/* the title's cold glow: a gradient, not a text-shadow, which a PDF turns into a square */
+.cover h1 { padding: .15em 0; background: radial-gradient(closest-side, rgba(34, 211, 238, .16), rgba(34, 211, 238, .05) 60%, transparent); }
+/* the title's glitch, as in the banner: the font's pixel rows (u = 1/8 em) torn sideways and split into ice, plasma and violet.
+   Each <i> is one copy of the word clipped to rows y..y+h and shifted x; the word itself stays only for its glow. */
+.gt { position: relative; display: inline-block; line-height: 1; color: transparent; }
+.gt i { position: absolute; left: 0; top: 0; font-style: normal; text-shadow: none; color: var(--k, var(--fg));
+        clip-path: inset(calc(var(--y) * .125em) -.5em calc(1em - (var(--y) + var(--h)) * .125em) -.5em);
+        transform: translateX(calc(var(--x, 0) * .125em)); }
 .cover .sami { font: 600 clamp(13px, 2.2vw, 17px) system-ui, sans-serif; letter-spacing: .3em !important; color: var(--dim); letter-spacing: .04em; }
 .cover .sub { font: 400 clamp(12px, 2.4vw, 18px)/1.8 var(--pix); color: var(--ice); }
 .cover .small { max-width: 34em; color: var(--label); font-size: 12px; }
@@ -111,6 +111,7 @@ footer p { margin: 4px 0; }
   main { max-width: none; padding: 0; }
   body { font-size: 11px; }
   .cover { min-height: 262mm; break-after: page; }
+  .aurora i { box-shadow: none; }
   .chap { break-before: page; padding-top: 0; }
   .chap.cont { break-before: auto; padding-top: 10px; }
   .pg { grid-template-columns: 54mm 1fr; gap: 14px; padding: 10px 14px 12px; margin-bottom: 10px; }
@@ -133,7 +134,7 @@ footer p { margin: 4px 0; }
 <section class="cover">
   <div class="top">
     <div class="sami">ÁRKTALAŠ HOLVVAS</div>
-    <h1 aria-label="Arctic Scream"><span class="gt">ARCTIC<i>ARCTIC</i><i>ARCTIC</i><i>ARCTIC</i><i>ARCTIC</i></span><br><span class="gt">SCREAM<i>SCREAM</i><i>SCREAM</i><i>SCREAM</i><i>SCREAM</i></span></h1>
+    <h1 aria-label="Arctic Scream"><span class="gt">ARCTIC<i style="--y: 0; --h: 4">ARCTIC</i><i style="--y: 6; --h: 2">ARCTIC</i><i style="--y: 4; --h: 1; --x: -0.7; --k: var(--ice)">ARCTIC</i><i style="--y: 4; --h: 1; --x: 1.1; --k: var(--plasma)">ARCTIC</i><i style="--y: 4; --h: 1; --x: 0.5; --k: #fff">ARCTIC</i><i style="--y: 5; --h: 0.5; --x: -1; --k: var(--violet)">ARCTIC</i><i style="--y: 5; --h: 1; --x: 0.35; --k: #e2f7ff">ARCTIC</i></span><br><span class="gt">SCREAM<i style="--y: 2; --h: 6">SCREAM</i><i style="--y: 0; --h: 1; --x: -0.6; --k: var(--plasma)">SCREAM</i><i style="--y: 0; --h: 1; --x: 1; --k: var(--ice)">SCREAM</i><i style="--y: 0; --h: 1; --k: #fff">SCREAM</i><i style="--y: 1.5; --h: 0.5; --x: 1.05; --k: var(--violet)">SCREAM</i><i style="--y: 1; --h: 1; --x: -0.75; --k: var(--ice)">SCREAM</i><i style="--y: 1; --h: 1; --x: -0.6; --k: #ffe4f3">SCREAM</i></span></h1>
     <div class="aurora" aria-hidden="true"><i style="color: var(--ice)"></i><i style="color: var(--aurora)"></i><i style="color: var(--violet)"></i><i style="color: var(--plasma)"></i></div>
   </div>
   <div class="mid">
