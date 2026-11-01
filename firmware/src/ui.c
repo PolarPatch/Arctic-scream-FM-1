@@ -427,7 +427,7 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         return;
     case PG_HOME:                               /* the selected track's, as the knobs (Arctic Scream p0larpatch; GR!MM's
                                                  * showed the four tracks' LEVELs here): VOLUME (MUTE), CUTOFF ("OPEN",
-                                                 * "2.4K", "450"), CHAOS, MORPH */
+                                                 * "2.4K", "450"), WARP, MORPH */
         if (k == 0u && (trk_quiet >> sel & 1u)) { put_s(S->val, "MUTE"); S->dim = 1; return; }
         if (k == 1u) {
             uint32_t hz = CUTOFF_HZ[clamp(v, 0, 127)];

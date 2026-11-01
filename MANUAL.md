@@ -62,12 +62,12 @@ Each track's wave glows on HOME as it plays, under a starry sky. The header show
 
 | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 |---|---|---|---|
-| VOLUME | CUTOFF | CHAOS | MORPH |
+| VOLUME | CUTOFF | WARP | MORPH |
 
 - **CUTOFF:** the track filter at the end of the track, for every source (its RESONANCE is on MIXER 2).
-- **CHAOS:** the sound will not sit still. At random moments, from about once a second to ~20 a second as you turn it up, the source's four knobs jump (MODEL and the other stepped ones too), the filter jumps and its resonance rises, and voices leap octaves and fifths; past 3/4 any interval, a little out of tune, and short silences. Low it stirs, full it is havoc. Holvut's FEEDBACK and DRIVE only ever go up, so the howl never falls asleep.
-- **MORPH:** one knob through all four of the source's knobs at once (on PHYS: MODEL, STRUCTURE, DAMP and BOW together), on a path of its own for each track and source, always the same. At 0 the sound is as set; turn it for new combinations.
-- CHAOS and MORPH sit on top of the knobs (the knobs themselves never move) and are saved with the project.
+- **WARP:** eight layers that come in one after another as you turn it, so the sound grows smoothly from still to wild: the voices drift apart like a choir; the filter breathes open; the source's knobs wander; the source is pushed the way DRONE's storm pushes it; a slow vibrato; more resonance and wider sweeps; the voices pull far apart and wander faster; at the top a tape's flutter and a sagging pitch. Nothing jumps and nothing goes silent.
+- **MORPH:** one knob through all four of the source's knobs at once (on PHYS: STRUCTURE, DAMP and BOW; the stepped ones, such as MODEL, stay as set), on a path of its own for each track and source, always the same, with a slow wandering around it that grows as you turn it up. At 0 the sound is as set.
+- While WARP or MORPH is up, the track's level is held where it was, so neither makes it suddenly louder or quieter; both sit on top of the knobs (the knobs themselves never move) and are saved with the project.
 
 Press **HOME** again for the mixers. MIXER 1 draws each track as a curtain of standing ribbons, MIXER 2 as a ribbon
 across the stereo field.

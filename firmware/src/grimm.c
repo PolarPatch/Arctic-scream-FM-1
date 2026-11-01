@@ -135,7 +135,7 @@ static uint32_t lv_rvk, lv_dlk, lv_pre;         /* (host: tests/level_test.py: S
 #include "tapefx.c"
 #include "scale.c"
 #include "drone.c"                              /* (Arctic Scream p0larpatch: DRONE, the sound living on its own) */
-#include "chaos.c"                              /* (Arctic Scream p0larpatch: HOME's CHAOS and MORPH) */
+#include "chaos.c"                              /* (Arctic Scream p0larpatch: HOME's WARP and MORPH) */
 #include "lfo.c"
 
 /* ---- the sound (runs in the audio ISR: keep it short, no flash, no screen): the voices, the mix, the effects, timed.
@@ -230,7 +230,7 @@ static int32_t tf_cs[NT] = {127 << 8, 127 << 8, 127 << 8, 127 << 8}, tf_ic[NT][2
                                                  * the states */
 static uint8_t tf_on[NT];
 static int32_t tf_tgt(uint32_t t)               /* the track filter's cutoff to glide to (<< 8): CUTOFF, its LFO, DRONE's
-                                                 * (drone.c), CHAOS's (chaos.c) */
+                                                 * (drone.c), WARP's (chaos.c) */
 {
     return clamp((lfo_move(t, LD_CUT, clamp(trk[t].cut, 0, 127), 127) << 8) + dr_cut[t] + ch_cut[t], 0, 127 << 8);
 }
@@ -246,7 +246,7 @@ static int tf_open(uint32_t t)                   /* the track filter bypassed no
 static void trk_filter(uint32_t t, int32_t *x, uint32_t n)
 {
     int32_t tgt = tf_tgt(t), cs = tf_cs[t], ic1, ic2;
-    int32_t r = clamp(trk[t].res + dr_res[t] + ch_res[t], 0, 127) * 7 / 8;   /* (DRONE's on both: drone.c; CHAOS's) */
+    int32_t r = clamp(trk[t].res + dr_res[t] + ch_res[t], 0, 127) * 7 / 8;   /* (DRONE's on both: drone.c; WARP's) */
     uint32_t ty = (uint32_t)clamp(trk[t].ftype, 0, NFTYPE - 1), i, j;
     tsvf_t c;
     if (tf_open(t)) {                           /* (open: as it is) */
@@ -315,7 +315,7 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
                 for (k = 0; k < 3u; k++)
                     mix_add(bus[k], 1u, x, (mix_g[t][2u + k] * (TF_PX1 - px0)) >> 8, (g[2u + k] * (TF_PX1 - px1)) >> 8, n);
             }
-            trk_peak(t, x, n);
+            trk_peak(t, x, n), ch_level(t, x, n);   /* (and WARP's and MORPH's level, chaos.c) */
             sc_take(t, x, n);                   /* (HOME's wave) */
             mix_add(out, 2u, x, mix_g[t][0], g[0], n);
             mix_add(out + 1, 2u, x, mix_g[t][1], g[1], n);
@@ -323,7 +323,7 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
             if (used >> t & 1u) trk_filter(t, x, n);
             else tf_on[t] = 0;                  /* (silent: from bypassed when it sounds again) */
             if (used >> t & 1u) {
-                trk_peak(t, x, n);
+                trk_peak(t, x, n), ch_level(t, x, n);
                 sc_take(t, x, n);               /* (HOME's wave) */
                 mix_add(out, 2u, x, mix_g[t][0], g[0], n);
                 mix_add(out + 1, 2u, x, mix_g[t][1], g[1], n);
@@ -979,8 +979,8 @@ static const page_t PAGES[NPAGE] = {
     {"SCALE", BTN_SEL, 1, 0, 1, {"ROOT", "SCALE", "", ""}},
     {"CHORD", BTN_SEL, 1, 0, 1, {"CHORD TYPE", "VOICING", "", ""}},
     {"SONG", BTN_GLO, 1, 0, 1, {"SECTION", "PATTERN", "REPEATS", "MODE"}},
-    {"HOME", BTN_HOME, 1, 1, 1, {"VOLUME", "CUTOFF", "CHAOS", "MORPH"}},   /* (the track's: its LEVEL, its filter,
-                                                 * CHAOS and MORPH (chaos.c); its sound's name in the header) */
+    {"HOME", BTN_HOME, 1, 1, 1, {"VOLUME", "CUTOFF", "WARP", "MORPH"}},   /* (the track's: its LEVEL, its filter,
+                                                 * WARP and MORPH (chaos.c); its sound's name in the header) */
     {"MIXER 1", BTN_HOME, 1, 1, 1, {"LEVEL", "DLY SEND", "REV SEND", "GRAIN SEND"}},
     {"MIXER 2", BTN_HOME, 1, 1, 1, {"PAN", "TYPE", "POS", "RESONANCE"}},   /* (V2: the track filter's TYPE and POS;
                                                  * its RESONANCE, HOME's before 1.3) */
@@ -1073,7 +1073,7 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_CHORD: return k == 0u ? &trk[sel].ch_type : k == 1u ? &trk[sel].ch_voice : 0;
     case PG_ARP: return k == 0u ? &trk[sel].arp_mode : k == 1u ? &trk[sel].arp_rate : k == 2u ? &trk[sel].arp_oct :
                         &trk[sel].arp_gate;
-    case PG_HOME: return k == 0u ? &trk[sel].level : k == 1u ? &trk[sel].cut : k == 2u ? &trk[sel].chaos : &trk[sel].morph;
+    case PG_HOME: return k == 0u ? &trk[sel].level : k == 1u ? &trk[sel].cut : k == 2u ? &trk[sel].warp : &trk[sel].morph;
     case PG_MIX1: return MIX[k];
     case PG_MIX2: return k == 0u ? &trk[sel].pan : k == 1u ? &trk[sel].ftype : k == 2u ? &trk[sel].fpos : &trk[sel].res;
     case PG_FMALGO: return k == 0u ? &trk[sel].fm_alg : k == 1u ? &trk[sel].fm_fb : k == 2u ? &fm_op :
@@ -1711,15 +1711,15 @@ static void fx_send_on(uint32_t pg)
     hd_until = fm1_ms + 1500u;
 }
 /* HOME's KNOB k + 1 turned: what it changed in the header ~1.5 s ("T2 VOL 090", "T2 CUTOFF 824", "T2 CUTOFF 2.4K",
- * "T2 CHAOS 040", "T2 MORPH 100"; then the track and its sound again): its slabs show the four tracks */
+ * "T2 WARP 040", "T2 MORPH 100"; then the track and its sound again): its slabs show the four tracks */
 static void home_say(uint32_t k)
 {
-    static const char *const W[4] = {" VOL ", " CUTOFF ", " CHAOS ", " MORPH "};
+    static const char *const W[4] = {" VOL ", " CUTOFF ", " WARP ", " MORPH "};
     char *e = put_s(put_u(put_s(hd_msg, "T"), sel + 1u), W[k & 3u]);
     if (k == 1u)
         hz_text(e, trk[sel].cut, trk[sel].ftype);
     else {
-        uint32_t v = (uint32_t)clamp(k == 2u ? trk[sel].chaos : k == 3u ? trk[sel].morph : trk[sel].level, 0, 127);
+        uint32_t v = (uint32_t)clamp(k == 2u ? trk[sel].warp : k == 3u ? trk[sel].morph : trk[sel].level, 0, 127);
         v = (v * 100u + 63u) / 127u;
         e[0] = (char)('0' + v / 100u), e[1] = (char)('0' + v / 10u % 10u), e[2] = (char)('0' + v % 10u), e[3] = 0;
     }
