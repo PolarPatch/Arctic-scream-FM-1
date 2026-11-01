@@ -112,6 +112,8 @@ SHOTS = {
     "grain": lambda: S().keys("C3").tap(FX, FX).turn(K4, 50).w(2000),
     "delay": lambda: S().keys("C3").tap(FX, FX, FX).turn(K4, 50).turn(K2, 60).w(2000),
     "space": lambda: S().keys("C3").tap(FX, FX, FX, FX).turn(K3, 40).w(2000),
+    "master": lambda: S().keys("C3").tap(FX, FX, FX, FX, FX).turn(K1, -56).turn(K2, 80).w(2000),
+    "drive": lambda: S().keys("C3").tap(FX, FX, FX, FX, FX, FX).turn(K1, 80).w(2000),
     "perform": lambda: S().keys("C3").w(500).down(FX).w(1200),
     "system": lambda: S().down(HOME).w(900).up(HOME).w(500),
     "system2": lambda: S().down(HOME).w(900).up(HOME).tap(HOME).w(500),

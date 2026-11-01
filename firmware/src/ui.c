@@ -1150,7 +1150,7 @@ static void pic_env(void)                       /* Env: the shape of the track's
 static int ui_anim_page(uint32_t p)             /* the pages whose ribbons move (ui_update) */
 {
     return p == PG_DRONE || p == PG_ENV || p == PG_TAPE || p == PG_GRAIN || p == PG_DELAY || p == PG_SPACE || p == PG_LFO ||
-           p == PG_MIX1 || p == PG_MIX2;
+           p == PG_MIX1 || p == PG_MIX2 || p == PG_MASTER || p == PG_DRIVE;
 }
 
 /* ---- the aurora pages (Arctic Scream p0larpatch, after the DRONE and Holvut pages): every knob a ribbon of northern
@@ -1313,44 +1313,63 @@ static void pic_space(void)
         ui_text(184, 31, "FREEZE", 1, UI_K);
     }
 }
-static void pic_master(void)                    /* (V2) Master: the filter's curve, as SPACE's bars: the cutoff where it
-                                                 * bends, RESONANCE its peak there; open: flat, "OPEN" */
+/* MASTER: an aurora curtain cut by the filter: a ribbon across the top, its rays hanging down as long as the filter lets
+ * that part of the spectrum through (low on the left, high on the right), the ones at the cutoff flaring (RESONANCE),
+ * swaying; open: every ray to the ground, "OPEN" */
+static void pic_master(void)
 {
-    int32_t c = clamp(mf_cut, 0, 127), r = clamp(mf_res, 0, 127), ty = clamp(mf_type, 0, NFTYPE - 1), i, j;
-    int open = ty == FT_LP ? c >= 127 : ty == FT_HP && c <= 0;
+    int32_t c = clamp(mf_cut, 0, 127), r = clamp(mf_res, 0, 127), ty = clamp(mf_type, 0, NFTYPE - 1);
+    int32_t open = ty == FT_LP ? c >= 127 : ty == FT_HP && c <= 0, y[55], i, k, s;
     ui_caption(FT_NAME[ty], MP_NAME[clamp(mf_pos, 0, NMPOS - 1)]);
-    for (i = 0; i < 37; i++) {
-        int32_t f = i * 127 / 36, d = ty == FT_HP ? c - f : f - c, h;
+    for (i = 0; i < 55; i++) y[i] = 52 + hw_wave((uint32_t)(i * 3 + (int32_t)hw_ph * 2) & 255u) * 4 / 64;
+    for (k = 0; k < 27; k++) {
+        int32_t f = k * 127 / 26, d = ty == FT_HP ? c - f : f - c, pk = 0, rx = PX0 + 2 + k * 8, y0 = y[(k * 8 + 2) / 4] + 4;
+        int32_t len, px = rx, py = y0;
         if (ty == FT_BP) d = d < 0 ? -d : d;
-        h = open ? 14 : d <= 0 ? 14 : 14 - d * 3 / 8;   /* (~-12 dB an octave past the cutoff) */
-        if (!open && d > -5 && d < 5) h += r * 5 / 127 * (5 - (d < 0 ? -d : d)) / 5;   /* (the peak) */
-        h = h < 1 ? 1 : h > 18 ? 18 : h;
-        for (j = 0; j < h; j++)
-            ui_rect(9 + i * 6, 156 - (h - j) * 4, 3, 3, j == 0 ? UI_L : j < h / 2 ? UI_M : UI_D);
+        if (!open && d > -6 && d < 6) pk = r * (6 - (d < 0 ? -d : d)) / 6;   /* (the peak: 0 .. 127) */
+        len = open || d <= 0 ? 88 : 88 - d * 3;   /* (~-12 dB an octave past the cutoff) */
+        len = clamp(len + pk * 4 / 127 * 4, 4, 144 - y0);
+        for (s = 4; s <= len; s += 4) {
+            int32_t nx = rx + hw_wave((uint32_t)(s * 3 + (int32_t)hw_ph * 2 + k * 23) & 255u) * 3 * s / (64 * 40);
+            uint16_t cc = ui_mix(UI_K, pk ? ui_mix(UI_KC[1], BW_MAGENTA, (uint32_t)pk, 127u) : UI_KC[1 + (k & 1)],
+                                 (uint32_t)clamp(15 - s * 11 / len, 2, 15), 16u);
+            ui_line(px, py, nx, y0 + s, cc);
+            px = nx, py = y0 + s;
+        }
     }
+    ui_glow(PX0, 4, y, 55, UI_KC[0]);
     if (open) {
-        ui_rect(196, 44, 40, 12, ui_acc);
-        ui_text(200, 46, "OPEN", 1, UI_K);
+        ui_rect(196, 132, 40, 12, ui_acc);
+        ui_text(200, 134, "OPEN", 1, UI_K);
     }
 }
-static void pic_drive(void)                     /* (V2) Drive: a sine through it (AMOUNT, TYPE, TONE left out), the clean
-                                                 * one dim behind it; AMOUNT 0: "OFF" */
+
+/* DRIVE: three ribbons of light through the drive (AMOUNT, TYPE), the clean wave dim behind the front one, burning
+ * toward magenta the harder they are driven, sparks torn off where a crest is flattened; AMOUNT 0: "OFF", calm */
+static void pic_drive(void)
 {
-    static const int16_t SIN37[37] = {0, 5690, 11207, 16384, 21063, 25102, 28378, 30792, 32270, 32767, 32270, 30792,
-                                      28378, 25102, 21063, 16384, 11207, 5690, 0, -5690, -11207, -16384, -21063, -25102,
-                                      -28378, -30792, -32270, -32767, -32270, -30792, -28378, -25102, -21063, -16384,
-                                      -11207, -5690, 0};
+    static const uint8_t K[3] = {5, 7, 9}, S[3] = {1, 2, 3};
+    static const int8_t Y[3] = {-22, 22, 0};
     uint32_t ty = (uint32_t)clamp(dr_type, 0, NDTYPE - 1);
-    int32_t a = clamp(dr_amt, 0, 127), g = drv_gain(ty, a), lv = dr_level(ty, a), i;
+    int32_t a = clamp(dr_amt, 0, 127), g = drv_gain(ty, a), lv = dr_level(ty, a), yc[55], yd[55], i, j;
     char r[8];
     ui_3(r, ui_pc(a));
     ui_caption(DT_NAME[ty], a ? r : "OFF");
-    for (i = 0; i < 37; i++) {
-        int32_t x = SIN37[i] * 3 / 4, y = a ? (dr_shape(ty, (x * g) >> 8) * lv) >> 12 : x;
-        ui_rect(9 + i * 6, 98 - x * 40 / 32768, 3, 3, UI_D);
-        ui_rect(9 + i * 6, 98 - y * 40 / 32768, 3, 3, a ? UI_L : UI_M);
+    for (j = 0; j < 3; j++) {
+        int32_t amp = j == 2 ? 36 : 14;
+        for (i = 0; i < 55; i++) {
+            int32_t x = hw_wave((uint32_t)(i * K[j] + (int32_t)hw_ph * S[j] + j * 70) & 255u) * 384;   /* (Q15) */
+            int32_t d = a ? clamp((dr_shape(ty, (x * g) >> 8) * lv) >> 12, -32767, 32767) : x;
+            yc[i] = 96 + Y[j] - x * amp / 32768, yd[i] = 96 + Y[j] - d * amp / 32768;
+            if (j == 2 && a > 8 && (x > 16000 || x < -16000) && (d < 0 ? -d : d) * 8 < (x < 0 ? -x : x) * 7 &&
+                ((uint32_t)(i * 7) + hw_ph) % 4u == 0)   /* (a spark off a flattened crest) */
+                ui_rect(PX0 + i * 4, yd[i] + (d > 0 ? -5 : 4) - (int32_t)((hw_ph + (uint32_t)i) % 4u) * (d > 0 ? 2 : -2),
+                        2, 2, ui_mix(UI_W, BW_MAGENTA, (uint32_t)a, 127u));
+        }
+        if (j == 2) ui_glow(PX0, 4, yc, 55, UI_D0);
+        ui_glow(PX0, 4, yd, 55, ui_mix(UI_K, a ? ui_mix(UI_KC[j], BW_MAGENTA, (uint32_t)a, 127u) : UI_KC[j],
+                                     j == 2 ? 16u : 7u, 16u));
     }
-    ui_rect(9, 99, 219, 1, UI_D);
 }
 
 static void pic_grid(void)                      /* Seq: the 64 steps of the track's pattern, 8 rows of 8 */
@@ -1787,7 +1806,7 @@ static void pic_sys3(void)                      /* (V2) SYSTEM 3: LATCH, what it
     ui_caption("LOADING A SOUND", 0);
     sys_row(0, "LATCH", set.latch ? "ALWAYS OFF" : "FROM SOUND");
     ui_text(PX0 + 6, 98, set.latch ? "A SOUND LOADED: THE" : "A SOUND BRINGS ITS OWN", 1, UI_M);
-    ui_text(PX0 + 6, 110, set.latch ? "TRACK'S LATCH OFF" : "LATCH (AS GR!MM 1.0)", 1, UI_M);
+    ui_text(PX0 + 6, 110, set.latch ? "TRACK'S LATCH OFF" : "LATCH WITH IT", 1, UI_M);
     ui_text(PX0 + 6, 140, "SEL + OCT+: THE TRACK'S", 1, UI_M);
     ui_text(PX0 + 6, 152, "LATCH ON, OFF", 1, UI_M);
 }
