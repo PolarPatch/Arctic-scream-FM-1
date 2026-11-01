@@ -1081,7 +1081,7 @@ static void pic_phys(void)
                        hw_wave((hw_ph * (uint32_t)(4 + j) + 64u) & 255u) * (env / 2 + 6) / (64 * 64 * 4);
             ui_glow(PX0 + 16, 4, y, 47, ui_mix(UI_K, UI_KC[1 + j], 9, 16));
         }
-    ui_rect(PX0 + 4 + 208 * st / 254 - 2, md == PM_SYMP ? 90 : 108, 5, 5, ui_acc);   /* (where it is struck or bowed) */
+    ui_rect(PX0 + 4 + 208 * st / 127 - 2, md == PM_SYMP ? 90 : 108, 5, 5, ui_acc);   /* (where it is struck or bowed) */
 }
 
 /* PHASE: two cycles of the bent wave, smooth, WAVE the first, WAVE2 the second, the plain sine dim behind them (DCW:
@@ -1232,7 +1232,7 @@ static int ui_anim_page(uint32_t p)             /* the pages whose ribbons move 
 {
     return p == PG_DRONE || p == PG_ENV || p == PG_TAPE || p == PG_GRAIN || p == PG_DELAY || p == PG_SPACE || p == PG_LFO ||
            p == PG_MIX1 || p == PG_MIX2 || p == PG_MASTER || p == PG_DRIVE || p == PG_SOUND || p == PG_FMOP || p == PG_FMALGO || p == PG_SCALE ||
-           p == PG_CHORD || p == PG_PERFORM;
+           p == PG_CHORD || p == PG_PERFORM || p == PG_ARP;
 }
 
 /* ---- the aurora pages (Arctic Scream p0larpatch, after the DRONE and Holvut pages): every knob a ribbon of northern
@@ -1601,13 +1601,16 @@ static void pic_sel(void)                       /* Scale: the 27 keys as rays of
     ui_rect(98, 147, 6, 6, ui_acc), ui_text(108, 146, "CHORD", 1, UI_M);
 }
 
-static void pic_arp(void)                       /* Arp: what it holds, its steps (13 at most) as bars, their height
-                                                 * the note, the step playing in the accent */
+static void pic_arp(void)                       /* Arp: what it holds; its steps (13 at most) as standing ribbons of
+                                                 * light, as tall as the note is high, swaying, the melody a ribbon over
+                                                 * their tips, the step playing in the accent; none: a calm ribbon,
+                                                 * pulsing on the arp's steps */
 {
     const arp_t *A = &arp[sel];
     uint8_t p[ARP_PN];
     uint32_t oct = (uint32_t)clamp(trk[sel].arp_oct, 1, 4), n, i, k, ids = 0, un = 0, lo = 127, hi = 0, from = 0, cnt;
-    int32_t now = A->last, chord = clamp(trk[sel].arp_mode, 0, NARPMODE - 1) == ARP_CHORD, x, y;
+    int32_t now = A->last, chord = clamp(trk[sel].arp_mode, 0, NARPMODE - 1) == ARP_CHORD, gate = clamp(trk[sel].arp_gate, 10, 100);
+    int32_t tip[14], x[24], j, m, sp;
     char l[48], *e;
     n = arp_pattern(sel, p, oct);
     cnt = A->n < ARP_N ? A->n : ARP_N;
@@ -1627,9 +1630,15 @@ static void pic_arp(void)                       /* Arp: what it holds, its steps
     else e = put_s(put_u(e, un), " NOTES");
     put_s(put_u(put_s(e, " / "), oct), oct == 1u ? " OCTAVE" : " OCTAVES");
     ui_caption(l, 0);
-    if (!trk[sel].arp || !n) {
-        const char *m = trk[sel].arp ? "PLAY KEYS" : "HOLD ARP: ON";
-        ui_text(120 - 4 * ui_len(m), 96, m, 1, UI_M);
+    if (!trk[sel].arp || !n) {                  /* (nothing to play: a calm ribbon, its steps pulsing) */
+        const char *msg = trk[sel].arp ? "PLAY KEYS" : "HOLD ARP: ON";
+        int32_t y[55];
+        for (j = 0; j < 55; j++) {
+            int32_t pulse = trk[sel].arp && (j % 7) == 3 && ((hw_ph / 4u + (uint32_t)j / 7u) & 7u) == 0u ? 8 : 0;
+            y[j] = 108 + hw_wave(((uint32_t)j * 5u + hw_ph * 2u) & 255u) / 16 - pulse;
+        }
+        ui_glow(PX0, 4, y, 55, trk[sel].arp ? UI_KC[0] : UI_D0);
+        ui_text(120 - 4 * ui_len(msg), 72, msg, 1, UI_M);
         return;
     }
     if (chord) n = oct;                         /* (CHORD: a step an octave, all its notes) */
@@ -1640,21 +1649,26 @@ static void pic_arp(void)                       /* Arp: what it holds, its steps
     }
     if (now >= (int32_t)n) now = -1;
     if (n > 13u && now > 6) from = (uint32_t)now - 6u < n - 13u ? (uint32_t)now - 6u : n - 13u;
-    for (y = 0; y < 30; y++)
-        for (x = 0; x < 54; x++) {
-            uint32_t st = from + (uint32_t)x / 4u, v, lv, top;
-            uint16_t c = 0;
-            if (y == 29 && !(x & 1)) c = UI_D;
-            if (st < n && st < from + 13u && x % 4 < 3) {
-                v = chord ? st : p[st];
-                lv = hi > lo ? (v - lo) * 7u / (hi - lo) : 3u;
-                top = 26u - lv * 3u - 2u;
-                if ((uint32_t)y >= top && (uint32_t)y <= top + 2u) c = (int32_t)st == now ? ui_acc : UI_L;
-                else if ((uint32_t)y > top + 2u && y < 29 && (int32_t)st == now) c = UI_D;
-                else if (chord && (uint32_t)y > top + 2u && y < 29) c = UI_M;   /* (a chord: a full column) */
-            }
-            if (c) ui_cell(x, y, c);
+    sp = 208 / (int32_t)(n - from < 13u ? n - from : 13u);   /* (the steps spread over the width) */
+    for (k = 0; k < 13u && from + k < n; k++) {
+        uint32_t st = from + k, v = chord ? st : p[st];
+        int32_t h = 20 + (hi > lo ? (int32_t)((v - lo) * 64u / (hi - lo)) : 32), cnt2 = h / 4 + 1, x0 = PX0 + 4 + sp / 2 + (int32_t)k * sp;
+        int on = (int32_t)st == now;
+        uint16_t c = on ? ui_acc : chord ? UI_KC[1] : UI_KC[(v / 12u) & 3u];
+        for (m = 0; m < cnt2 && m < 24; m++) {
+            int32_t sw = 1 + (cnt2 - m) * 3 / cnt2;
+            x[m] = x0 + hw_wave(((uint32_t)(m * 9 + (int32_t)k * 37) + hw_ph * 2u) & 255u) * sw / 64;
         }
+        for (j = gate > 50 ? 2 : 1; j >= 0; j--) {   /* (a beam; GATE past half: a wider one) */
+            for (m = 0; m < cnt2 && m < 24; m++) x[m] += j ? 2 * j : 0;
+            ui_glow_v(140 - h, 4, x, (uint32_t)(cnt2 < 24 ? cnt2 : 24), on ? c : ui_mix(UI_K, c, j ? 6u : 10u, 16u));
+            for (m = 0; m < cnt2 && m < 24; m++) x[m] -= j ? 2 * j : 0;
+        }
+        tip[k] = 136 - h;
+        ui_rect(x[0] - 1, 139 - h, 3, 3, on ? UI_W : ui_mix(UI_K, c, 12, 16));
+    }
+    if (k > 1) ui_glow(PX0 + 4 + sp / 2, sp, tip, k, ui_mix(UI_K, UI_KC[0], 9, 16));   /* (the melody over the tips) */
+    if (now >= (int32_t)from && now < (int32_t)(from + k)) ui_rect(PX0 + 2 + sp / 2 + (now - (int32_t)from) * sp, 142, 5, 3, ui_acc);
 }
 
 static uint32_t lfo_dot(void) { return (uint32_t)(((uint64_t)lfo_ph[sel] * 54u) >> 32); }   /* the dot's column */

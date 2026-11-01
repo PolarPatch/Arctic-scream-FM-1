@@ -1,4 +1,4 @@
-# Building GR!MM
+# Building Arctic Scream
 
 GR!MM is one C program, `firmware/src/grimm.c` (it includes the other `.c` files), on the FM-1 platform of
 [Felucca](https://github.com/hugelton/Felucca) as [SLOOP](https://github.com/isod89/sloop-fm1) and

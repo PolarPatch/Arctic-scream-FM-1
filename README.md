@@ -9,7 +9,7 @@ Arctic Scream turns the FM-1 into an instrument for that: slow, cold drones that
 
 <a href="https://buymeacoffee.com/p0larpatch"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy PolarPatch a coffee" height="42"></a>
 
-Arctic Scream p0larpatch is a drone firmware for the FM-1 by PolarPatch, inspired by [GR!MM](https://github.com/GRiMMBIENT/grimm). It has four tracks, long dark effects, a 64-step sequencer, chords, an arpeggiator and song mode, and comes with its own feedback voice, an arctic sound, a new look and its own editor.
+Arctic Scream p0larpatch is a drone firmware for the FM-1 by PolarPatch. It has four tracks, long dark effects, a 64-step sequencer, chords, an arpeggiator and song mode, and comes with its own feedback voice, an arctic sound, a new look and its own editor.
 
 **▶ [Watch the Arctic Scream demo on YouTube](https://youtu.be/MJ53VOVRIG8)**: Holvut, DRONE, the effects and the sequencer, played by the firmware itself.
 
@@ -17,7 +17,7 @@ Arctic Scream p0larpatch is a drone firmware for the FM-1 by PolarPatch, inspire
 
 **Try it in your browser first:** the **[demo](https://polarpatch.github.io/Arctic-scream-FM-1/)** runs the same code as the instrument, so you can play it before you install it. Then open the **[editor](https://polarpatch.github.io/Arctic-scream-FM-1/editor.html)** and the **[cheat sheet](https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html)**.
 
-Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-VAVE or GR!MM. **Install at your own risk.**
+Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-VAVE. **Install at your own risk.**
 
 ---
 
@@ -29,7 +29,7 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
   - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
   - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
-- **New in 1.3, from GR!MM V2.0:**
+- **New in 1.3:**
   - **GENERATE:** hold FX and tap a black key, and that track plays by itself, always in its SCALE (in chords with chord mode on), in three moods: DRIFT, PULSE and STORM. It sits beside DRONE: one moves the sound, the other the notes.
   - **MASTER and DRIVE:** two new FX pages. MASTER is a filter on the whole mix (LP, HP or BP, before the effects, after the reverb or at the very end). DRIVE's AMOUNT tears the whole mix (SOFT, FUZZ, CLIP or FOLD), each type about as loud as the others, a limiter after it.
   - **The track filter** gets a TYPE (LP, HP, BP) and a POS (PRE or POST the effects) on MIXER 2.
@@ -81,11 +81,11 @@ python3 tools/fm1_install.py arctic-scream-1.3.fwsc
 
 Every release is built and signed on GitHub from the tagged source (the FM-1 Firmware Hub's [fm1-build](https://github.com/zvenson/fm1-build)); check a file with `gh attestation verify arctic-scream-1.3.fwsc --repo PolarPatch/Arctic-scream-FM-1 --signer-workflow zvenson/fm1-build/.github/workflows/build.yml`.
 
-It installs over the FM-1's own firmware, GR!MM or any other FM-1 firmware. Don't unplug the FM-1 while it writes. If anything goes wrong, the **Rescue** page on the [FM-1 Firmware Hub](https://thefirmwarehub.com/) brings a stuck FM-1 back, and M-VAVE's own updater puts the original firmware back.
+It installs over the FM-1's own firmware or any other FM-1 firmware. Don't unplug the FM-1 while it writes. If anything goes wrong, the **Rescue** page on the [FM-1 Firmware Hub](https://thefirmwarehub.com/) brings a stuck FM-1 back, and M-VAVE's own updater puts the original firmware back.
 
 ## Good to know
 
-- **Saves:** Arctic Scream keeps its own saves, separate from GR!MM's. If you come from GR!MM, your projects and slots start empty.
+- **Saves:** Arctic Scream keeps its own saves, separate from other FM-1 firmwares. If you come from another one, your projects and slots start empty.
 - **Samples:** no samples are built in. The four slots are yours to fill from the editor, and samples already on your FM-1 stay.
 - **Learn it:** [every feature in one overview](FEATURES.md), the [manual](MANUAL.md), the [visual manual](https://polarpatch.github.io/Arctic-scream-FM-1/manual.html) ([PDF](docs/manual/arctic-scream-manual.pdf)) and the [cheat sheet](https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html).
 

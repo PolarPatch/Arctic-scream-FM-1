@@ -174,7 +174,7 @@ HOME draws each track's wave as it plays. The header shows the track, its sound 
 - **Autosave**: the work saves itself when stopped and silent, and comes back at power-on as it was left.
 - **Undo / redo**: EDIT + OCT− / OCT+. **Hold REC ~1 s** clears the selected track's pattern (undoable).
 - **Hold SEL + OCT+**: the selected track's LATCH on or off, from any page.
-- Arctic Scream keeps its own saves, separate from GR!MM's. Samples already on the FM-1 stay.
+- Arctic Scream keeps its own saves, separate from other FM-1 firmwares. Samples already on the FM-1 stay.
 
 ## Settings (hold HOME)
 
@@ -219,7 +219,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
   randomize (knobs, ENV, LFO, DRONE, all, or a new source) by an amount; a list of what changed.
 - **Sequencer**: a step grid, a piano roll or a typed list; tempo, play, stop and a playhead; MIDI files in and out.
 - **Library**: the factory sounds and your 64 slots; load to T1–T4, name, save, export and import (`.arcticsound`;
-  GR!MM's `.grimmsound` read too).
+  older `.grimmsound` files read too).
 - **Samples**: WAVs into the four sample slots.
 - **Backup**: the settings, slots A–D and all sounds, saved and restored.
 
@@ -236,7 +236,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 2. `pip install mido python-rtmidi`, connect the FM-1 over USB, run
    `python3 tools/fm1_install.py arctic-scream-1.3.fwsc`.
 
-- It installs over the original firmware, GR!MM or any other FM-1 firmware.
+- It installs over the original firmware or any other FM-1 firmware.
 - An interrupted install resumes: the FM-1 comes back in update mode and the same command finishes it.
 - Every release is built and signed on GitHub; check it with `gh attestation verify` (see the README).
 - If anything goes wrong, the Rescue page on the [FM-1 Firmware Hub](https://thefirmwarehub.com/) brings the FM-1 back.
@@ -245,7 +245,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 
 | Version | Date | What came |
 | --- | --- | --- |
-| 1.0 | 2026-10-25 | The fork of GR!MM: HOWL (now Holvut), six screaming presets, the HORROR scale, runaway echo, keys an octave down, 46 arctic factory sounds, the new look, the web editor with sound tools and sequencer, the demo and cheat sheet |
+| 1.0 | 2026-10-25 | The first release: HOWL (now Holvut), six screaming presets, the HORROR scale, runaway echo, keys an octave down, 46 arctic factory sounds, the new look, the web editor with sound tools and sequencer, the demo and cheat sheet |
 | 1.1 | 2026-10-26 | DRONE (BORGA, STOARBMA, GOHCCAT); HOWL renamed Holvut; moving northern lights on ENV, LFO, FX and the mixers; SUSTAIN 40 % by default; DRONE in the editor |
 | 1.3 | 2026-11-01 | Holvut overblows: FEEDBACK's last steps lift a high-pass in the loop, and the howl leaps up its overtones; MIDI aftertouch pushes FEEDBACK (press harder, it screams and climbs); BODY to ~92 ms; SAMPLE and Holvut share a voice's scratch memory. From GR!MM V2.0: GENERATE, MASTER and DRIVE, the track filter's TYPE and POS, MIDI clock in and out, TRS MIDI IN, CH n > SEL, SYSTEM 3's LATCH, SEL + OCT+, REC held to clear, 6 dB of headroom and a limiter, the voice rule, backups with the samples, the USB audio ring, saves under endless tails, reset reasons; ~6.5 KB of RAM freed. The editor: projects A–D to files, SETTINGS. Clearer page colours |
 | 1.2 | 2026-10-31 | III, a Holvut horrorscape (47 factory sounds) and demo A5; Holvut deeper: BODY to ~45 ms, four all-passes in the loop; WHITEOUT retuned to keep its sound; the host tests run on macOS |
@@ -262,4 +262,4 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 - Fonts: Press Start 2P (CodeMan38) and Terminus (Dimitar Zhekov), SIL Open Font License 1.1.
 
 See [LICENSING.md](LICENSING.md) for the details. M-VAVE and FM-1 are trademarks of their owners; Arctic Scream
-p0larpatch is not affiliated with or endorsed by them, nor by GR!MM.
+p0larpatch is not affiliated with or endorsed by them.

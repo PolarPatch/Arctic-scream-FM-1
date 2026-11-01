@@ -366,7 +366,7 @@ async function switchOn() {
           if (m.seq !== undefined) dispatchEvent(new CustomEvent("fm1-seq", { detail: m.seq }));
           if (m.settings && !saveSettings(m.settings) && !warned) {
             warned = true;
-            console.warn("GR!MM: this browser does not keep the settings; they last until the page closes.");
+            console.warn("Arctic Scream: this browser does not keep the settings; they last until the page closes.");
           }
         }
       };

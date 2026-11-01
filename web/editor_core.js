@@ -551,7 +551,7 @@ export function sameSettings(written, back) {                // read back as wri
     Array.from(written).every((x, k) => x === back[k] || (written.length < back.length && k === SET_V1 - 1));
 }
 export function checkBackup(b, info) {                       // -> [{id, data, what}] or throws (nothing written)
-  if (!b || b.format !== "grimm-backup" || b.version !== 1) throw new EditorError("not a GR!MM backup file", 90);
+  if (!b || b.format !== "grimm-backup" || b.version !== 1) throw new EditorError("not a backup file", 90);
   if (b.fmt !== info.fmt) throw new EditorError(`the backup's format is ${b.fmt}, the FM-1's is ${info.fmt}`, 90);
   const sizes = new Map(backupObjects(info).map(([id, size, what]) => [id, [size, what]]));
   return b.objects.map((o) => {

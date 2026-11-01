@@ -106,7 +106,7 @@ SHOTS = {
     "drone": lambda: S().keys("C3").keys("G3").tap(LFO, LFO).turn(K1, 64).turn(K2, 48).turn(K3, 3).w(3000),
     "scale": lambda: S().tap(SEL).turn(K2, 40).w(800),
     "chord": lambda: S().tap(SEL, SEL).turn(K1, 3).w(800),
-    "arp": lambda: S().tap(ARP).w(800),
+    "arp": lambda: S().tap(ARP).down(ARP).w(700).up(ARP).turn(K3, 1).hold("C3", "D#3", "G3").w(1700),
     "seq": lambda: va(S()).tap(SEQ, REC).keys("C3").keys("D#3").keys("G3").keys("A#3").keys("C4").keys("G3")
                           .keys("D#3").keys("F3").tap(REC, PLAY).w(1900),
     "save": lambda: S().tap(SAVE).w(800),
