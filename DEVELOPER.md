@@ -270,6 +270,23 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
   - Cost: the character changes (more tonal, less wild), BODY becomes a ratio instead of ms, and the six presets need
     retuning by ear.
   - Also: OCT−/OCT+ only move notes played after the press; a latched drone keeps its pitch.
+- **Ideas from Audrey Touch (noted 2026-11-02, waiting).** [AudreyTouch](https://github.com/Synthux-Academy/AudreyTouch)
+  (MIT, Infrasonic Audio / Synthux Academy; already credited for Holvut's design) is Audrey II on the Simple Touch:
+  pads, a line input, simpler to play. Its loop (`Source/FeedbackSynthEngine.cpp`, `Engine::Process`): a Karplus
+  string fed by the body line's return, white noise at -90 dB and the input (left channel, its own gain); a fixed
+  overdrive, LP and HP; the reverb inside the loop; written back through FEEDBACK x the envelope (1 in DRONE). Ideas,
+  to be written from scratch as Holvut was (no code copied):
+  - **A sample as the exciter (the first choice):** one of the four sample slots fed into Holvut's loop instead of
+    straight out, so the howl grows over a choir, a voice or drums uploaded from the editor. The FM-1 has no audio input
+    in this firmware (ALNK0 is output only), so this is its stand-in for Touch's line in.
+  - **The computer's audio into the loop over USB:** a UAC playback interface (an isochronous OUT endpoint) so the
+    FM-1 becomes a feedback effect for anything the computer plays. Large: the chip doing audio both ways at once is
+    untested, and it touches the USB layout that 1.3.1 made work on macOS 10.14 to 15 (test those again).
+  - **Reverb in the loop:** a share of SPACE back into Holvut, so the howl blooms as Touch's SIZE does (Holvut has only
+    its four all-passes now).
+  - **The envelope on FEEDBACK:** a setting where the loop dies when the key is let go, instead of howling on.
+  - Touch's right switch (a random target each half cycle, slewed: 1-8 Hz or 0.01-0.5 Hz on BODY) is close to
+    DRONE's BORGA; its pad scale 2 (0, 5, 6, 9, 10, 12, 13) is close to HORROR.
 - Tune the HOME waveform look for ICE WRAITH, and a stronger HOWL burst.
 - Move the redo buffer (`store.c` `redo_b`, 5 KB) into the pool now that the pool has room, to free main RAM.
 - Store `wv_d` (HOME's drawn waves) as 8-bit values instead of 32-bit: saves ~1.2 KB of main RAM.
