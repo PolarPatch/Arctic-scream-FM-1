@@ -517,14 +517,14 @@ static void ui_tint(uint32_t pg)
     case PG_DRONE: a = BW_CYAN, b = BW_VIOLET, c = BW_TEAL, x = BW_MAGENTA; break;
     case PG_SOUND: case PG_SOURCE: case PG_FMALGO: case PG_FMOP: a = BW_PERIWINKLE, b = BW_TEAL, c = BW_PINK, x = BW_AMBER; break;
     case PG_GRID: case PG_PATTERN: a = BW_VIOLET, b = BW_CYAN, c = BW_PINK, x = BW_MAGENTA; break;
-    case PG_SCALE: case PG_CHORD: a = BW_LAVENDER, b = BW_CYAN, c = BW_AMBER, x = BW_MAGENTA; break;
+    case PG_SCALE: case PG_CHORD: a = BW_LAVENDER, b = BW_CYAN, c = BW_TEAL, x = BW_AMBER; break;
     case PG_ARP: a = BW_TEAL, b = BW_PINK, c = BW_AMBER, x = BW_CYAN; break;
     case PG_TAPE: case PG_GRAIN: case PG_DELAY: case PG_SPACE: case PG_PERFORM: case PG_MASTER: case PG_DRIVE:
-        a = BW_VIOLET, b = BW_SKY, c = BW_ROSE, x = BW_AMBER; break;
+        a = BW_VIOLET, b = BW_SKY, c = BW_GREEN, x = BW_AMBER; break;
     case PG_MIX1: case PG_MIX2: case PG_TRACK: a = BW_CYAN, b = BW_GREEN, c = BW_VIOLET, x = BW_MAGENTA; break;
     case PG_SONG: a = BW_GOLD, b = BW_MAGENTA, c = BW_PERIWINKLE, x = BW_CYAN; break;
     case PG_SOUNDS: case PG_PROJECTS: a = BW_BLUE, b = BW_AMBER, c = BW_TEAL, x = BW_MAGENTA; break;
-    case PG_SYSTEM: case PG_SYS2: case PG_SYS3: a = BW_MAGENTA, b = BW_CYAN, c = BW_BLUE, x = BW_CYAN; break;
+    case PG_SYSTEM: case PG_SYS2: case PG_SYS3: a = BW_SKY, b = BW_PERIWINKLE, c = BW_BLUE, x = BW_CYAN; break;
     default:
         ui_d = UI_D0, ui_m = UI_M0, ui_l = UI_L0, ui_acc = ui_hd = ui_acc_user;
         return;
@@ -554,6 +554,23 @@ static void ui_glow(int32_t x0, int32_t dx, const int32_t *y, uint32_t n, uint16
         ui_line(xa, y[i - 1] + 1, xb, y[i] + 1, d);
     }
     for (i = 1; i < n; i++) ui_line(x0 + (int32_t)(i - 1) * dx, y[i - 1], x0 + (int32_t)i * dx, y[i], c);
+}
+static uint32_t hw_ph;                          /* their phase */
+static int32_t hw_wave(uint32_t p)              /* a soft wave of p (0 .. 255): -64 .. 64, a parabola a half */
+{
+    int32_t q = (int32_t)(p & 127u), v = q * (128 - q) / 64;
+    return p & 128u ? -v : v;
+}
+static void ui_glow_v(int32_t y0, int32_t dy, const int32_t *x, uint32_t n, uint16_t c)   /* ui_glow, standing */
+{
+    uint16_t d = ui_mix(UI_K, c, 1, 3);
+    uint32_t i;
+    for (i = 1; i < n; i++) {
+        int32_t ya = y0 + (int32_t)(i - 1) * dy, yb = ya + dy;
+        ui_line(x[i - 1] - 1, ya, x[i] - 1, yb, d);
+        ui_line(x[i - 1] + 1, ya, x[i] + 1, yb, d);
+    }
+    for (i = 1; i < n; i++) ui_line(x[i - 1], y0 + (int32_t)(i - 1) * dy, x[i], y0 + (int32_t)i * dy, c);
 }
 
 /* ---- HOME's moving picture (Main), a frame every UI_ANIM_MS while it is shown and the screen lit, from the main loop:
@@ -680,28 +697,27 @@ static int32_t va_sqr(int32_t x, int32_t y, int32_t p, int32_t o)
     int32_t ph = (x + o) % p, v = ph < p / 2 ? 4 : 25;
     return y == v || ((ph == 0 || ph == p / 2) && y >= 4 && y <= 25);
 }
-static void pic_va(void)                        /* EditVA: the waveform of WAVE (SUPERSAW: three detuned saws) */
+/* VA: the wave as ribbons of light through the source's filter (CUTOFF rounds it, RESONANCE rings after each edge),
+ * its detuned copies drifting against it as DETUNE beats them (SUPERSAW: three); moving */
+static void pic_va(void)
 {
+    static const uint8_t COL[3] = {0, 1, 3};
     const volatile int32_t *p = trk[sel].p[ENG_VA];
-    int32_t x, y, w = p[0], dt = clamp(p[1], 0, 127) / 16;
+    int32_t w = p[0], dt = clamp(p[1], 0, 127), cut = clamp(p[2], 0, 127), res = clamp(p[3], 0, 127);
+    int32_t f = 24 + cut * 190 / 127, q = 512 - res * 420 / 127, n = w == WAVE_SUPER ? 3 : 2, y[55], i, j;
     ui_caption(w == WAVE_SUPER ? "SUPERSAW X7" : w == WAVE_SQR ? "SQUARE X2" : "SAW X2", 0);
-    for (y = 0; y < 30; y++)
-        for (x = 0; x < 54; x++) {
-            uint16_t c = 0;
-            if (y == 29 && !(x & 1)) c = UI_KC[2];    /* (the colours: WAVE, DETUNE's other saws, CUTOFF's line) */
-            if (w == WAVE_SUPER) {
-                if (va_saw(x, y, 19, 11)) c = UI_KC[3];
-                if (va_saw(x, y, 17, 5)) c = UI_KC[1];
-                if (va_saw(x, y, 18, 0)) c = UI_KC[0];
-            } else if (w == WAVE_SQR) {
-                if (va_sqr(x, y, 18 + dt, 3)) c = UI_KC[1];
-                if (va_sqr(x, y, 18, 0)) c = UI_KC[0];
-            } else {
-                if (va_saw(x, y, 18 + dt, 3)) c = UI_KC[1];
-                if (va_saw(x, y, 18, 0)) c = UI_KC[0];
-            }
-            if (c) ui_cell(x, y, c);
+    for (j = n - 1; j >= 0; j--) {
+        int32_t lp = 0, bp = 0, ph0 = j ? (int32_t)hw_ph * j * (1 + dt / 12) + j * 40 : 0;
+        for (i = -55; i < 55; i++) {            /* (a cycle and a bit first: the filter settles) */
+            uint32_t ph = (uint32_t)((i + 55) * 256 * 2 / 55 + ph0) & 255u;
+            int32_t x = w == WAVE_SQR ? (ph & 128u ? 90 : -90) : (int32_t)ph - 128, hp;
+            hp = x - lp - ((q * bp) >> 8);
+            bp = clamp(bp + ((f * hp) >> 8), -400, 400);
+            lp = clamp(lp + ((f * bp) >> 8), -400, 400);
+            if (i >= 0) y[i] = 96 + (j - (n - 1) / 2) * 6 - clamp(lp, -170, 170) * 30 / 128;
         }
+        ui_glow(PX0, 4, y, 55, j ? ui_mix(UI_K, UI_KC[COL[j]], 9, 16) : UI_KC[0]);
+    }
 }
 
 /* EditFM: an algorithm's operators as wired (FM6_ALG, the core's own table): a modulator a dark block above what it
@@ -775,12 +791,12 @@ static void fm_algo_draw(uint32_t alg, int32_t sel_op)
         char n[2] = {(char)('1' + o), 0};
         if (c) {
             lo = FMX(o) < lo ? FMX(o) : lo, hi = FMX(o) > hi ? FMX(o) : hi;
-            ui_rect(FMX(o) - 1, y + 14, 2, 8, UI_L);
-            ui_rect(x, y, bw, 14, ui_acc);
-            if (!s) ui_rect(x + 2, y + 2, bw - 4, 10, UI_K);
+            ui_rect(FMX(o) - 1, y + 14, 2, 8, UI_KC[1]);
+            ui_rect(x, y, bw, 14, s ? ui_acc : UI_KC[1]);
+            if (!s) ui_rect(x + 2, y + 2, bw - 4, 10, ui_mix(UI_K, UI_KC[1], 3, 16));
         } else
-            ui_rect(x, y, bw, 14, s ? UI_L : UI_D);
-        ui_text(FMX(o) - 4, y + 3, n, 1, s ? UI_K : c ? ui_acc : UI_L);
+            ui_rect(x, y, bw, 14, s ? ui_acc : ui_mix(UI_K, UI_KC[0], 7, 16));
+        ui_text(FMX(o) - 4, y + 3, n, 1, s ? UI_K : c ? UI_KC[1] : UI_W);
         if ((int32_t)o == fbin) {               /* (the feedback: a hook on its right) */
             ui_rect(x + bw, y + 6, 4, 2, UI_M);
             ui_rect(x + bw + 2, y - 4, 2, 10, UI_M);
@@ -788,11 +804,15 @@ static void fm_algo_draw(uint32_t alg, int32_t sel_op)
             ui_rect(FMX(o), y - 4, 2, 4, UI_M);
         }
     }
-    ui_rect(lo - 1, 128, hi - lo + 2, 2, UI_L); /* OUT */
+    {                                           /* OUT: a ribbon of light, moving */
+        int32_t oy[55], n = (hi - lo) / 4 + 1, i;
+        for (i = 0; i < n && i < 55; i++) oy[i] = 129 + hw_wave(((uint32_t)i * 16u + hw_ph * 3u) & 255u) / 32;
+        ui_glow(lo, 4, oy, (uint32_t)(n < 55 ? n : 55), UI_KC[1]);
+    }
     ui_text(120 - 12, 133, "OUT", 1, UI_M);
-    ui_rect(PX0, 150, 7, 7, UI_D);              /* (the key) */
+    ui_rect(PX0, 150, 7, 7, ui_mix(UI_K, UI_KC[0], 7, 16));   /* (the key) */
     ui_text(PX0 + 11, 149, "MODULATOR", 1, UI_M);
-    ui_rect(PX0 + 100, 150, 7, 7, ui_acc), ui_rect(PX0 + 102, 152, 3, 3, UI_K);
+    ui_rect(PX0 + 100, 150, 7, 7, UI_KC[1]), ui_rect(PX0 + 102, 152, 3, 3, UI_K);
     ui_text(PX0 + 111, 149, "CARRIER", 1, UI_M);
 #undef FMX
 #undef FMY
@@ -821,7 +841,8 @@ static void pic_fmalgo(void)                    /* EditFM (FM ALGO): the track's
     fm_algo_draw((uint32_t)clamp(trk[sel].fm_alg, 0, 31), clamp(fm_op, 0, 5));
 }
 static void pic_fmop(void)                      /* EditFM (FM OP): the operator's envelope (ATTACK, DECAY; the rest the
-                                                 * PATCH's), scaled by LEVEL; its ratio */
+                                                 * PATCH's), scaled by LEVEL, as ENV's: a ribbon, its curtain under it;
+                                                 * its ratio */
 {
     const uint8_t *op = FM_PATCH[clamp(trk[sel].p[ENG_FM][0], 0, FM_NPATCH - 1)] + (5u - (uint32_t)clamp(fm_op, 0, 5)) * FP_OP;
     const volatile int32_t *f = trk[sel].fmo[clamp(fm_op, 0, 5)];
@@ -830,28 +851,30 @@ static void pic_fmop(void)                      /* EditFM (FM OP): the operator'
     int32_t fbin, fbout, lv = clamp(f[FO_LEVEL], 0, 99), wa = 2 + clamp(f[FO_ATK], 0, 99) * 16 / 99;
     int32_t wd = 2 + clamp(f[FO_DEC], 0, 99) * 14 / 99, wr = 2 + (99 - op[FP_R1 + 3] % 100) * 12 / 99, ws = 53 - wa - wd - wr;
     int32_t y1 = 28 - op[FP_L1] % 100 * 25 * lv / 9801, y2 = 28 - op[FP_L1 + 2] % 100 * 25 * lv / 9801;
-    int32_t y4 = 28 - op[FP_L1 + 3] % 100 * 25 * lv / 9801, x, y, ev[55];
-    char s[24];
+    int32_t y4 = 28 - op[FP_L1 + 3] % 100 * 25 * lv / 9801, x, s, ev, y[55];
+    uint16_t c;
+    char t[24];
     fm_wiring((uint32_t)clamp(trk[sel].fm_alg, 0, 31), tg, &car, &fbin, &fbout);
-    fm_ratio_text(put_s(put_u(put_s(s, "OP "), (uint32_t)clamp(fm_op, 0, 5) + 1u), " RATIO "), (uint32_t)clamp(fm_op, 0, 5));
-    ui_caption(s, car >> clamp(fm_op, 0, 5) & 1u ? "CARRIER" : "MODULATOR");
-    for (x = 0; x <= 54; x++) {                 /* (the level a column: 28 none, 3 full) */
-        if (x <= wa) ev[x] = 28 - (28 - y1) * x / wa;
-        else if (x <= wa + wd) ev[x] = y1 + (y2 - y1) * (x - wa) / wd;
-        else if (x <= wa + wd + ws) ev[x] = y2;
-        else ev[x] = y2 + (y4 - y2) * (x - wa - wd - ws) / wr;
-        ev[x] = clamp(ev[x], 3, 28);
+    fm_ratio_text(put_s(put_u(put_s(t, "OP "), (uint32_t)clamp(fm_op, 0, 5) + 1u), " RATIO "), (uint32_t)clamp(fm_op, 0, 5));
+    c = car >> clamp(fm_op, 0, 5) & 1u ? UI_KC[1] : UI_KC[0];
+    ui_caption(t, car >> clamp(fm_op, 0, 5) & 1u ? "CARRIER" : "MODULATOR");
+    for (x = 0; x < 55; x++) {                  /* (the level a column: 28 none, 3 full) */
+        if (x <= wa) ev = 28 - (28 - y1) * x / wa;
+        else if (x <= wa + wd) ev = y1 + (y2 - y1) * (x - wa) / wd;
+        else if (x <= wa + wd + ws) ev = y2;
+        else ev = y2 + (y4 - y2) * (x - wa - wd - ws) / wr;
+        y[x] = 50 + (clamp(ev, 3, 28) - 3) * 92 / 25 + hw_wave(((uint32_t)x * 11u + hw_ph * 3u) & 255u) / 40;
     }
-    for (y = 0; y < 30; y++)
-        for (x = 0; x < 54; x++) {
-            int32_t n = x < 53 ? ev[x + 1] : ev[x], a = ev[x] < n ? ev[x] : n, b = ev[x] < n ? n : ev[x];
-            uint16_t c = 0;
-            if (y > ev[x] && y <= 28 && !((x + y) & 1)) c = UI_D;
-            if (y >= a && y <= b) c = UI_L;
-            if (y == 29 && !(x & 1)) c = UI_D;
-            if (c) ui_cell(x, y, c);
+    for (x = 0; x < 54; x++) {                  /* the curtain */
+        int32_t top = y[x] + 3, len = 146 - top, px = PX0 + x * 4 + 2, py = top;
+        for (s = 4; s <= len; s += 4) {
+            int32_t nx = PX0 + x * 4 + 2 + hw_wave(((uint32_t)(s * 4 + x * 19) + hw_ph * 2u) & 255u) * s / (64 * 30);
+            ui_line(px, py, nx, top + s, ui_mix(UI_K, c, (uint32_t)clamp(8 - s * 8 / (len + 8), 1, 8), 16u));
+            px = nx, py = top + s;
         }
-    ui_cell(wa - 1, y1, ui_acc), ui_cell(wa, y1, ui_acc);
+    }
+    ui_glow(PX0 + 2, 4, y, 55, c);
+    ui_rect(PX0 + wa * 4, y[wa] - 2, 5, 5, ui_acc);
 }
 static void pic_fm(void)                        /* EditFM (SOUND): the track's algorithm as wired, the PATCH it is from */
 {
@@ -882,18 +905,23 @@ static void smp_peaks(uint32_t slot)            /* (decoded once a slot, when it
     smp_pk_data[slot] = s->data;
     smp_pk_n[slot] = s->n;
 }
-static void pic_sample(void)                    /* the slot's sample, the loop (START, LENGTH) marked */
+static void pic_sample(void)                    /* the slot's sample as a curtain of light, mirrored (its peaks), the
+                                                 * loop (START, LENGTH) lit between its two ends, a playhead sweeping it
+                                                 * (REVERSE: backwards); empty: a still, dim ribbon */
 {
     const volatile int32_t *p = trk[sel].p[ENG_SAMPLE];
     uint32_t slot = sp_slot(p);
     sp_loop_t L;
     char s[32], r[12];
-    int32_t x, y, x0, x1;
+    int32_t x, x0, x1, y[55], fr, ph;
     put_u(put_s(s, "SLOT "), slot + 1u);
     if (!smp[slot].ready) {
         put_s(s + ui_len(s), smp[slot].state == SS_SCAN ? " / CHECKING" : " / EMPTY");
         ui_caption(s, 0);
-        ui_text(120 - 4 * 5, 96, "EMPTY", 1, UI_M);
+        for (x = 0; x < 55; x++) y[x] = 96 + hw_wave(((uint32_t)x * 4u + hw_ph) & 255u) / 32;
+        ui_glow(PX0, 4, y, 55, UI_D0);
+        ui_text(120 - 4 * 5, 70, "EMPTY", 1, UI_M);
+        ui_text(120 - 4 * 23, 120, "LOAD A WAV IN THE EDITOR", 1, UI_M);
         return;
     }
     if (smp[slot].name[0]) put_s(put_s(s + ui_len(s), " / "), smp[slot].name);
@@ -904,124 +932,183 @@ static void pic_sample(void)                    /* the slot's sample, the loop (
     smp_peaks(slot);
     x0 = (int32_t)((uint64_t)L.l0 * 54u / smp[slot].n);
     x1 = (int32_t)((uint64_t)(L.l0 + L.len) * 54u / smp[slot].n);
-    for (x = 0; x < 54; x++) {
-        int32_t a = smp_pk[slot][x] ? smp_pk[slot][x] : 1, in = x >= x0 && x <= x1;
-        for (y = 0; y < 30; y++) {
-            int32_t dy = y - 15 < 0 ? 15 - y : y - 15;
-            if (dy <= a) ui_cell(x, y, dy == a ? (in ? UI_L : UI_M) : (in ? UI_M : UI_D));
-        }
+    x1 = x1 > 53 ? 53 : x1 < x0 + 1 ? x0 + 1 : x1;
+    fr = (int32_t)(L.len / 2425u) + 1;          /* (the loop's frames: ~55 ms a frame, 44.1 kHz) */
+    ph = (int32_t)(hw_ph % (uint32_t)fr) * (x1 - x0) / fr;
+    ph = L.rev ? x1 - ph : x0 + ph;
+    for (x = 0; x < 54; x++) {                  /* the rays, up and down from the middle */
+        int32_t a = 2 + smp_pk[slot][x] * 4, in = x >= x0 && x <= x1, cx = PX0 + x * 4 + 2;
+        int32_t sw = hw_wave(((uint32_t)x * 9u + hw_ph * 2u) & 255u) / 32, d = x - ph < 0 ? ph - x : x - ph;
+        uint16_t c = in ? ui_mix(UI_KC[1], UI_KC[0], (uint32_t)(x - x0), (uint32_t)(x1 - x0 + 1)) : UI_KC[3];
+        uint32_t lit = in ? (d < 3 ? 16u - (uint32_t)d * 2u : 9u) : 4u;
+        ui_line(cx, 96 - a, cx + sw, 96 + a, ui_mix(UI_K, c, lit, 16u));
+        y[x] = 96 - a - 2;
     }
-    for (y = 0; y < 30; y++) {                  /* the loop's ends */
-        ui_cell(x0, y, ui_acc);
-        ui_cell(x1 > 53 ? 53 : x1, y, ui_acc);
-    }
+    y[54] = y[53];
+    ui_glow(PX0 + 2, 4, y, 55, ui_mix(UI_K, UI_KC[0], 10, 16));
+    ui_rect(PX0 + x0 * 4 + 1, 48, 2, 96, ui_acc);   /* the loop's ends, the playhead */
+    ui_rect(PX0 + x1 * 4 + 1, 48, 2, 96, ui_acc);
+    ui_rect(PX0 + ph * 4 + 1, 52, 2, 88, UI_W);
 }
 
-static void pic_voice(void)                     /* a mouth singing VOWEL: A open, E wide, I narrow, O round, U small */
+/* VOICE: the voice's spectrum as aurora: a ribbon over the frequencies (low on the left), rising at its three formants
+ * (VOWEL: where, SHIFT: moved), its curtain hanging under it, each formant's light in its colour; BUZZ brightens it,
+ * BREATH makes it shimmer; moving */
+static int32_t au_log2q8(uint32_t x)            /* log2 x, Q8 (x >= 1) */
 {
-    static const int8_t RX[5] = {14, 17, 18, 9, 6}, RY[5] = {10, 6, 3, 10, 6};
+    int32_t n = 0;
+    while (x >> (n + 1)) n++;
+    return n * 256 + (int32_t)(((x << 8) >> n) - 256u);
+}
+static void pic_voice(void)
+{
+    static const uint8_t H[3] = {64, 46, 32};
     const volatile int32_t *p = trk[sel].p[ENG_VOICE];
-    int32_t v = clamp(p[0], 0, 127) * 4 * 256 / 127, i = v >> 8, f = v & 255, x, y, rx, ry, sh = clamp(p[1], 0, 24) - 12;
-    char s[24], t[12];
-    if (i >= 4) i = 3, f = 256;
-    rx = (RX[i] * (256 - f) + RX[i + 1] * f) / 256 + sh / 4;
-    ry = (RY[i] * (256 - f) + RY[i + 1] * f) / 256;
+    int32_t v = clamp(p[0], 0, 127) * 4 * 256 / 127, vi = v >> 8, fr = v & 255, sh = clamp(p[1], 0, 24) - 12;
+    int32_t bz = clamp(p[2], 0, 127), br = clamp(p[3], 0, 127), at[3], y[55], who[55], x, k, s;
+    char l[24], r[16], t[12];
+    if (vi >= 4) vi = 3, fr = 256;
     formant_text(p, 0, t);
-    put_s(put_s(s, "VOWEL "), t);
+    put_s(put_s(l, "VOWEL "), t);
     formant_text(p, 1, t);
-    {
-        char r[16];
-        put_s(put_s(r, "SHIFT "), t);
-        ui_caption(s, r);
+    put_s(put_s(r, "SHIFT "), t);
+    ui_caption(l, r);
+    for (k = 0; k < 3; k++) {                   /* (a formant's place: 100 Hz .. 4 kHz over 54 columns, log) */
+        uint32_t f = ((uint32_t)VOWEL_F[vi][k] * (uint32_t)(256 - fr) + (uint32_t)VOWEL_F[vi + 1][k] * (uint32_t)fr) >> 8;
+        at[k] = (au_log2q8(f) - au_log2q8(100u)) * 54 / 1362 + sh * 54 / 64;
     }
-    for (y = 0; y < 30; y++)
-        for (x = 0; x < 54; x++) {
-            int32_t dx = x - 27, dy = y - 15, o = (dx * dx) * (ry + 3) * (ry + 3) + (dy * dy) * (rx + 3) * (rx + 3),
-                    oo = (rx + 3) * (rx + 3) * (ry + 3) * (ry + 3), n = (dx * dx) * ry * ry + (dy * dy) * rx * rx,
-                    nn = rx * rx * ry * ry;
-            if (o <= oo) ui_cell(x, y, n <= nn ? (dy > ry / 2 && dy * 3 > ry && n * 4 <= nn * 3 ? ui_acc : UI_K) : UI_L);
+    for (x = 0; x < 55; x++) {
+        int32_t h = 4, best = 0;
+        for (k = 0; k < 3; k++) {
+            int32_t d = x - at[k], g = H[k] * 16 / (16 + d * d);
+            if (g > h) h = g, best = k;
         }
+        h += hw_wave(((uint32_t)x * 13u + hw_ph * (2u + (uint32_t)br / 32u)) & 255u) * (2 + br / 24) / 64;
+        y[x] = 140 - h, who[x] = best;
+    }
+    for (x = 0; x < 54; x++) {                  /* the curtain: from the ribbon down */
+        int32_t top = y[x] + 3, len = 144 - top, px = PX0 + x * 4 + 2, py = top;
+        for (s = 4; s <= len; s += 4) {
+            int32_t nx = PX0 + x * 4 + 2 + hw_wave(((uint32_t)(s * 5 + x * 17) + hw_ph * 2u) & 255u) * s * (1 + br / 40) / (64 * 30);
+            ui_line(px, py, nx, top + s, ui_mix(UI_K, UI_KC[who[x]], (uint32_t)clamp((4 + bz / 16) - s * (4 + bz / 16) / (len + 6), 1, 12), 16u));
+            px = nx, py = top + s;
+        }
+    }
+    ui_glow(PX0 + 2, 4, y, 55, ui_mix(UI_K, UI_W, 8u + (uint32_t)bz / 16u, 16u));
+    for (k = 0; k < 3; k++)
+        if (at[k] >= 0 && at[k] < 55) ui_rect(PX0 + at[k] * 4, y[at[k]] - 3, 5, 5, UI_KC[k]);
 }
 
-static void pic_wheel(void)                     /* the nine drawbars of the registration (PERC: its bar's tip) */
+/* WHEEL: the nine drawbars as standing ribbons of light, as tall as they are pulled out, swaying (DRIVE: wilder), the
+ * PERC bar's tip flashing, CLICK sparks over the tips; the subs in amber, the fundamentals' in their blue, the rest teal */
+static void pic_wheel(void)
 {
-    static const char FOOT[9] = {'M', 'M', 'L', 'L', 'D', 'L', 'D', 'D', 'L'};   /* brown, white, black as greys */
+    static const uint8_t KIND[9] = {2, 2, 0, 1, 1, 1, 1, 1, 1};   /* (16', 5 1/3': subs; 8': the fundamental) */
     const volatile int32_t *p = trk[sel].p[ENG_WHEEL];
     uint32_t reg = (uint32_t)clamp(p[0], 0, 15), perc = (uint32_t)clamp(p[1], 0, 6), k;
-    int32_t pk = perc ? (int32_t)(3u + ((perc - 1u) & 1u)) : -1, y;
+    int32_t pk = perc ? (int32_t)(3u + ((perc - 1u) & 1u)) : -1, ck = clamp(p[2], 0, 127), dv = clamp(p[3], 0, 127), i;
     ui_caption(N_DRW_REG[reg], perc ? N_DRW_PERC[perc] : "PERC OFF");
     for (k = 0; k < 9u; k++) {
-        int32_t lv = DRW_REG[reg][k] - '0', x = 5 + (int32_t)k * 5;
-        uint16_t c = FOOT[k] == 'M' ? UI_M : FOOT[k] == 'L' ? UI_L : UI_D;
+        int32_t lv = DRW_REG[reg][k] - '0', h, n, x[24], x0 = PX0 + 12 + (int32_t)k * 24;
+        uint16_t c = KIND[k] == 2u ? BW_AMBER : KIND[k] == 0u ? UI_KC[0] : UI_KC[1];
         if (perc && k == 8u) lv = 0;            /* (PERC on: the 1' bar is off) */
-        ui_rect(PX0 + x * 4, PY0, 16, 2, UI_D);
-        for (y = 0; y < lv * 3; y++)
-            ui_rect(PX0 + x * 4 + 2, PY0 + 2 + y * 4, 12, 4, c);
-        ui_rect(PX0 + x * 4, PY0 + 2 + lv * 12, 16, 6, (int32_t)k == pk ? ui_acc : c);
+        h = 6 + lv * 11, n = h / 4 + 1;
+        for (i = 0; i < n && i < 24; i++) {
+            int32_t sw = 1 + (n - i) * (3 + dv / 32) / n;
+            x[i] = x0 + hw_wave(((uint32_t)(i * 9 + (int32_t)k * 41) + hw_ph * (2u + (uint32_t)dv / 48u)) & 255u) * sw / 64;
+        }
+        for (i = 0; i < n && i < 24; i++) x[i] -= 2;   /* (a beam: two ribbons side by side) */
+        ui_glow_v(144 - h, 4, x, (uint32_t)(n < 24 ? n : 24), lv ? ui_mix(UI_K, c, 9, 16) : ui_mix(UI_K, c, 3, 16));
+        for (i = 0; i < n && i < 24; i++) x[i] += 3;
+        ui_glow_v(144 - h, 4, x, (uint32_t)(n < 24 ? n : 24), lv ? c : ui_mix(UI_K, c, 4, 16));
+        if ((int32_t)k == pk)                   /* (PERC: a struck tip, fading and struck again) */
+            ui_rect(x[0] - 2, 142 - h, 5, 5, ui_mix(UI_K, ui_acc, 16u - (hw_ph & 15u), 16u));
+        else ui_rect(x[0] - 1, 143 - h, 3, 3, lv ? UI_W : UI_D0);
+        if (lv && ck && ((hw_ph + k * 5u) % (1u + 12u - (uint32_t)ck / 12u)) == 0u)   /* (CLICK: a spark) */
+            ui_rect(x[0] - 1 + (int32_t)(hw_ph % 5u) - 2, 136 - h - (int32_t)(hw_ph % 7u), 2, 2, UI_W);
     }
 }
 
-static void pic_phys(void)                      /* the model's body: a bar, a string (and its sympathetic ones), a drum */
+/* PHYS: the model's body, ringing: a string swinging in its modes (STRUCTURE adds the higher ones), struck and dying
+ * away as DAMP lets it, or held swinging by BOW; a bar on its two cords bending; a drum head's rings running out
+ * from where it is struck; SYMPATH's three strings shimmering under the string */
+static void pic_phys(void)
 {
     const volatile int32_t *p = trk[sel].p[ENG_PHYS];
     uint32_t md = phys_model(p);
-    int32_t x, y, st = clamp(p[1], 0, 127), bw = clamp(p[3], 0, 127);
+    int32_t st = clamp(p[1], 0, 127), dmp = clamp(p[2], 0, 127), bw = clamp(p[3], 0, 127), y[55], i, j, m;
+    int32_t t = (int32_t)(hw_ph & 63u), env = bw ? 48 + bw * 16 / 127 + (int32_t)(hw_ph % 3u) * bw / 64 :
+                                                    64 - t * (16 + dmp) / 143;   /* (Q6: struck every 64 frames) */
     char r[16];
     phys_text(p, 3, r);
     ui_caption(N_PHYS_MODEL[md], r);
-    if (md == PM_MODAL) {                       /* a bar on two cords (its nodes), struck or bowed at its end */
-        for (x = 6; x < 48; x++)
-            for (y = 12; y < 18; y++) ui_cell(x, y, y == 12 ? UI_L : UI_M);
-        for (x = 0; x < 3; x++) ui_cell(15 + x * (12 + st / 32), 19, UI_D);   /* (STRUCTURE spreads the partials) */
-        ui_cell(15, 9, UI_D), ui_cell(15, 10, UI_D), ui_cell(15, 11, UI_D);
-        ui_cell(38, 9, UI_D), ui_cell(38, 10, UI_D), ui_cell(38, 11, UI_D);
-        ui_cell(47, bw ? 15 : 21, ui_acc), ui_cell(48, bw ? 15 : 22, ui_acc);
-    } else if (md == PM_MEMB) {                 /* a drum head and its rings */
-        for (y = 0; y < 30; y++)
-            for (x = 0; x < 54; x++) {
-                int32_t dx = x - 27, dy = (y - 15) * 2, d = dx * dx + dy * dy;
-                if (d <= 22 * 22) ui_cell(x, y, d >= 20 * 20 ? UI_L : (d >= 11 * 11 && d < 13 * 13) || d < 4 * 4 ? UI_M : UI_D);
+    if (env < 2) env = 2;
+    if (md == PM_MEMB) {                        /* rings running out from the middle */
+        for (j = 0; j < 4; j++) {
+            int32_t rr = (int32_t)((hw_ph * 2u + (uint32_t)j * 16u) & 63u) + 4, px = 0, py = 0;
+            uint32_t lit = (uint32_t)clamp(14 - rr * (8 + dmp / 12) / 64, 1, 14);
+            for (i = 0; i <= 32; i++) {
+                int32_t a = i * 8, wob = hw_wave(((uint32_t)(i * (3 + st / 32)) * 8u + hw_ph * 3u) & 255u) / 32;
+                int32_t nx = 120 + hw_wave((uint32_t)(a + 64) & 255u) * (rr + wob) * 3 / (2 * 64);
+                int32_t ny = 96 + hw_wave((uint32_t)a & 255u) * (rr + wob) * 3 / (4 * 64);
+                if (i) ui_line(px, py, nx, ny, ui_mix(UI_K, UI_KC[j], lit, 16u));
+                px = nx, py = ny;
             }
-        ui_cell(27 + st / 16, 15, ui_acc);
-    } else {                                    /* a string, its swing (and SYMPATH's three strings below) */
-        for (x = 4; x < 50; x++) {
-            int32_t a = (sine_i((uint32_t)(x - 4) * 46684427u) * (2 + bw / 32)) >> 15;   /* (half a sine over 46) */
-            ui_cell(x, 12 - (a < 0 ? -a : a), UI_L);
-            ui_cell(x, 12, UI_D);
         }
-        ui_cell(4, 11, UI_M), ui_cell(4, 12, UI_M), ui_cell(4, 13, UI_M);
-        ui_cell(49, 11, UI_M), ui_cell(49, 12, UI_M), ui_cell(49, 13, UI_M);
-        ui_cell(4 + 46 * clamp(st, 0, 127) / 254, 14, ui_acc);
-        if (md == PM_SYMP)
-            for (y = 0; y < 3; y++)
-                for (x = 8; x < 46; x++) ui_cell(x, 20 + y * 3, UI_M);
+        ui_rect(118, 94, 5, 5, ui_acc);
+        return;
     }
+    for (j = 0; j < (md == PM_MODAL ? 3 : 2); j++) {   /* a string (and its echo), or a bar's three edges */
+        for (i = 0; i < 55; i++) {
+            int32_t v = 0;
+            for (m = 1; m <= 1 + st / 43; m++)      /* (the modes: STRUCTURE adds the higher ones) */
+                v += hw_wave((uint32_t)(i * m * 128 / 54) & 255u) * hw_wave((hw_ph * (uint32_t)(3 + m * 2) + (uint32_t)(j * 9) + 64u) & 255u) / (64 * m);
+            if (md == PM_MODAL) v = v * 2 / 3;  /* (a bar: stiffer, three lines thick) */
+            y[i] = (md == PM_SYMP ? 78 : 96) + (md == PM_MODAL ? (j - 1) * 6 : 0) - v * 22 * env / (64 * 64);
+        }
+        ui_glow(PX0, 4, y, 55, j && md != PM_MODAL ? ui_mix(UI_K, UI_KC[1], 6, 16) : UI_KC[md == PM_MODAL ? 1 : 0]);
+    }
+    if (md == PM_MODAL) {                       /* (its cords, at the nodes) */
+        ui_rect(PX0 + 12 * 4, 60, 2, 26, UI_M), ui_rect(PX0 + 42 * 4, 60, 2, 26, UI_M);
+    } else {
+        int32_t cy = md == PM_SYMP ? 78 : 96;
+        ui_rect(PX0 - 2, cy - 8, 3, 16, UI_M), ui_rect(PX0 + 216, cy - 8, 3, 16, UI_M);
+    }
+    if (md == PM_SYMP)                          /* the three sympathetic strings, answering softly */
+        for (j = 0; j < 3; j++) {
+            for (i = 0; i < 55; i++)
+                y[i] = 112 + j * 12 - hw_wave((uint32_t)(i * 128 / 54) & 255u) *
+                       hw_wave((hw_ph * (uint32_t)(4 + j) + 64u) & 255u) * (env / 2 + 6) / (64 * 64 * 4);
+            ui_glow(PX0 + 16, 4, y, 47, ui_mix(UI_K, UI_KC[1 + j], 9, 16));
+        }
+    ui_rect(PX0 + 4 + 208 * st / 254 - 2, md == PM_SYMP ? 90 : 108, 5, 5, ui_acc);   /* (where it is struck or bowed) */
 }
 
-static void pic_phase(void)                     /* the bent waveform of WAVE at DCW (WAVE2: the next cycle, darker) */
+/* PHASE: two cycles of the bent wave, smooth, WAVE the first, WAVE2 the second, the plain sine dim behind them (DCW:
+ * how far from it they are bent), a light running along them; the bend's point marked */
+static void pic_phase(void)
 {
     const volatile int32_t *p = trk[sel].p[ENG_PHASE];
     uint32_t w1 = (uint32_t)clamp(p[0], 0, 7), w2 = (uint32_t)clamp(p[1], 0, 8), dcw;
-    int32_t x, y0 = -1, c;
+    int32_t x, c, y[55], g[55], run = (int32_t)(hw_ph % 110u);
     pd_t b;
-    char s[24], t[8];
+    char s[24], t[8], r[20], u[8];
     dcw = ((uint32_t)clamp(p[2], 0, 127) * 65535u / 127u * 56000u) >> 16;
     phase_text(p, 0, t);
     put_s(put_s(s, "WAVE "), t);
-    {
-        char r[20], u[8];
-        phase_text(p, 1, u);
-        put_s(put_s(r, "WAVE2 "), u);
-        ui_caption(s, r);
-    }
+    phase_text(p, 1, u);
+    put_s(put_s(r, "WAVE2 "), u);
+    ui_caption(s, r);
     for (c = 0; c < 2; c++) {                   /* two cycles: WAVE, then WAVE2 (or WAVE again) */
         pd_setup(&b, c && w2 ? w2 - 1u : w1, dcw);
-        for (x = 0; x < 27; x++) {
-            int32_t yy = 15 - pd_wave(&b, (uint32_t)x * 65535u / 26u) * 13 / 32767, a = y0 < 0 ? yy : y0, z;
-            for (z = a < yy ? a : yy; z <= (a < yy ? yy : a); z++) ui_cell(c * 27 + x, z, c ? UI_M : UI_L);
-            y0 = yy;
+        for (x = 0; x < 55; x++) {
+            y[x] = 96 - pd_wave(&b, (uint32_t)x * 65535u / 54u) * 44 / 32767;
+            g[x] = 96 - hw_wave((uint32_t)(x * 256 / 54) & 255u) * 44 / 64;
         }
-        ui_cell(c * 27 + (int32_t)(b.x * 26u / 65535u), 29, ui_acc);   /* the bend's point */
+        ui_glow(PX0 + c * 108, 2, g, 55, UI_D0);
+        ui_glow(PX0 + c * 108, 2, y, 55, c ? UI_KC[1] : UI_KC[0]);
+        if (run / 55 == c) ui_rect(PX0 + c * 108 + (run % 55) * 2 - 2, y[run % 55] - 2, 5, 5, UI_W);
+        ui_rect(PX0 + c * 108 + (int32_t)(b.x * 108u / 65535u) - 1, 142, 3, 4, ui_acc);   /* the bend's point */
     }
 }
 
@@ -1031,12 +1118,6 @@ static void pic_phase(void)                     /* the bent waveform of WAVE at 
  * asleep; tall ribbons, faster, howling), BODY their length (short: tight waves), DAMP their light, DRIVE
  * their shape (round .. squared, torn); always four, in the knobs' colours (asleep: low, still, close) */
 #define HW_RY (PY0 + 54)                        /* the ribbons' middle line */
-static uint32_t hw_ph;                          /* their phase */
-static int32_t hw_wave(uint32_t p)              /* a soft wave of p (0 .. 255): -64 .. 64, a parabola a half */
-{
-    int32_t q = (int32_t)(p & 127u), v = q * (128 - q) / 64;
-    return p & 128u ? -v : v;
-}
 static void pic_howl(void)
 {
     static const uint8_t S[4] = {3, 5, 2, 4}, O[4] = {0, 90, 170, 40};
@@ -1150,7 +1231,8 @@ static void pic_env(void)                       /* Env: the shape of the track's
 static int ui_anim_page(uint32_t p)             /* the pages whose ribbons move (ui_update) */
 {
     return p == PG_DRONE || p == PG_ENV || p == PG_TAPE || p == PG_GRAIN || p == PG_DELAY || p == PG_SPACE || p == PG_LFO ||
-           p == PG_MIX1 || p == PG_MIX2 || p == PG_MASTER || p == PG_DRIVE;
+           p == PG_MIX1 || p == PG_MIX2 || p == PG_MASTER || p == PG_DRIVE || p == PG_SOUND || p == PG_FMOP || p == PG_FMALGO || p == PG_SCALE ||
+           p == PG_CHORD || p == PG_PERFORM;
 }
 
 /* ---- the aurora pages (Arctic Scream p0larpatch, after the DRONE and Holvut pages): every knob a ribbon of northern
@@ -1158,17 +1240,6 @@ static int ui_anim_page(uint32_t p)             /* the pages whose ribbons move 
 static uint16_t au_lit(uint16_t c, int32_t v, int32_t mx)   /* c lit as v of mx: a glow even at 0 */
 {
     return ui_mix(UI_K, c, 4u + (uint32_t)(clamp(v, 0, mx) * 12 / (mx ? mx : 1)), 16u);
-}
-static void ui_glow_v(int32_t y0, int32_t dy, const int32_t *x, uint32_t n, uint16_t c)   /* ui_glow, standing */
-{
-    uint16_t d = ui_mix(UI_K, c, 1, 3);
-    uint32_t i;
-    for (i = 1; i < n; i++) {
-        int32_t ya = y0 + (int32_t)(i - 1) * dy, yb = ya + dy;
-        ui_line(x[i - 1] - 1, ya, x[i] - 1, yb, d);
-        ui_line(x[i - 1] + 1, ya, x[i] + 1, yb, d);
-    }
-    for (i = 1; i < n; i++) ui_line(x[i - 1], y0 + (int32_t)(i - 1) * dy, x[i], y0 + (int32_t)i * dy, c);
 }
 
 /* MIXER 1: each track a curtain of four standing ribbons (LEVEL, DLY, REV, GRAIN in the knobs' colours), as tall as
@@ -1314,7 +1385,7 @@ static void pic_space(void)
     }
 }
 /* MASTER: an aurora curtain cut by the filter: a ribbon across the top, its rays hanging down as long as the filter lets
- * that part of the spectrum through (low on the left, high on the right), the ones at the cutoff flaring (RESONANCE),
+ * that part of the spectrum through (low on the left, high on the right), the ones at the cutoff flaring violet (RESONANCE),
  * swaying; open: every ray to the ground, "OPEN" */
 static void pic_master(void)
 {
@@ -1331,7 +1402,7 @@ static void pic_master(void)
         len = clamp(len + pk * 4 / 127 * 4, 4, 144 - y0);
         for (s = 4; s <= len; s += 4) {
             int32_t nx = rx + hw_wave((uint32_t)(s * 3 + (int32_t)hw_ph * 2 + k * 23) & 255u) * 3 * s / (64 * 40);
-            uint16_t cc = ui_mix(UI_K, pk ? ui_mix(UI_KC[1], BW_MAGENTA, (uint32_t)pk, 127u) : UI_KC[1 + (k & 1)],
+            uint16_t cc = ui_mix(UI_K, pk ? ui_mix(BW_GREEN, BW_VIOLET, (uint32_t)pk, 127u) : UI_KC[1 + (k & 1)],
                                  (uint32_t)clamp(15 - s * 11 / len, 2, 15), 16u);
             ui_line(px, py, nx, y0 + s, cc);
             px = nx, py = y0 + s;
@@ -1344,12 +1415,13 @@ static void pic_master(void)
     }
 }
 
-/* DRIVE: three ribbons of light through the drive (AMOUNT, TYPE), the clean wave dim behind the front one, burning
- * toward magenta the harder they are driven, sparks torn off where a crest is flattened; AMOUNT 0: "OFF", calm */
+/* DRIVE: three ribbons of light through the drive (AMOUNT, TYPE), the clean wave dim behind the front one, turning
+ * from green to violet the harder they are driven, sparks torn off where a crest is flattened; AMOUNT 0: "OFF", calm */
 static void pic_drive(void)
 {
     static const uint8_t K[3] = {5, 7, 9}, S[3] = {1, 2, 3};
     static const int8_t Y[3] = {-22, 22, 0};
+    static const uint16_t DC[3] = {BW_TEAL, BW_LAVENDER, BW_GREEN};
     uint32_t ty = (uint32_t)clamp(dr_type, 0, NDTYPE - 1);
     int32_t a = clamp(dr_amt, 0, 127), g = drv_gain(ty, a), lv = dr_level(ty, a), yc[55], yd[55], i, j;
     char r[8];
@@ -1364,10 +1436,10 @@ static void pic_drive(void)
             if (j == 2 && a > 8 && (x > 16000 || x < -16000) && (d < 0 ? -d : d) * 8 < (x < 0 ? -x : x) * 7 &&
                 ((uint32_t)(i * 7) + hw_ph) % 4u == 0)   /* (a spark off a flattened crest) */
                 ui_rect(PX0 + i * 4, yd[i] + (d > 0 ? -5 : 4) - (int32_t)((hw_ph + (uint32_t)i) % 4u) * (d > 0 ? 2 : -2),
-                        2, 2, ui_mix(UI_W, BW_MAGENTA, (uint32_t)a, 127u));
+                        2, 2, ui_mix(UI_W, BW_VIOLET, (uint32_t)a, 127u));
         }
         if (j == 2) ui_glow(PX0, 4, yc, 55, UI_D0);
-        ui_glow(PX0, 4, yd, 55, ui_mix(UI_K, a ? ui_mix(UI_KC[j], BW_MAGENTA, (uint32_t)a, 127u) : UI_KC[j],
+        ui_glow(PX0, 4, yd, 55, ui_mix(UI_K, a ? ui_mix(DC[j], BW_VIOLET, (uint32_t)a, 127u) : DC[j],
                                      j == 2 ? 16u : 7u, 16u));
     }
 }
@@ -1476,14 +1548,16 @@ static void pic_pattern(void)                   /* SeqSet: the patterns (A; B ..
     }
 }
 
-static void pic_sel(void)                       /* Scale: the keys (the scale's light, the chord's in the accent), the
-                                                 * chord of the note last played (none: ROOT's first) and its name */
+static void pic_sel(void)                       /* Scale: the 27 keys as rays of aurora hanging from a ribbon, a key a
+                                                 * ray (black keys shorter): the scale's long and lit, the rest short
+                                                 * and dim, the chord's in the accent, longest; ROOT named under its
+                                                 * rays; the chord of the note last played (none: ROOT's) and its name */
 {
-    static const int8_t WI[12] = {0, -1, 1, -1, 2, -1, 3, 4, -1, 5, -1, 6};   /* (from F: a white key's place) */
+    static const uint8_t BLK[12] = {0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0};   /* (from C) */
     uint32_t base = KEY0 + (uint32_t)(12 * ui_oct), r, n, i, k, lit = 0;
     uint8_t ns[CH_MAX];
     char l[32], rg[12], *e;
-    int32_t x;
+    int32_t x, y[55], s;
     r = ch_last >= (int32_t)base && ch_last < (int32_t)base + 27 ? (uint32_t)ch_last :
         base + (uint32_t)(clamp(sc_root, 0, 11) + 12 - (int32_t)(base % 12u)) % 12u;
     n = chord_notes(sel, r, ns);
@@ -1491,19 +1565,26 @@ static void pic_sel(void)                       /* Scale: the keys (the scale's 
         if (ns[i] >= base && ns[i] < base + 27u) lit |= 1u << (ns[i] - base);
     e = put_s(put_s(l, SC_NOTE[clamp(sc_root, 0, 11)]), " ");
     put_s(e, SC_NAME[clamp(sc_scale, 0, NSCALE - 1)]);
-    ui_note(put_s(ui_note(rg, base), "-"), base + 26u);   /* (the keys' range: "F3-G5") */
+    ui_note(put_s(ui_note(rg, base), "-"), base + 26u);   /* (the keys' range: "F2-G4") */
     ui_caption(l, rg);
-    for (k = 0; k < 27u; k++)                   /* the white keys, then the black ones over them */
-        if (WI[k % 12u] >= 0) {
-            x = 12 + ((int32_t)(k / 12u) * 7 + WI[k % 12u]) * 27 / 2;
-            ui_rect(x, 42, 12, 72, lit >> k & 1u ? ui_acc : sc_in((int32_t)(base + k)) ? UI_L : UI_M);
+    for (i = 0; i < 55; i++) y[i] = 50 + hw_wave(((uint32_t)i * 3u + hw_ph * 2u) & 255u) * 3 / 64;
+    for (k = 0; k < 27u; k++) {
+        uint32_t pc = (base + k) % 12u;
+        int32_t rx = PX0 + 4 + (int32_t)k * 8, in = sc_in((int32_t)(base + k)), ch = (int32_t)(lit >> k & 1u);
+        int32_t y0 = y[(rx - PX0) / 4] + 3 + (BLK[pc] ? 6 : 0), len = ch ? 58 : in ? (BLK[pc] ? 40 : 50) : 10;
+        int32_t px = rx, py = y0;
+        uint16_t c = ch ? ui_acc : BLK[pc] ? UI_KC[1] : UI_KC[0];
+        for (s = 4; s <= len; s += 4) {
+            int32_t nx = rx + hw_wave(((uint32_t)(s * 3 + (int32_t)k * 23) + hw_ph * 2u) & 255u) * 3 * s / (64 * 50);
+            uint16_t cc = ui_mix(UI_K, c, (uint32_t)clamp((ch ? 16 : in ? 13 : 4) - s * (ch ? 8 : 9) / (len + 4), 1, 16), 16u);
+            ui_line(px, py, nx, y0 + s, cc);
+            if (in || ch) ui_line(px + 1, py, nx + 1, y0 + s, ui_mix(UI_K, cc, 10, 16));
+            px = nx, py = y0 + s;
         }
-    for (k = 0; k < 27u; k++)
-        if (WI[k % 12u] < 0) {
-            x = 12 + (((int32_t)(k / 12u) * 7 + WI[(k - 1u) % 12u] + 1) * 27 - 10) / 2;
-            ui_rect(x, 42, 9, 43, UI_K);
-            ui_rect(x + 1, 42, 7, 42, lit >> k & 1u ? ui_acc : sc_in((int32_t)(base + k)) ? UI_M : UI_D);
-        }
+        if (ch) ui_rect(px - 2, py, 5, 5, ui_acc);
+        if ((int32_t)pc == clamp(sc_root, 0, 11)) ui_text(rx - 4 * (int32_t)ui_len(SC_NOTE[pc]) + 1, 112, SC_NOTE[pc], 1, UI_L);
+    }
+    ui_glow(PX0, 4, y, 55, UI_KC[0]);
     chord_name(sel, r, l);
     x = ui_text(12, 124, l, 2, trk[sel].chord ? ui_acc : UI_M) + 8;
     if (!trk[sel].chord) put_s(l, "OFF: HOLD SEL");
@@ -1516,7 +1597,7 @@ static void pic_sel(void)                       /* Scale: the keys (the scale's 
         else put_s(l, "OFF");
     }
     ui_text(x, 128, l, 1, UI_M);
-    ui_rect(12, 147, 6, 6, UI_L), ui_text(22, 146, "IN SCALE", 1, UI_M);
+    ui_rect(12, 147, 6, 6, UI_KC[0]), ui_text(22, 146, "IN SCALE", 1, UI_M);
     ui_rect(98, 147, 6, 6, ui_acc), ui_text(108, 146, "CHORD", 1, UI_M);
 }
 
@@ -1656,34 +1737,67 @@ static uint32_t gen_flash(void)                 /* main loop: the tiles' flashes
     }
     return gen_fl = f;
 }
-static void pic_perform(void)                   /* FxLayer: the eight tricks (FX held + the white keys), on in the
-                                                 * accent (its mutes: GLO's); (V2) GENERATE's four tracks under them */
+/* FxLayer: the eight tricks (FX held + the white keys), each a small ribbon of light doing what it does (FREEZE
+ * still, REV THROW a hanging curtain, ECHO THROW echoes running off, TAPE STOP slowing and sinking, REVERSE running
+ * back, FILTER DOWN / UP closing and opening, STUTTER chopped); on: lit, in the accent's frame. (V2) GENERATE's four
+ * tracks under them, a ribbon each in the track's colour moving as its MODE plays (DRIFT slow and wide, PULSE in
+ * steps, STORM torn), flaring as it plays a note; off: a dim still line */
+static void pf_ribbon(int32_t i, int32_t x0, int32_t cy, int on)
+{
+    int32_t y[12], j;
+    uint32_t t = hw_ph * (on ? 3u : 1u);
+    uint16_t c = UI_KC[i & 3];
+    for (j = 0; j < 12; j++) {
+        int32_t w = hw_wave(((uint32_t)j * 22u + t) & 255u);
+        switch (i) {
+        case 0: w = (j & 1 ? 1 : -1) * (j % 3 + 1) * 10; break;   /* FREEZE: ice, still */
+        case 1: w = w / 3 - (j % 3 == 1 ? 40 : 0); break;          /* REV THROW */
+        case 2: w = hw_wave(((uint32_t)j * 40u - t * 2u) & 255u) * (12 - j) / 12; break;   /* ECHO THROW */
+        case 3: w = hw_wave(((uint32_t)(j * (12 - j)) * 6u + t / 2u) & 255u) / 2 + j * 6; break;   /* TAPE STOP */
+        case 4: w = (int32_t)((uint32_t)(j * 24) - t * 2u & 127u) - 64; break;   /* REVERSE: a saw, backwards */
+        case 5: w = w * (12 - j) / 12 / 2 + j * 4; break;             /* FILTER DOWN */
+        case 6: w = w * j / 12 / 2 + (12 - j) * 4; break;             /* FILTER UP */
+        default: w = (((uint32_t)j + t / 4u) & 2u) ? w / 2 : 0; break;   /* STUTTER */
+        }
+        y[j] = cy + w * 7 / 64;
+    }
+    ui_glow(x0, 4, y, 12, on ? ui_mix(c, UI_W, 4, 16) : ui_mix(UI_K, c, 7, 16));
+}
+static void pic_perform(void)
 {
     static const char *const KEY[8] = {"F2", "G2", "A2", "B2", "C3", "D3", "E3", "F3"};   /* (the white keys 1-8: Arctic
                                                  * Scream's keys start at F2) */
-    static const char *const NM[8][2] = {{"FREEZE", ""}, {"REV", "THROW"}, {"ECHO", "THROW"}, {"TAPE", "STOP"},
-                                         {"REVER-", "SE"}, {"FILTER", "DOWN"}, {"FILTER", "UP"}, {"STUT-", "TER"}};
-    int32_t i;
+    static const char *const NM[8] = {"FREEZE", "REVERB", "ECHO", "T.STOP", "REVRSE", "FILT-", "FILT+", "STUTTR"};
+    int32_t i, j;
     for (i = 0; i < 8; i++) {
-        int32_t x = 12 + (i & 3) * 55, y = 31 + (i >> 2) * 42;
+        int32_t x = 12 + (i & 3) * 55, y = 30 + (i >> 2) * 40;
         int on = i ? (int)(pf_held >> (i - 1) & 1u) : (int)(ge_freeze & 1u);
-        ui_rect(x, y, 51, 38, on ? ui_acc : UI_D);
-        ui_text(x + 3, y + 3, KEY[i], 1, on ? UI_K : UI_M);
-        ui_text(x + 2, y + 18, NM[i][0], 1, on ? UI_K : UI_L);
-        ui_text(x + 2, y + 28, NM[i][1], 1, on ? UI_K : UI_L);
+        ui_rect(x, y, 51, 36, on ? ui_acc : UI_D0);
+        ui_rect(x + 1, y + 1, 49, 34, on ? ui_mix(UI_K, ui_acc, 3, 16) : UI_K);
+        ui_text(x + 3, y + 3, KEY[i], 1, on ? ui_acc : UI_M);
+        ui_text(x + 3, y + 12, NM[i], 1, on ? UI_W : UI_L);
+        pf_ribbon(i, x + 3, y + 27, on);
     }
-    for (i = 0; i < (int32_t)NT; i++) {         /* (V2) GENERATE, a tile a track (its black key's): on in the accent,
-                                                 * its MODE, its range, a square flashing as it plays a note */
-        int32_t x = 12 + i * 55, y = 117;
+    for (i = 0; i < (int32_t)NT; i++) {         /* (V2) GENERATE: a tile a track (its black key's) */
+        int32_t x = 12 + i * 55, y = 112, y2[12], fl = (int32_t)(gen_fl >> i & 1u), md = gen_md[i] % NGM;
         int on = (int)(gen_on >> i & 1u);
+        uint16_t c = wv_col((uint32_t)i);
         char r[12];
-        ui_rect(x, y, 51, 44, on ? ui_acc : UI_D);
+        ui_rect(x, y, 51, 50, on ? c : UI_D0);
+        ui_rect(x + 1, y + 1, 49, 48, on ? ui_mix(UI_K, c, 3, 16) : UI_K);
         put_u(put_s(r, "T"), (uint32_t)i + 1u);
-        ui_text(x + 3, y + 3, r, 1, on ? UI_K : UI_M);
-        ui_rect(x + 41, y + 3, 7, 7, gen_fl >> i & 1u ? UI_W : UI_K);
-        ui_text(x + 3, y + 17, GM_NAME[gen_md[i] % NGM], 1, on ? UI_K : UI_L);
+        ui_text(x + 3, y + 3, r, 1, on ? c : UI_M);
+        ui_text(x + 3, y + 13, on ? GM_NAME[md] : "OFF", 1, on ? UI_W : UI_M);
+        for (j = 0; j < 12; j++) {
+            uint32_t ph = (uint32_t)j * (md == 0 ? 10u : md == 1 ? 24u : 40u) + hw_ph * (md == 0 ? 1u : md == 1 ? 3u : 6u);
+            int32_t w = hw_wave(ph & 255u);
+            if (md == 1) w = w > 0 ? 40 : -20;  /* (PULSE: in steps) */
+            if (md == 2 && ((ph * 7u) & 8u)) w = -w / 2;   /* (STORM: torn) */
+            y2[j] = y + 29 - (on ? w * (fl ? 10 : 6) / 64 : 0);
+        }
+        ui_glow(x + 3, 4, y2, 12, on ? (fl ? UI_W : c) : UI_D0);
         ui_note(put_s(ui_note(r, gen_low((uint32_t)i)), "-"), gen_high((uint32_t)i));
-        ui_text(x + 3, y + 31, r, 1, on ? UI_K : UI_M);
+        ui_text(x + 3, y + 40, r, 1, on ? UI_L : UI_D0);
     }
 }
 

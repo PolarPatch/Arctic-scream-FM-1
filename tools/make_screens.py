@@ -128,7 +128,7 @@ SHOTS = {
     "generate": lambda: S().down(FX).w(900).keys("F#2").w(2500),
     "sample": lambda: src(S(), 5).hold("C3", "G3").w(1500),
     "voice": lambda: src(S(), 4).hold("C3", "G3").w(1500),
-    "wheel": lambda: src(S(), 3).hold("C3", "G3").w(1500),
+    "wheel": lambda: src(S(), 3).turn(K1, 6).hold("C3", "G3").w(1500),
     "phys": lambda: src(S(), 2).hold("C3", "G3").w(1500),
     "phase": lambda: src(S(), 1).hold("C3", "G3").w(1500),
 }
