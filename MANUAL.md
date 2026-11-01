@@ -7,7 +7,8 @@
 
 > **Try it as you read:** the [demo](https://polarpatch.github.io/Arctic-scream-FM-1/) runs the same code in your
 > browser. Every button and combo is also on one page in the
-> [cheat sheet](https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html).
+> [cheat sheet](https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html), and every page with its screen in the
+> [visual manual](https://polarpatch.github.io/Arctic-scream-FM-1/manual.html) ([PDF](docs/manual/arctic-scream-manual.pdf)).
 
 | | |
 |---|---|
@@ -311,7 +312,7 @@ Arctic Scream keeps its own saves, separate from other FM-1 firmwares.
 
 ## 09 · Destroy: FX
 
-**FX** steps through **TAPE → GRAIN → DELAY → SPACE**. Tracks feed GRAIN, DELAY and SPACE through their sends; TAPE
+**FX** steps through **TAPE → GRAIN → DELAY → SPACE → MASTER → DRIVE**. Tracks feed GRAIN, DELAY and SPACE through their sends; TAPE
 colours the whole mix at the end. Each page has its own northern lights.
 
 | TAPE | GRAIN |
