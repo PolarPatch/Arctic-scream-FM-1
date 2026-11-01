@@ -2,7 +2,7 @@
 
 # Arctic Scream p0larpatch: the manual
 
-**Version 1.3, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
+**Version 1.3.1, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
 (`tools/make_screens.py`).
 
 > **Try it as you read:** the [demo](https://polarpatch.github.io/Arctic-scream-FM-1/) runs the same code in your
@@ -440,8 +440,10 @@ go of the notes MIDI holds (a latched note stays). Aftertouch pushes a Holvut tr
 Over USB the FM-1 is also an audio input for your computer, phone or tablet, and shows up there as **Arctic Scream**
 (its MIDI port too): class compliant, so no driver,
 16-bit stereo at 44.1 or 48 kHz (the computer picks). Choose the FM-1 as the input in your DAW and record. It is the
-stereo mix with all its effects, as the speaker plays it, not each track apart; to record the tracks one by one, solo
-each in turn (**hold GLO + keys 5–8**) and record a pass per track.
+stereo mix with all its effects, not each track apart; to record the tracks one by one, solo each in turn (**hold GLO +
+keys 5–8**) and record a pass per track. The computer always gets the full level, as with the volume knob all the way up
+(a limiter keeps it from clipping): the knob sets the speaker and the headphones, not the recording. Since 1.3.1 it shows
+up on macOS 10.14 to 15 too.
 
 ---
 
