@@ -140,7 +140,7 @@ footer p { margin: 4px 0; }
     <div class="aurora" aria-hidden="true"><i style="color: var(--ice)"></i><i style="color: var(--aurora)"></i><i style="color: var(--violet)"></i><i style="color: var(--plasma)"></i></div>
   </div>
   <div class="t">
-    <p>Arctic Scream p0larpatch 1.2, drone firmware for the M-VAVE FM-1 by PolarPatch. Every button, knob and combo on
+    <p>Arctic Scream p0larpatch 1.3, drone firmware for the M-VAVE FM-1 by PolarPatch. Every button, knob and combo on
       one page: four tracks, eight sources, and a feedback loop that wakes on its own.</p>
     <div class="actions">
       <a class="main" href="index.html">PLAY THE DEMO</a>
@@ -174,9 +174,9 @@ footer p { margin: 4px 0; }
       <h3>THE THRESHOLD: KNOB 1 FEEDBACK</h3>
       <div class="meter" aria-label="FEEDBACK: asleep to about 48, the threshold around 48 to 70, howling above"><span class="a">ASLEEP</span><span class="b">THRESHOLD</span><span class="c">HOWLING</span></div>
       <div class="scale"><span>0 · −60 dB</span><span>~64</span><span>127 · +12 dB</span></div>
-      <p class="note">The sound lives on the edge. Set FEEDBACK just under the threshold and play short notes: each key is a burst that <b>provokes</b> the loop, which flares and dies away. Higher up it screams on its own; the saturation keeps it from blowing up.</p>
+      <p class="note">The sound lives on the edge. Set FEEDBACK just under the threshold and play short notes: each key is a burst that <b>provokes</b> the loop, which flares and dies away. Higher up it screams on its own; the saturation keeps it from blowing up. At the very top (120–127) it <b>overblows</b>: it leaps up its overtones and screams higher. A MIDI keyboard's <b>aftertouch</b> does the same: press harder.</p>
       <dl>
-        <dt>K2 BODY</dt><dd>A second resonance, 1–17 ms. It <b>glides</b> when turned, so the whole sound bends; it also wanders a little by itself. Short = metal, long = hollow.</dd>
+        <dt>K2 BODY</dt><dd>A second resonance, 1–92 ms. It <b>glides</b> when turned, so the whole sound bends; it also wanders a little by itself. Short = metal, long = hollow.</dd>
         <dt>K3 DAMP</dt><dd>The loop's filter: a <b>scream</b> (18 kHz) down to a <b>growl under the ice</b> (100 Hz).</dd>
         <dt>K4 DRIVE</dt><dd>Clean to <b>torn</b>. High DRIVE + low DAMP is the dirtiest beast.</dd>
       </dl>
@@ -283,6 +283,7 @@ footer p { margin: 4px 0; }
     <dt>PLAY / REC</dt><dd>Start / stop; record. Stopped + REC: each key fills a step. Playing + REC: notes land on the nearest step.</dd>
     <dt>hold SEL + knob</dt><dd>Lock a sound value to the step. + OCT−: clear its locks.</dd>
     <dt>hold SEQ + SELECT</dt><dd>The pattern's length.</dd>
+    <dt>hold REC ~1 s</dt><dd>Clear the track's pattern (undoable).</dd>
   </dl>
   <h3>HOLD SEQ + A WHITE KEY</h3>
   <div class="kb"><span><i>1</i>CLEAR</span><span><i>2</i>RANDOM</span><span><i>3</i>SHIFT ←</span><span><i>4</i>SHIFT →</span><span><i>5</i>COPY</span><span><i>6</i>PASTE</span><span><i>7</i>DOUBLE</span><span><i>8</i>MUTATE</span></div>
@@ -296,21 +297,27 @@ footer p { margin: 4px 0; }
     <tr><td>GRAIN</td><td>SIZE</td><td>DENSITY</td><td>SCATTER</td><td>MIX</td></tr>
     <tr><td>DELAY</td><td>TIME</td><td>FEEDBACK (to 150 %)</td><td>WEAR</td><td>MIX</td></tr>
     <tr><td>SPACE</td><td>SIZE (to INF)</td><td>DAMP</td><td>MIX</td><td>PRE-DELAY</td></tr>
+    <tr><td>MASTER</td><td>CUTOFF</td><td>RESONANCE</td><td>TYPE (LP HP BP)</td><td>POSITION</td></tr>
+    <tr><td>DRIVE</td><td>AMOUNT</td><td>TYPE (SOFT FUZZ CLIP FOLD)</td><td>TONE</td><td>MIX</td></tr>
   </table>
+  <p class="note">DRIVE's AMOUNT tears the whole mix, each TYPE about as loud; 0 is off. MASTER filters the whole mix: PRE FX, POST REVERB or at the END.</p>
   <h3>HOLD FX + A WHITE KEY (WHILE HELD)</h3>
   <div class="kb v"><span><i>1</i>FREEZE</span><span><i>2</i>REV THROW</span><span><i>3</i>ECHO THROW</span><span><i>4</i>TAPE STOP</span><span><i>5</i>REVERSE</span><span><i>6</i>FILTER DOWN</span><span><i>7</i>FILTER UP</span><span><i>8</i>STUTTER</span></div>
   <p class="note">FREEZE is a toggle: tap to hold the grain cloud, tap again to let go. The sends: MIXER 1, or FX on HOME.</p>
+  <h3>HOLD FX + A BLACK KEY: GENERATE</h3>
+  <div class="kb v"><span><i>F#2</i>T1</span><span><i>G#2</i>T2</span><span><i>A#2</i>T3</span><span><i>C#3</i>T4</span><span><i>D#3</i>MODE</span><span><i>F#3</i>OCT −</span><span><i>G#3</i>OCT +</span><span><i>A#3</i>RANGE</span></div>
+  <p class="note">A track plays by itself in its SCALE: DRIFT, PULSE, STORM. With a track's key held, D#3–A#3 set that track only; alone, all four.</p>
 </section>
 
 <section class="card" style="--c: var(--teal)">
   <h2>HOME and the mix</h2>
   <table class="knobs">
     <tr><th></th><th>K1</th><th>K2</th><th>K3</th><th>K4</th></tr>
-    <tr><td>HOME</td><td>VOLUME</td><td>CUTOFF</td><td>RESONANCE</td><td>FX</td></tr>
+    <tr><td>HOME</td><td>VOLUME</td><td>CUTOFF</td><td>WARP</td><td>MORPH</td></tr>
     <tr><td>MIXER 1</td><td>LEVEL</td><td>DLY SEND</td><td>REV SEND</td><td>GRAIN SEND</td></tr>
-    <tr><td>MIXER 2</td><td>PAN</td><td></td><td></td><td></td></tr>
+    <tr><td>MIXER 2</td><td>PAN</td><td>TYPE (LP HP BP)</td><td>POS (PRE POST)</td><td>RESONANCE</td></tr>
   </table>
-  <p class="note">HOME draws each track's wave as it plays. FX turns the track's three sends together: 0 dry, 100 % as set, 200 % twice as wet.</p>
+  <p class="note">HOME draws each track's wave as it plays. WARP twists the sound smoothly from still to wild in eight layers; MORPH turns all four of the source's knobs at once, never quite still. GRAIN and DELAY hear only the sends: turned up on a track that sends nothing, its send goes on.</p>
 </section>
 
 <section class="card" style="--c: var(--gold)">
@@ -329,12 +336,16 @@ footer p { margin: 4px 0; }
   <table class="knobs">
     <tr><th></th><th>K1</th><th>K2</th><th>K3</th><th>K4</th></tr>
     <tr><td>SYSTEM</td><td>COLOUR</td><td>MIDI CHANNEL</td><td>TUNE</td><td>SCREEN OFF</td></tr>
-    <tr><td>SYSTEM 2</td><td>MIDI LEARN</td><td>SEQ MIDI OUT</td><td>SAMPLES</td><td></td></tr>
+    <tr><td>SYSTEM 2</td><td>MIDI LEARN</td><td>SEQ MIDI OUT</td><td>SAMPLES</td><td>CLOCK</td></tr>
+    <tr><td>SYSTEM 3</td><td>LATCH</td><td></td><td></td><td></td></tr>
   </table>
   <dl>
     <dt>COLOUR</dt><dd>ICE, AURORA, VIOLET, PLASMA.</dd>
+    <dt>MIDI CHANNEL</dt><dd>1-4 … 13-16, ALL &gt; SEL, CH n &gt; SEL (channel n alone, the selected track). MIDI in: USB or the TRS jack.</dd>
+    <dt>CLOCK</dt><dd>INT; I+OUT (clock out over USB); USB or TRS (follows a MIDI clock: START, CONTINUE, STOP).</dd>
+    <dt>LATCH</dt><dd>FROM SOUND (a sound brings its own) or ALWAYS OFF. Any page: hold SEL + OCT+ for the track's LATCH.</dd>
     <dt>SAMPLES</dt><dd>CLEAR, then OCT+: the four sample slots emptied.</dd>
-    <dt>OCT− + OCT+</dt><dd>Together, on SYSTEM 2: reset CPU PEAK.</dd>
+    <dt>OCT− + OCT+</dt><dd>Together, on SYSTEM 2: reset CPU PEAK and USB REC DROPS.</dd>
   </dl>
 </section>
 

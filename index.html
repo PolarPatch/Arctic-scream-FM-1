@@ -5,7 +5,7 @@
      the panel: its demos, its numbered sections, its glitching titles): Copyright (C) 2026 PolarPatch
      After Felucca's browser page, web/emu/index.html of hugelton/Felucca (Copyright (C) 2026 Leo Kuroshita
      (@kurogedelic), Hügelton Instruments), which follows X0X's, web/emu/index.html of charlesvestal/fm1-x0x; both
-     GPL-3.0. GR!MM in the browser: firmware/src/grimm.c, the code the FM-1 runs, on a fake FM-1 (web/fm1_web.c). -->
+     GPL-3.0. Arctic Scream in the browser: firmware/src/grimm.c, the code the FM-1 runs, on a fake FM-1 (web/fm1_web.c). -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -277,7 +277,7 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
 <main>
 <section class="hero">
   <div class="wrap">
-    <div class="kicker">DRONE FIRMWARE FOR THE M-VAVE FM-1 · v1.2</div>
+    <div class="kicker">DRONE FIRMWARE FOR THE M-VAVE FM-1 · v1.3</div>
     <div class="head">
       <h1 aria-label="Arctic Scream"><span class="gl" data-t="ARCTIC">ARCTIC</span><span class="gl" data-t="SCREAM">SCREAM</span></h1>
       <p>Dark ambient drones and feedback screams from the arctic tundra. Slow, cold drones that hum for minutes, and a
@@ -345,12 +345,13 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
           <dt>hold SEL</dt><dd>Chord mode: one key, a whole chord.</dd>
           <dt>hold ARP</dt><dd>The arpeggiator plays the keys held (with LATCH: they stay).</dd>
           <dt>hold GLO + a key</dt><dd>White keys 1–4 mute T1–T4, 5–8 solo them.</dd>
+          <dt>hold SEL + OCT+</dt><dd>The track's LATCH on or off, from any page.</dd>
         </dl>
       </div>
       <div>
         <h3>BUTTONS</h3>
         <dl>
-          <dt><kbd>1</kbd> FX</dt><dd>TAPE, GRAIN, DELAY, SPACE. Held: PERFORM, eight tricks on the keys.</dd>
+          <dt><kbd>1</kbd> FX</dt><dd>TAPE, GRAIN, DELAY, SPACE, MASTER, DRIVE. Held: PERFORM, eight tricks on the white keys; GENERATE on the black keys (a track plays by itself).</dd>
           <dt><kbd>2</kbd> SCL</dt><dd>SCALE (the keys snap to it, HORROR last), then CHORD.</dd>
           <dt><kbd>3</kbd> ENV</dt><dd>ATTACK, DECAY, SUSTAIN, RELEASE.</dd>
           <dt><kbd>4</kbd> LFO</dt><dd>RATE, DEPTH, DESTINATION, SHAPE. Again: DRONE.</dd>
@@ -533,7 +534,7 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
     <div class="sec-head">
       <div class="num" aria-hidden="true">06</div>
       <h2><span class="gl" data-t="STATUS">STATUS</span></h2>
-      <p>Version 1.2. Free and open source, GPL-3.0. Unofficial firmware, not made or endorsed by M-VAVE or GR!MM:
+      <p>Version 1.3. Free and open source, GPL-3.0. Unofficial firmware, not made or endorsed by M-VAVE:
         install at your own risk.</p>
     </div>
     <div class="status">
@@ -563,7 +564,7 @@ python3 tools/fm1_install.py arctic-scream-1.1.fwsc</pre>
     <p>Arctic Scream p0larpatch by PolarPatch, inspired by and built on <a href="https://github.com/GRiMMBIENT/grimm">GR!MM</a> (GPL-3.0) · its Holvut source and HORROR scale follow <a href="https://github.com/Synthux-Academy/Audrey-II">Audrey II</a> (Nick Donaldson, Infrasonic Audio; Synthux Academy, MIT), written anew · DRONE after the idea of <a href="https://github.com/zednaked/jangada">Jangada</a> (zednaked), written anew · the colours and the glitching titles after <a href="https://github.com/PolarPatch/BlueWatch">BlueWatch</a> by PolarPatch · the PolarPatch logo is PolarPatch's own, not under the GPL</p>
     <p>The same <code>firmware/src/grimm.c</code> the FM-1 runs, compiled to WebAssembly · <a href="LICENSE">GPL-3.0-only</a> · <a href="https://github.com/PolarPatch/Arctic-scream-FM-1">source</a> · <a href="https://github.com/PolarPatch/Arctic-scream-FM-1/blob/main/LICENSING.md">credits and licences</a> (<a href="LICENSING.md">as text</a>) · fonts: Press Start 2P, <a href="LICENSES/OFL-PressStart2P.txt">SIL OFL 1.1</a>; Terminus, <a href="Terminus-LICENSE.txt">SIL OFL 1.1</a> · built with Emscripten (<a href="LICENSES/MIT-Emscripten.txt">MIT</a>, musl <a href="LICENSES/MIT-musl.txt">MIT</a>)</p>
     <p>Built on <a href="https://github.com/zvenson/dinghy">Dinghy</a> by zvenson, on the platform of <a href="https://github.com/hugelton/Felucca">Felucca</a> by Leo Kuroshita, Hügelton Instruments, and <a href="https://github.com/isod89/sloop-fm1">SLOOP</a> by isod89 · the browser build and the panel's layout follow Felucca's and charlesvestal's <a href="https://github.com/charlesvestal/fm1-x0x">X0X</a> (GPL-3.0)</p>
-    <p>M-VAVE and FM-1 are trademarks of their respective owners. Arctic Scream p0larpatch (like GR!MM) is not affiliated with or endorsed by them, nor by GR!MM.</p>
+    <p>M-VAVE and FM-1 are trademarks of their respective owners. Arctic Scream p0larpatch is not affiliated with or endorsed by them.</p>
   </div>
 </footer>
 <script type="module" src="panel.js"></script>

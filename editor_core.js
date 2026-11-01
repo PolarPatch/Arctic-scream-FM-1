@@ -8,9 +8,9 @@
 
 export const HEAD = [0x7d, 0x41, 0x53];   // "AS": Arctic Scream's (GR!MM's 7D 47 52)
 export const CMD = { SMP_BEGIN: 11, SMP_WRITE: 12, SMP_END: 13, SMP_ERASE: 14, SMP_INFO: 15, SMP_FACTORY: 16, INFO: 20, GET: 21, PUT: 22,
-                     TRACK: 23, SEQ: 24 };
+                     TRACK: 23, SEQ: 24, FX: 26 };
 export const PROTOS = [1, 2, 3];                           // the editor protocols this page knows (2: TRACK, 3: SEQ)
-export const OBJ = { SET: 0, SLOT: 1, SND: 16, FACT: 80 };
+export const OBJ = { SET: 0, SLOT: 1, SMP: 5, SND: 16, FACT: 80 };   // (SMP: GR!MM V2, the sample slots 5..8, GET only)
 const BEGIN = 0, DATA = 1, COMMIT = 2, ABORT = 3;
 export const RC = {
   1: "the FM-1 did not accept the request (arguments)",
@@ -78,10 +78,13 @@ export class Client {
   }
 
   async info() {
-    let r;
-    for (let i = 0; ; i++) {                                 // (the first message after opening a port can be lost)
-      try { r = await this.req(CMD.INFO, [], 1500); break; } catch (e) { if (i >= 2) throw e; }
+    let r, k = 0;
+    for (; ; k++) {                                          // (the first message after opening a port can be lost)
+      try { r = await this.req(CMD.INFO, [], 1500); break; } catch (e) { if (k >= 2) throw e; }
     }
+    if (k) await this.wait(300);                             // (asked again: the first may only have been slow, and the
+                                                             // FM-1, one request at a time, still answering the next; a
+                                                             // request now would be dropped: its answer let come first)
     const j = r.indexOf(0, 2), i = j + 1;
     if (j < 0 || r.length < i + 15) throw new EditorError(`a short INFO from the FM-1 (${r.length} bytes): see the MIDI LOG`, 95);
     return { proto: r[0], fmt: r[1], firmware: String.fromCharCode(...r.slice(2, j)), sounds: r[i], soundSize: r[i + 1],
@@ -117,16 +120,33 @@ export class Client {
   seqSet(t, bytes) { return this.seqOp([1, t, ...pack7(bytes)], true); }
   play(on) { return this.seqOp([3, 0, on ? 1 : 0], true); }
   tempo(bpm) { const b = Math.max(20, Math.min(300, bpm | 0)); return this.seqOp([2, 0, b & 0x7f, b >> 7], true); }
-  async get(obj, size, progress) {
-    const out = new Uint8Array(size);
+  async get(obj, size, progress, at = 0) {                 // size bytes of object obj from offset at (a reply missed,
+    const out = new Uint8Array(size);                        // or not for the offset asked: asked again, counted in missed)
     for (let off = 0; off < size; off += 256) {
-      const c = Math.min(256, size - off), r = await this.req(CMD.GET, [obj, ...u35(off), c & 0x7f, c >> 7]);
+      const c = Math.min(256, size - off);
+      let r;
+      for (let tries = 0; ; tries++) {
+        try {
+          r = await this.req(CMD.GET, [obj, ...u35(at + off), c & 0x7f, c >> 7]);
+          if (r[0] === obj && (r[1] || rd35(r, 2) === at + off)) break;
+        } catch (e) { if (e.rc !== 97 || tries >= 2) throw e; }
+        this.missed = (this.missed || 0) + 1;
+        if (tries >= 2) throw new EditorError(`object ${obj}: no reply for offset ${at + off}`, 97);
+      }
       if (r[0] !== obj || r[1]) throw new EditorError(RC[r[1]] || `rc ${r[1]}`, r[1]);
       const d = unpack7(r.slice(9));
       if (d.length !== c) throw new EditorError(`object ${obj}: ${d.length} bytes back, not ${c}`, 99);
       out.set(d, off);
       if (progress) progress(off + c, size);
     }
+    return out;
+  }
+  async smpRead(slot, n = 0) {                             // GR!MM V2: a sample slot as the flash holds it (header, data;
+    let h;                                                   // n: its first n bytes), null: empty (or a GR!MM before V2)
+    try { h = await this.get(OBJ.SMP + slot, n || SAMPLE.DATA_OFF); } catch (e) { if (e.rc === 1) return null; throw e; }
+    if (n) return h;
+    const len = new DataView(h.buffer).getUint32(16, true), out = new Uint8Array(SAMPLE.DATA_OFF + len);
+    out.set(h), out.set(await this.get(OBJ.SMP + slot, len, null, SAMPLE.DATA_OFF), SAMPLE.DATA_OFF);
     return out;
   }
   async put(obj, data, fmt, progress) {
@@ -184,6 +204,15 @@ export class Client {
       await this.wait(50);
     }
     return this.smpInfo();
+  }
+  async fx() {                                             // GR!MM V2: the project's effects (28 values: FX_LIST's)
+    const r = await this.req(CMD.FX, [0], 1500);
+    if (r[1]) throw new EditorError(RC[r[1]] || `rc ${r[1]}`, r[1]);
+    return r.slice(2, 30);
+  }
+  async fxSet(i, v) {                                      // value i to v, live
+    const r = await this.req(CMD.FX, [1, i, v & 0x7f], 1500, true);
+    if (r[1]) throw new EditorError(RC[r[1]] || `rc ${r[1]}`, r[1]);
   }
   async smpErase(slot) {
     const r = await this.req(CMD.SMP_ERASE, [slot], 10000);
@@ -471,31 +500,119 @@ export function backupObjects(info) {
 }
 const b64 = (b) => { let s = ""; b.forEach((x) => { s += String.fromCharCode(x); }); return btoa(s); };
 const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
-export async function makeBackup(client, info, progress) {
-  const list = backupObjects(info), objects = [];
+export async function makeBackup(client, info, progress) {   // (GR!MM V2: the sample slots too, "samples"; a GR!MM
+  const list = backupObjects(info), objects = [], smp = [], n = list.length + info.sampleSlots;   // before: none)
   for (let i = 0; i < list.length; i++) {
     const [id, size, what] = list[i], d = await client.get(id, size);
     objects.push({ id, len: size, crc: crc32(d), data: b64(d) });
-    if (progress) progress(i + 1, list.length, what);
+    if (progress) progress(i + 1, n, what);
   }
-  return { format: "grimm-backup", version: 1, proto: info.proto, fmt: info.fmt, firmware: info.firmware,
-           date: new Date().toISOString().replace("T", " ").slice(0, 19), objects };
+  for (let k = 0; k < info.sampleSlots; k++) {
+    smp.push(await client.smpRead(k));
+    if (progress) progress(list.length + k + 1, n, `sample ${k + 1}`);
+  }
+  const b = { format: "grimm-backup", version: 1, proto: info.proto, fmt: info.fmt, firmware: info.firmware,
+              date: new Date().toISOString().replace("T", " ").slice(0, 19), objects };
+  if (!info.samplesUsed || smp.some((d) => d)) {
+    b.samples = smp.map((d, k) => d && { slot: k + 1, name: String.fromCharCode(...d.subarray(8, 16)).replace(/\0+$/, ""),
+                                         len: d.length, crc: crc32(d), data: b64(d) });
+  }
+  return b;
+}
+// ------------------------------------------------------------------ FX (GR!MM V2, docs/EDITOR_PROTOCOL.md 25 FX): the six
+// pages' four knobs each (a list's names, else 0..127), then T1..T4's filter (TYPE + 4 x POS)
+export const FX_PAGES = [
+  ["TAPE", ["WOW", "SATURATION", "TONE", "HISS"]], ["GRAIN", ["SIZE", "DENSITY", "SCATTER", "MIX"]],
+  ["DELAY", ["TIME", "FEEDBACK", "WEAR", "MIX"]], ["SPACE", ["SIZE", "DAMP", "MIX", "PRE-DELAY"]],
+  ["MASTER", ["CUTOFF", "RESONANCE", ["TYPE", ["LP", "HP", "BP"]], ["POSITION", ["PRE FX", "POST REVERB", "END"]]]],
+  ["DRIVE", ["AMOUNT", ["TYPE", ["SOFT", "FUZZ", "CLIP", "FOLD"]], "TONE", "MIX"]],
+];
+export const FT_NAMES = ["LP", "HP", "BP"];
+
+// ------------------------------------------------------------------ the settings (docs/EDITOR_PROTOCOL.md): GR!MM V2's two
+// on the SETTINGS section; the rest (the octave, TUNE, COLOUR, SCREEN OFF, SEQ MIDI OUT, MIDI LEARN's links) as read
+export const SET_V1 = 168;                                   // V1.0's settings (version 1, no CLOCK)
+export const SET_V2 = 169;                                   // V2's version 2 (CLOCK, no LATCH); version 3's: 170
+export const MCH_NAMES = [...Array.from({ length: 13 }, (_, k) => `${k + 1}-${k + 4}`), "ALL > SEL",
+  ...Array.from({ length: 16 }, (_, k) => `CH ${k + 1} > SEL`)];
+export const CLOCK_NAMES = ["INT", "INT+OUT", "USB", "TRS"];
+export function settingsOf(b) {                              // -> { mch, clk, latch } (older: CLOCK INT, LATCH FROM SOUND)
+  return { mch: b[3], clk: b.length > SET_V1 ? b[SET_V1] : 0, latch: b.length > SET_V2 ? b[SET_V2] : 0 };
+}
+export function withSettings(b, s) {                         // a copy of b with MIDI CHANNEL, CLOCK and LATCH s
+  const o = Uint8Array.from(b);
+  o[3] = s.mch;
+  if (o.length > SET_V1) o[SET_V1] = s.clk;
+  if (o.length > SET_V2 && s.latch !== undefined) o[SET_V2] = s.latch;
+  return o;
+}
+export function sameSettings(written, back) {                // read back as written (an older one's: all but the version,
+  return written.length <= back.length &&                    // byte SET_V1 - 1)
+    Array.from(written).every((x, k) => x === back[k] || (written.length < back.length && k === SET_V1 - 1));
 }
 export function checkBackup(b, info) {                       // -> [{id, data, what}] or throws (nothing written)
-  if (!b || b.format !== "grimm-backup" || b.version !== 1) throw new EditorError("not a GR!MM backup file", 90);
+  if (!b || b.format !== "grimm-backup" || b.version !== 1) throw new EditorError("not a backup file", 90);
   if (b.fmt !== info.fmt) throw new EditorError(`the backup's format is ${b.fmt}, the FM-1's is ${info.fmt}`, 90);
   const sizes = new Map(backupObjects(info).map(([id, size, what]) => [id, [size, what]]));
   return b.objects.map((o) => {
     const d = unb64(o.data), s = sizes.get(o.id);
-    if (!s || d.length !== s[0] || crc32(d) !== o.crc) throw new EditorError(`object ${o.id} is damaged or not this firmware's`, 90);
+    const oldset = o.id === OBJ.SET && (d.length === SET_V1 || d.length === SET_V2) && s && s[0] > d.length;   // (an
+                                                             // older GR!MM's settings: 1.0's, V2's version 2: taken)
+    if (!s || (d.length !== s[0] && !oldset) || crc32(d) !== o.crc) throw new EditorError(`object ${o.id} is damaged or not this firmware's`, 90);
     return { id: o.id, data: d, what: s[1] };
   });
+}
+// ------------------------------------------------------------------ a project (slot A..D) as a file of its own
+export function makeProject(d, k, info) {
+  return { format: "arctic-project", version: 1, fmt: info.fmt, firmware: info.firmware, slot: "ABCD"[k],
+           date: new Date().toISOString().replace("T", " ").slice(0, 19), len: d.length, crc: crc32(d), data: b64(d) };
+}
+export function checkProject(p, info) {                      // -> the slot's bytes, or throws (nothing written)
+  if (!p || p.format !== "arctic-project" || p.version !== 1) throw new EditorError("not an Arctic Scream project file", 90);
+  if (p.fmt !== info.fmt) throw new EditorError(`the project's format is ${p.fmt}, the FM-1's is ${info.fmt}`, 90);
+  const d = unb64(p.data);
+  if (d.length !== info.slotSize || crc32(d) !== p.crc) throw new EditorError("the project file is damaged or not this firmware's", 90);
+  return d;
 }
 export async function restoreBackup(client, objs, info, progress) {
   for (let i = 0; i < objs.length; i++) {
     await client.put(objs[i].id, objs[i].data, info.fmt);
     if (progress) progress(i + 1, objs.length, objs[i].what);
   }
+}
+const sampleOk = (d) => {                                    // a slot's bytes: its header good, its length and CRC as it says
+  const v = new DataView(d.buffer, d.byteOffset), n = d.length > SAMPLE.DATA_OFF ? v.getUint32(16, true) : -1;
+  return n === d.length - SAMPLE.DATA_OFF && n <= SAMPLE.MAX_DATA && v.getUint32(0, true) === SAMPLE.MAGIC &&
+    v.getUint32(20, true) === crc32(d.subarray(SAMPLE.DATA_OFF));
+};
+export function checkSamples(b, info) {                      // GR!MM V2: the backup's sample slots -> [bytes or null] x 4,
+  if (!b.samples) return null;                               // null: none in it (a 1.0's: the slots left as they are)
+  if (!Array.isArray(b.samples) || b.samples.length !== info.sampleSlots) throw new EditorError("the backup's samples are damaged", 90);
+  return b.samples.map((s, k) => {
+    if (!s) return null;
+    const d = unb64(s.data);
+    if (crc32(d) !== s.crc || !sampleOk(d)) throw new EditorError(`sample ${k + 1} in the backup is damaged`, 90);
+    return d;
+  });
+}
+export async function restoreSamples(client, smp, progress) {   // the slots as in the backup: an empty one emptied, one
+  const now = await client.smpInfo(), done = [];             // with the same header (its data's CRC in it) left as it
+  for (let k = 0; k < smp.length; k++) {                     // is, the others uploaded and checked -> what each got
+    const d = smp[k], H = SAMPLE.HDR_LEN;
+    if (!d) {
+      if (now[k].state !== 0) await client.smpErase(k), done.push("EMPTIED");
+      else done.push("EMPTY");
+    } else {
+      const h = await client.smpRead(k, H);
+      if (h && h.every((x, i) => x === d[i])) done.push("AS IT WAS");
+      else {
+        const s = await client.smpUpload(k, d.slice(0, H), d.slice(SAMPLE.DATA_OFF), progress && ((i, n) => progress(k, i, n)));
+        if (s[k].state !== 1) throw new EditorError(`sample ${k + 1} did not check out on the FM-1: restore again`, 99);
+        done.push("WRITTEN");
+      }
+    }
+  }
+  return done;
 }
 
 // ------------------------------------------------------------------ a WAV -> a GR!MM sample slot

@@ -1,0 +1,472 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     Copyright (C) 2026 PolarPatch
+     Arctic Scream p0larpatch, the visual manual: every page of the firmware as the FM-1's screen shows it
+     (docs/manual/screens, tools/make_screens.py), with what its knobs and buttons do. Its facts follow MANUAL.md.
+     Printed to A4 (tools/make_manual_pdf.sh): docs/manual/arctic-scream-manual.pdf. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arctic Scream Manual</title>
+<link rel="icon" href="polarpatch-logo.png">
+<meta name="description" content="The visual manual of Arctic Scream p0larpatch 1.3, drone firmware for the M-VAVE FM-1: every page as the screen shows it, and what each knob and button does.">
+<style>
+@font-face { font-family: "Press Start 2P"; src: url("PressStart2P-Regular.ttf") format("truetype"); font-display: block; }
+/* BlueWatch's colours, as the demo page and the cheat sheet */
+:root { --bg: #060410; --card: #0d1117; --card-hi: #161b22; --edge: #30363d; --fg: #eaf6fa; --label: #a6afb9;
+        --dim: #7fa8b8; --muted: #45606e; --ice: #22d3ee; --aurora: #3fb950; --violet: #a78bfa; --plasma: #ff1a8c;
+        --amber: #ffcb47; --pink: #f472b6; --teal: #3fb9a5; --periwinkle: #7c8cf8;
+        --pix: "Press Start 2P", ui-monospace, monospace;
+        color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body { margin: 0; color: var(--fg); font: 13px/1.5 system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+       -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+main { max-width: 980px; margin: 0 auto; padding: 24px 16px 40px; }
+a { color: var(--ice); }
+b { color: var(--fg); }
+
+/* the cover */
+.cover { min-height: 92vh; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+         text-align: center; gap: 26px; padding: 4vh 0 2vh; }
+.cover .top, .cover .mid { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.cover img.logo { width: min(260px, 60vw); image-rendering: pixelated; }
+.cover h1 { margin: 0; font: 400 clamp(34px, 10vw, 88px)/1.2 var(--pix); }
+/* the title's cold glow: a gradient, not a text-shadow, which a PDF turns into a square */
+.cover h1 { padding: .15em 0; background: radial-gradient(closest-side, rgba(34, 211, 238, .16), rgba(34, 211, 238, .05) 60%, transparent); }
+/* the title's glitch, as in the banner: the font's pixel rows (u = 1/8 em) torn sideways and split into ice, plasma and violet.
+   Each <i> is one copy of the word clipped to rows y..y+h and shifted x; the word itself stays only for its glow. */
+.gt { position: relative; display: inline-block; line-height: 1; color: transparent; }
+.gt i { position: absolute; left: 0; top: 0; font-style: normal; text-shadow: none; color: var(--k, var(--fg));
+        clip-path: inset(calc(var(--y) * .125em) -.5em calc(1em - (var(--y) + var(--h)) * .125em) -.5em);
+        transform: translateX(calc(var(--x, 0) * .125em)); }
+.cover .sami { font: 600 clamp(13px, 2.2vw, 17px) system-ui, sans-serif; letter-spacing: .3em !important; color: var(--dim); letter-spacing: .04em; }
+.cover .sub { font: 400 clamp(12px, 2.4vw, 18px)/1.8 var(--pix); color: var(--ice); }
+.cover .small { max-width: 34em; color: var(--label); font-size: 12px; }
+.aurora { display: flex; gap: 6px; justify-content: center; width: min(420px, 80vw); }
+.aurora i { flex: 1; height: 3px; border-radius: 2px; background: currentColor; box-shadow: 0 0 8px currentColor; }
+.cover .shots { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.cover .shots img { width: 150px; border-radius: 4px; border: 1px solid var(--edge); image-rendering: pixelated; }
+
+/* the chapters */
+.chap { padding-top: 34px; }
+.chap > .no { font: 400 14px var(--pix); color: var(--c, var(--ice)); }
+.chap > h2 { margin: 10px 0 12px; font: 400 clamp(18px, 4vw, 26px)/1.3 var(--pix); }
+.chap > p { margin: 0 0 16px; max-width: 46em; color: var(--label); font-size: 14px; }
+
+/* a page of the firmware: its screen, its table */
+.pg { display: grid; grid-template-columns: 240px 1fr; gap: 18px; margin: 0 0 16px; padding: 14px 16px 16px;
+      background: var(--card); border: 1px solid var(--edge); border-radius: 6px;
+      break-inside: avoid; }
+.pg.wide { grid-template-columns: 1fr; }
+.pg header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+             border-bottom: 1px solid var(--edge); padding-bottom: 8px; }
+.pg h3 { margin: 0; font: 400 14px var(--pix); color: var(--fg); }
+.pg header span { font-size: 12px; font-weight: 600; color: var(--c, var(--ice)); text-align: right; }
+.pg .scr img { width: 100%; display: block; border-radius: 3px; border: 1px solid var(--edge); image-rendering: pixelated; }
+.pg .scr p { margin: 8px 0 0; color: var(--label); font-size: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th { text-align: left; font: 400 9px var(--pix); color: var(--dim); padding: 6px 8px 7px; border-bottom: 1px solid var(--edge); }
+td { padding: 6px 8px; border-bottom: 1px solid #1c232c; vertical-align: top; color: var(--label); }
+td:first-child { color: var(--fg); font-weight: 600; width: 9.5em; }
+td:last-child { width: 9em; }
+table.two td:last-child { width: auto; }
+td:last-child { color: var(--dim); }
+tr:last-child td { border-bottom: 0; }
+.k1 { color: var(--periwinkle) !important; } .k2 { color: var(--teal) !important; }
+.k3 { color: var(--amber) !important; } .k4 { color: var(--pink) !important; }
+.note { margin: 10px 0 0; padding: 6px 10px; border-left: 2px solid var(--c, var(--ice)); color: var(--label); font-size: 12px; }
+.note + .note { margin-top: 6px; }
+.new { display: inline-block; margin-left: 6px; padding: 1px 5px 0; border-radius: 3px; border: 1px solid var(--plasma); color: var(--plasma); background: rgba(255, 26, 140, .12);
+       font: 800 8px/1.5 system-ui, sans-serif; letter-spacing: .08em; vertical-align: 2px; }
+.btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.btns div { background: var(--card-hi); border: 1px solid var(--edge); border-radius: 4px; padding: 6px 9px; color: var(--label); font-size: 12px; }
+.btns div b { display: block; font: 400 9px var(--pix); color: var(--c, var(--ice)); margin-bottom: 5px; }
+.keys { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin-top: 6px; }
+.keys div { background: var(--card-hi); border: 1px solid var(--edge); border-radius: 3px; padding: 5px 4px; text-align: center;
+            font-size: 11px; color: var(--label); }
+.keys div b { display: block; font: 400 8px var(--pix); color: var(--c, var(--ice)); margin-bottom: 4px; }
+.about { display: flex; gap: 18px; align-items: center; }
+.about img { width: 160px; flex: none; image-rendering: pixelated; }
+.about p { margin: 0 0 8px; color: var(--label); font-size: 13px; }
+ul.how { margin: 0; padding-left: 18px; color: var(--label); font-size: 13px; }
+ul.how li { margin: 4px 0; }
+footer { margin-top: 30px; color: var(--dim); font-size: 12px; text-align: center; }
+footer p { margin: 4px 0; }
+
+@media (max-width: 640px) {
+  .pg { grid-template-columns: 1fr; }
+  .pg .scr { max-width: 300px; }
+  td:first-child { white-space: normal; }
+  .keys { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* print: A4, dark, a chapter a page, the page's number at the foot */
+@page { size: A4; margin: 13mm 12mm 15mm; background: #060410;
+        @bottom-center { content: "ARCTIC SCREAM 1.3 · VISUAL MANUAL · " counter(page); color: #45606e;
+                         font: 7pt system-ui, sans-serif; letter-spacing: .08em; } }
+@page :first { @bottom-center { content: none; } }
+@media print {
+  main { max-width: none; padding: 0; }
+  body { font-size: 11px; }
+  .cover { min-height: 262mm; break-after: page; }
+  .aurora i { box-shadow: none; }
+  .chap { break-before: page; padding-top: 0; }
+  .chap.cont { break-before: auto; padding-top: 10px; }
+  .pg { grid-template-columns: 54mm 1fr; gap: 14px; padding: 10px 14px 12px; margin-bottom: 10px; }
+  .pg header { padding-bottom: 6px; }
+  table { font-size: 10px; }
+  td { padding: 4px 7px; }
+  th { padding: 4px 7px 5px; }
+  .note { margin-top: 6px; padding: 4px 9px; font-size: 10.5px; }
+  .chap > h2 { margin: 6px 0 8px; }
+  .chap > p { font-size: 12px; margin-bottom: 12px; }
+  .about img { width: 46mm !important; }
+  .btns div { font-size: 10px; padding: 4px 8px; }
+  footer { break-before: avoid; }
+}
+</style>
+</head>
+<body>
+<main>
+
+<section class="cover">
+  <div class="top">
+    <div class="sami">ÁRKTALAŠ HOLVVAS</div>
+    <h1 aria-label="Arctic Scream"><span class="gt">ARCTIC<i style="--y: 0; --h: 4">ARCTIC</i><i style="--y: 6; --h: 2">ARCTIC</i><i style="--y: 4; --h: 1; --x: -0.7; --k: var(--ice)">ARCTIC</i><i style="--y: 4; --h: 1; --x: 1.1; --k: var(--plasma)">ARCTIC</i><i style="--y: 4; --h: 1; --x: 0.5; --k: #fff">ARCTIC</i><i style="--y: 5; --h: 0.5; --x: -1; --k: var(--violet)">ARCTIC</i><i style="--y: 5; --h: 1; --x: 0.35; --k: #e2f7ff">ARCTIC</i></span><br><span class="gt">SCREAM<i style="--y: 2; --h: 6">SCREAM</i><i style="--y: 0; --h: 1; --x: -0.6; --k: var(--plasma)">SCREAM</i><i style="--y: 0; --h: 1; --x: 1; --k: var(--ice)">SCREAM</i><i style="--y: 0; --h: 1; --k: #fff">SCREAM</i><i style="--y: 1.5; --h: 0.5; --x: 1.05; --k: var(--violet)">SCREAM</i><i style="--y: 1; --h: 1; --x: -0.75; --k: var(--ice)">SCREAM</i><i style="--y: 1; --h: 1; --x: -0.6; --k: #ffe4f3">SCREAM</i></span></h1>
+    <div class="aurora" aria-hidden="true"><i style="color: var(--ice)"></i><i style="color: var(--aurora)"></i><i style="color: var(--violet)"></i><i style="color: var(--plasma)"></i></div>
+  </div>
+  <div class="mid">
+    <div class="shots" aria-hidden="true"><img src="screens/holvut.png" alt=""><img src="screens/drone.png" alt=""><img src="screens/voice.png" alt=""><img src="screens/space.png" alt=""></div>
+    <div class="shots" aria-hidden="true"><img src="screens/env.png" alt=""><img src="screens/scale.png" alt=""><img src="screens/master.png" alt=""><img src="screens/perform.png" alt=""></div>
+  </div>
+  <div class="sub">VISUAL MANUAL · 1.3<br>FOR THE M-VAVE FM-1</div>
+  <p class="small">Dark ambient drones and feedback screams from the arctic tundra. Unofficial firmware by PolarPatch, free and open source (GPL-3.0); not made or endorsed by M-VAVE. Install at your own risk.</p>
+</section>
+
+<div id="book"></div>
+
+<footer>
+  <p>Arctic Scream p0larpatch by PolarPatch · the demo, the editor and the cheat sheet: <a href="https://polarpatch.github.io/Arctic-scream-FM-1/">polarpatch.github.io/Arctic-scream-FM-1</a> · <a href="LICENSING.md">credits and licences</a></p>
+  <p>M-VAVE and FM-1 are trademarks of their respective owners. Arctic Scream p0larpatch is not affiliated with or endorsed by them.</p>
+</footer>
+</main>
+
+<script>
+/* the book: chapters of pages; a page: [title, how to get there, screen (or ""), rows, notes, extra html]; a row:
+ * [control, what it does, range], or [KNOB n, its name, what it does, range]: the knob in its colour */
+const C = (no, title, c, intro, pages, cont) => ({no, title, c, intro, pages, cont});
+const P = (t, how, scr, rows, notes, extra) => ({t, how, scr, rows: rows || [], notes: notes || [], extra: extra || ""});
+const K = (a, b, c, d) => [["KNOB 1", ...a], ["KNOB 2", ...b], ["KNOB 3", ...c], ["KNOB 4", ...d]].filter(r => r[1]);
+const NEW = '<span class="new">NEW</span>';
+const keys = (ks) => '<div class="keys">' + ks.map(([k, v]) => `<div><b>${k}</b>${v}</div>`).join("") + "</div>";
+
+const BOOK = [
+C("00", "How to read this manual", "var(--ice)",
+  "Every page of Arctic Scream is shown as the FM-1's screen shows it, taken from the firmware itself, with a table of what its knobs and buttons do. The four tiles along the bottom of the screen always belong to KNOB 1–4, left to right, each in its colour.", [
+  P("Words used here", "", "", [], [], `<ul class="how">
+    <li><b>Tap</b> a button: open its page. Tap again: its next page.</li>
+    <li><b>Hold</b> a button: its second job (written as <i>hold</i>).</li>
+    <li><b>A + B</b>: hold A, then press B.</li>
+    <li><b>Keys from F2:</b> everything sits an octave down, for drones. <b>White keys 1–8</b> are counted from the left (F2, G2, A2, B2, C3, D3, E3, F3); the black keys from <b>F#2</b>.</li>
+    <li><b>T1–T4:</b> the four tracks. Turn ALGORITHM to pick one; most pages show the selected track.</li>
+    <li>${NEW} marks what is new in 1.3.</li></ul>`),
+  P("Arctic Scream p0larpatch", "by PolarPatch", "", [], [], `<div class="about"><img src="polarpatch-logo.png" alt="PolarPatch">
+    <div><p>A drone firmware for the M-VAVE FM-1: four tracks, eight sources, long dark effects, a 64-step sequencer, chords, an arpeggiator and song mode, with its own feedback voice, Holvut, that wakes on its own and screams.</p>
+    <p>Free and open source (GPL-3.0). Try it in your browser first: the demo, the editor and the cheat sheet are at <a href="https://polarpatch.github.io/Arctic-scream-FM-1/">polarpatch.github.io/Arctic-scream-FM-1</a>.</p></div></div>`)]),
+
+C("01", "Getting around", "var(--ice)",
+  "Four tracks play together and share six voices. The buttons open the pages, the four knobs set the four tiles at the bottom of the screen, and these controls work everywhere. Every track starts with ICE WRAITH: press a low key and let it howl.", [
+  P("Every page", "No button needed", "", [
+    ["ALGORITHM", "Picks the track. Every page shows that track.", "T1–T4"],
+    ["PRESETS", "Loads the next or previous sound into the track (factory first, then yours). On the sequencer pages: the tempo.", "47 factory + 64 yours"],
+    ["SELECT", "On HOME: the tempo. On the sequencer: the cursor.", "20–300 BPM"],
+    ["MASTER", "Volume.", ""],
+    ["OCT− / OCT+", "Octave down and up. In the save menus: back and confirm.", ""],
+    ["Keys", "Play the selected track, snapped to the SCALE (chord mode: its chord; ARP on: arpeggiated).", "F2 and up"],
+    ["LATCH ON: keys", "A key starts its note, the same key again stops it.", ""],
+    ["PLAY", "Starts and stops all four sequences (following a MIDI clock: at its next pulse).", ""],
+    ["REC", "Record on or off. On SONG: arms song recording.", ""],
+    ["REC: hold ~1 s " + NEW, "Clears the selected track's pattern (undoable).", ""],
+    ["EDIT + OCT− / OCT+", "Undo / redo the last edit.", ""],
+    ["SEL + OCT+ " + NEW, "The selected track's LATCH on or off, from any page (off lets go of its latched notes).", ""],
+    ["OCT− + OCT+", "Sets SYSTEM 2's CPU PEAK and USB REC DROPS to 0.", ""],
+  ], ["Saving is automatic: stopped and silent, your work saves itself and comes back at power-on (a latched note: SAVES WHEN SILENT). Knobs speed up: slowly for fine steps, fast to sweep."]),
+  P("Buttons: tap and hold", "What each button opens", "", [], [], `<div class="btns"><div><b>HOME</b>HOME → MIXER 1 → MIXER 2. Hold: SYSTEM (then HOME: SYSTEM 2, SYSTEM 3).</div><div><b>EDIT</b>SOUND → SOURCE (FM: SOUND → FM ALGO → FM OP → SOURCE).</div><div><b>ENV</b>ENV.</div><div><b>LFO</b>LFO → DRONE.</div><div><b>SEL</b>SCALE → CHORD. Hold and let go: chord mode on or off.</div><div><b>ARP</b>ARP. Hold: the arpeggiator on or off for the track.</div><div><b>SEQ</b>GRID → PATTERN SETTINGS. Hold + white keys: sequencer tools; hold + SELECT: pattern length.</div><div><b>SAVE</b>SOUNDS → PROJECTS. Hold + white keys 1–4: recall slots A–D, 5–8: save into them.</div><div><b>GLO</b>SONG. Hold + white keys 1–4: mute T1–T4, 5–8: solo them.</div><div><b>FX</b>TAPE → GRAIN → DELAY → SPACE → MASTER → DRIVE. Hold: PERFORM (+ black keys: GENERATE).</div></div>`)]),
+
+C("02", "HOME and the mixers", "var(--aurora)",
+  "Each track's wave glows on HOME as it plays, under a starry sky. Tap HOME again for the mixers: MIXER 1 draws each track as a curtain of standing ribbons, MIXER 2 as a ribbon across the stereo field.", [
+  P("HOME", "Tap HOME", "home", K(
+    ["VOLUME", "The selected track's level (MUTE when muted).", "0–100 %"],
+    ["CUTOFF", "The track filter's cutoff (MIXER 2's TYPE), for every source.", "~30 Hz – OPEN"],
+    ["WARP " + NEW, "Eight layers of motion that come in one after another: the voices drift apart, the filter breathes, the knobs wander, the storm pushes, vibrato, resonance, wide drift, at the top flutter and a sagging pitch. Smooth from still to wild; the level held.", "0–100 %"],
+    ["MORPH " + NEW, "One knob through all four of the source's knobs at once (the stepped ones, such as MODEL, stay), on a path of its own, wandering a little around it. At 0 the sound is as set.", "0–100 %"]).concat([
+    ["SELECT", "The tempo (following a MIDI clock: EXT and its tempo).", "20–300 BPM"]])),
+  P("MIXER 1", "Tap HOME twice", "mixer", K(
+    ["LEVEL", "The track's level.", "0–100 %"],
+    ["DLY SEND", "Send to DELAY.", "0–100 %"],
+    ["REV SEND", "Send to SPACE.", "0–100 %"],
+    ["GRAIN SEND", "Send to GRAIN.", "0–100 %"])),
+  P("MIXER 2", "Tap HOME three times", "mixer2", K(
+    ["PAN", "Where the track sits.", "L64 – C – R63"],
+    ["TYPE " + NEW, "The track filter: low-pass, high-pass or band-pass. LP open (CUTOFF at the top) or HP open (at the bottom): no filtering. BP is gentle at RESONANCE 0 and narrows as you turn it up.", "LP / HP / BP"],
+    ["POS " + NEW, "PRE: the effect sends hear the filtered sound. POST: only the dry sound is filtered; GRAIN, DELAY and SPACE hear it unfiltered (a dark track with a bright reverb).", "PRE / POST"],
+    ["RESONANCE", "The track filter's resonance (on HOME before 1.3).", "0–100 %"]))]),
+
+C("03", "Sources: EDIT", "var(--violet)",
+  "EDIT opens the track's SOUND page, the source's four knobs, then SOURCE. Eight sources, each with its own picture.", [
+  P("SOURCE", "Tap EDIT twice", "source", K(
+    ["SOURCE", "Picks the track's source.", "VA, FM, SAMPLE, VOICE, WHEEL, PHYS, PHASE, Holvut"],
+    ["LATCH", "Holds the notes: a key starts its note, the same key again stops it.", "OFF / ON"], ["", "", ""], ["", "", ""])),
+  P("Holvut, the feedback voice", "EDIT, source Holvut", "holvut", K(
+    ["FEEDBACK", "Wakes the loop. Below the threshold it sleeps (THE LOOP: ASLEEP); past ~2/3 it grows out of silence and howls by itself (HOWLING). Its last steps (120–127) overblow: the howl leaps up the overtones.", "0–100 %"],
+    ["BODY", "Bends it: the resonant body, ~1 to ~92 ms. Past 100 slow beating howls, past 115 slow pulses.", "0–100 %"],
+    ["DAMP", "Turns the scream into a growl.", "0–100 %"],
+    ["DRIVE", "Tears it.", "0–100 %"]),
+    ["Holvut is North Sami for to howl. A string and a resonant body sit inside a loop with saturation, filters and diffusion; nothing is struck. Each key sends a burst into the loop, so a note near the threshold sets it off.",
+     "Pressure: from a MIDI keyboard with aftertouch, pressing harder feeds the note back more, then overblows."]),
+  P("VA", "EDIT, source VA", "va", K(
+    ["WAVE", "Virtual analog: the waveform.", "SAW / SQR / SUPER"],
+    ["DETUNE", "Detunes the voices against each other.", "0–100 %"],
+    ["CUTOFF", "The source's own filter.", "0–100 %"],
+    ["RESONANCE", "Its resonance.", "0–100 %"])),
+  P("FM: SOUND, FM ALGO, FM OP", "EDIT on an FM track: SOUND → FM ALGO → FM OP", "fm-algo", [
+    ["SOUND · KNOB 1", "PATCH: the six-operator patch.", ""],
+    ["SOUND · KNOB 2–4", "BRIGHT, DECAY, DETUNE.", "0–100 %"],
+    ["ALGO · KNOB 1", "ALGO: how the six operators are wired.", "01–32"],
+    ["ALGO · KNOB 2", "FEEDBACK.", ""],
+    ["ALGO · KNOB 3", "OP: the operator the next page edits.", "1–6"],
+    ["ALGO · KNOB 4", "FINE: the operator's ratio, fine.", ""],
+    ["OP · KNOB 1–4", "RATIO, LEVEL, ATTACK, DECAY of the operator.", "LEVEL etc. 0–99"],
+  ], ["The screen draws the wiring: carriers (the ones you hear) outlined, modulators filled, the selected one lit."]),
+  P("SAMPLE", "EDIT, source SAMPLE", "sample", K(
+    ["SLOT", "One of the four sample slots, played as a loop.", "1–4"],
+    ["START", "Where the loop starts.", "0–100 %"],
+    ["LENGTH", "How long it is.", ""],
+    ["REVERSE", "Backwards.", "OFF / ON"]),
+    ["No samples are built in: the four slots are yours, filled with WAVs from the editor. An empty slot is silent."]),
+  P("VOICE", "EDIT, source VOICE", "voice", K(
+    ["VOWEL", "A singing formant voice: the vowel.", "A E I O U"],
+    ["SHIFT", "Shifts the formants.", ""],
+    ["BUZZ", "The buzz of the throat.", "0–100 %"],
+    ["BREATH", "Air in it.", "0–100 %"])),
+  P("WHEEL", "EDIT, source WHEEL", "wheel", K(
+    ["DRAWBARS", "A tonewheel organ: the registration.", "16 settings"],
+    ["PERC", "Percussion.", "OFF and 6 kinds"],
+    ["CLICK", "The key click.", "0–100 %"],
+    ["DRIVE", "Overdrive.", "0–100 %"])),
+  P("PHYS", "EDIT, source PHYS", "phys", K(
+    ["MODEL", "Bowed and struck strings, bars, plates, membranes (MEMB), sympathetic strings (SYMP).", ""],
+    ["STRUCTURE", "The body's structure (MEMB: HARM, SYMP: CHORD).", "0–100 %"],
+    ["DAMP", "How fast it dies away.", "0–100 %"],
+    ["BOW", "Bowing (MEMB: BEND, SYMP: BUZZ).", "0–100 %"]),
+    ["The names of KNOB 2 and 4 change with the model; the screen shows the current one."]),
+  P("PHASE", "EDIT, source PHASE", "phase", K(
+    ["WAVE", "Phase distortion: the wave.", ""],
+    ["WAVE2", "The second cycle's wave.", ""],
+    ["DCW", "How far it is bent.", "0–100 %"],
+    ["DETUNE", "Detune.", "0–100 %"]))]),
+
+C("04", "DRONE: a sound that lives on its own", "var(--teal)",
+  "Press LFO twice. DRONE makes a held sound move by itself, slowly, and never the same way twice. The knobs have North Sami names.", [
+  P("DRONE", "Tap LFO twice", "drone", K(
+    ["BORGA (snowdrift)", "Four slow random walks move the filter, the source's shape, its most natural knob (on Holvut: FEEDBACK, around the threshold) and the reverb's distance. Each voice drifts a few cents and breathes: a held chord sounds like a choir.", "0–100 %"],
+    ["STOARBMA (storm)", "The tension: opens the filter, raises resonance and drive, spreads the voices, makes the walks deeper and faster.", "0–100 %"],
+    ["GOHCCÁT (to wake)", "How long the storm takes to rise, in tempo. A drone woken from silence starts calm and builds.", "OFF, 1–32 bars"],
+    ["LATCH", "Holds the notes.", "OFF / ON"]),
+    ["At 0 % nothing is added. The settings are saved with the sound; the seven Holvut presets start with BORGA on."])]),
+
+C("05", "ENV and LFO", "var(--amber)",
+  "How each note starts and ends, and slow movement. Both belong to the track.", [
+  P("ENV", "Tap ENV", "env", K(
+    ["ATTACK", "How each note starts.", "~1 ms – 10 s"],
+    ["DECAY", "How fast it falls to SUSTAIN.", "~10 ms – 10 s"],
+    ["SUSTAIN", "The level it holds.", "0–100 %"],
+    ["RELEASE", "How it dies away after the key.", "~10 ms – 20 s"])),
+  P("LFO", "Tap LFO", "lfo", K(
+    ["RATE", "How fast. It never restarts with a note, so drones keep breathing.", "60 s a cycle – 20 Hz"],
+    ["DEPTH", "How much (0 = off).", "0–100"],
+    ["DESTINATION", "What it moves.", "PITCH, VOLUME, PAN, the source's four knobs, REV SEND, GRAIN SEND, CUTOFF"],
+    ["SHAPE", "Its shape.", "SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT"]))]),
+
+C("06", "Scales, chords and the arpeggiator", "var(--pink)",
+  "SEL opens SCALE and CHORD; hold SEL and let go for chord mode: one key, a whole chord. ARP opens the arpeggiator.", [
+  P("SCALE", "Tap SEL", "scale", K(
+    ["ROOT", "The scale's root, shared by all tracks.", "C–B"],
+    ["SCALE", "Keys, MIDI and recordings snap to it. The last is HORROR: close semitones, every note wrong in the right way.", "OFF + 14 scales"],
+    ["", "", ""], ["", "", ""])),
+  P("CHORD", "Tap SEL twice", "chord", K(
+    ["CHORD TYPE", "The chord a key plays in chord mode.", "SCALE, MIN, MAJ, SUS2, SUS4, FIFTH, MIN7, MAJ7, DIM, ADD9, CLUSTER"],
+    ["VOICING", "How it is spread. Big chords use more of the six voices.", "CLOSE, OPEN, SPREAD, +OCT, DROP"],
+    ["", "", ""], ["", "", ""])),
+  P("ARP", "Tap ARP · hold ARP: on / off", "arp", K(
+    ["MODE", "The order it plays the held keys in.", "UP, DOWN, UP-DOWN, RANDOM, AS PLAYED, CHORD"],
+    ["RATE", "How fast, on the sequencer's clock.", "1/1 – 1/32, triplets"],
+    ["OCTAVES", "How many octaves it climbs.", "1–4"],
+    ["GATE", "How long each note sounds.", "10–100 %"]),
+    ["It plays the keys you hold; with LATCH ON it keeps going after you let go."])]),
+
+C("07", "Sequencer: SEQ, PLAY, REC", "var(--violet)",
+  "Each track has its own 64-step pattern; all four play together on one tempo. Stopped + REC: each key fills a step and moves on. Playing + REC: notes land on the nearest step.", [
+  P("GRID", "Tap SEQ", "seq", K(
+    ["NOTE", "The selected step's note (all the way down: OFF).", "OFF, notes"],
+    ["CHANCE", "How likely it plays.", "0–100 %"],
+    ["RATCHET", "Repeats within the step.", "1–4"],
+    ["LENGTH", "How long it sounds.", ""]).concat([
+    ["SELECT", "Moves the cursor. PRESETS: the tempo.", ""],
+    ["SEL + a knob", "Locks that value to the step. SEL + OCT−: clears the step's locks.", ""]])),
+  P("PATTERN SETTINGS", "Tap SEQ twice", "pattern", K(
+    ["STEPS", "The pattern's length (also: hold SEQ + turn SELECT).", "1–64"],
+    ["DIVISION", "How long a step is.", "1/16 etc."],
+    ["SWING", "Swing.", "0–100 %"],
+    ["PLAY MODE", "Which way it runs.", "FORWARD and more"]),
+    [], `<p class="note"><b>Hold SEQ + a white key</b> (all undoable):</p>` + keys([["F2", "CLEAR"], ["G2", "RANDOM"], ["A2", "SHIFT ←"], ["B2", "SHIFT →"], ["C3", "COPY"], ["D3", "PASTE"], ["E3", "DOUBLE"], ["F3", "MUTATE"]]))]),
+
+C("08", "Sounds, slots and songs: SAVE, GLO", "var(--periwinkle)",
+  "A slot (A–D) holds the four tracks' sounds, sequences, locks and mix. Hold SAVE + white keys 1–4 to recall them (at the next bar while playing), 5–8 to save into them (press again within 3 s to overwrite).", [
+  P("SOUNDS", "Tap SAVE", "save", K(
+    ["SLOT", "One of 64 slots for your own sounds.", "001–064"],
+    ["CATEGORY", "Its category: it comes in PRESETS after that category's factory sounds.", ""],
+    ["TYPE", "Shows only one source's sounds.", "ALL, the sources"],
+    ["ACTION", "Confirm with OCT+, back out with OCT−.", "LOAD / SAVE / CLEAR"]),
+    ["A sound keeps its source and knobs, ENV, LFO, DRONE, LATCH, chord and (FM) its patch. Name it in the editor (up to 10 characters)."]),
+  P("PROJECTS", "Tap SAVE twice", "projects", K(
+    ["SLOT", "One of the four slots.", "A–D"],
+    ["ACTION", "Confirm with OCT+.", "LOAD, SAVE, ERASE, NEW"], ["", "", ""], ["", "", ""])),
+  P("SONG", "Tap GLO", "song", K(
+    ["SECTION", "A step of the chain.", "01–16"],
+    ["PATTERN", "The slot it plays (END: the song ends there).", "A–D / END"],
+    ["REPEATS", "How many times.", "01–16"],
+    ["MODE", "OFF: PLAY loops the slot. SONG: once. SONG LOOP: over and over.", "OFF / SONG / LOOP"]),
+    ["Record a song: on SONG press REC, then PLAY, and switch slots with SAVE + keys 1–4.",
+     "Hold GLO + white keys 1–4 mutes T1–T4, keys 5–8 solos them."])]),
+
+C("09", "Destroy: FX", "var(--plasma)",
+  "Tracks feed GRAIN, DELAY and SPACE through their sends; MASTER, DRIVE and TAPE work on the whole mix. Each page has its own northern lights.", [
+  P("TAPE", "Tap FX", "tape", K(
+    ["WOW", "Slow wobble and flutter, up to a seasick ±2 % of pitch.", "0–100 %"],
+    ["SATURATION", "Tape saturation, up to 12x drive.", "0–100 %"],
+    ["TONE", "Darker, down to ~500 Hz.", "0–100 %"],
+    ["HISS", "Tape hiss, up to loud.", "0–100 %"]),
+    ["All four at 0 switch TAPE off (BYPASS). It colours the whole mix at the very end."]),
+  P("GRAIN", "Tap FX twice", "grain", K(
+    ["SIZE", "How long each grain is.", "10–390 ms"],
+    ["DENSITY", "How many grains a second.", ""],
+    ["SCATTER", "How far they scatter.", "0–100 %"],
+    ["MIX", "How loud the cloud is.", "0–100 %"]),
+    ["FREEZE (PERFORM, F2) holds the grain cloud. GRAIN pours into SPACE.", "GRAIN hears what the tracks send it (MIXER 1). Turn a knob up while the selected track sends nothing and its send goes to 50 %."]),
+  P("DELAY", "Tap FX three times", "delay", K(
+    ["TIME", "The echo's time.", "20 ms – 3 s"],
+    ["FEEDBACK", "Past 100 % the echo grows and saturates, and burns magenta on the screen: runaway.", "0–150 %"],
+    ["WEAR", "Worn, wobbly echoes: darker, driven to 4x, wobbling up to ~11 ms.", "0–100 %"],
+    ["MIX", "How loud they are.", "0–100 %"])),
+  P("SPACE", "Tap FX four times", "space", K(
+    ["SIZE", "The reverb's length; at the top it holds for ever (INF, FREEZE).", "to ~32 s, INF"],
+    ["DAMP", "Darkens the tail.", "0–100 %"],
+    ["MIX", "How loud it is.", "0–100 %"],
+    ["PRE-DELAY", "The gap before it.", "0–250 ms"])),
+  P("MASTER " + NEW, "Tap FX five times", "master", K(
+    ["CUTOFF", "A filter on everything, in stereo. LP at the top or HP at the bottom: off completely (OPEN).", "~30 Hz – OPEN"],
+    ["RESONANCE", "Its peak at the cutoff: the rays there flare.", "0–100 %"],
+    ["TYPE", "Low-pass, high-pass, band-pass.", "LP / HP / BP"],
+    ["POSITION", "PRE FX: the tracks' dry mix before the effects return (reverb and echoes stay bright). POST REVERB: tracks and effects together, before DRIVE and TAPE. END: the very end, after TAPE and PERFORM.", "PRE FX / POST REVERB / END"]),
+    ["The picture: an aurora curtain cut by the filter, low on the left, high on the right."]),
+  P("DRIVE " + NEW, "Tap FX six times", "drive", K(
+    ["AMOUNT", "How hard it tears the whole mix, after SPACE, before TAPE. 0: off completely.", "OFF, 1–100 %"],
+    ["TYPE", "SOFT: warm saturation. FUZZ: lopsided, buzzy. CLIP: hard. FOLD: a wavefolder, folding back into new overtones.", "SOFT / FUZZ / CLIP / FOLD"],
+    ["TONE", "Darkens it.", "0–100 %, OPEN"],
+    ["MIX", "Blends it with the clean sound.", "0–100 %"]),
+    ["All four types are about equally loud at the same AMOUNT; all the way up is at most ~6 dB louder, and a limiter after it keeps the output safe. Turn AMOUNT on KNOB 1 for fast changes.",
+     "MASTER and DRIVE are saved with the project, like the other effects."])]),
+
+C("10", "Perform and GENERATE: hold FX", "var(--amber)",
+  "Hold FX for a moment and PERFORM appears. Each trick lasts while you hold its white key; the sequencer keeps running, and you land back in time when you let go. The black keys start GENERATE.", [
+  P("PERFORM", "Hold FX + white keys", "perform", [], ["FREEZE is a toggle: tap it to hold the grain cloud, tap again to let go."],
+    keys([["F2", "FREEZE"], ["G2", "REV THROW"], ["A2", "ECHO THROW"], ["B2", "TAPE STOP"], ["C3", "REVERSE"], ["D3", "FILTER DOWN"], ["E3", "FILTER UP"], ["F3", "STUTTER"]])),
+  P("GENERATE " + NEW, "Hold FX + black keys", "generate", [
+    ["F#2 G#2 A#2 C#3", "Tapped: GENERATE on or off for T1–T4. The track plays by itself: random notes of the SCALE (chord mode: chords), on the tempo, resting now and then.", ""],
+    ["D#3", "MODE. DRIFT: few long, soft notes. PULSE: a melody on eighths. STORM: dense sixteenths, wild volume.", "DRIFT / PULSE / STORM"],
+    ["F#3 / G#3", "OCTAVE − / +: the generator's own (0: from C3).", "−3 … +3"],
+    ["A#3", "RANGE: how far up it may play.", "1, 2, 3 OCT"],
+  ], ["With a track's key held, D#3–A#3 set only that track; alone, all four.",
+      "The PERFORM screen shows a tile a track: lit while it generates, its MODE, its range, and a square that flashes with each note. Its own pattern runs on silently underneath and comes back when you switch GENERATE off. Nothing is saved: after power-on it is off."],
+    keys([["F#2", "T1"], ["G#2", "T2"], ["A#2", "T3"], ["C#3", "T4"], ["D#3", "MODE"], ["F#3", "OCT −"], ["G#3", "OCT +"], ["A#3", "RANGE"]]))]),
+
+C("11", "System: hold HOME", "var(--sky, #4fb3e8)",
+  "Hold HOME for SYSTEM; press HOME again for SYSTEM 2, again for SYSTEM 3. These settings belong to the FM-1, not the project.", [
+  P("SYSTEM", "Hold HOME", "system", K(
+    ["COLOUR", "Pick the one that matches your FM-1.", "ICE, AURORA, VIOLET, PLASMA"],
+    ["MIDI CHANNEL", "1-4: T1–T4 on channels 1–4 (or higher, to 13-16). ALL > SEL: everything to the selected track. CH n > SEL: only that channel, to the selected track." + NEW, "1-4 … 13-16, ALL, CH 1–16"],
+    ["TUNE", "Fine tuning.", "±50 cents"],
+    ["SCREEN OFF", "The screen goes dark after this; the music goes on. The first touch only wakes it.", "1–… min, NEVER"])),
+  P("SYSTEM 2", "Hold HOME, then HOME", "system2", K(
+    ["MIDI LEARN", "Set LEARN, turn a knob on the FM-1, then move one on your controller. Up to 32 links.", "OFF, LEARN, CLEAR"],
+    ["SEQ MIDI OUT", "Sends the sequencer's and the arpeggiator's notes out over USB.", "OFF / ON"],
+    ["SAMPLES", "CLEAR and OCT+ empties all four sample slots.", "KEEP / CLEAR"],
+    ["CLOCK " + NEW, "INT: its own tempo. I+OUT: the same, and MIDI clock out over USB. USB or TRS: follows a MIDI clock from there (START, CONTINUE, STOP).", "INT, I+OUT, USB, TRS"]),
+    ["The processor load, NOW and PEAK, and USB REC DROPS " + NEW + ": gaps in the sound sent to a computer. OCT− + OCT+ sets them to 0."]),
+  P("SYSTEM 3 " + NEW, "Hold HOME, then HOME twice", "system3", K(
+    ["LATCH", "FROM SOUND: a sound you load brings its own LATCH (the seven Holvut sounds latch). ALWAYS OFF: loading sets it off; EDIT's LATCH and SEL + OCT+ still switch it.", "FROM SOUND / ALWAYS OFF"],
+    ["", "", ""], ["", "", ""], ["", "", ""])),
+  P("MIDI, USB audio and good to know", "", "", [
+    ["MIDI in", "USB (the MIDI port is called <b>Arctic Scream</b> too), or the TRS jack with a TRS-to-DIN adapter (type A) " + NEW + ". Notes play the tracks, a CC its MIDI LEARN link; ALL NOTES OFF lets go of MIDI's notes; aftertouch pushes Holvut's FEEDBACK.", ""],
+    ["USB audio", "Class compliant, no driver: the FM-1 shows up on the computer, phone or tablet as <b>Arctic Scream</b>, an audio input, 16-bit stereo at 44.1 or 48 kHz, the whole mix. Solo each track (GLO + keys 5–8) to record them one by one.", ""],
+    ["CPU FULL: NOTE DROPPED", "It had more to play than it can: a fading or generated note goes first, your held notes last.", ""],
+    ["WATCHDOG / LOW VOLTAGE RESET", "Why it restarted: it stood still, or the power dipped.", ""],
+    ["Saves", "Under a never-ending delay, SPACE on INF or a frozen GRAIN, saves go ahead 10 s after the last note. While a computer records over USB, it saves only after a minute left alone.", ""],
+  ])]),
+
+C("12", "Factory sounds and combos", "var(--aurora)",
+  "47 sounds with arctic names. Turn PRESETS to step through them by category, then your own.", [
+  P("Factory sounds", "PRESETS", "", [
+    ["DRONE", "Permafrost, Deep Fjord, Cracking Ice, Arctic Hum, Solar Wind, Under the Ice", ""],
+    ["DRONE · Holvut", "Polar Howl, Wendigo, Frozen Scream, Whiteout, Dead Signal, III, Ice Wraith", "latched, DRONE on"],
+    ["PAD", "Polar Night, Snow Veil, Glacier Pad, Midnight Sun, Lichen, Snowdrift", ""],
+    ["BELL", "Ice Bell, Frost Chime, Iceberg Gong, Crystal Harp, Bowed Icicle, Starlight", ""],
+    ["VOICE", "Aurora Choir, Tundra Voices, Blizzard Breath, Northern Call, Empty Horizon", ""],
+    ["ORGAN", "Ice Organ, Base Camp", ""],
+    ["KEYS", "Frost Keys, Snow Globe, Polar Keys, Ice Piano, Snow Owl, Signal Flare, Icicle Pluck, Frost Lute, Northern Light", ""],
+    ["OTHER", "Tundra Strings, Icebreaker, Fog Horn, Svalbard Cello, North Strings", ""],
+    ["TEXTURE", "Wind over Ice", ""],
+  ]),
+  P("Combos at a glance", "Hold + press", "", [
+    ["EDIT + OCT− / OCT+", "Undo / redo", ""],
+    ["FX + white keys", "PERFORM: FREEZE … STUTTER", ""],
+    ["FX + black keys", "GENERATE: T1–T4, MODE, OCTAVE, RANGE", ""],
+    ["SEL (alone)", "Chord mode on / off", ""],
+    ["SEL + a knob", "Lock the value to the step (sequencer pages)", ""],
+    ["SEL + OCT−", "Clear the step's locks (sequencer pages)", ""],
+    ["SEL + OCT+", "The track's LATCH on / off", ""],
+    ["SEQ + white keys", "Sequencer tools", ""],
+    ["SEQ + SELECT", "Pattern length", ""],
+    ["SAVE + white keys", "1–4 recall, 5–8 save slots A–D", ""],
+    ["GLO + white keys", "1–4 mute, 5–8 solo T1–T4", ""],
+    ["ARP (alone)", "Arpeggiator on / off", ""],
+    ["REC (~1 s)", "Clear the track's pattern", ""],
+    ["HOME (alone)", "SYSTEM", ""],
+    ["OCT− + OCT+", "Reset CPU PEAK and USB REC DROPS", ""],
+  ])], true),
+];
+
+const rng = (p) => p.rows.some((r) => r[r.length - 1]);
+const cell = (r) => r.length > 3 ? `<span class="k${r[0].slice(-1)}">${r[0]}</span><br>${r[1]}` : r[0];
+document.getElementById("book").innerHTML = BOOK.map((ch) => `
+<section class="chap" style="--c: ${ch.c}">
+  <div class="no">${ch.no}</div><h2>${ch.title}</h2><p>${ch.intro}</p>
+  ${ch.pages.map((p) => `
+  <article class="pg${p.scr ? "" : " wide"}">
+    <header><h3>${p.t}</h3><span>${p.how}</span></header>
+    ${p.scr ? `<div class="scr"><img src="screens/${p.scr}.png" alt="${p.t.replace(/<[^>]*>/g, "")}: the FM-1's screen" loading="eager"></div>` : ""}
+    <div>
+      ${p.rows.length ? `<table${rng(p) ? "" : ' class="two"'}><thead><tr><th>${p.head || "Control"}</th><th>What it does</th>${rng(p) ? "<th>Range</th>" : ""}</tr></thead><tbody>
+        ${p.rows.map((r) => `<tr><td>${cell(r)}</td><td>${r[r.length - 2]}</td>${rng(p) ? `<td>${r[r.length - 1]}</td>` : ""}</tr>`).join("")}
+      </tbody></table>` : ""}
+      ${p.extra}
+      ${p.notes.map((n) => `<p class="note">${n}</p>`).join("")}
+    </div>
+  </article>`).join("")}
+</section>`).join("");
+</script>
+</body>
+</html>
