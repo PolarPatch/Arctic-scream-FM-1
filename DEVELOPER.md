@@ -298,6 +298,22 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
     - The JieLi SIE's EP4 FIFO size.
     - A setting to choose 2 or 10 channels, since 2 is simpler for most hosts.
     - The USB layout: test macOS 10.14 to 15 again.
+- **HOME's sky as northern lights, or snow and rain (prototype 2026-11-03, set aside).**
+  - Where: the local branch `proto/home-aurora` (commit d9a734b), not pushed. It is off unless built with
+    `HOME_SKY 1`.
+  - What it does: four aurora curtains over HOME's stars, one per track, each as bright as its track sounds. A
+    curtain is walked along its length and folds over itself; the hem ripples, the rays fade from green up to violet
+    in seven posterized steps with Bayer at the edges, and a 5-wide blur softens it.
+  - Source of the idea: [pixelfx](https://github.com/patch-gg/pixelfx) `src/fx/weather/aurora.js` (MIT, patch-gg),
+    itself after Sprite Fusion's holy light (MIT, Hugo Duprez). Written again in integers, no code copied; credit
+    both if it ships. The same gallery has snow, blizzard and rain.
+  - Measured on the FM-1:
+    - CPU NOW 23.4 %, PEAK 38.2 % (lightly played);
+    - pool +3.3 KB (1.7 KB left), flash +1.8 KB;
+    - about 9 frames a second, because the whole field takes ~42 ms on the panel's 12 MHz SPI.
+  - Why it was set aside: the picture was not good enough. The strands came out streaky and the hem did not burn.
+  - Next time: try 2 x 2 pixel cells (pixel-art look, a quarter of the work), a real bloom, fewer and wider curtains,
+    or a screensaver instead of HOME so the speed matters less.
 - Tune the HOME waveform look for ICE WRAITH, and a stronger HOWL burst.
 - Move the redo buffer (`store.c` `redo_b`, 5 KB) into the pool now that the pool has room, to free main RAM.
 - Store `wv_d` (HOME's drawn waves) as 8-bit values instead of 32-bit: saves ~1.2 KB of main RAM.
