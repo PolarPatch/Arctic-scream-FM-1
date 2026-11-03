@@ -287,6 +287,17 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
   - **The envelope on FEEDBACK:** a setting where the loop dies when the key is let go, instead of howling on.
   - Touch's right switch (a random target each half cycle, slewed: 1-8 Hz or 0.01-0.5 Hz on BODY) is close to
     DRONE's BORGA; its pad scale 2 (0, 5, 6, 9, 10, 12, 13) is close to HORROR.
+- **USB audio per track (asked for in issue #1, 2026-11-03).** Record each track on its own channels over USB.
+  - The idea: 10 channels, each track's own stereo pair (after its filter, LEVEL and PAN, from `mix_tracks` in
+    `grimm.c`) plus the master pair. The stems are dry: ECHO, REVERB, GRAIN and the master stage are shared and come
+    after the mix. The master pair stays the full mix.
+  - Bandwidth fits: 10 ch x 2 B x 49 samples = 980 B a frame at 48 kHz, under full speed's 1023.
+  - Open questions:
+    - Main RAM (~2 KB free): the ring grows fivefold, so it must move into the pool.
+    - CPU: the 48 kHz resampler (`uac_tap48`) would run five times over. Measure with SYSTEM 2 first.
+    - The JieLi SIE's EP4 FIFO size.
+    - A setting to choose 2 or 10 channels, since 2 is simpler for most hosts.
+    - The USB layout: test macOS 10.14 to 15 again.
 - Tune the HOME waveform look for ICE WRAITH, and a stronger HOWL burst.
 - Move the redo buffer (`store.c` `redo_b`, 5 KB) into the pool now that the pool has room, to free main RAM.
 - Store `wv_d` (HOME's drawn waves) as 8-bit values instead of 32-bit: saves ~1.2 KB of main RAM.
