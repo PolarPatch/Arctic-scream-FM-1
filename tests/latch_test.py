@@ -17,7 +17,7 @@ from pathlib import Path
 EXE = sys.argv[1] if len(sys.argv) > 1 else "build/host/grimm"
 OUT = Path("build/host/latch")
 OUT.mkdir(parents=True, exist_ok=True)
-ENG_FM, ENG_PHYS = 1, 5
+ENG_FM, ENG_PHYS, ENG_HOWL = 1, 5, 7
 C4, E4, G4, A3, D4 = 0x80, 0x800, 0x4000, 0x10, 0x200   # (the keys; Arctic Scream plays them an octave down)
 NFACT = 47                                      # (Arctic Scream's factory sounds)
 bad = 0
@@ -66,7 +66,8 @@ NAME = {0: "FROM SOUND", 1: "ALWAYS OFF"}
 n_ok = 0
 for k in range(1, NFACT + 1):
     eng = run("eng", [(300, f"enc 6 {k}"), (500, "probe")], 600, ENV[0])[500]["eng"]
-    edit = [(700 + 100 * i, "btn 6") for i in range(4 if eng == ENG_FM else 2)]   # (FM: FM ALGO, FM OP before SOURCE)
+    edit = [(700 + 100 * i, "btn 6") for i in range(4 if eng == ENG_FM else 3 if eng == ENG_HOWL else 2)]   # (FM: FM ALGO,
+    # FM OP before SOURCE; HOWL: LOOP)
     for s in (0, 1):
         ev = [(300, f"enc 6 {k}"), (600, "probe")] + edit + [(1200, "probe"), (1250, "enc 3 1"), (1300, "probe")]
         ev += tap(1400, C4) + [(1700, "probe")] + tap(1800, C4) + [(2100, "probe")]          # latched; let go

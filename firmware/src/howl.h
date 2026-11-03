@@ -19,4 +19,5 @@ typedef struct {
     int32_t bd;                                 /* BODY's delay now, frames Q8 (gliding) */
     int32_t wd, wt;                             /* the wander on it: now, its target (Q8) */
     uint32_t wn, rng, kick;                     /* blocks to the wander's next target; the noise; a note's burst left */
+    int32_t gt, hl2;                            /* (1.4) GATE: the key held, gliding (Q15); LOW CUT's second pole */
 } howl_t;

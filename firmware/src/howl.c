@@ -22,6 +22,15 @@
  *              goes to 100 ms)
  *   DAMP       the loop's low-pass, ~18 kHz .. ~100 Hz: a scream .. a growl under the ice
  *   DRIVE      the saturation, 1x .. 7x: clean .. torn
+ * The LOOP page (Arctic Scream 1.4, after Audrey Touch's loop and Book of the Dead's FX loop; written anew, none of
+ * their code), the track's own (track_t hw_x), 0 each as before it:
+ *   GATE       how far the loop stops feeding itself once the key is let go (Audrey Touch's envelope on the write
+ *              back): 0 howls on through the release as before, 100 % lets it die into its own tail
+ *   BLOOM      the effects' return (GRAIN, DELAY, SPACE: what they add to the mix, the last render's) fed into the
+ *              loop, an FX loop inside the feedback: the howl blooms into the reverb and the echoes come round again
+ *   LOWCUT     the loop's high-pass, ~70 Hz (as before) .. ~1.9 kHz, two poles: with DAMP, a band that screams
+ *   EXCITE     the track's sample (the SAMPLE source's SLOT, START and LENGTH, as recorded, looped) fed into the
+ *              string: the howl grows out of a voice, a choir, drums; OFF: the noise alone wakes it
  * State: howl_t (howl.h) in the voice's PHYS slot; BODY's line in the voice's pool scratch (voices.c vx_pool, shared with
  * SAMPLE's windows); hw_press: the tracks' MIDI pressure (grimm.c, the MIDI in). */
 
@@ -30,6 +39,18 @@
 
 _Static_assert(HW_BL <= VX_POOL, "BODY's line fits in a voice's pool scratch");
 static uint8_t hw_press[NT];                    /* a track's MIDI pressure, 0 .. 127 (the main loop writes it) */
+#define HW_RN 256u                              /* (the render's frames: VB) */
+static int32_t hw_ret[HW_RN] __attribute__((section(".pool")));   /* BLOOM: the effects' return, mono, the last render's
+                                                 * (grimm.c app_audio) */
+static uint8_t hw_bloom_on;                     /* (a HOWL track's BLOOM is up: app_audio keeps hw_ret) */
+typedef struct {                                /* EXCITE: a track's sample, read on as recorded (22.05 kHz, each sample
+                                                 * twice), shared by the track's HOWL voices: CTL frames a control step */
+    uint32_t vb, pos, start, end;               /* the step it holds; the next sample, the loop's first and end */
+    int32_t pred, idx, a, b;                    /* the decoder; the last two samples */
+    uint8_t slot, on, half;
+    int16_t buf[CTL];
+} hw_exc_t;
+static hw_exc_t hw_ex[NT];
 static howl_t *hw_of(voice_t *v) { return &ph_slot[v - vc].u.h; }
 static uint32_t hw_rnd(howl_t *S)
 {
@@ -98,18 +119,65 @@ static inline int32_t hw_ap(int16_t *b, uint16_t *ix, uint32_t n, int32_t x)   /
     return y;
 }
 
+static const int16_t *hw_excite(uint32_t t)    /* track t's sample this control step (0: none) */
+{
+    hw_exc_t *E = &hw_ex[t];
+    sp_loop_t L;
+    uint32_t i;
+    if (E->vb == vblock && E->on) return E->buf;
+    if (!sp_loop(trk[t].p[ENG_SAMPLE], &L)) {   /* (the slot empty: nothing; REVERSE: read forward all the same) */
+        E->on = 0;
+        return 0;
+    }
+    if (!E->on || E->slot != L.slot || E->pos >= E->end) {   /* (the loop from its segment's start: no decodes to skip) */
+        uint32_t seg = L.l0 >> SMP_SEG_LOG2;
+        E->slot = L.slot, E->on = 1, E->half = 0;
+        E->start = E->pos = seg << SMP_SEG_LOG2, E->end = L.l0 + L.len;
+        if (E->end > smp[L.slot].n) E->end = smp[L.slot].n;
+        E->pred = smp_ipred[L.slot][seg], E->idx = smp_iidx[L.slot][seg], E->a = E->b = 0;
+    }
+    for (i = 0; i < (uint32_t)CTL; i++) {
+        int32_t w;
+        if (!E->half) {
+            E->a = E->b;
+            E->b = E->pos < E->end ? ima_dec(smp[E->slot].data, E->pos, &E->pred, &E->idx) : 0;
+            E->pos++;
+        }
+        w = (int32_t)(E->pos - E->start < E->end - E->pos ? E->pos - E->start : E->end - E->pos);   /* (a fade at both ends,
+                                                 * 256 samples: the loop never clicks into the string) */
+        w = w > 256 ? 256 : w;
+        E->buf[i] = (int16_t)((E->half ? (E->a + E->b) >> 1 : E->a) * w >> 8);
+        E->half ^= 1u;
+    }
+    E->vb = vblock;
+    return E->buf;
+}
+
 /* CTL frames of voice v, added to mono[] */
 static void howl_block(voice_t *v, const volatile int32_t *p, int32_t *mono, int32_t amp0, int32_t amp1)
 {
     howl_t *S = hw_of(v);
     int16_t *body = vx_pool[v - vc];
+    const volatile int32_t *X = trk[v->trk < NT ? v->trk : 0].hw_x;
     uint32_t inc = vinc(VP16(v)) >> 8, per, fc = hw_cut(p[2]), i;
-    int32_t g, hc, mk, drv = 256 + clamp(p[3], 0, 127) * 12, dmp = amp1 - amp0;
+    int32_t g, hc, hl, mk, drv = 256 + clamp(p[3], 0, 127) * 12, dmp = amp1 - amp0;
     int32_t x = (int32_t)(fc * 4669u / 1000u), a = x * 16384 / (32768 + x);   /* (DAMP's one-pole, Q14) */
-    int32_t tgt, bd0 = S->bd, dbd;
+    int32_t tgt, bd0 = S->bd, dbd, gate = clamp(X[HX_GATE], 0, 127), lc = clamp(X[HX_LCUT], 0, 127);
+    int32_t bl = clamp(X[HX_BLOOM], 0, 127), ex = clamp(X[HX_EXCITE], 0, 127);
+    const int16_t *exs = ex ? hw_excite(v->trk < NT ? v->trk : 0) : 0;
+    const int32_t *ret = bl && hw_bloom_on && vc_at + (uint32_t)CTL <= HW_RN ? hw_ret + vc_at : 0;
     S->fb = hw_glide(S->fb, hw_fb(v, p[0]));    /* (FEEDBACK and the pressure glide: ~6 ms) */
     g = hw_gain(S->fb) >> 4;
+    {                                           /* GATE: the key held (1) or let go (0), gliding (up ~3 ms, down ~45 ms) */
+        int32_t held = v->stage == ST_REL || v->stage == ST_FADE ? 0 : 32767;
+        S->gt += held > S->gt ? (held - S->gt) >> 2 : (held - S->gt) >> 6;
+        g = (int32_t)((int64_t)g * (32767 - gate * (32767 - S->gt) / 127) >> 15);
+    }
     hc = S->hc = hw_glide(S->hc, hw_hpc(S->fb));
+    hl = lc ? (int32_t)(((uint32_t)hc * pow2_q16(lc * 920 / 127)) >> 16) : hc;   /* LOWCUT: up from it, ~1.9 kHz */
+    hl = hl > 12880 ? 12880 : hl;
+    ex = ex * ex * 2;                           /* (EXCITE, BLOOM: Q15 gains, squared: fine at the low end) */
+    bl = bl * bl * 3 / 2;
     mk = 256 + (hc - 327) * 1024 / 7146;        /* (overblown, the high-pass thins it: up to 5x back, Q8) */
     per = 0xFFFFFFFFu / (inc ? inc : 1u);      /* the note's period, frames Q8 */
     while (per > (HW_SL - 4u) << 8) per >>= 1;  /* (below ~43 Hz: an octave up) */
@@ -137,6 +205,9 @@ static void howl_block(voice_t *v, const volatile int32_t *p, int32_t *mono, int
             n += (((int32_t)S->rng >> 20) * (int32_t)S->kick) / (int32_t)HW_KICK;
             S->kick--;
         }
+        if (exs) n += (exs[i] * ex) >> 15;      /* (EXCITE: the sample into the string) */
+        if (ret) n += (int32_t)clamp(((int64_t)ret[i] * bl) >> 11, -32767, 32767);   /* (BLOOM: the effects' return, at the
+                                                 * output's level: up to ~12x, to the loop's) */
         s = clamp(s1 + (((s0 - s1) * (int32_t)sf) >> 8) + fbk + n, -65535, 65535);   /* the string */
         S->dcy = clamp(s - S->dcx + ((S->dcy * 32604) >> 15), -65535, 65535);
         S->dcx = s;
@@ -147,8 +218,12 @@ static void howl_block(voice_t *v, const volatile int32_t *p, int32_t *mono, int
         y = hw_sat((s * drv) >> 8);             /* DRIVE */
         S->lp += ((y - S->lp) * a) >> 14;       /* DAMP */
         y = S->lp;
-        S->hl += ((y - S->hl) * hc) >> 15;      /* (~70 Hz .. ~1.6 kHz) */
+        S->hl += ((y - S->hl) * hl) >> 15;      /* (~70 Hz .. ~1.6 kHz; LOWCUT: on up to ~1.9 kHz) */
         y -= S->hl;
+        if (lc) {                               /* (LOWCUT: a second pole, so it narrows) */
+            S->hl2 += ((y - S->hl2) * hl) >> 15;
+            y -= S->hl2;
+        }
         S->h2 += ((y - S->h2) * (hc - 327)) >> 15;   /* (overblown: a second pole, steeper, so the howl leaps) */
         y -= S->h2;
         n = hw_ap(S->ap2, &S->a2, HW_A2, hw_ap(S->ap1, &S->a1, HW_A1, y));

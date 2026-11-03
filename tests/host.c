@@ -260,7 +260,7 @@ static void read_script(const char *path)
     static host_ev_t ev[4096];
     static uint8_t sx[65536];
     static uint32_t sx_n;
-    char line[1024], what[16];
+    char line[4096], what[16];                  /* (a sample upload's END: its 480 B header, pack7, in hex) */
     FILE *f = fopen(path, "r");
     uint32_t n = 0;
     if (!f) { perror(path); exit(1); }

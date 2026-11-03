@@ -72,7 +72,10 @@ typedef struct {
     volatile int32_t ftype, fpos;               /* (V2) MIXER 2: the track filter's TYPE (FT_: LP, HP, BP), POS (0 PRE:
                                                  * the sends hear it filtered; 1 POST: only the dry sound filtered) */
     volatile int32_t warp, morph;               /* HOME: WARP, MORPH 0..127 (chaos.c) */
+    volatile int32_t hw_x[4];                   /* (Arctic Scream 1.4) Holvut's LOOP page: GATE, BLOOM, LOW CUT, EXCITE
+                                                 * 0..127 (howl.c; 0: as before it) */
 } track_t;
+enum { HX_GATE, HX_BLOOM, HX_LCUT, HX_EXCITE };
 #define TRK_DEF {ENG_VA, {{0, 10, 90, 30}, {0, 64, 64, 20}, {0, 0, 127, 0}, {0, 12, 64, 10}, {4, 0, 40, 0}, {0, 64, 80, 64}, {0, 0, 60, 0}, {96, 64, 50, 40}}, 100, 0, 100, 0, 64, 0, \
                  {60, 85, 51, 105}, 0, 0, 0, 0, 0, 4, 1, 50, 40, 30, 9, 0, 84, 24, 100, 0, 0, {{0}}}
 static track_t trk[NT] = {TRK_DEF, TRK_DEF, TRK_DEF, TRK_DEF};   /* VA: SAW, DETUNE 10, CUTOFF 90, RESONANCE 30
@@ -123,6 +126,8 @@ static const volatile int32_t *lfo_params(uint32_t v, uint32_t t, uint32_t e);
 /* SYSTEM's TUNE (main loop): every source's pitch times 1 + tune_f / 4096 (-50 .. +50 cents: -117 .. +120; finer than
  * VP16's 6.25-cent steps); vinc: a pitch's phase increment, tuned */
 static volatile int32_t tune_f;
+static uint32_t vc_at;                          /* audio: the frame in the render where the voice's block begins (HOWL's
+                                                 * BLOOM reads the effects' return there) */
 static int32_t vc_fine;                         /* audio: the voice being rendered's own detune, as tune_f (DRONE's
                                                  * BORGA, STOARBMA: dr_fine; 0 between voices) */
 static int32_t dr_fine[NV], dr_gain[NV] = {32767, 32767, 32767, 32767, 32767, 32767};   /* audio: drone.c's, a voice's
@@ -313,6 +318,7 @@ static uint32_t voices_render(int32_t (*tb)[VB], uint32_t n)
             vc_fine = dr_fine[k] + ch_fine[k];  /* (DRONE: its detune and breath, drone.c; WARP's, chaos.c) */
             if (dr_gain[k] < 32767 || dr_gain_was[k] < 32767) amp0 = mulq15(amp0, dr_gain_was[k]), amp1 = mulq15(amp1, dr_gain[k]);
             dr_gain_was[k] = dr_gain[k];
+            vc_at = b;
             ENGINES[v->eng]->block(v, lfo_params(k, t, v->eng), tb[t] + b, amp0, amp1);   /* (the engine it began
                                                  * with; the LFO's on one of its knobs) */
             vc_fine = 0;

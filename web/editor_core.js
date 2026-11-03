@@ -381,7 +381,8 @@ export function parseSound(r, meta) {                        // a record -> a so
            lfo: [r[14] & 0x7f, r[15] & 0x7f, r[16] & 15, r[17] & 7],
            drone: { borga: Math.min(100, r[12] >> 1), storm: Math.min(100, (r[17] >> 3) | (r[16] >> 7) << 5 | (r[15] >> 7) << 6),
                     rise: Math.min(6, (r[16] >> 4) & 7) },
-           fm: { alg: fm[0] & 31, fb: fm[1] & 7, ops: [0, 1, 2, 3, 4, 5].map((i) => [...fm.slice(2 + i * 5, 7 + i * 5)]) }, name };
+           fm: { alg: fm[0] & 31, fb: fm[1] & 7, ops: [0, 1, 2, 3, 4, 5].map((i) => [...fm.slice(2 + i * 5, 7 + i * 5)]) },
+           loop: r[3] === 7 ? [...r.slice(18, 22)].map((x) => x & 127) : [0, 0, 0, 0], name };   // (1.4, Holvut: LOOP)
 }
 export function buildRecord(s) {
   const r = new Uint8Array(SND);
@@ -395,6 +396,7 @@ export function buildRecord(s) {
     r[18] = 0x80 | (s.fm.alg & 31), r[19] = s.fm.fb & 7;
     s.fm.ops.forEach((o, i) => r.set(o, 20 + i * 5));
   }
+  if (s.eng === 7) r.set((s.loop || [0, 0, 0, 0]).map((x) => x & 127), 18);   // (1.4, Holvut: its LOOP, store.c snd_pack)
   const nm = (s.name || "").toUpperCase().replace(/[^\x20-\x7e]/g, "").slice(0, 10);
   for (let i = 0; i < nm.length; i++) r[50 + i] = nm.charCodeAt(i);
   new DataView(r.buffer).setUint32(60, crc32(r.subarray(0, 60)), true);

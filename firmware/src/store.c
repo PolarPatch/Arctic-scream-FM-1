@@ -323,6 +323,8 @@ static void snd_pack(uint8_t *r, uint32_t t, uint32_t cat, uint32_t num)   /* tr
     for (k = 0; k < SND_SIZE; k++) r[k] = 0;
     r[0] = SND_MAGIC, r[1] = (uint8_t)cat, r[2] = (uint8_t)num, r[3] = (uint8_t)e;
     if (e == ENG_FM) pk_fm(r + 18, t);          /* (FM: its own patch) */
+    if (e == ENG_HOWL)                          /* (1.4, HOWL: its LOOP in the FM patch's room, 0 before it: off) */
+        for (k = 0; k < 4u; k++) r[18 + k] = (uint8_t)clamp(trk[t].hw_x[k], 0, 127);
     for (k = 0; k < 4u; k++) {
         r[4 + k] = (uint8_t)clamp(trk[t].p[e][k], 0, 255);
         r[8 + k] = (uint8_t)clamp(trk[t].env[k], 0, 127);
@@ -369,6 +371,8 @@ static void snd_apply(const uint8_t *r, uint32_t t)   /* a sound record into tra
     lfo_uk(r + 14, t);                          /* (saved before the LFO: zeros, DEPTH 0) */
     dr_suk(r, t);                               /* (saved before DRONE: off) */
     if (e == ENG_FM) uk_fm(snd_fname(r) ? 0 : r + 18, t);   /* (FM: its patch; a factory sound's: the PATCH as built) */
+    if (e == ENG_HOWL)                          /* (1.4, HOWL: its LOOP; a factory sound's, one from before it: off) */
+        for (k = 0; k < 4u; k++) trk[t].hw_x[k] = snd_fname(r) ? 0 : clamp(r[18 + k], 0, 127);
     if ((uint32_t)trk[t].eng != e) {
         trk[t].eng = (int32_t)e;
         nq_put(NQ_RESTART, t, 0);
@@ -410,6 +414,9 @@ static uint8_t *pk_track(uint8_t *q, uint32_t t)
     for (e = 0; e < PK_ENG; e++)
         for (k = 0; k < 4u; k++) q[1 + e * 4u + k] = (uint8_t)clamp(trk[t].p[e][k], 0, 255);
     for (k = 0; k < 4u; k++) q[52 + k] = (uint8_t)clamp(trk[t].p[ENG_HOWL][k], 0, 255);   /* (HOWL) */
+    for (k = 0; k < 28u; k++)                   /* (1.4: HOWL's LOOP, 7 bits each in the top bits of the sources' bytes 1
+                                                 * .. 28: their values are 127 at most; saved before it: 0, off) */
+        q[1 + k] = (uint8_t)(q[1 + k] | ((uint32_t)clamp(trk[t].hw_x[k / 7u], 0, 127) >> (k % 7u) & 1u) << 7);
     for (k = 0; k < 4u; k++) q[33 + k] = (uint8_t)clamp(trk[t].env[k], 0, 127);
     q[29] = (uint8_t)(127 - clamp(trk[t].cut, 0, 127)), q[30] = (uint8_t)clamp(trk[t].res, 0, 127);   /* TRACK (0, 0, 0:
                                                  * open, 0, 100 %: as a save from before it) */
@@ -462,6 +469,8 @@ static const uint8_t *uk_track(const uint8_t *q0, uint32_t t, int isr, uint32_t 
         trk[t].warp |= (int32_t)(q[CH_PKB[k]] >> 7) << k, q[CH_PKB[k]] &= 127u;
         trk[t].morph |= (int32_t)(q[MO_PKB[k]] >> 7) << k, q[MO_PKB[k]] &= 127u;
     }
+    for (k = 0; k < 4u; k++) trk[t].hw_x[k] = 0;   /* (1.4: HOWL's LOOP out of the top bits, then those cleared) */
+    for (k = 0; k < 28u; k++) trk[t].hw_x[k / 7u] |= (int32_t)(q[1 + k] >> 7) << (k % 7u), q[1 + k] &= 127u;
     for (e = 0; e < PK_ENG; e++)                /* (GR!MM rc9: every value loaded within its knob's range: a broken save
                                                  * can't put one past it) */
         for (k = 0; k < 4u; k++) trk[t].p[e][k] = clamp(q[1 + e * 4u + k], 0, ENGINES[e]->max[k]);
@@ -850,6 +859,7 @@ static void project_new(void)                   /* NEW: the four tracks' power-o
                                                  * closed, its FX 0 came out of NEW silent) */
         trk[t].cut = T0.cut, trk[t].res = T0.res, trk[t].fx = T0.fx, trk[t].ftype = T0.ftype, trk[t].fpos = T0.fpos;
         trk[t].warp = trk[t].morph = 0;
+        trk[t].hw_x[0] = trk[t].hw_x[1] = trk[t].hw_x[2] = trk[t].hw_x[3] = 0;   /* (1.4: HOWL's LOOP off) */
         fm_builtin(t, T0.p[ENG_FM][0]);
         if (trk[t].eng != T0.eng) {
             trk[t].eng = T0.eng;

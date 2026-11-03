@@ -424,6 +424,10 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         if (k < 3u) { put_u(S->val, (uint32_t)v + (k == 2u ? 1u : 0u)); return; }
         fm_ratio_text(S->val, (uint32_t)clamp(fm_op, 0, 5));
         return;
+    case PG_LOOP:                               /* (1.4) GATE, BLOOM, EXCITE: "OFF", "045"; LOWCUT: "70", "1.9K" */
+        if (k == HX_LCUT || !v) hx_text(S->val, k, v, NT);
+        else ui_3(S->val, ui_pc(v));
+        return;
     case PG_FMOP:                               /* RATIO (with FINE), LEVEL, ATTACK, DECAY 0..99 */
         if (k == 0u) fm_ratio_text(S->val, (uint32_t)clamp(fm_op, 0, 5));
         else ui_3(S->val, (uint32_t)clamp(v, 0, 99));
@@ -519,7 +523,7 @@ static void ui_tint(uint32_t pg)
     case PG_ENV: a = BW_AMBER, b = BW_TEAL, c = BW_PERIWINKLE, x = BW_MAGENTA; break;
     case PG_LFO: a = BW_PINK, b = BW_CYAN, c = BW_AMBER, x = UI_W; break;
     case PG_DRONE: a = BW_CYAN, b = BW_VIOLET, c = BW_TEAL, x = BW_MAGENTA; break;
-    case PG_SOUND: case PG_SOURCE: case PG_FMALGO: case PG_FMOP: a = BW_PERIWINKLE, b = BW_TEAL, c = BW_PINK, x = BW_AMBER; break;
+    case PG_SOUND: case PG_SOURCE: case PG_FMALGO: case PG_FMOP: case PG_LOOP: a = BW_PERIWINKLE, b = BW_TEAL, c = BW_PINK, x = BW_AMBER; break;
     case PG_GRID: case PG_PATTERN: a = BW_VIOLET, b = BW_CYAN, c = BW_PINK, x = BW_MAGENTA; break;
     case PG_SCALE: case PG_CHORD: a = BW_LAVENDER, b = BW_CYAN, c = BW_TEAL, x = BW_AMBER; break;
     case PG_ARP: a = BW_TEAL, b = BW_PINK, c = BW_AMBER, x = BW_CYAN; break;
@@ -1236,7 +1240,7 @@ static int ui_anim_page(uint32_t p)             /* the pages whose ribbons move 
 {
     return p == PG_DRONE || p == PG_ENV || p == PG_TAPE || p == PG_GRAIN || p == PG_DELAY || p == PG_SPACE || p == PG_LFO ||
            p == PG_MIX1 || p == PG_MIX2 || p == PG_MASTER || p == PG_DRIVE || p == PG_SOUND || p == PG_FMOP || p == PG_FMALGO || p == PG_SCALE ||
-           p == PG_CHORD || p == PG_PERFORM || p == PG_ARP;
+           p == PG_CHORD || p == PG_PERFORM || p == PG_ARP || p == PG_LOOP;
 }
 
 /* ---- the aurora pages (Arctic Scream p0larpatch, after the DRONE and Holvut pages): every knob a ribbon of northern
@@ -1244,6 +1248,43 @@ static int ui_anim_page(uint32_t p)             /* the pages whose ribbons move 
 static uint16_t au_lit(uint16_t c, int32_t v, int32_t mx)   /* c lit as v of mx: a glow even at 0 */
 {
     return ui_mix(UI_K, c, 4u + (uint32_t)(clamp(v, 0, mx) * 12 / (mx ? mx : 1)), 16u);
+}
+
+/* LOOP (1.4, a HOWL track's): four ribbons, a knob each: GATE lets the first die away to the right (its tail), BLOOM
+ * gives the second echoes above and below it, LOWCUT takes the slow swell out of the third (only the fast ripple
+ * left), EXCITE rides sparks of the sample along the fourth; all 0: four quiet ribbons */
+static void pic_loop(void)
+{
+    static const uint8_t S[4] = {3, 2, 4, 3}, O[4] = {0, 90, 170, 40};
+    const volatile int32_t *X = trk[sel].hw_x;
+    int32_t gate = clamp(X[HX_GATE], 0, 127), bl = clamp(X[HX_BLOOM], 0, 127), lc = clamp(X[HX_LCUT], 0, 127);
+    int32_t ex = clamp(X[HX_EXCITE], 0, 127), y[55], i, j, e;
+    char r[16];
+    if (ex) hx_text(r, HX_EXCITE, ex, sel);
+    ui_caption("THE LOOP", ex ? r : "");
+    for (j = 3; j >= 0; j--) {
+        int32_t cy = 60 + j * 22, v = X[j] < 0 ? 0 : X[j] > 127 ? 127 : X[j];
+        for (i = 0; i < 55; i++) {
+            uint32_t ph = (uint32_t)(i * (j == 2 ? 6 + lc * 10 / 127 : 6)) + hw_ph * (uint32_t)S[j] + O[j];
+            int32_t w = hw_wave(ph & 255u) * 2 / 3, a = 9;
+            if (j != 2 || lc < 120) w += hw_wave((ph / 3u + hw_ph + (uint32_t)j * 37u) & 255u) * (j == 2 ? 127 - lc : 127) / 381;
+            if (j == 0) a = 9 - 9 * gate * i / (127 * 54);   /* (GATE: the tail dies) */
+            y[i] = cy + w * a / 64;
+        }
+        if (j == 1 && bl) {                     /* (BLOOM: its echoes) */
+            int32_t z[55], d = 2 + bl * 6 / 127;
+            for (e = -1; e <= 1; e += 2) {
+                for (i = 0; i < 55; i++) z[i] = y[i] + e * d;
+                ui_glow(PX0, 4, z, 55, ui_mix(UI_K, UI_KC[1], 2u + (uint32_t)bl * 4u / 127u, 16u));
+            }
+        }
+        ui_glow(PX0, 4, y, 55, au_lit(UI_KC[j], v, 127));
+        if (j == 3 && ex)                       /* (EXCITE: the sample's sparks along it) */
+            for (e = 0; e < 2 + ex * 8 / 127; e++) {
+                i = (int32_t)(((uint32_t)e * 23u + hw_ph * (2u + (uint32_t)e % 3u)) % 55u);
+                ui_rect(PX0 + i * 4 - 1, y[i] - 1, 3, 3, UI_W);
+            }
+    }
 }
 
 /* MIXER 1: each track a curtain of four standing ribbons (LEVEL, DLY, REV, GRAIN in the knobs' colours), as tall as
@@ -1961,6 +2002,7 @@ static void ui_pic_draw(void)
     case PG_HOME: pic_home(); return;
     case PG_FMALGO: pic_fmalgo(); return;
     case PG_FMOP: pic_fmop(); return;
+    case PG_LOOP: pic_loop(); return;
     case PG_SOUND:
         switch (sel_eng()) {
         case ENG_VA: pic_va(); return;

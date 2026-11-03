@@ -403,12 +403,18 @@ static void app_audio(int32_t *out, uint32_t n)
     CS_MARK(CS_MIX);
     master_filter(out, n, MP_PRE);              /* (V2) MASTER, PRE FX: the tracks' dry mix */
     CS_MARK(CS_MASTER);
+    for (i = 0, hw_bloom_on = 0; i < NT; i++)   /* (1.4) HOWL's BLOOM: the dry mix kept, so what the effects add is known */
+        if (trk[i].eng == ENG_HOWL && trk[i].hw_x[HX_BLOOM] > 0) hw_bloom_on = 1;
+    if (hw_bloom_on && n <= HW_RN)
+        for (i = 0; i < n; i++) hw_ret[i] = (out[2u * i] + out[2u * i + 1u]) >> 1;
     grain_render(gbus, out, rbus, n);           /* GRAIN: the GRAIN bus in; the cloud out, and into the REV bus */
     CS_MARK(CS_GRAIN);
     tape_render(dbus, out, rbus, n);            /* DELAY: the DLY bus in; the echoes out, and into the REV bus */
     CS_MARK(CS_DELAY);
     hall_render(rbus, out, n);                  /* SPACE: the REV bus in, the reverb out */
     CS_MARK(CS_SPACE);
+    if (hw_bloom_on && n <= HW_RN)              /* (.. and now only what they added: the next render's BLOOM) */
+        for (i = 0; i < n; i++) hw_ret[i] = ((out[2u * i] + out[2u * i + 1u]) >> 1) - hw_ret[i];
     master_filter(out, n, MP_POST);             /* (V2) MASTER, POST REVERB */
     CS_MARK(CS_MASTER);
     drive_render(out, n);                       /* (V2) DRIVE and its limiter, */
@@ -975,6 +981,22 @@ static char *put_x10(char *s, uint32_t t)       /* tenths: "12.3" */
     return s;
 }
 static char *put_pc(char *s, int32_t v) { return put_s(put_u(s, ((uint32_t)clamp(v, 0, 127) * 100u + 63u) / 127u), "%"); }
+static char *hx_text(char *s, uint32_t k, int32_t v, uint32_t t)   /* (1.4) LOOP's knob k ("OFF", "45%"; LOWCUT "70",
+                                                 * "1.9K"); t: the track (EXCITE: "S2 45%", its sample's slot), or NT */
+{
+    uint32_t hz;
+    v = clamp(v, 0, 127);
+    if (k == HX_LCUT) {
+        hz = (70u * pow2_q16(v * 920 / 127)) >> 16;
+        return hz < 1000u ? put_u(s, hz) : put_s(put_x10(s, (hz + 50u) / 100u), "K");
+    }
+    if (!v) return put_s(s, "OFF");
+    if (k == HX_EXCITE && t < NT) {
+        *s++ = 'S', *s++ = (char)('1' + sp_slot(trk[t].p[ENG_SAMPLE])), *s++ = ' ';
+        if (!smp[sp_slot(trk[t].p[ENG_SAMPLE])].ready) return put_s(s, "EMPTY");
+    }
+    return put_pc(s, v);
+}
 static char *put_ms(char *s, uint32_t q16)      /* a time, ms in Q16: "5 ms", "120 ms", "1.5 s", "12 s" */
 {
     uint32_t ms = (q16 + 32768u) >> 16;
@@ -987,7 +1009,7 @@ static char *put_ms(char *s, uint32_t q16)      /* a time, ms in Q16: "5 ms", "1
  * tap opens its first page, again the next (round); SYSTEM is HOME's, held */
 enum { PG_SOUND, PG_SOURCE, PG_ENV, PG_LFO, PG_SCALE, PG_CHORD, PG_SONG, PG_HOME, PG_MIX1, PG_MIX2, PG_SYSTEM,
        PG_SYS2, PG_SOUNDS, PG_PROJECTS, PG_ARP, PG_GRID, PG_PATTERN, PG_TAPE, PG_GRAIN, PG_DELAY, PG_SPACE, PG_PERFORM,
-       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
+       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
                                                  * have; in their button's round by pg_key. TRACK: gone in step 25, its
                                                  * number kept: sys_load moves its links onto HOME) */
 typedef struct {
@@ -1032,14 +1054,18 @@ static const page_t PAGES[NPAGE] = {
     {"MASTER", BTN_FX, 1, 0, 1, {"CUTOFF", "RESONANCE", "TYPE", "POSITION"}},   /* (GR!MM V2: FX's 5th and 6th, master.c) */
     {"DRIVE", BTN_FX, 1, 0, 1, {"AMOUNT", "TYPE", "TONE", "MIX"}},
     {"SYSTEM 3", BTN_HOME, 1, 0, 0, {"LATCH", "USB", "", ""}},   /* (V2: a NEW project's tracks' LATCH) */
+    {"LOOP", BTN_EDIT, 1, 1, 1, {"GATE", "BLOOM", "LOWCUT", "EXCITE"}},   /* (1.4: a HOWL track's, after SOUND: its
+                                                 * loop's GATE, BLOOM, LOWCUT and EXCITE, howl.c) */
 };
 static uint32_t pg_key(uint32_t p)              /* its place in its button's round */
 {
-    return p == PG_FMALGO ? PG_SOUND * 4u + 1u : p == PG_FMOP ? PG_SOUND * 4u + 2u : p * 4u;
+    return p == PG_FMALGO || p == PG_LOOP ? PG_SOUND * 4u + 1u : p == PG_FMOP ? PG_SOUND * 4u + 2u : p * 4u;
 }
-static int pg_on(uint32_t p)                    /* in its button's round now (FM ALGO, FM OP: an FM track's only) */
+static int pg_on(uint32_t p)                    /* in its button's round now (FM ALGO, FM OP: an FM track's only; LOOP:
+                                                 * a HOWL track's) */
 {
-    return PAGES[p].cyc && ((p != PG_FMALGO && p != PG_FMOP) || clamp(trk[sel].eng, 0, NENG - 1) == ENG_FM);
+    int32_t e = clamp(trk[sel].eng, 0, NENG - 1);
+    return PAGES[p].cyc && (p == PG_LOOP ? e == ENG_HOWL : (p != PG_FMALGO && p != PG_FMOP) || e == ENG_FM);
 }
 static volatile int32_t fm_op;                  /* FM ALGO's OP: the operator FINE and FM OP's knobs edit (0 = OP1) */
 static const char *const BTN_NAME[14] = {"OCT-", "OCT+", "FX", "SEL", "ENV", "LFO", "EDIT", "GLO", "HOME", "SAVE", "ARP",
@@ -1118,6 +1144,7 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_SYSTEM: return k == 0u ? &sy_col : k == 1u ? &sy_mch : k == 2u ? &sy_tune : &sy_scr;
     case PG_SYS2: return k == 0u ? &sy_learn : k == 1u ? &sy_out : k == 2u ? &sy_fac : &sy_clk;
     case PG_SYS3: return k == 0u ? &sy_latch : k == 1u ? &sy_usb : 0;
+    case PG_LOOP: return &trk[sel].hw_x[k & 3u];
     default: return 0;                          /* (not built yet: the knobs do nothing) */
     }
 }
@@ -1255,6 +1282,7 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
         put_u(put_s(s, v < 64 ? "L " : "R "), (uint32_t)(v < 64 ? 64 - v : v - 64));
         return;
     case PG_TAPE: put_pc(s, v); return;
+    case PG_LOOP: hx_text(s, k, v, sel); return;
     case PG_MASTER:
         if (k == 0u) hz_text(s, v, mf_type);
         else if (k == 2u) put_s(s, FT_NAME[clamp(v, 0, NFTYPE - 1)]);
@@ -2243,6 +2271,7 @@ static void app_main(void)
         }
         sys_sync();
         if ((page == PG_FMALGO || page == PG_FMOP) && sel_eng() != ENG_FM) page = PG_SOUND;   /* (not FM now: SOUND) */
+        if (page == PG_LOOP && sel_eng() != ENG_HOWL) page = PG_SOUND;   /* (not HOWL now: SOUND) */
 
         while (midi_get(&st, &d1, &d2)) {       /* MIDI in (USB, the TRS jack): a note on MIDI CHANNEL's T1 .. T4
                                                  * channels plays that track as its keys (ALL > SEL: any channel, the

@@ -298,6 +298,16 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
     - The JieLi SIE's EP4 FIFO size.
     - A setting to choose 2 or 10 channels, since 2 is simpler for most hosts.
     - The USB layout: test macOS 10.14 to 15 again.
+- **The computer's audio into Holvut's loop over USB (waiting, 2026-11-03).** When it is built, support only the latest
+  two or three macOS versions; macOS 12 and older are too far back.
+- **Ideas from Book of the Dead II (DigDugDIY, noted 2026-11-03).** An analog feedback drone box with an FX send and
+  return inside its loop. These are ideas only; it is hardware, so there is no code to look at.
+  - **AURA (power starve):** a "starved" loop, where the gain sags and stutters at random, to make it chaotic and
+    unpredictable. On Holvut this could be a random sag on FEEDBACK and DRIVE, deeper with the knob.
+  - **STIRRING THE POT:** a momentary push to the gain structure. On the FM-1 this could be a key or button held for a
+    FEEDBACK burst; aftertouch already does something close.
+  - **CLOSE / OPEN BOOK:** stop or start the drone. LATCH plus GATE now cover this.
+  - **THIRD EYE (self-oscillation amount)** is FEEDBACK. **The FX loop** is BLOOM, done in 1.4.
 - **HOME's sky as northern lights, or snow and rain (prototype 2026-11-03, set aside).**
   - Where: the local branch `proto/home-aurora` (commit d9a734b), not pushed. It is off unless built with
     `HOME_SKY 1`.
