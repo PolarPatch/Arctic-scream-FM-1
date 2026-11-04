@@ -424,6 +424,9 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         if (k < 3u) { put_u(S->val, (uint32_t)v + (k == 2u ? 1u : 0u)); return; }
         fm_ratio_text(S->val, (uint32_t)clamp(fm_op, 0, 5));
         return;
+    case PG_AIR:                                /* (1.4) PING-PONG, SHIMMER: "OFF", "045" */
+        if (!v) { put_s(S->val, "OFF"); return; }
+        break;
     case PG_LOOP:                               /* (1.4) GATE, BLOOM, EXCITE: "OFF", "045"; LOWCUT: "70", "1.9K" */
         if (k == HX_LCUT || !v) hx_text(S->val, k, v, NT);
         else ui_3(S->val, ui_pc(v));
@@ -527,7 +530,7 @@ static void ui_tint(uint32_t pg)
     case PG_GRID: case PG_PATTERN: a = BW_VIOLET, b = BW_CYAN, c = BW_PINK, x = BW_MAGENTA; break;
     case PG_SCALE: case PG_CHORD: a = BW_LAVENDER, b = BW_CYAN, c = BW_TEAL, x = BW_AMBER; break;
     case PG_ARP: a = BW_TEAL, b = BW_PINK, c = BW_AMBER, x = BW_CYAN; break;
-    case PG_TAPE: case PG_GRAIN: case PG_DELAY: case PG_SPACE: case PG_PERFORM: case PG_MASTER: case PG_DRIVE:
+    case PG_TAPE: case PG_GRAIN: case PG_DELAY: case PG_SPACE: case PG_PERFORM: case PG_MASTER: case PG_DRIVE: case PG_AIR:
         a = BW_VIOLET, b = BW_SKY, c = BW_GREEN, x = BW_AMBER; break;
     case PG_MIX1: case PG_MIX2: case PG_TRACK: a = BW_CYAN, b = BW_GREEN, c = BW_VIOLET, x = BW_MAGENTA; break;
     case PG_SONG: a = BW_GOLD, b = BW_MAGENTA, c = BW_PERIWINKLE, x = BW_CYAN; break;
@@ -1240,7 +1243,7 @@ static int ui_anim_page(uint32_t p)             /* the pages whose ribbons move 
 {
     return p == PG_DRONE || p == PG_ENV || p == PG_TAPE || p == PG_GRAIN || p == PG_DELAY || p == PG_SPACE || p == PG_LFO ||
            p == PG_MIX1 || p == PG_MIX2 || p == PG_MASTER || p == PG_DRIVE || p == PG_SOUND || p == PG_FMOP || p == PG_FMALGO || p == PG_SCALE ||
-           p == PG_CHORD || p == PG_PERFORM || p == PG_ARP || p == PG_LOOP;
+           p == PG_CHORD || p == PG_PERFORM || p == PG_ARP || p == PG_LOOP || p == PG_AIR;
 }
 
 /* ---- the aurora pages (Arctic Scream p0larpatch, after the DRONE and Holvut pages): every knob a ribbon of northern
@@ -1486,6 +1489,30 @@ static void pic_drive(void)
         if (j == 2) ui_glow(PX0, 4, yc, 55, UI_D0);
         ui_glow(PX0, 4, yd, 55, ui_mix(UI_K, a ? ui_mix(DC[j], BW_VIOLET, (uint32_t)a, 127u) : DC[j],
                                      j == 2 ? 16u : 7u, 16u));
+    }
+}
+
+/* AIR (1.4): above, DELAY's echoes, each a short ribbon one under the other, fading: PING-PONG throws them left and
+ * right, as far apart as it is turned (off: all in the middle); below, SPACE's tail, a ribbon with its octaves rising
+ * from it, each twice as fast and as bright as SHIMMER lets it (off: the ribbon alone) */
+static void pic_air(void)
+{
+    int32_t pp = clamp(dl_pp, 0, 127), sh = clamp(rv_shim, 0, 127), y[55], i, j, o;
+    ui_caption("PING-PONG", "SHIMMER");
+    for (j = 0; j < 6; j++) {                   /* (the echoes) */
+        int32_t cx = 120 + ((j & 1) ? 1 : -1) * (j ? pp * 78 / 127 : 0), cy = 54 + j * 8, x0 = cx - 20;
+        for (i = 0; i < 11; i++) {
+            int32_t d = i * 4 - 20, env = 400 - d * d;
+            y[i] = cy + hw_wave((uint32_t)(i * 20 + (int32_t)hw_ph * 3 + j * 40) & 255u) * 5 * env / (64 * 400);
+        }
+        ui_glow(x0, 4, y, 11, ui_mix(UI_K, UI_KC[0], (uint32_t)(15 - j * 2), 16u));
+    }
+    for (o = 3; o >= 0; o--) {                  /* (the tail and its octaves) */
+        int32_t lit = o ? sh * (4 - o) * 12 / (127 * 3) : 14;
+        if (o && lit < 1) continue;
+        for (i = 0; i < 55; i++)
+            y[i] = 134 - o * 11 + hw_wave((uint32_t)((i * 5 << o) + (int32_t)hw_ph * (2 << o) + o * 60) & 255u) * (6 - o) / 64;
+        ui_glow(PX0, 4, y, 55, ui_mix(UI_K, o ? UI_KC[1] : UI_KC[2], (uint32_t)clamp(lit + 2, 2, 16), 16u));
     }
 }
 
@@ -2023,6 +2050,7 @@ static void ui_pic_draw(void)
     case PG_SPACE: pic_space(); return;
     case PG_MASTER: pic_master(); return;
     case PG_DRIVE: pic_drive(); return;
+    case PG_AIR: pic_air(); return;
     case PG_GRID: pic_grid(); return;
     case PG_PATTERN: pic_pattern(); return;
     case PG_SCALE: case PG_CHORD: pic_sel(); return;

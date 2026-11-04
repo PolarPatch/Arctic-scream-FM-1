@@ -41,7 +41,7 @@ def run(name, ev, end, env):
             w = ln.split(" ui ", 1)[1].split()
             d = {w[i]: w[i + 1] for i in range(0, len(w) - 1, 2)}
             pr[int(ln.split()[1])] = dict(latch=int(d["latch"].split(",")[0]), page=int(d["page"]), eng=int(d["eng"]),
-                                          saved=int(d["slatch"]),
+                                          saved=int(d["slatch"]), lit=int(ln.split(" lit ", 1)[1].split()[0], 16),
                                           notes=[x for x in ln.split(" notes", 1)[1].split(" fx ")[0].split()
                                                  if x.startswith("1:")])
     return pr
@@ -151,5 +151,17 @@ check("LATCH OFF: the track's notes let go, MIDI's, the keys', the sequencer's (
       "1:48" in p[1400]["notes"] and "1:55" in p[1400]["notes"] and
       not [x for x in p[1700]["notes"] if x in ("1:48", "1:55")] and not p[2600]["notes"],
       {t: p[t]["notes"] for t in sorted(p)})
+# (1.4) the keys' lights follow OCT- / OCT+: a key's latched note lit on the key that plays it now (an octave down: 12
+# keys up; off the keys: none), and that key lets it go; the arp's keys the same (a YouTube comment on GR!MM's video)
+ev = SEL_OCT(300) + tap(500, C4) + [(700, "probe"), (800, "btn 1"), (1000, "probe"), (1100, "btn 0"), (1200, "btn 0"),
+                                    (1400, "probe")] + tap(1500, C4 << 12) + [(1800, "probe")]
+p = run("octlit", ev, 1900, ENV[0])
+check("LATCH ON: the note's key lit, OCT+: none (off the keys), OCT-: 12 keys up, that key lets it go",
+      p[700]["lit"] == C4 and p[1000]["lit"] == 0 and p[1400]["lit"] == C4 << 12 and p[1400]["notes"] == ["1:48"] and
+      not p[1800]["notes"] and p[1800]["lit"] == 0, {t: (hex(p[t]["lit"]), p[t]["notes"]) for t in sorted(p)})
+ev = SEL_OCT(300) + [(400, "down 10"), (1200, "up 10")] + tap(1400, C4) + [(1700, "probe"), (1800, "btn 0"), (2000, "probe")]
+p = run("octarp", ev, 2100, ENV[0])
+check("ARP: its key lit, OCT-: 12 keys up", p[1700]["lit"] == C4 and p[2000]["lit"] == C4 << 12,
+      {t: hex(p[t]["lit"]) for t in sorted(p)})
 print("latch test: passed" if not bad else "latch test: FAILED")
 sys.exit(1 if bad else 0)

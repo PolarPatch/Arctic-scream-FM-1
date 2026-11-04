@@ -356,6 +356,22 @@ static int32_t out_gain(void)                   /* MASTER: Q12, half up to 3/4, 
     return m <= OUT_MQ ? m >> 1 : (m >> 1) + m * (m - OUT_MQ) / (2 * (4092 - OUT_MQ));
 }
 static int32_t usb_env;                         /* audio: the USB recording's limiter peak */
+/* (1.4) the side limiter: the FM-1's headphone amplifier, loaded by headphones, crackles when left and right swing far
+ * apart at a high level (a wide reverb, PING-PONG), found and measured by ECHOFIELD (Philip Bos, MIT: docs/HARDWARE_TESTS
+ * there; the approach, not its code). The side, (L - R) / 2, held under ~-17 dBFS (the peak at once, let go over ~90
+ * ms), the middle untouched: a mono sound never changes, a wide one only near MASTER's top. Not the USB recording */
+#define SIDE_LIM 4630
+static int32_t side_env;                        /* audio: the side's peak */
+static inline void side_lim(int32_t *l, int32_t *r, int32_t *env)
+{
+    int32_t m = (*l + *r) >> 1, sd = (*l - *r) >> 1, a = sd < 0 ? -sd : sd, e = *env;
+    e = a > e - (e >> 12) ? a : e - (e >> 12);
+    if (e > SIDE_LIM) {
+        sd = (int32_t)(((int64_t)sd * (int32_t)(((uint32_t)SIDE_LIM << 15) / (uint32_t)e)) >> 15);
+        *l = m + sd, *r = m - sd;
+    }
+    *env = e;
+}
 static inline void out_lim(int32_t *l, int32_t *r, int32_t *env)
 {
     int32_t a = *l < 0 ? -*l : *l, b = *r < 0 ? -*r : *r, e = *env;
@@ -369,11 +385,12 @@ static inline void out_lim(int32_t *l, int32_t *r, int32_t *env)
 }
 static void out_stage(int32_t *out, uint32_t n)
 {
-    int32_t g = out_gain(), env = out_env, ue = usb_env, ug = USB_G[usb_lvl <= USB_LMAX ? usb_lvl : USB_L0], u[64];
+    int32_t g = out_gain(), env = out_env, ue = usb_env, ug = USB_G[usb_lvl <= USB_LMAX ? usb_lvl : USB_L0], u[64], se = side_env;
     uint32_t i, rec = (uint32_t)usb_feeding();
     for (i = 0; i < n; i++) {
         int32_t x = clamp(out[2u * i], -500000, 500000), y = clamp(out[2u * i + 1u], -500000, 500000);
         int32_t l = (x * g) >> 12, r = (y * g) >> 12;
+        side_lim(&l, &r, &se);
         out_lim(&l, &r, &env);
         if (rec) {                              /* (the USB recording: MASTER at its top, USB LEVEL's gain) */
             int32_t ul = (int32_t)(((int64_t)x * ug) >> 12), ur = (int32_t)(((int64_t)y * ug) >> 12);
@@ -386,6 +403,7 @@ static void out_stage(int32_t *out, uint32_t n)
     }
     out_env = env;
     usb_env = ue;
+    side_env = se;
 }
 
 static void app_audio(int32_t *out, uint32_t n)
@@ -462,6 +480,9 @@ enum { SRC_KEY, SRC_SEQ, SRC_ARP, SRC_GEN };     /* (SRC_ARP: arp.c's notes, no 
                                                  * GENERATE, gen.c) */
 #define KEY_ID(k) (k)                           /* lat_id of a physical key (0 = F3 .. 26), */
 #define MIDI_ID(n) (32u + (n))                  /* of a MIDI note in (its number as it came: 32 .. 159); SEQ: the note */
+static uint8_t lat_oct[NV];                     /* audio: (1.4) a key's note: the octave it was played in (set.oct + 3;
+                                                 * 0: not a key's), so its key's light follows OCT- / OCT+ */
+static uint32_t nq_oct;                         /* audio: the ask being handled: its octave (as lat_oct) */
 static uint8_t lat_note[NV], lat_root[NV], lat_id[NV], lat_trk[NV], lat_voice[NV], lat_src[NV];   /* audio (the
                                                  * main loop reads them to light keys); lat_root: the note before the
                                                  * chord (its USB-MIDI echo) */
@@ -479,7 +500,8 @@ enum { NQ_ON, NQ_OFF, NQ_TOGGLE, NQ_RELEASE, NQ_RESTART, NQ_PLAY, NQ_STOP, NQ_SO
 #define NQ_LEN 64u
 #define NQ_ECHO 0x80u                           /* (with a command: echo it over USB-MIDI) */
 static volatile uint32_t nq[NQ_LEN];            /* an ask in one word (one store: never seen half-written): the
-                                                 * command, the track << 8, the note << 16, its origin (lat_id) << 24 */
+                                                 * command, the track << 8, (1.4) a key's octave << 10 (lat_oct), the
+                                                 * note << 16, its origin (lat_id) << 24 */
 #define EC_LEN 128u
 #define EC_SEQ 0x80u                            /* (with an echo's note: a step's, an arp's note: SEQ MIDI OUT) */
 static volatile uint8_t ec[EC_LEN][2];          /* an echo: its status (0x90, 0x80) + the track; its note (+ EC_SEQ) */
@@ -492,10 +514,11 @@ static void nq_note(uint32_t c, uint32_t t, uint32_t note, uint32_t id)   /* mai
                                                  * the ISR then skips that one (ctl_hook) */
 {
     uint32_t w = nq_w;
-    nq[w % NQ_LEN] = (c & 0xFFu) | (t & 3u) << 8 | (note & 127u) << 16 | (id & 0xFFu) << 24;
+    nq[w % NQ_LEN] = (c & 0x1CFFu) | (t & 3u) << 8 | (note & 127u) << 16 | (id & 0xFFu) << 24;
     nq_w = w + 1u;
 }
 static void nq_put(uint32_t c, uint32_t t, uint32_t note) { nq_note(c, t, note, 0); }   /* (RELEASE, RESTART, ..) */
+#define NQ_OCT(o) ((uint32_t)((o) + 3) << 10)   /* (1.4) with a key's command: the octave it is played in */
 static void ec_put(uint32_t st, uint32_t t, uint32_t note)   /* audio: a USB-MIDI echo of track t for the main loop
                                                  * to send (on t's channel); full: said (the main loop then lets go of
                                                  * what it sent, never a note left on out there) */
@@ -534,6 +557,7 @@ static void drop(uint32_t i)                    /* note i out of the list */
         lat_trk[i] = lat_trk[i + 1u];
         lat_voice[i] = lat_voice[i + 1u];
         lat_src[i] = lat_src[i + 1u];
+        lat_oct[i] = lat_oct[i + 1u];
     }
     nlat = n;
 }
@@ -705,6 +729,7 @@ static void note_on(uint32_t t, uint32_t id, uint32_t note, uint32_t src, int ec
         lat_trk[nlat] = (uint8_t)t;
         lat_voice[nlat] = (uint8_t)v;
         lat_src[nlat] = (uint8_t)src;
+        lat_oct[nlat] = (uint8_t)(src == SRC_KEY && id < 27u ? nq_oct : 0u);
         nlat = nlat + 1u, on++;
     }
     for (; i < no; i++) voice_release(own[i]);  /* (a smaller chord now: the rest let go) */
@@ -852,6 +877,7 @@ static void ctl_hook(void)
     if (nq_w - nq_r > NQ_LEN) nq_r = nq_w - NQ_LEN;   /* (overrun: the oldest asks are gone) */
     while (nq_r != nq_w) {
         uint32_t r = nq_r, q = nq[r % NQ_LEN], c = q & 0xFFu, t = q >> 8 & 3u, note = q >> 16 & 127u, id = q >> 24;
+        nq_oct = q >> 10 & 7u;
         int echo = (c & NQ_ECHO) != 0;
         c &= ~NQ_ECHO;
         switch (c) {
@@ -1009,7 +1035,7 @@ static char *put_ms(char *s, uint32_t q16)      /* a time, ms in Q16: "5 ms", "1
  * tap opens its first page, again the next (round); SYSTEM is HOME's, held */
 enum { PG_SOUND, PG_SOURCE, PG_ENV, PG_LFO, PG_SCALE, PG_CHORD, PG_SONG, PG_HOME, PG_MIX1, PG_MIX2, PG_SYSTEM,
        PG_SYS2, PG_SOUNDS, PG_PROJECTS, PG_ARP, PG_GRID, PG_PATTERN, PG_TAPE, PG_GRAIN, PG_DELAY, PG_SPACE, PG_PERFORM,
-       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
+       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
                                                  * have; in their button's round by pg_key. TRACK: gone in step 25, its
                                                  * number kept: sys_load moves its links onto HOME) */
 typedef struct {
@@ -1056,6 +1082,8 @@ static const page_t PAGES[NPAGE] = {
     {"SYSTEM 3", BTN_HOME, 1, 0, 0, {"LATCH", "USB", "", ""}},   /* (V2: a NEW project's tracks' LATCH) */
     {"LOOP", BTN_EDIT, 1, 1, 1, {"GATE", "BLOOM", "LOWCUT", "EXCITE"}},   /* (1.4: a HOWL track's, after SOUND: its
                                                  * loop's GATE, BLOOM, LOWCUT and EXCITE, howl.c) */
+    {"AIR", BTN_FX, 1, 0, 1, {"PING", "SHIMMR", "", ""}},   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
+                                                 * (tape.c), SPACE's SHIMMER (hall.c)) */
 };
 static uint32_t pg_key(uint32_t p)              /* its place in its button's round */
 {
@@ -1145,6 +1173,7 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_SYS2: return k == 0u ? &sy_learn : k == 1u ? &sy_out : k == 2u ? &sy_fac : &sy_clk;
     case PG_SYS3: return k == 0u ? &sy_latch : k == 1u ? &sy_usb : 0;
     case PG_LOOP: return &trk[sel].hw_x[k & 3u];
+    case PG_AIR: return k == 0u ? &dl_pp : k == 1u ? &rv_shim : 0;
     default: return 0;                          /* (not built yet: the knobs do nothing) */
     }
 }
@@ -1283,6 +1312,7 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
         return;
     case PG_TAPE: put_pc(s, v); return;
     case PG_LOOP: hx_text(s, k, v, sel); return;
+    case PG_AIR: if (v <= 0) put_s(s, "OFF"); else put_pc(s, v); return;
     case PG_MASTER:
         if (k == 0u) hz_text(s, v, mf_type);
         else if (k == 2u) put_s(s, FT_NAME[clamp(v, 0, NFTYPE - 1)]);
@@ -2226,9 +2256,9 @@ static void app_main(void)
                 if (!playing) seq[sel].cursor = (seq[sel].cursor + 1) % clamp(seq[sel].steps, 1, SEQ_N);
             }
             if (trk[sel].latch && !rec)         /* (LATCH ON: that key's voices on, or off) */
-                nq_note(NQ_TOGGLE | NQ_ECHO, sel, n, KEY_ID(k));
+                nq_note(NQ_TOGGLE | NQ_ECHO | NQ_OCT(set.oct), sel, n, KEY_ID(k));
             else {
-                nq_note(NQ_ON | NQ_ECHO, sel, n, KEY_ID(k));
+                nq_note(NQ_ON | NQ_ECHO | NQ_OCT(set.oct), sel, n, KEY_ID(k));
                 key_held[k] = (uint16_t)(0x8000u | sel << 8);
             }
         }
@@ -2340,12 +2370,16 @@ static void app_main(void)
                                                  * number as it came, a step's note */
             uint32_t id = lat_id[k], o = lat_src[k] == SRC_SEQ ? lat_root[k] : id >= MIDI_ID(0) ? id - MIDI_ID(0) : 255u;
             if (lat_trk[k] != sel || lat_src[k] == SRC_ARP) continue;   /* (the arp's: its keys, below) */
-            if (lat_src[k] == SRC_KEY && id < 27u) lit |= 1u << id;
-            else if (o >= base && o < base + 27u) lit |= 1u << (o - base);
+            if (lat_src[k] == SRC_KEY && id < 27u) {   /* (1.4: on the key that plays it now: its octave's
+                                                 * keys moved by OCT- / OCT+ since; off the keys: none lit) */
+                int32_t p = (int32_t)id + (lat_oct[k] ? 12 * ((int32_t)lat_oct[k] - 3 - set.oct) : 0);
+                if (p >= 0 && p < 27) lit |= 1u << p;
+            } else if (o >= base && o < base + 27u) lit |= 1u << (o - base);
         }
         for (k = 0; k < arp[sel].n && k < ARP_N; k++) {   /* ARP: the keys (MIDI notes) in its list */
-            uint32_t id = arp[sel].id[k], o = id >= MIDI_ID(0) ? id - MIDI_ID(0) : 255u;
-            if (id < 27u) lit |= 1u << id;
+            uint32_t id = arp[sel].id[k], o = id >= MIDI_ID(0) ? id - MIDI_ID(0) : 255u, ao = arp[sel].oct[k];
+            int32_t p = (int32_t)id + (ao ? 12 * ((int32_t)ao - 3 - set.oct) : 0);   /* (1.4: as the notes' above) */
+            if (id < 27u) { if (p >= 0 && p < 27) lit |= 1u << p; }
             else if (o >= base && o < base + 27u) lit |= 1u << (o - base);
         }
         if (b_down >> BTN_SEQ & 1u)             /* (SEQ held: the tools' eight keys lit) */

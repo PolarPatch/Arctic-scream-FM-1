@@ -262,14 +262,14 @@ Request: `op`, then for SET `i`, `v`.
 
 | op | | Reply |
 | --- | --- | --- |
-| 0 | READ | `op`, `rc`, then 28 values |
+| 0 | READ | `op`, `rc`, then 30 values (before 1.4: 28) |
 | 1 | SET `i` to `v` | `op`, `rc` |
 
 The values, in order: TAPE (WOW, SATURATION, TONE, HISS), GRAIN (SIZE, DENSITY, SCATTER, MIX), DELAY (TIME, FEEDBACK,
 WEAR, MIX), SPACE (SIZE, DAMP, MIX, PRE-DELAY), MASTER (CUTOFF, RESONANCE, TYPE 0 LP / 1 HP / 2 BP, POSITION 0 PRE FX /
 1 POST REVERB / 2 END), DRIVE (AMOUNT, TYPE 0 SOFT / 1 FUZZ / 2 CLIP / 3 FOLD, TONE, MIX): each 0..127 (or its list),
 as the FM-1's knobs; then T1..T4's filter (MIXER 2): TYPE (0 LP, 1 HP, 2 BP) + 4 × POS (0 PRE, 1 POST). A value out
-of its range is set to the nearest end.
+of its range is set to the nearest end. Then (1.4) AIR's PING-PONG and SHIMMER (values 28 and 29, 0..127: 0 off).
 
 ## Samples (11–16)
 

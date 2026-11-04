@@ -308,6 +308,25 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
     FEEDBACK burst; aftertouch already does something close.
   - **CLOSE / OPEN BOOK:** stop or start the drone. LATCH plus GATE now cover this.
   - **THIRD EYE (self-oscillation amount)** is FEEDBACK. **The FX loop** is BLOOM, done in 1.4.
+- **What ECHOFIELD showed (noted 2026-11-04).** [echofield-fm1](https://github.com/Philip-Bos/echofield-fm1) (MIT,
+  Philip Bos) is a granular sampler for the FM-1 built on fm1-base. 1.4 took three of its ideas, written again in
+  integers (no code copied; credited in the sources): PING-PONG and SHIMMER (FX's AIR page) and the side limiter on the
+  output. Two more are bigger and wait:
+  - **The FPU.** Its DESIGN.md says the chip (pi32v2, 360 MHz) has a single-precision FPU, and its whole engine is
+    float. This firmware has assumed no FPU and no libgcc from the start (`grimm.c`'s rules, `tools/build.py` builds
+    without float flags). Test it first: a small float loop built with the toolchain's FPU flags, timed on the FM-1
+    against the integer version. If it holds, new effects could be written in float.
+  - **The second core.** ECHOFIELD renders half its grains on the chip's second core (fm1-base's `cpu2`, with a
+    fallback to one core if the second fails) and measured 28-54 % peaks while playing hard. This firmware uses one
+    core. Moving the voices or the effects to the second core would be the biggest gain in headroom, and the biggest
+    job: boot the core, share the buffers, and keep a fallback.
+  - Its hardware notes also report that fm1-base's USB audio can splice whole 256-sample blocks. This firmware's own
+    USB ring (1.3.1) is a different path, but it is worth a listen with a plain tone.
+- **The key lights after OCT-/OCT+ (fixed in 1.4).** A YouTube comment on GR!MM's video said the key lights do not
+  follow octave changes; this firmware had the same bug. A key's latched note (and an ARP key) was lit on the key it
+  was played on, whatever the octave. Each note now keeps the octave it was played in (`lat_oct`, the arp's `oct`),
+  and its light moves with OCT-/OCT+ (off the keys: none lit). The same comment asked for a sign when all six voices
+  are in use; not done yet.
 - **HOME's sky as northern lights, or snow and rain (prototype 2026-11-03, set aside).**
   - Where: the local branch `proto/home-aurora` (commit d9a734b), not pushed. It is off unless built with
     `HOME_SKY 1`.

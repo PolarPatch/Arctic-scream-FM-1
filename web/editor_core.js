@@ -205,10 +205,10 @@ export class Client {
     }
     return this.smpInfo();
   }
-  async fx() {                                             // GR!MM V2: the project's effects (28 values: FX_LIST's)
-    const r = await this.req(CMD.FX, [0], 1500);
+  async fx() {                                             // GR!MM V2: the project's effects (28 values: FX_LIST's; 1.4: 30,
+    const r = await this.req(CMD.FX, [0], 1500);           // AIR's PING-PONG and SHIMMER after them)
     if (r[1]) throw new EditorError(RC[r[1]] || `rc ${r[1]}`, r[1]);
-    return r.slice(2, 30);
+    return r.slice(2, 32);
   }
   async fxSet(i, v) {                                      // value i to v, live
     const r = await this.req(CMD.FX, [1, i, v & 0x7f], 1500, true);
@@ -529,6 +529,7 @@ export const FX_PAGES = [
   ["MASTER", ["CUTOFF", "RESONANCE", ["TYPE", ["LP", "HP", "BP"]], ["POSITION", ["PRE FX", "POST REVERB", "END"]]]],
   ["DRIVE", ["AMOUNT", ["TYPE", ["SOFT", "FUZZ", "CLIP", "FOLD"]], "TONE", "MIX"]],
 ];
+export const FX_AIR = ["PING-PONG", "SHIMMER"];             // (1.4) values 28, 29: after the tracks' filters
 export const FT_NAMES = ["LP", "HP", "BP"];
 
 // ------------------------------------------------------------------ the settings (docs/EDITOR_PROTOCOL.md): GR!MM V2's two

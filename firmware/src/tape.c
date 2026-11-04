@@ -16,7 +16,11 @@
  *   through a soft knee: no sum can clip. Each repeat: darker, a little saturated, a little more wobbly.
  *   TIME glides to a new value (~50 ms): the pitch bends, as a tape's does.
  *   MIX: the return (the echoes' level: the tracks' DLY sends set how much goes in); the echoes also go into the REV
- *   bus at that level: they fall into SPACE. Nothing runs at MIX 0, or once
+ *   bus at that level: they fall into SPACE.
+ *   PING-PONG (Arctic Scream 1.4, AIR's; the idea from ECHOFIELD's ping-pong delay, Philip Bos, MIT: its code float,
+ *   none of it here): the loop reads 2 TIME back (its gain FEEDBACK squared), the left side TIME, the right 2 TIME at
+ *   FEEDBACK: the echoes go left, right, left .., each FEEDBACK's gain after the last; TIME at most 1.5 s. PING-PONG's amount: how
+ *   far apart the sides are (the other side's share of each echo, 1 .. 0). Nothing runs at MIX 0, or once
  *   the line is all silence and nothing comes in.
  *
  * The audio ISR calls tape_render with the DLY bus, before SPACE (the echoes fall into the reverb); the main loop
@@ -45,6 +49,8 @@ static struct {
 
 /* the parameters, 0..127, written by the main loop */
 static volatile int32_t dl_time = 88, dl_fb = 64, dl_wear = 50, dl_mix = 100;   /* 644 ms, 55 %, return 79 % (the tracks' DLY 0: nothing goes in) */
+static volatile int32_t dl_pp;                  /* (1.4) PING-PONG, 0..127: 0 off */
+#define DL_PPMAX (((DL_LEN - 400u) / 2u) << 8)    /* PING-PONG's TIME at most (Q8 samples: 2 TIME and the wow in the line) */
 
 /* main loop: the delay gives nothing out (MIX 0, or the line silent and nothing coming in) */
 static int tape_idle(void) { return dl_mix <= 0 || dl.quiet >= DL_LEN; }
@@ -64,7 +70,7 @@ static void tape_render(const int32_t *in, int32_t *out, int32_t *rev, uint32_t 
 {
     uint32_t i, any = 0, w;
     int32_t mix = dl_mix, wear = dl_wear, fbk = dl_fb;
-    int32_t target, d0, d1, m1, a, tc, g, ig, fb;
+    int32_t target, d0, d1, m1, a, tc, g, ig, fb, f1, pp = clamp(dl_pp, 0, 127), po = 32767 - pp * 258;
     int32_t xp = dl.x, lp = dl.lp, le = dl.le, dc = dl.dc, de = dl.de, ml = dl.ml, mr = dl.mr;
     if (n != 2u * DL_NC || mix <= 0)
         return;                                 /* MIX 0: the dry alone; the line waits as it is */
@@ -77,6 +83,7 @@ static void tape_render(const int32_t *in, int32_t *out, int32_t *rev, uint32_t 
 
     /* this block's settings: TIME (gliding), the wow, the loop's tone, drive and feedback */
     target = (int32_t)DL_MS[clamp(dl_time, 0, 127)] * 5645;   /* ms -> Q8 samples at 22.05 kHz */
+    if (pp && target > (int32_t)DL_PPMAX) target = (int32_t)DL_PPMAX;
     if (!dl.d)
         dl.d = target;                          /* (the first block: no glide from nothing) */
     d0 = dl.d;
@@ -94,6 +101,8 @@ static void tape_render(const int32_t *in, int32_t *out, int32_t *rev, uint32_t 
     fb = fbk <= 100 ? fbk * 284 : 28400 + (fbk - 100) * 769;   /* FEEDBACK, Q15: 0 .. ~0.87 at 100, then on to 1.5 (Arctic
                                                  * p0larpatch: past unity on purpose, as Audrey II's echo: it grows
                                                  * and saturates) */
+    f1 = fb;
+    if (pp) fb = (int32_t)(((int64_t)fb * fb) >> 15);   /* (PING-PONG: the loop twice TIME: FEEDBACK twice) */
 
     w = dl.w;
     {
@@ -103,8 +112,16 @@ static void tape_render(const int32_t *in, int32_t *out, int32_t *rev, uint32_t 
             int32_t y = tape_read(w, D), v, e;
             xp = in[2u * i + 1u];
             x = mulq15(clamp(x, -65535, 65535), DL_IN);
-            dl.l[i] = y;
-            dl.r[i] = tape_read(w, D + DL_SPREAD);
+            if (pp) {                           /* PING-PONG: left TIME back, right (and the loop) 2 TIME */
+                int32_t y2 = tape_read(w, 2 * D), yr = mulq15(y2, f1);   /* (the right's echo: one FEEDBACK after
+                                                 * the left's) */
+                dl.l[i] = y + mulq15(yr, po);
+                dl.r[i] = yr + mulq15(y, po);
+                y = y2;
+            } else {
+                dl.l[i] = y;
+                dl.r[i] = tape_read(w, D + DL_SPREAD);
+            }
             e = (y - lp) * tc + le, le = e & 32767, lp += e >> 15;          /* darker each time round */
             v = sh_tz(lp * fb, 15);                                         /* FEEDBACK */
             v = wear_sat(v, g, ig);                                         /* the tape's saturation (wear.c) */

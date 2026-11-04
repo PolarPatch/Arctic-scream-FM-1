@@ -25,6 +25,7 @@ static const char *const ARP_MODE_SHORT[NARPMODE] = {"UP", "DOWN", "UPDN", "RAND
 typedef struct {
     uint8_t note[ARP_N], id[ARP_N], root[ARP_N];   /* the list: the notes, where they came from (lat_id), the note
                                                  * played (before its chord) */
+    uint8_t oct[ARP_N];                         /* (1.4) a key's: the octave it was played in (as lat_oct) */
     volatile uint32_t n;                        /* .. how many */
     uint32_t on[4];                             /* the notes it has on now (bit: the note) */
     uint32_t ft, since;                         /* its own clock (ticks since its first note); ticks since its step */
@@ -158,7 +159,7 @@ static void arp_take(uint32_t t, uint32_t id, int echo)
     uint32_t i, k = 0, root = 255u;
     for (i = 0; i < A->n; i++)
         if (A->id[i] != id) {
-            A->note[k] = A->note[i], A->id[k] = A->id[i], A->root[k] = A->root[i];
+            A->note[k] = A->note[i], A->id[k] = A->id[i], A->root[k] = A->root[i], A->oct[k] = A->oct[i];
             k++;
         } else
             root = A->root[i];
@@ -178,6 +179,7 @@ static void arp_add(uint32_t t, uint32_t id, uint32_t note, int echo)
     if (!A->n) A->ft = 0, A->since = 0, A->pos = 0;   /* the first: it starts (its own clock: at once) */
     for (i = 0; i < n && A->n < ARP_N; i++) {
         A->note[A->n] = ns[i], A->id[A->n] = (uint8_t)id, A->root[A->n] = (uint8_t)note;
+        A->oct[A->n] = (uint8_t)(id < 27u ? nq_oct : 0u);
         A->n++;
     }
     if (echo) ec_put(0x90, t, note);

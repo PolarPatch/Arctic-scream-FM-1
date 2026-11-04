@@ -17,6 +17,11 @@
  * goes back into the lines, so nothing feeding back can clip or run away; PRE-DELAY 0 .. 250 ms before the
  * diffusers; MIX: the return (the wet's level: the tracks' REV sends set how much goes in); nothing run at MIX 0 (the tail waits)
  * or once the tank is empty and nothing comes in.
+ * SHIMMER (Arctic Scream 1.4, AIR's; the idea from ECHOFIELD's shimmer, Philip Bos, MIT: its code float, none of it
+ * here): the tank's output (both sides) an octave up, back into the send, before the low cut (no DC round the loop):
+ * the tail climbs. The octave: a ring of the last 46 ms read by two taps sliding at twice the speed over a 35 ms
+ * window, half a window apart, each faded in and out (a triangle), then a gentle low-pass. Its gain SHIMMER squared,
+ * at most ~1; the lines' soft knee holds the rest. At INF the send is shut: the shimmer too.
  *
  * The audio ISR calls hall_render with the REV bus (the tracks' REV sends and DELAY's echoes); the main loop sets the four parameters. Its buffers are in the
  * pool (zero at boot): ~37 KB. */
@@ -37,16 +42,20 @@
 #define RV_PRE_LEN 5760u                        /* its line: that and a block (and a little) */
 #define RV_LINES (853u + 941u + 1031u + 1123u + 1237u + 1361u + 1493u + 1637u + RV_NL)   /* (+1 each: the mirror) */
 #define RV_APS (149u + 211u + 337u + 499u)
+#define RV_SHN 1024u                            /* (1.4) the shimmer's ring (half rate: 46 ms) */
+#define RV_SHW 768u                             /* its window: 35 ms */
 #define RV_EMPTY 14u                            /* blocks of silence in and out of the lines: all of them silent (1637 / 128) */
 static const uint16_t RV_LEN[RV_NL] = {853, 941, 1031, 1123, 1237, 1361, 1493, 1637};
 static const uint16_t RV_AP[RV_NAP] = {149, 211, 337, 499};
 static const int16_t RV_APG[RV_NAP] = {11469, 11469, 10240, 10240};   /* Q14: 0.7, 0.7, 0.625, 0.625 (Felucca's two) */
 _Static_assert(RV_NC + 2u * RV_MOD + 2u < 853u && RV_NC <= 149u, "SPACE: one wrap a block at most, in place");
 _Static_assert(RV_PRE_MAX + RV_NC <= RV_PRE_LEN, "SPACE: the pre-delay's line");
+_Static_assert(RV_NC + 2u + RV_SHW < RV_SHN, "SPACE: the shimmer's taps behind the block's writes");
 
 static int16_t rv_line[RV_LINES] __attribute__((section(".pool")));
 static int16_t rv_apb[RV_APS] __attribute__((section(".pool")));
 static int16_t rv_pbuf[RV_PRE_LEN] __attribute__((section(".pool")));
+static int16_t rv_shb[RV_SHN] __attribute__((section(".pool")));
 static struct {
     uint16_t i[RV_NL], d[RV_NAP], pw;           /* the lines' write indices, the diffusers', the pre-delay's */
     int32_t lp[RV_NL], le[RV_NL];               /* the low-passes and their steps' remainders */
@@ -55,12 +64,15 @@ static struct {
                                                  * out, left / right; the send's level (Q15: 0 at INF) */
     uint32_t ph, quiet, empty;                  /* the taps' drift; half-rate samples with nothing coming in; blocks
                                                  * with nothing in the lines */
+    uint32_t sw, sc;                            /* (1.4) the shimmer's ring: the block's first write; the window's place */
+    int32_t slp;                                /* .. its low-pass */
     int32_t bx[RV_NC], l[RV_NC], r[RV_NC];      /* the block at half the rate: the diffused send, left, right */
     int16_t y[RV_NL][RV_NC];                    /* the lines' ends, then what goes back into them */
 } rv __attribute__((section(".pool")));
 
 /* the parameters, 0..127, written by the main loop */
 static volatile int32_t rv_size = 80, rv_damp = 48, rv_mix = 100, rv_pre = 16;  /* 6.4 s, ~2.5 kHz, return 79 %, 31 ms */
+static volatile int32_t rv_shim;                /* (1.4) SHIMMER, 0..127: 0 off */
 #define RV_INF 127
 
 /* Felucca's helpers: m / 2^sh rounded towards zero (a product that feeds back must not floor: a loop of floors holds
@@ -140,6 +152,8 @@ static void hall_render(const int32_t *in, int32_t *out, uint32_t n)
     int32_t mix = rv_mix, size = rv_size, damp = rv_damp, pre = rv_pre;
     int32_t inf = size >= RV_INF, kd = inf ? 32767 : RV_KD(damp), st = inf ? 0 : 32767;
     int32_t xp = rv.x, hp = rv.hp, he = rv.he, sd = rv.send, ml = rv.ml, mr = rv.mr;
+    int32_t sg = clamp(rv_shim, 0, 127), sl = rv.slp, shany = 0;
+    uint32_t sc = rv.sc, sw = rv.sw;
     const int16_t *g = RV_G[size < 0 ? 0 : size > RV_INF ? RV_INF : size];
     if (n != 2u * RV_NC || mix <= 0)
         return;                                 /* MIX 0: the dry alone; the tank waits as it is */
@@ -152,10 +166,23 @@ static void hall_render(const int32_t *in, int32_t *out, uint32_t n)
     pd = (uint32_t)(pre < 0 ? 0 : pre > 127 ? 127 : pre) * RV_PRE_MAX / 127u;
     w = rv.pw;
     rd = w >= pd ? w - pd : w + RV_PRE_LEN - pd;
+    sg = sg * sg * 2;                           /* (SHIMMER squared: Q15, at most ~0.98) */
     for (i = 0; i < RV_NC; i++) {
         int32_t x = (xp + 2 * in[2u * i] + in[2u * i + 1u]) >> 2, v;
         xp = in[2u * i + 1u];
         x = mulq15(clamp(x, -262143, 262143), RV_IN);
+        if (sg) {                               /* SHIMMER: the two taps, an octave up, into the send */
+            uint32_t c2 = sc + RV_SHW / 2u >= RV_SHW ? sc + RV_SHW / 2u - RV_SHW : sc + RV_SHW / 2u;
+            int32_t s1 = rv_shb[(sw + i - (RV_NC + 2u + RV_SHW - sc)) & (RV_SHN - 1u)];
+            int32_t s2 = rv_shb[(sw + i - (RV_NC + 2u + RV_SHW - c2)) & (RV_SHN - 1u)];
+            int32_t w1 = (int32_t)(sc < RV_SHW / 2u ? sc : RV_SHW - sc), w2 = (int32_t)(c2 < RV_SHW / 2u ? c2 : RV_SHW - c2);
+            v = (s1 * w1 + s2 * w2) / (int32_t)(RV_SHW / 2u);   /* (the two fades sum to one) */
+            sl += sh_tz((v - sl) * 13107, 15);  /* (~3 kHz: the octave's edges softened) */
+            v = mulq15(sl, sg);
+            shany |= v;
+            x += v;
+            if (++sc == RV_SHW) sc = 0;
+        }
         v = x - hp + he;                        /* the low cut, its step's remainder kept */
         he = v & 31;
         hp += v >> 5;
@@ -167,8 +194,8 @@ static void hall_render(const int32_t *in, int32_t *out, uint32_t n)
         if (++w == RV_PRE_LEN) w = 0;
         if (++rd == RV_PRE_LEN) rd = 0;
     }
-    rv.x = xp, rv.hp = hp, rv.he = he, rv.send = sd, rv.pw = (uint16_t)w;
-    rv.quiet = any ? 0u : rv.quiet + RV_NC;
+    rv.x = xp, rv.hp = hp, rv.he = he, rv.send = sd, rv.pw = (uint16_t)w, rv.slp = sl, rv.sc = sc;
+    rv.quiet = any || shany ? 0u : rv.quiet + RV_NC;
 
     a = rv_apb;                                 /* the diffusers */
     for (k = 0; k < RV_NAP; k++) {
@@ -227,6 +254,9 @@ static void hall_render(const int32_t *in, int32_t *out, uint32_t n)
             full |= (uint32_t)rv.y[k][i];
     }
     rv.empty = full ? 0u : rv.empty + 1u;
+    for (i = 0; i < RV_NC; i++)                 /* (1.4) the tank's output into the shimmer's ring */
+        rv_shb[(sw + i) & (RV_SHN - 1u)] = (int16_t)clamp((rv.l[i] + rv.r[i]) >> 2, -32767, 32767);
+    rv.sw = (sw + RV_NC) & (RV_SHN - 1u);
 
     b = rv_line;                                /* back into the lines (and the mirror after a wrap) */
     for (k = 0; k < RV_NL; k++) {

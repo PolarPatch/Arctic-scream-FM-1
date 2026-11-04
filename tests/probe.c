@@ -7,11 +7,13 @@
  * FM-1's tempo (SELECT on HOME); ticks: the sequencer's since PLAY; pulses, done: the clock's pulses since it came and
  * the ticks played for them; pos: each track's step (-1 stopped); mch, clk, links: MIDI CHANNEL, CLOCK, MIDI LEARN's
  * links (the settings); notes: the notes on, by track:note (1..4); then (V2) "fx mf CUT,RES,TYPE,POS dr AMOUNT,TYPE,
- * TONE,MIX ft T1 T2 T3 T4": MASTER's and DRIVE's knobs, the tracks' filter TYPE | POS << 2; "ui page P sel T rec R
+ * TONE,MIX ft T1 T2 T3 T4": MASTER's and DRIVE's knobs, the tracks' filter TYPE | POS << 2, (1.4) "air PP,SH": AIR's
+ * knobs; "ui page P sel T rec R
  * latch L1,L2,L3,L4 new N steps S wait W said A": the page (PG_), the selected track (0..3), REC, the tracks' LATCH,
  * SYSTEM 3's LATCH (0 FROM SOUND, 1 ALWAYS OFF), the selected track's steps with a note, a save waiting for silence,
  * the header saying so (tests/quick_test.py); "eng E slatch L": the selected track's source, the LATCH saved in the
- * sound PRESETS last loaded on it (-1: none) (tests/latch_test.py) */
+ * sound PRESETS last loaded on it (-1: none) (tests/latch_test.py); (1.4) "lit L": the keys lit (hex, bit k: key k,
+ * tests/latch_test.py) */
 static void host_probe(void)
 {
     uint32_t i;
@@ -22,6 +24,7 @@ static void host_probe(void)
     printf(" fx mf %d,%d,%d,%d dr %d,%d,%d,%d ft", (int)mf_cut, (int)mf_res, (int)mf_type, (int)mf_pos, (int)dr_amt,
            (int)dr_type, (int)dr_tone, (int)dr_mix);   /* (V2: MASTER, DRIVE; the tracks' filter TYPE | POS << 2) */
     for (i = 0; i < NT; i++) printf(" %d", (int)(trk[i].ftype | trk[i].fpos << 2));
+    printf(" air %d,%d", (int)dl_pp, (int)rv_shim);   /* (1.4: AIR's PING-PONG, SHIMMER) */
     {                                           /* (V2: the page, the track, REC, the tracks' LATCH, SYSTEM 3's, the
                                                  * selected track's steps with a note) */
         const seq_pat_t *P = &seq[sel].pat[clamp(seq[sel].cur, 0, SEQ_NPAT - 1)];
@@ -86,6 +89,7 @@ static void host_probe(void)
             *trk_sname(0, nm) = 0;
             printf(" lv %u %u %u ch1 %d snd1 %s", lv_rvk, lv_dlk, lv_pre, (int)trk[0].chord, nm[0] ? nm : "-");
         }
+        printf(" lit %x", host_lit);            /* (1.4: the keys lit, bit k: key k, F3 = 0) */
         printf(" voices");                      /* (each voice: its stage (0 off, 1 attack, 2 sustain, 3 release, 4
                                                  * fade), track, note, in the notes-on list or not) */
         for (i = 0; i < NV; i++) printf(" %u/%u/%u/%d", (unsigned)vc[i].stage, (unsigned)vc[i].trk + 1u,

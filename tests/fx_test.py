@@ -139,14 +139,16 @@ check("MASTER POSITION PRE FX -> END while playing: no click (the change comes i
 SAVE = MIX2 + [(400, "enc 3 2"), (420, "enc 4 1")] + FX(5) + [(1200, "enc 2 -60"), (1250, "enc 3 40"), (1300, "enc 4 1"),
                                                              (1350, "enc 5 -2"), (1400, "btn 2"), (1500, "enc 2 50"),
                                                              (1550, "enc 3 3"), (1600, "enc 4 -27"), (1650, "enc 5 -60"),
-                                                             (1700, "keys 0")]
+                                                             (1700, "keys 0"), (1720, "btn 2"), (1750, "enc 2 90"),
+                                                             (1780, "enc 3 33")]   # (1.4: AIR)
 _, p1, _ = run("save", SAVE, 9000, dict(os.environ, GRIMM_SAVE_OUT=str(OUT / "saves.bin")))
 _, p2, _ = run("load", [(1050, "keys 0")], 1500, dict(os.environ, GRIMM_SAVE_IN=str(OUT / "saves.bin")))
-want = "fx mf 67,40,1,0 dr 50,3,100,67 ft 6 0 0 0"
-check("saved and loaded: MASTER, DRIVE, the track filter as set", want in p1 and want in p2,
+want = "fx mf 67,40,1,0 dr 50,3,100,67 ft 6 0 0 0 air 90,33"
+check("saved and loaded: MASTER, DRIVE, the track filter, (1.4) AIR as set", want in p1 and want in p2,
       f"set: {p1.split(' fx ')[-1]}; loaded: {p2.split(' fx ')[-1]}")
 _, p3, _ = run("v10", [(1050, "keys 0")], 1500, dict(os.environ, GRIMM_SAVE_IN="tests/data/a1.2-saves.bin"))
-check("an Arctic Scream 1.2 project: LP PRE, MASTER open (END), DRIVE off", "fx mf 127,0,0,2 dr 0,0,127,127 ft 0 0 0 0" in p3,
+check("an Arctic Scream 1.2 project: LP PRE, MASTER open (END), DRIVE off, AIR off",
+      "fx mf 127,0,0,2 dr 0,0,127,127 ft 0 0 0 0 air 0,0" in p3,
       p3.split(" fx ")[-1])
 print("fx test: passed" if not bad else "fx test: FAILED")
 sys.exit(1 if bad else 0)
