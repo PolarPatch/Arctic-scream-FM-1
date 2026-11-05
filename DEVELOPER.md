@@ -196,7 +196,12 @@ STRESS_CHECKS=build/stress/checks.txt build/stress/grimm build/stress/s build/st
 
 # the real firmware (JieLi toolchain; on macOS through Docker, linux/amd64)
 ./build.sh                                # -> build/arctic-scream.fwsc; checks RAM, pool and the image size
+python3 tools/check_mul64.py              # must find 0: no 64-bit multiply beside 16-bit loads (see below)
 ```
+
+On macOS, tests/stress.sh stops at its device check (`tests/device_names.py` runs the toolchain's clang without
+Docker, and needs gcc's `-Wredundant-decls`). Run the stress build by hand with `'-Dsection(x)=used'` added, as
+`tests/run_host.sh` does.
 
 Notes for the web build:
 
@@ -313,7 +318,7 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
   integers (no code copied; credited in the sources): PING-PONG and SHIMMER (FX's AIR page) and the side limiter on the
   output. Two more are bigger and wait:
   - **The FPU.** Its DESIGN.md says the chip (pi32v2, 360 MHz) has a single-precision FPU, and its whole engine is
-    float. This firmware has assumed no FPU and no libgcc from the start (`grimm.c`'s rules, `tools/build.py` builds
+    float (FRASIL's too, below). This firmware has assumed no FPU and no libgcc from the start (`grimm.c`'s rules, `tools/build.py` builds
     without float flags). Test it first: a small float loop built with the toolchain's FPU flags, timed on the FM-1
     against the integer version. If it holds, new effects could be written in float.
   - **The second core.** ECHOFIELD renders half its grains on the chip's second core (fm1-base's `cpu2`, with a
@@ -322,6 +327,30 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
     job: boot the core, share the buffers, and keep a fallback.
   - Its hardware notes also report that fm1-base's USB audio can splice whole 256-sample blocks. This firmware's own
     USB ring (1.3.1) is a different path, but it is worth a listen with a plain tone.
+- **64-bit multiplies beside 16-bit loads (fixed in 1.4).** felucca-bsp's `docs/CPU.md` (found through FRASIL, below)
+  reports that on the FM-1 a 32x32->64-bit multiply inlined among 16-bit loads now and then leaves a register one bit
+  off, and the firmware crashes. fm1-radio's AAC decoder crashed within a minute that way. `tools/check_mul64.py`
+  found nine such places here:
+  - FM6's operators (`fm6_op_run`, `fm6_op_fb`): now `fm6_mulg`, two 32-bit products, the same bits.
+  - PHYS's sympathetic strings (`px_symp_run`): the same split.
+  - FORMANT's coefficients, PERFORM's history, the LFO's DRIFT shape and LOOP's BLOOM: now `dsp.c`'s `mul64_sh`, out
+    of line.
+
+  The stress test's sound is bit for bit the same (seeds 1-3), and both splits were checked against 64 bits over
+  200 million random inputs each. Nobody had reported such a crash, but it is rare and random; FM6 was the most
+  exposed. Not measured yet: FM6's CPU on the FM-1 after the change.
+- **What FRASIL showed (noted 2026-11-05).** [frasil](https://github.com/styvesgoupil/frasil) (MPL-2.0, Styves
+  Goupil) is an ambient drone firmware for the FM-1 built on fm1-base, much praised. Ideas only, nothing copied:
+  - **FREEZE as a hold.** Hold FX: the reverb holds what is in it (loop gain to ~1, damping off, input faded out over
+    ~0.1 s); let go and it thaws over DECAY. SPACE's SIZE 127 (INF) already does this, but only by turning the knob
+    away from the size you had. A hold combo would make it a performance move.
+  - **Its reverb** is an 8-line float FDN at the full 44.1 kHz with an allpass inside each line, RT60 set per line,
+    shimmer with BRIGHT and a choice of interval. It needs ~128 KB of pool; this firmware has 2 KB left.
+  - **Load shedding.** It measures the render as it goes and, near the budget, drops partials and then voices,
+    letting the quietest released ones go first, so the audio never breaks up.
+  - **ENV held: SWELL**, every drone voice swells together; and **COMPARE**, the scene as saved.
+  - Its engine builds alone (`engine/`), with tests that compare render hashes between the simulator and the engine,
+    and a bench that counts instructions against the FM-1's budget.
 - **The key lights after OCT-/OCT+ (fixed in 1.4).** A YouTube comment on GR!MM's video said the key lights do not
   follow octave changes; this firmware had the same bug. A key's latched note (and an ARP key) was lit on the key it
   was played on, whatever the octave. Each note now keeps the octave it was played in (`lat_oct`, the arp's `oct`),

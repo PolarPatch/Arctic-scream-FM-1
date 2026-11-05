@@ -14,6 +14,13 @@ static inline int32_t mulq16(int32_t a, uint32_t k)
     return (int32_t)(((a >> 16) * (int32_t)k) + (int32_t)(((uint32_t)(a & 0xFFFF) * k) >> 16));
 }
 static inline int32_t clamp(int32_t v, int32_t lo, int32_t hi) { return v < lo ? lo : v > hi ? hi : v; }
+/* a * b / 2^sh through 64 bits, out of line. On the FM-1 a 64-bit multiply inlined among 16-bit loads now and then
+ * leaves a register a bit off, and the firmware crashes (felucca-bsp docs/CPU.md); the call completes the product
+ * before any load that follows. Arctic Scream p0larpatch 1.4; tools/check_mul64.py lists what is left */
+static __attribute__((noinline)) int32_t mul64_sh(int32_t a, int32_t b, uint32_t sh)
+{
+    return (int32_t)(((int64_t)a * b) >> sh);
+}
 
 /* polyBLEP residual (Q15) around a wrap of a phase accumulator */
 static inline int32_t blep(uint32_t ph, uint32_t inc)

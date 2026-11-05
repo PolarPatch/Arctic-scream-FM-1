@@ -206,7 +206,7 @@ static void howl_block(voice_t *v, const volatile int32_t *p, int32_t *mono, int
             S->kick--;
         }
         if (exs) n += (exs[i] * ex) >> 15;      /* (EXCITE: the sample into the string) */
-        if (ret) n += (int32_t)clamp(((int64_t)ret[i] * bl) >> 11, -32767, 32767);   /* (BLOOM: the effects' return, at the
+        if (ret) n += (int32_t)clamp(mul64_sh(ret[i], bl, 11), -32767, 32767);   /* (BLOOM: the effects' return, at the
                                                  * output's level: up to ~12x, to the loop's) */
         s = clamp(s1 + (((s0 - s1) * (int32_t)sf) >> 8) + fbk + n, -65535, 65535);   /* the string */
         S->dcy = clamp(s - S->dcx + ((S->dcy * 32604) >> 15), -65535, 65535);

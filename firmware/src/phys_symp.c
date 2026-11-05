@@ -133,9 +133,13 @@ static __attribute__((noinline)) void px_symp_run(px_symp_t *Y, const int32_t *i
             continue;
         for (i = 0; i < m; i++) {
             uint32_t t = wp + d;
-            int64_t s = (int64_t)h0 * l[t & PX_YMASK] + (int64_t)h1 * l[(t + 1u) & PX_YMASK] +
-                        (int64_t)h2 * l[(t + 2u) & PX_YMASK];
-            int32_t y = px_clamp((int32_t)((s + ((s >> 63) & 0xFFFFFF)) >> 24) + x[i], -32767, 32767);
+            /* the sum s = h0 l0 + h1 l1 + h2 l2 / 2^24 towards 0, in 32-bit products: s = hi 2^12 + lo, each h split
+             * at bit 12 (h < 2^24). No 64-bit multiply beside the line's 16-bit loads (dsp.c mul64_sh) */
+            int32_t l0 = l[t & PX_YMASK], l1 = l[(t + 1u) & PX_YMASK], l2 = l[(t + 2u) & PX_YMASK];
+            int32_t hi = (h0 >> 12) * l0 + (h1 >> 12) * l1 + (h2 >> 12) * l2;
+            int32_t lo = (h0 & 4095) * l0 + (h1 & 4095) * l1 + (h2 & 4095) * l2;
+            int32_t c = ((hi & 4095) << 12) + lo, q = (hi >> 12) + (c >> 24);   /* floored; c & 2^24-1 the rest */
+            int32_t y = px_clamp(q + (q < 0 && (c & 0xFFFFFF)) + x[i], -32767, 32767);
             l[wp] = (int16_t)y;
             acc[i] += y;
             wp = (wp - 1u) & PX_YMASK;

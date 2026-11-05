@@ -326,10 +326,16 @@ typedef struct {                 /* msfa FmOpParams */
 
 /* one operator over the block: modulated by in (0: none), into out (add: += else =). Four loops, so none
  * tests a flag per sample */
+/* s * g / 2^15 for |s| < 2^15, |g| < 2^28, in two 32-bit products (the same bits as through 64: dsp.c mul64_sh) */
+static inline int32_t fm6_mulg(int32_t s, int32_t g)
+{
+    int32_t hi = s * (g >> 12), lo = s * (g & 4095);
+    return (hi >> 3) + ((((hi & 7) << 12) + lo) >> 15);
+}
 #define FM6_OP_LOOP(PH, STORE)                                                    \
     for (i = 0; i < FM6_N; i++) {                                               \
         g += dg;                                                                \
-        out[i] STORE (int32_t)(((int64_t)fm6_sin(PH) * g) >> 15);               \
+        out[i] STORE fm6_mulg(fm6_sin(PH), g);                                  \
         phase = (int32_t)((uint32_t)phase + (uint32_t)freq);                    \
     }
 static __attribute__((noinline)) void fm6_op_run(int32_t *out, const int32_t *in, int32_t phase, int32_t freq,
@@ -357,7 +363,7 @@ static __attribute__((noinline)) void fm6_op_fb(int32_t *out, int32_t phase, int
         int32_t s = (y0 + y) >> (shift + 1);
         g += dg;
         y0 = y;
-        y = (int32_t)(((int64_t)fm6_sin((int32_t)((uint32_t)phase + (uint32_t)s)) * g) >> 15);   /* (the phase wraps) */
+        y = fm6_mulg(fm6_sin((int32_t)((uint32_t)phase + (uint32_t)s)), g);   /* (the phase wraps) */
         out[i] = add ? out[i] + y : y;
         phase = (int32_t)((uint32_t)phase + (uint32_t)freq);
     }

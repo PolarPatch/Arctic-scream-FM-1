@@ -46,7 +46,7 @@ static int32_t lfo_shape(uint32_t s, uint32_t ph, int32_t a, int32_t b)   /* SHA
     case LS_DRIFT:                              /* from a to b over the cycle, smoothstep */
         f = x >> 1;
         k = (int32_t)(((f * f) >> 15) * (98304 - 2 * f) >> 15);
-        return a + (int32_t)(((int64_t)(b - a) * k) >> 15);
+        return a + mul64_sh(b - a, k, 15);
     default: return sine_i(ph);
     }
 }

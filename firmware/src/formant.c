@@ -82,13 +82,13 @@ static void fres_coef(fres_t *r, uint32_t f16, uint32_t bw16)
 {
     int32_t s = sine_i(f16 * 3044u);            /* sin(pi F / FS), Q15 (2^32 / (2 FS) / 16) */
     int32_t x = (int32_t)(bw16 * 4781u);        /* pi BW / FS, Q30 (<= 0.2) */
-    int32_t x2 = (int32_t)(((int64_t)x * x) >> 30), x3 = (int32_t)(((int64_t)x2 * x) >> 30);
-    int32_t x4 = (int32_t)(((int64_t)x3 * x) >> 30);
-    int32_t e = (1 << 30) - x + (x2 >> 1) - (int32_t)(((int64_t)x3 * 178956971) >> 30)   /* exp(-x): x^3 / 6, */
-                + (int32_t)(((int64_t)x4 * 44739243) >> 30);                            /* x^4 / 24 */
+    int32_t x2 = mul64_sh(x, x, 30), x3 = mul64_sh(x2, x, 30);
+    int32_t x4 = mul64_sh(x3, x, 30);
+    int32_t e = (1 << 30) - x + (x2 >> 1) - mul64_sh(x3, 178956971, 30)         /* exp(-x): x^3 / 6, */
+                + mul64_sh(x4, 44739243, 30);                                   /* x^4 / 24 */
     int32_t cs = (1 << 30) - 2 * s * s;         /* cos(2 pi F / FS) = 1 - 2 sin^2, Q30 */
-    r->b = (int32_t)(((int64_t)e * cs) >> 29);  /* 2 r cos */
-    r->c = -(int32_t)(((int64_t)e * e) >> 30);  /* -r^2 */
+    r->b = mul64_sh(e, cs, 29);                 /* 2 r cos */
+    r->c = -mul64_sh(e, e, 30);                 /* -r^2 */
     r->a = (1 << 30) - r->b - r->c;
 }
 

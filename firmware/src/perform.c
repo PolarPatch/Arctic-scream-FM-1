@@ -35,7 +35,7 @@ static int32_t pf_st[2][4];                     /* audio: the filters' states (L
 static int32_t pf_at(uint32_t i, uint32_t f)    /* history sample i (+ f / 65536), between the two */
 {
     int32_t a = pf_buf[i % PF_LEN], b = pf_buf[(i + 1u) % PF_LEN];
-    return a + (int32_t)(((int64_t)(b - a) * (int32_t)f) >> 16);
+    return a + mul64_sh(b - a, (int32_t)f, 16);
 }
 static uint32_t pf_beat(void)                   /* a beat (history samples): the tempo's, a MIDI clock's (V2) */
 {
