@@ -29,6 +29,12 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
   - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
   - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
+- **New in 1.4:**
+  - **Holvut's LOOP page** (press EDIT twice on a Holvut track): **GATE** lets the howl die into its own tail when you let go of the key; **BLOOM** feeds the grain, the echoes and the reverb back into the loop, so the scream grows inside its own effects; **LOWCUT** thins the loop from ~70 Hz up to ~1.9 kHz; **EXCITE** plays the track's sample into the string, so your own sound wakes the howl.
+  - **AIR**, FX's new last page: **PING-PONG** throws DELAY's echoes left, right, left; **SHIMMER** sends SPACE's tail up an octave and back into the reverb, so it rises as it fades.
+  - **USB LEVEL** on SYSTEM 3: how loud a computer records the FM-1, −12 to +24 dB.
+  - Quieter headphones on wide, loud sound: a limiter on the difference between left and right stops the FM-1's headphone amplifier from crackling. The middle of the sound and the USB recording are untouched.
+  - The key lights of latched and arpeggiated notes follow OCT− and OCT+.
 - **New in 1.3.1:** **USB audio on macOS 10.14 to 15.** Up to 1.3 those Macs saw the FM-1 but never showed its audio input (MIDI worked); the newest macOS took it. And a computer now records the FM-1 at full level whatever the volume knob says: the knob sets the speaker and the headphones, not the recording.
 - **New in 1.3:**
   - **GENERATE:** hold FX and tap a black key, and that track plays by itself, always in its SCALE (in chords with chord mode on), in three moods: DRIFT, PULSE and STORM. It sits beside DRONE: one moves the sound, the other the notes.
@@ -78,10 +84,10 @@ The **[editor](https://polarpatch.github.io/Arctic-scream-FM-1/editor.html)** ru
 Download `arctic-scream-X.Y.fwsc` (the newest) from [Releases](../../releases). Then, with Python 3 and `pip install mido python-rtmidi`, connect the FM-1 over USB and run:
 
 ```
-python3 tools/fm1_install.py arctic-scream-1.3.1.fwsc
+python3 tools/fm1_install.py arctic-scream-1.4.fwsc
 ```
 
-Every release is built and signed on GitHub from the tagged source (the FM-1 Firmware Hub's [fm1-build](https://github.com/zvenson/fm1-build)); check a file with `gh attestation verify arctic-scream-1.3.1.fwsc --repo PolarPatch/Arctic-scream-FM-1 --signer-workflow zvenson/fm1-build/.github/workflows/build.yml`.
+Every release is built and signed on GitHub from the tagged source (the FM-1 Firmware Hub's [fm1-build](https://github.com/zvenson/fm1-build)); check a file with `gh attestation verify arctic-scream-1.4.fwsc --repo PolarPatch/Arctic-scream-FM-1 --signer-workflow zvenson/fm1-build/.github/workflows/build.yml`.
 
 It installs over the FM-1's own firmware or any other FM-1 firmware. Don't unplug the FM-1 while it writes. If anything goes wrong, the **Rescue** page on the [FM-1 Firmware Hub](https://thefirmwarehub.com/) brings a stuck FM-1 back, and M-VAVE's own updater puts the original firmware back.
 
@@ -96,6 +102,8 @@ It installs over the FM-1's own firmware or any other FM-1 firmware. Don't unplu
 - **[GR!MM](https://github.com/GRiMMBIENT/grimm)** (GPL-3.0): the firmware this is built on, and everything GR!MM itself builds on: Felucca, Dinghy, SLOOP, X0X, msfa, DaisySP, Rings and CrispyZebra. 1.3 brings in much of GR!MM V2.0: GENERATE, MASTER, DRIVE, the track filter's TYPE and POS, the MIDI clock and TRS MIDI IN, the gain staging and its fixes.
 - **[Audrey II](https://github.com/Synthux-Academy/Audrey-II)** and **[Audrey Touch](https://github.com/Synthux-Academy/AudreyTouch)** by Nick Donaldson (Infrasonic Audio) and Synthux Academy (MIT): the design behind Holvut and the HORROR scale. No code is copied.
 - **[Jangada](https://github.com/zednaked/jangada)** by zednaked (GPL-3.0): the idea behind the DRONE page (its EVOL, TENS and RAMP). Written from scratch; no code is copied.
+- **[ECHOFIELD](https://github.com/Philip-Bos/echofield-fm1)** by Philip Bos (MIT): the ideas behind 1.4's PING-PONG, SHIMMER and the side limiter, and its measurements of the FM-1's headphone amplifier. Written again in integers; no code is copied.
+- **Book of the Dead II** by DigDugDIY: the FX loop inside the feedback that became the LOOP page's BLOOM. An idea only; it is hardware.
 - **[BlueWatch](https://github.com/PolarPatch/BlueWatch)** by PolarPatch: the colour palette.
 - **Press Start 2P** font by CodeMan38 and **Terminus** font by Dimitar Zhekov (SIL Open Font License 1.1).
 

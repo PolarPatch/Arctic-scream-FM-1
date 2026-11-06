@@ -224,7 +224,7 @@ footer p { margin: 4px 0; }
 
 <section class="card" style="--c: var(--periwinkle)">
   <h2>Sound: EDIT</h2>
-  <p style="margin:0 0 6px;color:var(--label)"><b style="color:var(--fg)">EDIT</b>: SOUND → (FM: FM ALGO → FM OP →) SOURCE.</p>
+  <p style="margin:0 0 6px;color:var(--label)"><b style="color:var(--fg)">EDIT</b>: SOUND → (FM: FM ALGO → FM OP →; Holvut: LOOP →) SOURCE.</p>
   <table class="knobs">
     <tr><th>SOURCE</th><th>K1</th><th>K2</th><th>K3</th><th>K4</th></tr>
     <tr><td>VA</td><td>WAVE</td><td>DETUNE</td><td>CUTOFF</td><td>RESONANCE</td></tr>
@@ -235,8 +235,10 @@ footer p { margin: 4px 0; }
     <tr><td>PHYS</td><td>MODEL</td><td>STRUCTURE</td><td>DAMP</td><td>BOW</td></tr>
     <tr><td>PHASE</td><td>WAVE</td><td>WAVE2</td><td>DCW</td><td>DETUNE</td></tr>
     <tr><td style="color:var(--plasma)">Holvut</td><td>FEEDBACK</td><td>BODY</td><td>DAMP</td><td>DRIVE</td></tr>
+    <tr><td style="color:var(--plasma)">LOOP</td><td>GATE</td><td>BLOOM</td><td>LOWCUT</td><td>EXCITE</td></tr>
   </table>
   <dl>
+    <dt>LOOP</dt><dd>Holvut's loop. GATE: dies into its tail once let go. BLOOM: the effects back into the loop. LOWCUT: ~70 Hz – ~1.9 kHz. EXCITE: the track's sample into the string.</dd>
     <dt>FM ALGO</dt><dd>ALGO 1–32, FEEDBACK, OP (pick 1–6), FINE.</dd>
     <dt>FM OP</dt><dd>RATIO, LEVEL, ATTACK, DECAY of that operator.</dd>
   </dl>
@@ -299,8 +301,9 @@ footer p { margin: 4px 0; }
     <tr><td>SPACE</td><td>SIZE (to INF)</td><td>DAMP</td><td>MIX</td><td>PRE-DELAY</td></tr>
     <tr><td>MASTER</td><td>CUTOFF</td><td>RESONANCE</td><td>TYPE (LP HP BP)</td><td>POSITION</td></tr>
     <tr><td>DRIVE</td><td>AMOUNT</td><td>TYPE (SOFT FUZZ CLIP FOLD)</td><td>TONE</td><td>MIX</td></tr>
+    <tr><td>AIR</td><td>PING-PONG</td><td>SHIMMER</td><td></td><td></td></tr>
   </table>
-  <p class="note">DRIVE's AMOUNT tears the whole mix, each TYPE about as loud; 0 is off. MASTER filters the whole mix: PRE FX, POST REVERB or at the END.</p>
+  <p class="note">DRIVE's AMOUNT tears the whole mix, each TYPE about as loud; 0 is off. MASTER filters the whole mix: PRE FX, POST REVERB or at the END. AIR: DELAY's echoes left and right, SPACE's tail an octave up.</p>
   <h3>HOLD FX + A WHITE KEY (WHILE HELD)</h3>
   <div class="kb v"><span><i>1</i>FREEZE</span><span><i>2</i>REV THROW</span><span><i>3</i>ECHO THROW</span><span><i>4</i>TAPE STOP</span><span><i>5</i>REVERSE</span><span><i>6</i>FILTER DOWN</span><span><i>7</i>FILTER UP</span><span><i>8</i>STUTTER</span></div>
   <p class="note">FREEZE is a toggle: tap to hold the grain cloud, tap again to let go. The sends: MIXER 1, or FX on HOME.</p>
@@ -337,13 +340,14 @@ footer p { margin: 4px 0; }
     <tr><th></th><th>K1</th><th>K2</th><th>K3</th><th>K4</th></tr>
     <tr><td>SYSTEM</td><td>COLOUR</td><td>MIDI CHANNEL</td><td>TUNE</td><td>SCREEN OFF</td></tr>
     <tr><td>SYSTEM 2</td><td>MIDI LEARN</td><td>SEQ MIDI OUT</td><td>SAMPLES</td><td>CLOCK</td></tr>
-    <tr><td>SYSTEM 3</td><td>LATCH</td><td></td><td></td><td></td></tr>
+    <tr><td>SYSTEM 3</td><td>LATCH</td><td>USB LEVEL</td><td></td><td></td></tr>
   </table>
   <dl>
     <dt>COLOUR</dt><dd>ICE, AURORA, VIOLET, PLASMA.</dd>
     <dt>MIDI CHANNEL</dt><dd>1-4 … 13-16, ALL &gt; SEL, CH n &gt; SEL (channel n alone, the selected track). MIDI in: USB or the TRS jack.</dd>
     <dt>CLOCK</dt><dd>INT; I+OUT (clock out over USB); USB or TRS (follows a MIDI clock: START, CONTINUE, STOP).</dd>
     <dt>LATCH</dt><dd>FROM SOUND (a sound brings its own) or ALWAYS OFF. Any page: hold SEL + OCT+ for the track's LATCH.</dd>
+    <dt>USB LEVEL</dt><dd>The computer's recording, −12 … +24 dB (0 dB: the volume knob at the top).</dd>
     <dt>SAMPLES</dt><dd>CLEAR, then OCT+: the four sample slots emptied.</dd>
     <dt>OCT− + OCT+</dt><dd>Together, on SYSTEM 2: reset CPU PEAK and USB REC DROPS.</dd>
   </dl>

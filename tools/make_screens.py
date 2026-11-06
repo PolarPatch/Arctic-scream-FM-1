@@ -86,21 +86,22 @@ class S:
 
 
 def va(s):                                   # T1 (ICE WRAITH, Holvut) to VA, LATCH OFF; back on its SOUND page
-    return s.tap(EDIT, EDIT).turn(K1, -7).turn(K2, -1).tap(EDIT)
+    return s.tap(EDIT, EDIT, EDIT).turn(K1, -7).turn(K2, -1).tap(EDIT)
 
 
 def src(s, d):                               # T1 to the source d steps down from Holvut, LATCH OFF; its SOUND page
-    return s.tap(EDIT, EDIT).turn(K1, -d).turn(K2, -1).tap(EDIT)
+    return s.tap(EDIT, EDIT, EDIT).turn(K1, -d).turn(K2, -1).tap(EDIT)
 
 
 SHOTS = {
     "boot": lambda: S(3400),
     "home": lambda: S().keys("C3").keys("G3").w(2500),
     "holvut": lambda: S().keys("C3").w(800).tap(EDIT).turn(K1, 24).w(6000),
-    "source": lambda: S().tap(EDIT, EDIT).w(800),
+    "loop": lambda: S().keys("C3").w(800).tap(EDIT, EDIT).turn(K1, 40).turn(K2, 56).turn(K3, 24).w(3000),
+    "source": lambda: S().tap(EDIT, EDIT, EDIT).w(800),
     "va": lambda: va(S()).hold("C3", "D#3", "G3").w(1500),
-    "fm-algo": lambda: S().tap(EDIT, EDIT).turn(K1, -6).tap(EDIT, EDIT).turn(K3, 2).w(800),
-    "fm-op": lambda: S().tap(EDIT, EDIT).turn(K1, -6).tap(EDIT, EDIT).turn(K3, 2).tap(EDIT).w(800),
+    "fm-algo": lambda: S().tap(EDIT, EDIT, EDIT).turn(K1, -6).tap(EDIT, EDIT).turn(K3, 2).w(800),
+    "fm-op": lambda: S().tap(EDIT, EDIT, EDIT).turn(K1, -6).tap(EDIT, EDIT).turn(K3, 2).tap(EDIT).w(800),
     "env": lambda: S().keys("C3").tap(ENV).w(1500),
     "lfo": lambda: S().keys("C3").tap(LFO).turn(K2, 24).w(1500),
     "drone": lambda: S().keys("C3").keys("G3").tap(LFO, LFO).turn(K1, 64).turn(K2, 48).turn(K3, 3).w(3000),
@@ -118,6 +119,7 @@ SHOTS = {
     "space": lambda: S().keys("C3").tap(FX, FX, FX, FX).turn(K3, 40).w(2000),
     "master": lambda: S().keys("C3").tap(FX, FX, FX, FX, FX).turn(K1, -56).turn(K2, 80).w(2000),
     "drive": lambda: S().keys("C3").tap(FX, FX, FX, FX, FX, FX).turn(K1, 80).w(2000),
+    "air": lambda: S().keys("C3").tap(FX, FX, FX, FX, FX, FX, FX).turn(K1, 64).turn(K2, 72).w(2500),
     "perform": lambda: S().keys("C3").w(500).down(FX).w(1200),
     "system": lambda: S().down(HOME).w(900).up(HOME).w(500),
     "system2": lambda: S().down(HOME).w(900).up(HOME).tap(HOME).w(500),
@@ -136,7 +138,7 @@ SHOTS = {
 
 def build():
     os.makedirs(os.path.dirname(HOST), exist_ok=True)
-    subprocess.run(["cc", "-O2", "-w", "-DDINGHY_HOST", "-DAPP_VER=\"1.3.2\"", "-Dsection(x)=used",
+    subprocess.run(["cc", "-O2", "-w", "-DDINGHY_HOST", "-DAPP_VER=\"1.4\"", "-Dsection(x)=used",
                     "-Ifirmware/src", "-Ifirmware/gen", "-o", HOST, "firmware/src/grimm.c"], cwd=ROOT, check=True)
 
 

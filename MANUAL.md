@@ -2,7 +2,7 @@
 
 # Arctic Scream p0larpatch: the manual
 
-**Version 1.3.1, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
+**Version 1.4, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
 (`tools/make_screens.py`).
 
 > **Try it as you read:** the [demo](https://polarpatch.github.io/Arctic-scream-FM-1/) runs the same code in your
@@ -44,7 +44,8 @@ Every track starts with **ICE WRAITH**, a Holvut sound that holds its notes: pre
   Many buttons do more when **held** while you press a key or turn a knob (see [13 · Combos](#13--combos-at-a-glance)).
 - **Knobs speed up:** turn slowly for fine steps, fast to sweep.
 - **LATCH ON:** a key starts its note, the same key again stops it. **Hold SEL + OCT+** switches the selected track's
-  LATCH on or off from any page (off lets go of all its latched notes).
+  LATCH on or off from any page (off lets go of all its latched notes). The keys of latched and arpeggiated notes stay
+  lit, and their lights follow OCT− and OCT+.
 - **Saving is automatic.** When the sequencer is stopped and everything is silent, your work saves itself, and it comes
   back at power-on as you left it. A latched note never goes silent: the header says `SAVES WHEN SILENT` until you let
   it go.
@@ -87,7 +88,8 @@ across the stereo field.
 
 ## 03 · Sources: EDIT
 
-**EDIT** opens the track's **SOUND** page (the source's four knobs), then **SOURCE**. An FM track has two more pages.
+**EDIT** opens the track's **SOUND** page (the source's four knobs), then **SOURCE**. An FM track has two more pages
+(FM ALGO, FM OP), and a Holvut track one: **LOOP**, between SOUND and SOURCE.
 
 | SOUND: Holvut | SOURCE |
 |---|---|
@@ -124,6 +126,30 @@ diffusion. Nothing is struck.
 - **III** is a horrorscape: three Holvut voices in a CLUSTER chord, a semitone rubbing in it, dark and slowly waking.
   Hold a key around C4. Turn **DAMP** down to let it scream, **BODY** to bend it, **FEEDBACK** to wake or calm it.
   Step by step: [how to play III](docs/iii/iii_en.md).
+
+### Holvut's LOOP page (new in 1.4)
+
+<img src="docs/manual/screens/loop.png" alt="Holvut's LOOP page: GATE, BLOOM and LOWCUT turned up" width="300" align="right">
+
+Press **EDIT** again on a Holvut track: **SOUND → LOOP → SOURCE**. Four knobs on the loop itself; all four at `OFF` (0)
+sound as before 1.4. They are saved with the sound and the project.
+
+| KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
+|---|---|---|---|
+| GATE | BLOOM | LOWCUT (~70 Hz – ~1.9 kHz) | EXCITE |
+
+- **GATE:** when you let go of the key, the loop stops feeding itself. All the way up it dies into its own tail; in
+  between it fades but lingers. At `OFF` the howl goes on through the release as before.
+- **BLOOM:** what GRAIN, DELAY and SPACE add to the mix goes back into the loop: an FX loop inside the feedback. Turn up
+  a track's sends and the scream grows inside its own echoes and reverb.
+- **LOWCUT:** a high-pass inside the loop. The howl thins and climbs; with DAMP it leaves a band that screams.
+- **EXCITE:** the track's sample (SAMPLE's SLOT, START and LENGTH, looped) is fed into the string, so your own sound
+  wakes and colours the howl. The slab shows the slot, `S2 45%`, or `EMPTY` when that slot has no sample. Set it on
+  the SAMPLE source first, then switch the track back to Holvut.
+- Each knob is a ribbon on the screen: GATE's tail fades out, BLOOM's echoes appear around it, LOWCUT takes the slow
+  swell out of its ribbon, EXCITE throws sparks along it.
+
+<br clear="right">
 
 ### The other sources
 
@@ -314,7 +340,7 @@ Arctic Scream keeps its own saves, separate from other FM-1 firmwares.
 
 ## 09 · Destroy: FX
 
-**FX** steps through **TAPE → GRAIN → DELAY → SPACE → MASTER → DRIVE**. Tracks feed GRAIN, DELAY and SPACE through their sends; TAPE
+**FX** steps through **TAPE → GRAIN → DELAY → SPACE → MASTER → DRIVE → AIR**. Tracks feed GRAIN, DELAY and SPACE through their sends; TAPE
 colours the whole mix at the end. Each page has its own northern lights.
 
 | TAPE | GRAIN |
@@ -331,6 +357,7 @@ colours the whole mix at the end. Each page has its own northern lights.
 | SPACE | SIZE (to ~32 s, then INF) | DAMP | MIX | PRE-DELAY |
 | MASTER | CUTOFF | RESONANCE | TYPE (LP / HP / BP) | POSITION (PRE FX / POST REVERB / END) |
 | DRIVE | AMOUNT | TYPE (SOFT / FUZZ / CLIP / FOLD) | TONE | MIX |
+| AIR | PING (PING-PONG) | SHIMMR (SHIMMER) | | |
 
 - **Runaway echo:** past 100 % FEEDBACK the echo grows and saturates, and burns magenta on the screen.
 - GRAIN and DELAY both pour into SPACE. All four TAPE knobs at 0 switch TAPE off.
@@ -340,6 +367,19 @@ colours the whole mix at the end. Each page has its own northern lights.
 - **MASTER** filters everything, in stereo. **POSITION** says where: `PRE FX` filters the tracks' dry mix before the effects return (the reverb and echoes stay bright), `POST REVERB` filters the tracks and the effects together (before DRIVE and TAPE), `END` filters the very end, after TAPE and the PERFORM tricks. `LP` with CUTOFF at the top or `HP` at the bottom switches it off completely.
 - **DRIVE** distorts everything after SPACE, before TAPE. **AMOUNT** is how hard (0 = off completely), **TYPE** the character: `SOFT` (warm saturation), `FUZZ` (lopsided, buzzy), `CLIP` (hard), `FOLD` (a wavefolder: the harder you drive it, the more it folds back into new overtones). All four are about equally loud at the same AMOUNT, so switching TYPE doesn't jump in volume, and turning AMOUNT all the way up makes it at most ~6 dB louder. **TONE** darkens it (`OPEN` at the top), **MIX** blends it with the clean sound. A limiter after it keeps even the loudest settings from blowing up the output.
 - MASTER and DRIVE belong to the project (saved with it, like the other effects); TYPE and POS belong to each track.
+
+### AIR (new in 1.4)
+
+<img src="docs/manual/screens/air.png" alt="FX > AIR: PING-PONG and SHIMMER" width="300" align="right">
+
+- **PING-PONG** (KNOB 1) throws DELAY's echoes left, right, left, wider as you turn it up. The echoes come at the same
+  TIME as before; while PING-PONG is on, TIME goes up to 1.5 s. At `OFF` DELAY is as it was.
+- **SHIMMER** (KNOB 2) takes SPACE's tail an octave up and sends it back into the reverb, so the sound rises as it
+  fades. Long SIZE and a high SHIMMER make a slow, bright choir out of any drone.
+- On the screen, DELAY's echoes fly apart as PING-PONG grows, and SHIMMER's octaves rise over SPACE's tail.
+- Both are saved with the project; projects from before 1.4 load with them off.
+
+<br clear="right">
 
 ---
 
@@ -400,7 +440,7 @@ FM-1, not the project.
 |---|---|---|---|---|
 | SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF |
 | SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES | CLOCK (INT, I+OUT, USB, TRS) |
-| SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | | | |
+| SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB) | | |
 
 - **COLOUR:** pick the one that matches your FM-1.
 - **MIDI CHANNEL:** `1-4` puts T1–T4 on channels 1–4 (or higher, up to `13-16`); `ALL > SEL` sends everything to the
@@ -415,6 +455,9 @@ FM-1, not the project.
   second it goes on at its own tempo.
 - **LATCH** (SYSTEM 3): `FROM SOUND`, a sound you load brings the LATCH it was saved with (the seven Holvut sounds latch).
   `ALWAYS OFF`, a sound you load sets the track's LATCH off; EDIT's LATCH and **SEL + OCT+** still switch it.
+- **USB LEVEL** (SYSTEM 3, new in 1.4): how loud a computer records the FM-1, in 6 dB steps from −12 to +24 dB. `0 DB` is
+  the volume knob all the way up; higher steps make quiet drones louder in the recording, and a limiter keeps them from
+  clipping. The volume knob itself only sets the speaker and the headphones.
 - SYSTEM 2 shows the processor load, NOW and PEAK, and over it **USB REC DROPS**: gaps in the sound sent to a computer
   over USB (stopping or pausing your DAW adds to it too). OCT− + OCT+ together sets both to 0.
 
@@ -432,6 +475,9 @@ go of the notes MIDI holds (a latched note stays). Aftertouch pushes a Holvut tr
   it stood still).
 - A delay that feeds back for ever, SPACE on INF or a frozen GRAIN never fall silent: saves, sample uploads and the
   editor's writes go ahead 10 s after the last note anyway.
+- **Headphones on wide, loud sound** (a big reverb, PING-PONG): the FM-1's headphone amplifier used to crackle. Since 1.4
+  a limiter holds the difference between left and right in check near the top of MASTER; a mono sound never changes,
+  and the USB recording is not touched.
 - While a computer records the FM-1 over USB, it saves only after you have left it alone for a minute (a save stops
   the sound ~50 ms), and at once when the recording stops.
 
@@ -441,9 +487,9 @@ Over USB the FM-1 is also an audio input for your computer, phone or tablet, and
 (its MIDI port too): class compliant, so no driver,
 16-bit stereo at 44.1 or 48 kHz (the computer picks). Choose the FM-1 as the input in your DAW and record. It is the
 stereo mix with all its effects, not each track apart; to record the tracks one by one, solo each in turn (**hold GLO +
-keys 5–8**) and record a pass per track. The computer always gets the full level, as with the volume knob all the way up
-(a limiter keeps it from clipping): the knob sets the speaker and the headphones, not the recording. Since 1.3.1 it shows
-up on macOS 10.14 to 15 too.
+keys 5–8**) and record a pass per track. The computer gets the level SYSTEM 3's **USB LEVEL** sets (`0 DB`: the volume
+knob all the way up; a limiter keeps it from clipping): the knob sets the speaker and the headphones, not the recording.
+Since 1.3.1 it shows up on macOS 10.14 to 15 too.
 
 ---
 

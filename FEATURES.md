@@ -1,6 +1,6 @@
 # Arctic Scream p0larpatch: features
 
-A complete overview of what Arctic Scream p0larpatch does, version 1.3.1. For the short version see the
+A complete overview of what Arctic Scream p0larpatch does, version 1.4. For the short version see the
 [README](README.md); for every button on one page, the [cheat sheet](https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html);
 for how it is built, [DEVELOPER.md](DEVELOPER.md).
 
@@ -12,9 +12,9 @@ feedback screams: slow, cold sounds that hum for minutes, and a voice that wakes
 
 | | |
 | --- | --- |
-| Version | 1.3.1 |
+| Version | 1.4 |
 | Firmware identity | `FM-1_977` (USB name "Arctic Scream" by "PolarPatch") |
-| Package | `arctic-scream-1.3.1.fwsc`, built and attested on GitHub |
+| Package | `arctic-scream-1.4.fwsc`, built and attested on GitHub |
 | Source | <https://github.com/PolarPatch/Arctic-scream-FM-1> |
 | Demo, editor, cheat sheet | <https://polarpatch.github.io/Arctic-scream-FM-1/> |
 | Licence | GPL-3.0 (the PolarPatch logo excepted) |
@@ -25,7 +25,7 @@ feedback screams: slow, cold sounds that hum for minutes, and a voice that wakes
 - Eight sound sources, among them **Holvut**, a feedback loop that howls by itself.
 - **DRONE**: a sound that lives on its own (BORGA, STOARBMA, GOHCCAT).
 - 47 factory sounds with arctic names, and 64 slots for your own.
-- Four effects (TAPE, GRAIN, DELAY, SPACE) and eight performance tricks.
+- Effects on seven pages (TAPE, GRAIN, DELAY, SPACE, MASTER, DRIVE, AIR) and eight performance tricks.
 - A 64-step sequencer per track, an arpeggiator, chords, scales and song mode.
 - An arctic cyberpunk screen with moving northern lights.
 - A web editor and a browser demo that run the same code as the instrument.
@@ -74,6 +74,16 @@ scratch for the FM-1.
   note's overtones and screams higher. Below 120 the sound is as before.
 - **Pressure:** MIDI aftertouch (channel or poly) on a track's channel pushes its Holvut's FEEDBACK toward the top.
   Press harder and the note feeds back more, then overblows; ease off and it falls back.
+- **The LOOP page** (1.4; EDIT tapped again on a Holvut track: SOUND, LOOP, SOURCE). All four at 0 (OFF) sound as
+  before. Saved with the sound and the project.
+  - **GATE:** once the key is let go, the loop stops feeding itself: all the way up it dies into its own tail, in
+    between it fades but lingers.
+  - **BLOOM:** what GRAIN, DELAY and SPACE add to the mix goes back into the loop, an FX loop inside the feedback: the
+    scream grows inside its own effects.
+  - **LOWCUT:** the loop's high-pass, two poles, ~70 Hz to ~1.9 kHz: the howl thins and climbs; with DAMP, a band
+    that screams.
+  - **EXCITE:** the track's sample (SAMPLE's SLOT, START and LENGTH, looped) is fed into the string, so a sound of your
+    own wakes and colours the howl. The slab shows the slot (`S2 45%`, or `EMPTY`).
 - The howl's pitch comes mostly from the loop itself, not the key, so OCT− and OCT+ do not move it by an octave.
   [DEVELOPER.md](DEVELOPER.md) describes a possible change.
 
@@ -136,8 +146,12 @@ New in 1.1. The idea follows Jangada's DRONE page; it is written from scratch. T
 | SPACE | SIZE (0.4 s–~32 s, then INF) | DAMP | MIX | PRE-DELAY (0–250 ms) |
 | MASTER (1.3) | CUTOFF | RESONANCE | TYPE (LP / HP / BP) | POSITION (PRE FX / POST REVERB / END) |
 | DRIVE (1.3) | AMOUNT (0: off) | TYPE (SOFT / FUZZ / CLIP / FOLD) | TONE | MIX |
+| AIR (1.4) | PING (PING-PONG, 0: off) | SHIMMR (SHIMMER, 0: off) | | |
 
 - **Runaway echo**: DELAY FEEDBACK past 100 % lets the echo grow and saturate.
+- **AIR** (1.4), FX's last page. **PING-PONG** throws DELAY's echoes left, right, left, as wide as it is turned (the
+  loop runs at twice TIME, so TIME goes up to 1.5 s while it is on). **SHIMMER** takes SPACE's tail an octave up and back
+  into the reverb, so it rises as it fades. Both are saved with the project; older projects load with them off.
 - **Hold FX ~0.3 s: PERFORM.** While FX is held, the white keys play eight tricks: FREEZE (a toggle: holds the grain
   cloud), REV THROW, ECHO THROW, TAPE STOP, REVERSE, FILTER DOWN, FILTER UP, STUTTER.
 - **DRIVE**: AMOUNT drives the whole mix 1x to ~8x into the TYPE's curve; each TYPE about as loud as the others at the
@@ -147,7 +161,9 @@ New in 1.1. The idea follows Jangada's DRONE page; it is written from scratch. T
   OCTAVE and RANGE; several tracks share the six voices fairly; the pattern runs on silently underneath. Not saved.
 - Signal flow: each track → its filter (PRE or POST its sends) → LEVEL and PAN → out. Its sends go to GRAIN, DELAY and
   SPACE. Then MASTER (at its POSITION), DRIVE, TAPE over everything, the tricks, MASTER's END, and the output stage:
-  6 dB of headroom, the MASTER knob and a limiter, so nothing clips.
+  6 dB of headroom, the MASTER knob and a limiter, so nothing clips. On the speaker and headphones a side limiter
+  (1.4) holds the difference between left and right under ~−17 dBFS, against the headphone amplifier's crackle on wide,
+  loud sound; a mono sound never changes, and the USB recording is not touched.
 
 ## HOME and the mixer
 
@@ -186,12 +202,14 @@ HOME draws each track's wave as it plays. The header shows the track, its sound 
 | --- | --- | --- | --- | --- |
 | SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF |
 | SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES (CLEAR) | CLOCK (INT, INT+OUT, USB, TRS) |
-| SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | | | |
+| SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB, 1.4) | | |
 
 - **MIDI**: notes in and out over USB on each track's channel (or ALL > SEL, or CH n > SEL: channel n alone to the
   selected track). MIDI in on the TRS jack too, with a TRS-to-DIN adapter. MIDI LEARN links up to 32 CCs to any knob.
   SEQ MIDI OUT also sends the sequencer's, the arpeggiator's and GENERATE's notes.
 - **MIDI clock**: follow one from USB or the TRS jack (START, CONTINUE, STOP), or send one over USB (INT+OUT).
+- **USB LEVEL** (1.4): how loud a computer records the FM-1, in 6 dB steps; 0 dB is the volume knob all the way up,
+  and a limiter after it keeps the louder steps from clipping.
 - SYSTEM 2 shows the CPU load (NOW and PEAK) and USB REC DROPS (gaps in the USB recording); the header says CPU FULL:
   NOTE DROPPED when the FM-1 had to let a note go, and WATCHDOG RESET or LOW VOLTAGE RESET after such a restart.
 
@@ -218,7 +236,7 @@ Runs in Chrome or Edge and talks to the FM-1 over USB (SysEx), live. Without an 
 page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 
 - **Sound**: every parameter of the four tracks, live, with the instrument's screen and keys beside it; a card each for
-  the source, ENV, sound settings, LFO, DRONE and the FM patch.
+  the source, ENV, sound settings, LFO, DRONE, the FM patch and Holvut's LOOP (1.4).
 - **Sound tools**: undo and redo; compare with the sound as loaded; store A and B, toggle and morph between them;
   randomize (knobs, ENV, LFO, DRONE, all, or a new source) by an amount; a list of what changed.
 - **Sequencer**: a step grid, a piano roll or a typed list; tempo, play, stop and a playhead; MIDI files in and out.
@@ -238,7 +256,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 
 1. Download `arctic-scream-X.Y.fwsc` from [Releases](https://github.com/PolarPatch/Arctic-scream-FM-1/releases).
 2. `pip install mido python-rtmidi`, connect the FM-1 over USB, run
-   `python3 tools/fm1_install.py arctic-scream-1.3.1.fwsc`.
+   `python3 tools/fm1_install.py arctic-scream-1.4.fwsc`.
 
 - It installs over the original firmware or any other FM-1 firmware.
 - An interrupted install resumes: the FM-1 comes back in update mode and the same command finishes it.
@@ -251,6 +269,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 | --- | --- | --- |
 | 1.0 | 2026-10-25 | The first release: HOWL (now Holvut), six screaming presets, the HORROR scale, runaway echo, keys an octave down, 46 arctic factory sounds, the new look, the web editor with sound tools and sequencer, the demo and cheat sheet |
 | 1.1 | 2026-10-26 | DRONE (BORGA, STOARBMA, GOHCCAT); HOWL renamed Holvut; moving northern lights on ENV, LFO, FX and the mixers; SUSTAIN 40 % by default; DRONE in the editor |
+| 1.4 | 2026-11-06 | Holvut's LOOP page: GATE, BLOOM (the effects back into the loop), LOWCUT, EXCITE (the track's sample into the string); FX's AIR page: PING-PONG and SHIMMER; SYSTEM 3's USB LEVEL (−12 to +24 dB); a side limiter against the headphone amplifier's crackle; latched and ARP key lights follow OCT− and OCT+; no 64-bit multiplies beside 16-bit loads, which the FM-1's CPU now and then got wrong (FM, PHYS, VOICE, PERFORM, LFO, BLOOM), and a tool that checks it |
 | 1.3.1 | 2026-11-01 | USB audio on macOS 10.14 to 15: the audio input and MIDI each with an audio control of their own (macOS's older USB audio driver stopped at MIDI in the list and never reached the input); the computer records at full level, the volume knob sets the speaker only |
 | 1.3 | 2026-11-01 | Holvut overblows: FEEDBACK's last steps lift a high-pass in the loop, and the howl leaps up its overtones; MIDI aftertouch pushes FEEDBACK (press harder, it screams and climbs); BODY to ~92 ms; SAMPLE and Holvut share a voice's scratch memory. From GR!MM V2.0: GENERATE, MASTER and DRIVE, the track filter's TYPE and POS, MIDI clock in and out, TRS MIDI IN, CH n > SEL, SYSTEM 3's LATCH, SEL + OCT+, REC held to clear, 6 dB of headroom and a limiter, the voice rule, backups with the samples, the USB audio ring, saves under endless tails, reset reasons; ~6.5 KB of RAM freed. The editor: projects A–D to files, SETTINGS. Clearer page colours |
 | 1.2 | 2026-10-31 | III, a Holvut horrorscape (47 factory sounds) and demo A5; Holvut deeper: BODY to ~45 ms, four all-passes in the loop; WHITEOUT retuned to keep its sound; the host tests run on macOS |
@@ -262,6 +281,9 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 - **[Audrey II](https://github.com/Synthux-Academy/Audrey-II)** and **Audrey Touch** (Nick Donaldson, Infrasonic Audio;
   Synthux Academy; MIT): the design behind Holvut and the HORROR scale. No code copied.
 - **[Jangada](https://github.com/zednaked/jangada)** (zednaked, GPL-3.0): the idea behind DRONE. No code copied.
+- **[ECHOFIELD](https://github.com/Philip-Bos/echofield-fm1)** (Philip Bos, MIT): the ideas behind PING-PONG, SHIMMER
+  and the side limiter (1.4). No code copied.
+- **Book of the Dead II** (DigDugDIY): the FX loop in the feedback, LOOP's BLOOM (1.4). An idea only.
 - **[BlueWatch](https://github.com/PolarPatch/BlueWatch)** by PolarPatch: the colour palette.
 - North Sami words checked in the dictionary at [sanit.oahpa.no](https://sanit.oahpa.no/).
 - Fonts: Press Start 2P (CodeMan38) and Terminus (Dimitar Zhekov), SIL Open Font License 1.1.
