@@ -67,8 +67,10 @@
  *              held + white keys 1..4 (from F3): recall A..D (playing: at the next bar), 5..8: save into A..D (used:
  *              again within 3 s to overwrite); the header shows the slots in use (store.c)
  *   autosave   the work (all of it: tracks, mixer, FX, tempo, sequences, slots) saves itself when stopped and untouched
- *              2.5 s, at most every 20 s, only if changed, never while playing nor while a voice sounds (a release, a
- *              latched note: SAVES WHEN SILENT, as SOUNDS' SAVE / CLEAR); at power-on it comes back as left. (GR!MM
+ *              2.5 s, at most every 20 s, only if changed, never while playing; while a voice sounds (a release, a
+ *              latched note: SAVES WHEN SILENT) it waits, at most 30 s at rest (1.4.1: a drone never falls silent,
+ *              and a power-off lost the work); a slot saved or erased, a SOUNDS SAVE / CLEAR, at once (playing: at
+ *              the stop), the flash's ~50 ms gap in the sound asked for; at power-on it comes back as left. (GR!MM
  *              rc11) A computer recording the USB audio: the hands at rest a minute first (a save stops the key scan,
  *              the LEDs and the stream for ~50 ms). A watchdog restart says WATCHDOG RESET at boot, a supply that
  *              sagged LOW VOLTAGE RESET (a fault: platform.c's red crash screen, its PC)
@@ -974,6 +976,12 @@ static uint32_t hd_until, as_err;               /* (as_err: an autosave failed, 
                                                  * recording had a hole); else 2.5 s, 2 s */
 static uint32_t as_wait, sv_wait;               /* an autosave waits for the voices to fall silent; that, or a SOUNDS
                                                  * SAVE / CLEAR, waits (ui.c: SAVES WHEN SILENT) */
+static uint32_t as_force;                       /* (1.4.1) a save asked for (a slot saved or erased): the autosave goes
+                                                 * now, a voice sounding or not (a drone is never silent: the flash's
+                                                 * ~50 ms gap in the sound, asked for) */
+#define AS_LOUD_MS 30000u                       /* (1.4.1) the hands at rest this long, a voice still sounding (a latched
+                                                 * drone): the autosave goes anyway, once (before, it waited for ever and a
+                                                 * power-off lost the work) */
 static uint32_t sv_said;                        /* (V2) when that wait began: the header says so SV_SAY_MS, then gives
                                                  * the page back (a drone: never silent); a new wait says it again */
 #define SV_SAY_MS 2000u
@@ -1445,6 +1453,7 @@ static void slot_do_save(uint32_t s)            /* the state into slot s (used: 
     }
     ow_slot = -1;
     slot_save(s);
+    as_force = 1;
     put_s(m, "SAVED "), m[6] = (char)('A' + s), m[7] = 0;
     hd_say(m);
 }
@@ -1479,10 +1488,10 @@ static void sv_do(void)                         /* OCT+ on a SAVE page: its ACTI
             snd_apply(r, sel);
             brw_at(sel, r);
             hd_say("LOADED");
-        } else if (playing || !voices_silent()) {   /* SAVE, CLEAR: the flash only while the sequencer stands and
-                                                 * no voice sounds (latched notes too) */
+        } else if (playing) {                   /* SAVE, CLEAR: the flash only while the sequencer stands (1.4.1: a voice
+                                                 * sounding, a latched drone, no longer waits: the flash's ~50 ms gap) */
             sv_pend = sv_act, sv_pend_slot = i, sv_pend_cat = (uint32_t)clamp(sv_cat, 0, NCAT - 1), sv_pend_trk = sel;
-            hd_say(playing ? "SAVES ON STOP" : "SAVES WHEN SILENT");
+            hd_say("SAVES ON STOP");
         } else
             sv_sound((uint32_t)sv_act, i, (uint32_t)clamp(sv_cat, 0, NCAT - 1), sel);
         return;
@@ -1494,6 +1503,7 @@ static void sv_do(void)                         /* OCT+ on a SAVE page: its ACTI
         if (!slot_used((uint32_t)pj_slot & 3u)) { hd_say("EMPTY"); return; }
         undo_take(UK_ONE | ++uk_n, pj_slot & 3);
         slot_erase((uint32_t)pj_slot & 3u);
+        as_force = 1;
         hd_say("ERASED");
         return;
     default:
@@ -2441,7 +2451,7 @@ static void app_main(void)
             static uint32_t shed_seen;
             if (shed_n != shed_seen) shed_seen = shed_n, hd_say("CPU FULL: NOTE DROPPED");
         }
-        if (!playing && sv_pend >= 0 && voices_silent()) {   /* SOUNDS: a SAVE or CLEAR that waited (the stop, silence) */
+        if (!playing && sv_pend >= 0) {         /* SOUNDS: a SAVE or CLEAR that waited for the stop */
             sv_sound((uint32_t)sv_pend, sv_pend_slot, sv_pend_cat, sv_pend_trk);
             sv_pend = -1;
         }
@@ -2449,12 +2459,14 @@ static void app_main(void)
          * sounding (a release, a latched note: it waits, the header says so); a failed one: again in 3 s, the header
          * says so */
         if (playing) as_wait = 0;
-        if (!playing && !ed_open() && fm1_ms - t_touch >= (usb_recording() ? SAVE_REST_REC_MS : 2500u) &&
-            (!as_last || fm1_ms - as_last >= 20000u) &&
-            fm1_ms >= as_next) {                /* (an editor's PUT open: its bytes are in st_img) */
+        if (!playing && !ed_open() && fm1_ms >= as_next &&
+            (as_force || (fm1_ms - t_touch >= (usb_recording() ? SAVE_REST_REC_MS : 2500u) &&
+                          (!as_last || fm1_ms - as_last >= 20000u)))) {   /* (an editor's PUT open: its bytes are in
+                                                 * st_img; a save asked for: now) */
             uint32_t g = st_gen;
             as_next = fm1_ms + 500u;
-            if (!voices_silent())               /* (no flash while a voice sounds: it waits, if there is anything) */
+            if (!voices_silent() && !as_force && fm1_ms - t_touch < AS_LOUD_MS)   /* (no flash while a voice sounds:
+                                                 * it waits, if there is anything; a drone: AS_LOUD_MS at rest) */
                 as_wait = (uint32_t)autosave_due();
             else {
                 as_wait = 0;
@@ -2462,7 +2474,7 @@ static void app_main(void)
                     as_err = 1;
                     as_next = fm1_ms + 3000u;
                 } else {
-                    as_err = 0;
+                    as_err = 0, as_force = 0;
                     if (st_gen != g) as_last = fm1_ms ? fm1_ms : 1u;
                 }
             }
