@@ -175,6 +175,25 @@ and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.m
   - GR!MM's tests run with `GRIMM_PLAIN=1` (host mode: the plain VA tracks GR!MM starts with, not ICE WRAITH) and our
     keys an octave down; `tests/compat.c`'s saves are Arctic Scream 1.2's (`tests/data/a1.2-*`).
 
+### The screen reader (1.5)
+
+- **What it is.** The FM-1 tells [fm1-reader](https://github.com/charlesvestal/fm1-reader)'s page what its screen
+  shows, over SysEx (`F0 7D 53 52 ...`, its `PROTOCOL.md`). `firmware/src/announce.c` (fm1-base's, MPL-2.0) keeps the
+  protocol; `firmware/src/reader.c` says what changed: a page, a knob, a list's row, the header's messages (`hd_say`),
+  PLAY, STOP, REC. Nothing is sent before a reader's HELLO.
+- **The words.** `firmware/words.tsv` says how the screen's text is spoken ("SHIMMR": shimmer). Every build runs
+  `tools/gen_words.py`, which writes `web/words/<id>.json` and the link in `firmware/gen/ann_words.h`. A changed table
+  makes a new file: commit it, publish it with the site (`build_web.sh` copies `web/words/` to `words/`), and never
+  change or delete a published one: an FM-1 in the wild points at it.
+- **Updating the shared files.** Change nothing in `announce.c` or `gen_words.py`; run fm1-reader's
+  `tools/sync_announce.sh ../arctic-drones` (fm1-base next to it), then `tools/reader_audit.sh` again.
+- **Cost.** ~6 KB of flash and ~580 B of RAM (`ANN_MAX` 160, so a SAY fits the SysEx queue of 64 packets as it is).
+- **Checks.** `tools/reader_audit.sh` (0 errors; three warnings kept: "nothing to undo", "nothing to redo", "nothing
+  copied" say what did not happen) and `tests/reader_test.py`. On the device: fm1-reader's
+  `tools/fm1_reader.py --where --seconds 20` while turning knobs and changing pages.
+- **Not yet.** The browser demo does not speak (`web/fm1_web.c`'s `ann_wire_send` refuses); fm1-reader's PAGES.md
+  describes how.
+
 ## Build and test
 
 ```sh
@@ -188,7 +207,11 @@ build/host/grimm OUT script.txt FPS      # script mode: "3100 keys 0x80", "3500 
 source ~/emsdk/emsdk_env.sh; bash web/build_web.sh
 node web/test_web.mjs                     # must say "test_web: all ok"
 
-# tests/run_host.sh also runs GR!MM's tests: clock, fx, quick, latch, gen, level, the USB ring, rc11 (all "passed")
+# tests/run_host.sh also runs GR!MM's tests: clock, fx, quick, latch, gen, level, the USB ring, rc11, and (1.5) the
+# screen reader's (all "passed")
+
+# the screen reader's words (1.5): fm1-reader next to this repo (../fm1-reader); must say "0 errors"
+sh tools/reader_audit.sh                  # --spoken: every message as it will be heard
 
 # stress test, seeds 1-3: each must print STRESS OK (see tests/stress.sh for the build line)
 python3 tests/stress_gen.py 1 build/stress/script.txt build/stress/checks.txt

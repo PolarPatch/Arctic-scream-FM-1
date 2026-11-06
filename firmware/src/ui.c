@@ -506,8 +506,14 @@ static void ui_slab_draw(void)
 }
 
 /* ---- the pictures */
+static char ui_cap[2][28];                      /* (1.5) the caption as last drawn: the screen reader's WHERE */
 static void ui_caption(const char *l, const char *r)
 {
+    uint32_t i;
+    for (i = 0; i < 27u && l[i]; i++) ui_cap[0][i] = l[i];
+    ui_cap[0][i] = 0;
+    for (i = 0; r && i < 27u && r[i]; i++) ui_cap[1][i] = r[i];
+    ui_cap[1][i] = 0;
     ui_text(PX0, 31, l, 1, UI_M);
     if (r) ui_text(PX0 + 216 - 8 * ui_len(r), 31, r, 1, UI_M);
 }

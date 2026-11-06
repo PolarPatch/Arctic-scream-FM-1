@@ -29,6 +29,7 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
   - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
   - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
+- **New in 1.5: a screen reader.** Arctic Scream says what its screen shows: pages, knobs as they turn, lists and messages. Open the [FM-1 Screen Reader](https://charlesvestal.github.io/fm1-reader/) in Chrome or Edge, connect, and it speaks with its own voice or through VoiceOver, NVDA, JAWS or TalkBack. See the [manual](MANUAL.md#the-screen-reader-new-in-15).
 - **New in 1.4:**
   - **Holvut's LOOP page** (press EDIT twice on a Holvut track): **GATE** lets the howl die into its own tail when you let go of the key; **BLOOM** feeds the grain, the echoes and the reverb back into the loop, so the scream grows inside its own effects; **LOWCUT** thins the loop from ~70 Hz up to ~1.9 kHz; **EXCITE** plays the track's sample into the string, so your own sound wakes the howl.
   - **AIR**, FX's new last page: **PING-PONG** throws DELAY's echoes left, right, left; **SHIMMER** sends SPACE's tail up an octave and back into the reverb, so it rises as it fades.
@@ -104,6 +105,7 @@ It installs over the FM-1's own firmware or any other FM-1 firmware. Don't unplu
 - **[Jangada](https://github.com/zednaked/jangada)** by zednaked (GPL-3.0): the idea behind the DRONE page (its EVOL, TENS and RAMP). Written from scratch; no code is copied.
 - **[ECHOFIELD](https://github.com/Philip-Bos/echofield-fm1)** by Philip Bos (MIT): the ideas behind 1.4's PING-PONG, SHIMMER and the side limiter, and its measurements of the FM-1's headphone amplifier. Written again in integers; no code is copied.
 - **Book of the Dead II** by DigDugDIY: the FX loop inside the feedback that became the LOOP page's BLOOM. An idea only; it is hardware.
+- **[FM-1 Screen Reader](https://github.com/charlesvestal/fm1-reader)** by Charles Vestal: the reader page and its protocol; `firmware/src/announce.c` and `tools/gen_words.py` are [fm1-base](https://github.com/charlesvestal/fm1-base)'s (MPL-2.0).
 - **[BlueWatch](https://github.com/PolarPatch/BlueWatch)** by PolarPatch: the colour palette.
 - **Press Start 2P** font by CodeMan38 and **Terminus** font by Dimitar Zhekov (SIL Open Font License 1.1).
 

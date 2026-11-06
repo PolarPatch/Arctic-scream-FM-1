@@ -195,6 +195,21 @@ static int sysex_get(const uint8_t **p, uint32_t *n)
 static void sysex_done(void) { host_sx_n = 0; }
 static int sysex_send(const uint8_t *p, uint32_t n) { (void)p; (void)n; return 0; }
 #endif
+/* (Arctic Scream 1.5) the screen reader's frames (announce.c): a SAY printed ("said: ..."), and with GRIMM_SAID_LOG
+ * appended to that file as "MSG<tab>text" ("WARN" with ANN_KEEP), for fm1-reader's tools/audit.mjs */
+static int ann_wire_send(const uint8_t *p, uint32_t n)
+{
+    static FILE *log;
+    static int opened;
+    if (n < 7u) return 0;
+    if (p[4] == 16u) {
+        printf("%6u ms  said%s: %.*s\n", fm1_ms, p[5] & 2u ? " (keep)" : "", (int)(n - 7u), (const char *)p + 6);
+        if (!opened) opened = 1, log = getenv("GRIMM_SAID_LOG") ? fopen(getenv("GRIMM_SAID_LOG"), "a") : 0;
+        if (log) fprintf(log, "%s\t%.*s\n", p[5] & 2u ? "WARN" : "MSG", (int)(n - 7u), (const char *)p + 6), fflush(log);
+    } else if (p[4] == 1u)
+        printf("%6u ms  reader HELLO: %.*s\n", fm1_ms, (int)(n - 7u), (const char *)p + 6);
+    return 0;
+}
 
 static void app_audio(int32_t *out, uint32_t n);
 static int32_t host_master = 4092;              /* (GR!MM V2) the MASTER knob as the app reads it (fm1_master, Q12): all

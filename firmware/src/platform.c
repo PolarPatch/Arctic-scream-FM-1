@@ -302,6 +302,13 @@ static uint32_t sx_app_t0;                      /* when the frame waiting for th
 static int sysex_get(const uint8_t **p, uint32_t *n) { return ota_frame_get(p, n) && *n && (*p)[0] == 0x7Du; }
 static void sysex_done(void) { ota_frame_done(), sx_app_t0 = 0; }
 static int sysex_send(const uint8_t *p, uint32_t n) { return ota_wire_send(p, n); }
+/* (Arctic Scream 1.5) the screen reader's messages (announce.c): one whole frame, never waiting: no room in the SysEx
+ * queue (nobody reading), an editor's reply on its way, USB away: not sent */
+static int ann_wire_send(const uint8_t *p, uint32_t n)
+{
+    if (!usb.config || usb.suspended || sx_busy || SXQ - (so_w - so_r) < (n + 2u) / 3u + 1u) return -1;
+    return ota_wire_send(p, n);
+}
 
 /* ---- MIDI over USB: 4-byte USB-MIDI packets, cable 0 */
 static int midi_get(uint8_t *st, uint8_t *d1, uint8_t *d2)   /* 1: a message (status, data 1, data 2) */

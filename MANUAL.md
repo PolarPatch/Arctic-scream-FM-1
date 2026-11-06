@@ -574,6 +574,25 @@ mouse or the computer keyboard.
 Hold a button's key and press others for combos. With the mouse, right-click or Shift-click a button to keep it held.
 Drag or scroll a knob to turn it.
 
+### The screen reader (new in 1.5)
+
+Arctic Scream says what its screen shows, for blind and low-vision players. Connect the FM-1 over USB, open the
+**[FM-1 Screen Reader](https://charlesvestal.github.io/fm1-reader/)** in Chrome or Edge and press **Connect**. The page
+speaks with its own voice, or hands the words to your own screen reader (VoiceOver, NVDA, JAWS, TalkBack).
+
+- **A new page** says its name, the track and its source, its place in its button's round and its four knobs:
+  "loop, track 1 Holvut, page 2 of 3. gate off, bloom 45 percent, low cut 70 hertz, excite off".
+- **A knob turned** says its name and value, once it settles: "feedback minus 4 decibels".
+- **Lists** say the row and its place: on SAVE, "slot 5 drone 01, Holvut, 5 of 64"; on SEQ's grid, the step.
+- **Messages** in the header are said at once: a sound's name from PRESETS, SAVED, LATCH ON. Warnings ("empty: not
+  loaded", "C P U full: note dropped") are heard whole.
+- **PLAY, STOP and REC** are said as they happen.
+- The page's **Read the whole screen** button says everything on it, the picture's caption and the tempo too.
+
+The FM-1 says nothing until the page asks, so a DAW on the same USB port never sees a byte of it. How each word on the
+screen is said ("FDBK": feedback, "T1": track 1) lives in a small file on this project's site, not in the FM-1's
+memory. The reader is made by Charles Vestal for many FM-1 firmwares.
+
 ---
 
 **Stuck?** The Rescue page on the [FM-1 Firmware Hub](https://thefirmwarehub.com/) brings an FM-1 back.

@@ -119,6 +119,10 @@
  * What platform.c offers: docs/API.md. The chip's rules: docs/RULES.md. */
 #define APP_NAME "ARCTIC SCREAM p0larpatch"     /* the app, the rescue and the crash screen say this */
 #include "platform.c"
+#define ANN_NAME "Arctic Scream " APP_VER       /* (1.5) the screen reader (reader.c): its HELLO answer, */
+#define ANN_MAX 160u                            /* its longest SAY (platform.c's SysEx queue, 64 packets, holds it) */
+#include "ann_words.h"                          /* (tools/gen_words.py from firmware/words.tsv: the words file's link) */
+#include "announce.c"                           /* (fm1-base's, MPL-2.0: fm1-reader's tools/sync_announce.sh) */
 #include "dsp.c"
 #include "wear.c"
 #include "samples.c"
@@ -1354,9 +1358,22 @@ static int same(const char *a, const char *b)
     return *a == *b;
 }
 
-static void hd_say(const char *m)               /* the header says m a moment (cut to what hd_msg holds) */
+static int hd_warn(const char *m)              /* (1.5) a message that says something did not happen: the screen
+                                                 * reader hears it whole */
+{
+    static const char *const W[] = {"NOT ", "NOTHING", "EMPTY", "STOP AND", "CPU FULL", "SAVE ERROR", "NO "};
+    uint32_t i, j;
+    for (i = 0; i < sizeof W / sizeof W[0]; i++) {
+        for (j = 0; W[i][j] && m[j] == W[i][j]; j++) {}
+        if (!W[i][j]) return 1;
+    }
+    return 0;
+}
+static void hd_say(const char *m)               /* the header says m a moment (cut to what hd_msg holds); (1.5) and
+                                                 * the screen reader, at once */
 {
     uint32_t i;
+    ann_say(m, 0, ANN_NOW | (hd_warn(m) ? ANN_KEEP : 0u));
     for (i = 0; m[i] && i < sizeof hd_msg - 1u; i++) hd_msg[i] = m[i];
     hd_msg[i] = 0;
     hd_until = fm1_ms + 1500u;
@@ -1451,7 +1468,7 @@ static void slot_do_save(uint32_t s)            /* the state into slot s (used: 
 static void slot_do_recall(uint32_t s)          /* slot s back: playing, at the next bar; stopped, now */
 {
     char m[24];
-    if (!slot_used(s)) { hd_say("EMPTY"); return; }
+    if (!slot_used(s)) { hd_say("EMPTY: NOT LOADED"); return; }
     if (playing) {                              /* (song record: at the pass's end, song.c) */
         seq_recall = (int32_t)s;
         char *e = put_s(m, song_rec == 2u ? "NEXT PASS: " : "NEXT BAR: ");
@@ -1474,7 +1491,7 @@ static void sv_do(void)                         /* OCT+ on a SAVE page: its ACTI
         uint32_t i = (uint32_t)clamp(sv_slot, 0, SND_N - 1);
         const uint8_t *r = snd_rec(i);
         if (sv_act == 0) {                      /* LOAD */
-            if (!r) { hd_say("EMPTY"); return; }
+            if (!r) { hd_say("EMPTY: NOT LOADED"); return; }
             undo_take(UK_SND | sel, -1);
             snd_apply(r, sel);
             brw_at(sel, r);
@@ -1491,7 +1508,7 @@ static void sv_do(void)                         /* OCT+ on a SAVE page: its ACTI
     case 0: slot_do_recall((uint32_t)pj_slot & 3u); return;
     case 1: slot_do_save((uint32_t)pj_slot & 3u); return;
     case 2:
-        if (!slot_used((uint32_t)pj_slot & 3u)) { hd_say("EMPTY"); return; }
+        if (!slot_used((uint32_t)pj_slot & 3u)) { hd_say("EMPTY: NOT ERASED"); return; }
         undo_take(UK_ONE | ++uk_n, pj_slot & 3);
         slot_erase((uint32_t)pj_slot & 3u);
         hd_say("ERASED");
@@ -1532,6 +1549,7 @@ static void presets_turn(int32_t d)
     hd_say(m);
 }
 #include "ui.c"                                 /* the screens (after the concept designs) */
+#include "reader.c"                             /* (1.5) the screen reader: what the screen shows, said */
 
 static void set_source(int32_t e)               /* the selected track's source: its notes go over (a fade, then a new
                                                  * attack); each source keeps its own settings */
@@ -2419,6 +2437,16 @@ static void app_main(void)
         }
         batt_poll();
         if (!scr_dark) ui_update(set.oct);
+#ifdef DINGHY_HOST
+        rd_host();                              /* (host mode: a reader listening, the words' dump) */
+#endif
+        speak();                                /* (1.5) the screen reader: what changed, said */
+        ann_tick(fm1_ms);
+        {                                       /* (1.5) a screen reader's SysEx (F0 7D 53 52), before the editor's */
+            const uint8_t *fp;
+            uint32_t fn;
+            if (sysex_get(&fp, &fn) && ann_frame(fp, fn, fm1_ms)) sysex_done();
+        }
 #ifdef GRIMM_STRESS
         stress_poll();
 #endif
