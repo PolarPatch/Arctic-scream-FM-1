@@ -205,10 +205,10 @@ export class Client {
     }
     return this.smpInfo();
   }
-  async fx() {                                             // GR!MM V2: the project's effects (28 values: FX_LIST's)
-    const r = await this.req(CMD.FX, [0], 1500);
+  async fx() {                                             // GR!MM V2: the project's effects (28 values: FX_LIST's; 1.4: 30,
+    const r = await this.req(CMD.FX, [0], 1500);           // AIR's PING-PONG and SHIMMER after them)
     if (r[1]) throw new EditorError(RC[r[1]] || `rc ${r[1]}`, r[1]);
-    return r.slice(2, 30);
+    return r.slice(2, 32);
   }
   async fxSet(i, v) {                                      // value i to v, live
     const r = await this.req(CMD.FX, [1, i, v & 0x7f], 1500, true);
@@ -381,7 +381,8 @@ export function parseSound(r, meta) {                        // a record -> a so
            lfo: [r[14] & 0x7f, r[15] & 0x7f, r[16] & 15, r[17] & 7],
            drone: { borga: Math.min(100, r[12] >> 1), storm: Math.min(100, (r[17] >> 3) | (r[16] >> 7) << 5 | (r[15] >> 7) << 6),
                     rise: Math.min(6, (r[16] >> 4) & 7) },
-           fm: { alg: fm[0] & 31, fb: fm[1] & 7, ops: [0, 1, 2, 3, 4, 5].map((i) => [...fm.slice(2 + i * 5, 7 + i * 5)]) }, name };
+           fm: { alg: fm[0] & 31, fb: fm[1] & 7, ops: [0, 1, 2, 3, 4, 5].map((i) => [...fm.slice(2 + i * 5, 7 + i * 5)]) },
+           loop: r[3] === 7 ? [...r.slice(18, 22)].map((x) => x & 127) : [0, 0, 0, 0], name };   // (1.4, Holvut: LOOP)
 }
 export function buildRecord(s) {
   const r = new Uint8Array(SND);
@@ -395,6 +396,7 @@ export function buildRecord(s) {
     r[18] = 0x80 | (s.fm.alg & 31), r[19] = s.fm.fb & 7;
     s.fm.ops.forEach((o, i) => r.set(o, 20 + i * 5));
   }
+  if (s.eng === 7) r.set((s.loop || [0, 0, 0, 0]).map((x) => x & 127), 18);   // (1.4, Holvut: its LOOP, store.c snd_pack)
   const nm = (s.name || "").toUpperCase().replace(/[^\x20-\x7e]/g, "").slice(0, 10);
   for (let i = 0; i < nm.length; i++) r[50 + i] = nm.charCodeAt(i);
   new DataView(r.buffer).setUint32(60, crc32(r.subarray(0, 60)), true);
@@ -527,12 +529,14 @@ export const FX_PAGES = [
   ["MASTER", ["CUTOFF", "RESONANCE", ["TYPE", ["LP", "HP", "BP"]], ["POSITION", ["PRE FX", "POST REVERB", "END"]]]],
   ["DRIVE", ["AMOUNT", ["TYPE", ["SOFT", "FUZZ", "CLIP", "FOLD"]], "TONE", "MIX"]],
 ];
+export const FX_AIR = ["PING-PONG", "SHIMMER"];             // (1.4) values 28, 29: after the tracks' filters
 export const FT_NAMES = ["LP", "HP", "BP"];
 
 // ------------------------------------------------------------------ the settings (docs/EDITOR_PROTOCOL.md): GR!MM V2's two
 // on the SETTINGS section; the rest (the octave, TUNE, COLOUR, SCREEN OFF, SEQ MIDI OUT, MIDI LEARN's links) as read
 export const SET_V1 = 168;                                   // V1.0's settings (version 1, no CLOCK)
-export const SET_V2 = 169;                                   // V2's version 2 (CLOCK, no LATCH); version 3's: 170
+export const SET_V2 = 169;                                   // V2's version 2 (CLOCK, no LATCH)
+export const SET_V3 = 170;                                   // version 3's (LATCH, no USB LEVEL: 0 dB); version 4's: 171
 export const MCH_NAMES = [...Array.from({ length: 13 }, (_, k) => `${k + 1}-${k + 4}`), "ALL > SEL",
   ...Array.from({ length: 16 }, (_, k) => `CH ${k + 1} > SEL`)];
 export const CLOCK_NAMES = ["INT", "INT+OUT", "USB", "TRS"];
@@ -556,7 +560,7 @@ export function checkBackup(b, info) {                       // -> [{id, data, w
   const sizes = new Map(backupObjects(info).map(([id, size, what]) => [id, [size, what]]));
   return b.objects.map((o) => {
     const d = unb64(o.data), s = sizes.get(o.id);
-    const oldset = o.id === OBJ.SET && (d.length === SET_V1 || d.length === SET_V2) && s && s[0] > d.length;   // (an
+    const oldset = o.id === OBJ.SET && (d.length === SET_V1 || d.length === SET_V2 || d.length === SET_V3) && s && s[0] > d.length;   // (an
                                                              // older GR!MM's settings: 1.0's, V2's version 2: taken)
     if (!s || (d.length !== s[0] && !oldset) || crc32(d) !== o.crc) throw new EditorError(`object ${o.id} is damaged or not this firmware's`, 90);
     return { id: o.id, data: d, what: s[1] };

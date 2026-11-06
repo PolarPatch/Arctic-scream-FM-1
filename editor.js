@@ -495,6 +495,10 @@ function card(parent, icon, title, color, small) {
 }
 
 // ------------------------------------------------------------------ the sound page
+function loopText(k, v) {                                  // (1.4) Holvut's LOOP knob as the FM-1 shows it (grimm.c hx_text)
+  if (k === 2) { const hz = 70 * 2 ** (Math.floor(v * 920 / 127) / 192); return hz < 1000 ? `${Math.floor(hz)} hz` : `${(hz / 1000).toFixed(1)} khz`; }
+  return v ? `${Math.round(v * 100 / 127)} %` : "off";
+}
 function drawEditor() {
   const ed = $("ed"), s = tracks[selT];
   ed.textContent = "";
@@ -509,6 +513,17 @@ function drawEditor() {
       if (s.eng === 1 && k === 0) { setPatch(s, v); drawFM(); }   // (FM's PATCH: its operators as built, as on the FM-1)
       changed();
     }, () => knobText(s, k), KC[k]);
+
+  if (s.eng === 7) {                                       // (1.4, Holvut: the LOOP page, EDIT tapped again)
+    s.loop = s.loop || [0, 0, 0, 0];
+    g = card(left, "∞", "loop", "var(--violet)", "gate · bloom · lowcut · excite");
+    c = el("div", { cls: "ctls" }, g);
+    ["GATE", "BLOOM", "LOWCUT", "EXCITE"].forEach((n, k) =>
+      control(c, n, 0, 127, () => s.loop[k], (v) => { s.loop[k] = v; changed(); }, (v) => loopText(k, v), KC[k]));
+    el("p", { style: "grid-column: 1 / -1; margin: 4px 0 0; color: var(--muted); font-size: 11px" }, c,
+      "gate: the loop dies when the key is let go · bloom: the effects fed back into the loop · lowcut: the loop's " +
+      "high-pass · excite: the track's sample (SAMPLE's slot) fed into the string");
+  }
 
   g = card(left, "⌁", "env", "var(--ice)", "attack · decay · sustain · release");
   const cv = el("canvas", { cls: "env", width: 640, height: 140 }, g);
@@ -813,6 +828,8 @@ function diffList() {                                        // what changed sin
   ["ATTACK", "DECAY", "SUSTAIN", "RELEASE"].forEach((n, k) => add(n, vf.text("web_env_text", k, l.env[k]), vf.text("web_env_text", k, s.env[k])));
   add("LFO RATE", vf.text("web_lfo_text", l.lfo[0]), vf.text("web_lfo_text", s.lfo[0]));
   add("LFO DEPTH", `${l.lfo[1]} %`, `${s.lfo[1]} %`);
+  if (s.eng === 7) ["GATE", "BLOOM", "LOWCUT", "EXCITE"].forEach((n, k) =>   // (1.4, Holvut's LOOP)
+    add(n, loopText(k, (l.loop || [0, 0, 0, 0])[k]), loopText(k, (s.loop || [0, 0, 0, 0])[k])));
   add("LFO DEST", meta.lfoDest[l.lfo[2]], meta.lfoDest[s.lfo[2]]);
   add("LFO SHAPE", meta.lfoShape[l.lfo[3]], meta.lfoShape[s.lfo[3]]);
   add("LATCH", l.latch ? "ON" : "OFF", s.latch ? "ON" : "OFF");
