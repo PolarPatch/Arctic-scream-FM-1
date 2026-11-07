@@ -461,6 +461,9 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         if (k == 2u) { put_s(S->val, FT_NAME[clamp(v, 0, NFTYPE - 1)]); return; }
         if (k == 3u) { put_s(S->val, MP_SHORT[clamp(v, 0, NMPOS - 1)]); return; }
         break;
+    case PG_TAPE:                               /* TONE: its low-pass corner ("OPEN", "2.4K", "400") */
+        if (k == 2u) { tone_text(S->val, v); return; }
+        break;
     case PG_DRIVE:                              /* (V2) AMOUNT ("OFF": 0), TYPE, TONE ("OPEN"), MIX */
         if (k == 0u && !v) { put_s(S->val, "OFF"); return; }
         if (k == 1u) { put_s(S->val, DT_NAME[clamp(v, 0, NDTYPE - 1)]); return; }

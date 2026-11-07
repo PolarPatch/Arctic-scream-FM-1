@@ -222,6 +222,8 @@ North Sami names.
 
 - **Destinations:** PITCH, VOLUME, PAN, the source's four knobs by name, REV SEND, GRAIN SEND, the track's CUTOFF.
 - **Shapes:** SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT.
+- **VOLUME swings around the track's VOLUME**, so a track at VOLUME 0 still sounds on the LFO's peaks. To silence a
+  track, mute it (**hold GLO + keys 1–4**). A square wave on VOLUME at a fast RATE (~6 Hz) is a tremolo-picked guitar.
 
 ---
 
@@ -364,7 +366,7 @@ colours the whole mix at the end. Each page has its own northern lights.
 - **Runaway echo:** past 100 % FEEDBACK the echo grows and saturates, and burns magenta on the screen.
 - GRAIN and DELAY both pour into SPACE. All four TAPE knobs at 0 switch TAPE off.
 - GRAIN and DELAY only hear what the tracks send them (MIXER 1). Turn a GRAIN or DELAY knob up while the selected track sends nothing, and its send goes to 50 % (the header says so), so you hear the page at once.
-- TAPE goes far: WOW to a seasick ±2 % of pitch, SATURATION to 12x drive, TONE down to ~500 Hz, HISS loud. DELAY's WEAR wobbles up to ~11 ms and drives the loop to 4x.
+- TAPE goes far: WOW to a seasick ±2 % of pitch, SATURATION to 12x drive, TONE darker as it turns up, from `OPEN` down to ~400 Hz (the screen shows its corner: `10K`, `2.4K`, `400`; the opposite way to DRIVE's TONE), HISS loud. DELAY's WEAR wobbles up to ~11 ms and drives the loop to 4x.
 
 - **MASTER** filters everything, in stereo. **POSITION** says where: `PRE FX` filters the tracks' dry mix before the effects return (the reverb and echoes stay bright), `POST REVERB` filters the tracks and the effects together (before DRIVE and TAPE), `END` filters the very end, after TAPE and the PERFORM tricks. `LP` with CUTOFF at the top or `HP` at the bottom switches it off completely.
 - **DRIVE** distorts everything after SPACE, before TAPE. **AMOUNT** is how hard (0 = off completely), **TYPE** the character: `SOFT` (warm saturation), `FUZZ` (lopsided, buzzy), `CLIP` (hard), `FOLD` (a wavefolder: the harder you drive it, the more it folds back into new overtones). All four are about equally loud at the same AMOUNT, so switching TYPE doesn't jump in volume, and turning AMOUNT all the way up makes it at most ~6 dB louder. **TONE** darkens it (`OPEN` at the top), **MIX** blends it with the clean sound. A limiter after it keeps even the loudest settings from blowing up the output.

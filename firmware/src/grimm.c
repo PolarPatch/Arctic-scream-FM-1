@@ -1246,6 +1246,15 @@ static char *hz_text(char *s, int32_t v, int32_t ty)   /* a filter's CUTOFF (0..
     if (hz < 10000u) return put_s(put_x10(s, (hz + 50u) / 100u), "K");
     return put_s(put_u(s, (hz + 500u) / 1000u), "K");
 }
+static char *tone_text(char *s, int32_t v)      /* TAPE's TONE: its low-pass corner, darker as it turns: "OPEN" (0), "9.8K",
+                                                 * "880", "400" */
+{
+    uint32_t hz = TF_TONE_HZ[clamp(v, 0, 127)];
+    if (!hz || hz >= 20000u) return put_s(s, "OPEN");
+    if (hz < 1000u) return put_u(s, hz);
+    if (hz < 10000u) return put_s(put_x10(s, (hz + 50u) / 100u), "K");
+    return put_s(put_u(s, (hz + 500u) / 1000u), "K");
+}
 static char *tempo_text(char *s, const char *pre)   /* the tempo: pre "120"; a MIDI clock's (V2): "EXT 120.4", "EXT"
                                                  * (not measured yet: its first beat) */
 {
@@ -1322,7 +1331,7 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
         if (v == 64) { put_s(s, "C"); return; }
         put_u(put_s(s, v < 64 ? "L " : "R "), (uint32_t)(v < 64 ? 64 - v : v - 64));
         return;
-    case PG_TAPE: put_pc(s, v); return;
+    case PG_TAPE: if (k == 2u) tone_text(s, v); else put_pc(s, v); return;   /* (TONE: its corner, as CUTOFF) */
     case PG_LOOP: hx_text(s, k, v, sel); return;
     case PG_AIR: if (v <= 0) put_s(s, "OFF"); else put_pc(s, v); return;
     case PG_MASTER:

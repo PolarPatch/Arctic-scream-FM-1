@@ -295,7 +295,7 @@ C("05", "ENV and LFO", "var(--amber)",
   P("LFO", "Tap LFO", "lfo", K(
     ["RATE", "How fast. It never restarts with a note, so drones keep breathing.", "60 s a cycle – 20 Hz"],
     ["DEPTH", "How much (0 = off).", "0–100"],
-    ["DESTINATION", "What it moves.", "PITCH, VOLUME, PAN, the source's four knobs, REV SEND, GRAIN SEND, CUTOFF"],
+    ["DESTINATION", "What it moves. VOLUME swings around the track's VOLUME, so a track at 0 still sounds on its peaks: mute it with GLO + keys 1–4.", "PITCH, VOLUME, PAN, the source's four knobs, REV SEND, GRAIN SEND, CUTOFF"],
     ["SHAPE", "Its shape.", "SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT"]))]),
 
 C("06", "Scales, chords and the arpeggiator", "var(--pink)",
@@ -355,7 +355,7 @@ C("09", "Destroy: FX", "var(--plasma)",
   P("TAPE", "Tap FX", "tape", K(
     ["WOW", "Slow wobble and flutter, up to a seasick ±2 % of pitch.", "0–100 %"],
     ["SATURATION", "Tape saturation, up to 12x drive.", "0–100 %"],
-    ["TONE", "Darker, down to ~500 Hz.", "0–100 %"],
+    ["TONE", "Darker as it turns up, down to ~400 Hz (DRIVE's TONE goes the other way).", "OPEN, 10K … 400"],
     ["HISS", "Tape hiss, up to loud.", "0–100 %"]),
     ["All four at 0 switch TAPE off (BYPASS). It colours the whole mix at the very end."]),
   P("GRAIN", "Tap FX twice", "grain", K(
