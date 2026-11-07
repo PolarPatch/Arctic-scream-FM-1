@@ -567,9 +567,15 @@ export function checkBackup(b, info) {                       // -> [{id, data, w
   });
 }
 // ------------------------------------------------------------------ a project (slot A..D) as a file of its own
-export function makeProject(d, k, info) {
-  return { format: "arctic-project", version: 1, fmt: info.fmt, firmware: info.firmware, slot: "ABCD"[k],
-           date: new Date().toISOString().replace("T", " ").slice(0, 19), len: d.length, crc: crc32(d), data: b64(d) };
+export function makeProject(d, k, info, more = {}) {      // (1.5, more: the effects and the tempo, as fx() and the
+  return { format: "arctic-project", version: 1, fmt: info.fmt, firmware: info.firmware, slot: "ABCD"[k],   // SEQ's
+           date: new Date().toISOString().replace("T", " ").slice(0, 19), len: d.length, crc: crc32(d), data: b64(d), ...more };
+}
+export function projectExtras(p) {                           // (1.5) a project file's effects and tempo, checked; null: none
+  const fx = Array.isArray(p.effects) && p.effects.length === 30 && p.effects.every((v) => Number.isInteger(v) && v >= 0 && v < 128)
+    ? p.effects : null;                                      // (a slot keeps the tracks; the effects and the tempo are
+  const bpm = Number.isInteger(p.tempo) && p.tempo >= 20 && p.tempo <= 300 ? p.tempo : null;   // the working project's)
+  return fx || bpm ? { fx, bpm } : null;
 }
 export function checkProject(p, info) {                      // -> the slot's bytes, or throws (nothing written)
   if (!p || p.format !== "arctic-project" || p.version !== 1) throw new EditorError("not an Arctic Scream project file", 90);
