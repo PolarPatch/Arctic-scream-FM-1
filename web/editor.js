@@ -11,7 +11,7 @@
 // factory sounds (LOAD TO T1..T4), samples the sample slots, backup everything. The protocol, the records, the WAV
 // conversion: editor_core.js. Without an FM-1 the same, with the "virtual FM-1" (grimm.wasm here) in its place.
 import { Client, MidiTransport, VirtualFM1, LiveSender, findFM1, HEAD, CMD, OBJ, PROTOS, EditorError, emptyRecord, isEmpty,
-         recordOk, parseSound, buildRecord, soundTitle, makeBackup, checkBackup, restoreBackup, makeProject, checkProject, makeSlot, noteFromName,
+         recordOk, parseSound, buildRecord, soundTitle, makeBackup, checkBackup, restoreBackup, makeProject, checkProject, projectExtras, makeSlot, noteFromName,
          sampleName, noteName, pack7, hex, SEQ_N, SEQ_DIV, SEQ_MODE, parseSeq, buildSeq, emptyStep, seqToMidi,
          midiToSeq, SET_V1, SET_V2, MCH_NAMES, CLOCK_NAMES, settingsOf, withSettings, sameSettings, checkSamples, restoreSamples } from "./editor_core.js";
 const RISE = ["OFF", "1 BAR", "2 BARS", "4 BARS", "8 BARS", "16 BARS", "32 BARS"];   // DRONE's GOHCCAT
@@ -1281,8 +1281,11 @@ for (let k = 0; k < 4; k++) {
   el("button", {}, row, "SAVE").onclick = () => job("SAVE PROJECT", async () => {
     say(`READING PROJECT ${"ABCD"[k]}…`);
     const d = await conn.client.get(OBJ.SLOT + k, conn.info.slotSize, progress);
-    download(`arctic-scream-project-${"ABCD"[k]}-${stamp()}.arcticproject`, JSON.stringify(makeProject(d, k, conn.info)));
-    return `PROJECT ${"ABCD"[k]} SAVED (DOWNLOADED)`;
+    const more = {};                                         // (1.5: the effects and the tempo as they are now, with it)
+    try { more.effects = [...await conn.client.fx()]; more.tempo = (await conn.client.seqOp([0, 0], true)).bpm; } catch { /* (an
+                                                             // older firmware: the tracks alone) */ }
+    download(`arctic-scream-project-${"ABCD"[k]}-${stamp()}.arcticproject`, JSON.stringify(makeProject(d, k, conn.info, more)));
+    return `PROJECT ${"ABCD"[k]} SAVED (DOWNLOADED)${more.effects ? ", WITH THE EFFECTS AND THE TEMPO AS THEY ARE NOW" : ""}`;
   });
   el("button", {}, row, "LOAD").onclick = () => { projSlot = k; $("f-proj").click(); };
 }
@@ -1290,15 +1293,23 @@ $("f-proj").onchange = async (e) => {
   const f = e.target.files[0], k = projSlot, s = "ABCD"[k];
   e.target.value = "";
   if (!f) return;
-  let d;
-  try { d = checkProject(JSON.parse(await f.text()), conn.info); } catch (err) { say(`LOAD PROJECT: ${errText(err)} (NOTHING WRITTEN)`, "err"); return; }
+  let d, x;
+  try { const p = JSON.parse(await f.text()); d = checkProject(p, conn.info); x = projectExtras(p); } catch (err) { say(`LOAD PROJECT: ${errText(err)} (NOTHING WRITTEN)`, "err"); return; }
   if (!confirm(`LOAD ${f.name} INTO PROJECT ${s}?\n\nWhat is in slot ${s} on the FM-1 now is replaced. Stop the sequencer and let the notes end first.`)) return;
+  const fx = x && confirm(`${f.name} ALSO HOLDS THE EFFECTS${x.bpm ? " AND THE TEMPO" : ""} IT WAS SAVED WITH. SET THEM TOO?\n\n` +
+    "They go live into what the FM-1 plays now (TAPE, GRAIN, DELAY, SPACE, MASTER, DRIVE, AIR" + (x.bpm ? `, TEMPO ${x.bpm}` : "") +
+    "), and stay through the recall.");
   await job("LOAD PROJECT", async () => {
     say(`WRITING PROJECT ${s}…`);
     await conn.client.put(OBJ.SLOT + k, d, conn.info.fmt, progress);
     const r = await conn.client.get(OBJ.SLOT + k, d.length);
     if (r.some((x, i) => x !== d[i])) throw new EditorError(`PROJECT ${s} DID NOT READ BACK AS WRITTEN`, 0);
-    return `PROJECT ${s} LOADED AND READ BACK: RECALL IT ON THE FM-1 (SAVE, KEY ${k + 1})`;
+    if (fx) {                                                // (the tracks' filters, 24..27, are in the slot: not set)
+      say("SETTING THE EFFECTS…");
+      if (x.fx) for (let i = 0; i < 30; i++) if (i < 24 || i > 27) await conn.client.fxSet(i, x.fx[i]);
+      if (x.bpm) await conn.client.tempo(x.bpm);
+    }
+    return `PROJECT ${s} LOADED AND READ BACK${fx ? ", ITS EFFECTS SET" : ""}: RECALL IT ON THE FM-1 (SAVE, KEY ${k + 1})`;
   });
 };
 
