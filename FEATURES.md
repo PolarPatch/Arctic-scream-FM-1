@@ -191,7 +191,9 @@ HOME draws each track's wave as it plays. The header shows the track, its sound 
   source, knobs, ENV, LATCH, chord, LFO, DRONE and (FM) its patch.
 - **SAVE → PROJECTS**: slots A–D, each the four tracks, their sequences and locks (LOAD, SAVE, ERASE, NEW).
 - **Hold SAVE + a white key**: keys 1–4 recall A–D (at the next bar when playing), keys 5–8 save into them.
-- **Autosave**: the work saves itself when stopped and silent, and comes back at power-on as it was left.
+- **Autosave**: the work saves itself when stopped and silent, and comes back at power-on as it was left. Under a
+  latched drone it saves after 30 s left alone (1.4.1); a slot or a sound you save is written at once, with a ~50 ms
+  gap in the sound.
 - **Undo / redo**: EDIT + OCT− / OCT+. **Hold REC ~1 s** clears the selected track's pattern (undoable).
 - **Hold SEL + OCT+**: the selected track's LATCH on or off, from any page.
 - Arctic Scream keeps its own saves, separate from other FM-1 firmwares. Samples already on the FM-1 stay.
