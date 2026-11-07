@@ -20,12 +20,14 @@ WASM_OPT="$EMSDK/upstream/bin/wasm-opt"
 [ -x "$EMCC" ] || { echo "build_web: no Emscripten (emcc) in $EMSDK or on the PATH"; exit 1; }
 [ -x "$WASM_OPT" ] || { echo "build_web: no wasm-opt (Binaryen) in $EMSDK or on the PATH"; exit 1; }
 mkdir -p build/web web/dist
+python3 tools/gen_words.py firmware/words.tsv web/words firmware/gen/ann_words.h >/dev/null   # (1.5: the reader's words)
 "$EMCC" -O2 -Wall -Wno-unused-function -DGRIMM_WEB -DAPP_VER="\"${APP_VER:-1.4}\"" -Ifirmware/src -Ifirmware/gen \
     --no-entry -sSTANDALONE_WASM -sFILESYSTEM=0 -sSTACK_SIZE=262144 -sINITIAL_MEMORY=4194304 \
     -o build/web/grimm.wasm firmware/src/grimm.c
 "$WASM_OPT" build/web/grimm.wasm --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext \
     --enable-mutable-globals --asyncify --pass-arg=asyncify-imports@env.web_yield -O2 -o web/dist/grimm.wasm
 cp web/index.html web/cheatsheet.html web/manual.html web/panel.js web/site.js web/glitch.js web/demos.json web/worklet.js assets/fonts/Terminus-LICENSE.txt web/dist/   # (the screen font: SIL OFL 1.1)
+mkdir -p web/dist/words && cp web/words/*.json web/dist/words/   # (1.5: the screen reader's words files, every one)
 mkdir -p web/dist/screens && cp docs/manual/screens/*.png web/dist/screens/   # (the visual manual's screens)
 cp assets/polarpatch-logo.png web/dist/                         # (the PolarPatch logo: PolarPatch's, not under the GPL)
 cp web/editor.html web/editor.js web/editor_core.js assets/fonts/PressStart2P-Regular.ttf web/dist/   # (the editor page)
