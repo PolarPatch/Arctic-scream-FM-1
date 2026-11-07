@@ -10,7 +10,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Arctic Scream Manual</title>
 <link rel="icon" href="polarpatch-logo.png">
-<meta name="description" content="The visual manual of Arctic Scream p0larpatch 1.4, drone firmware for the M-VAVE FM-1: every page as the screen shows it, and what each knob and button does.">
+<meta name="description" content="The visual manual of Arctic Scream p0larpatch 1.5, drone firmware for the M-VAVE FM-1: every page as the screen shows it, and what each knob and button does.">
 <style>
 @font-face { font-family: "Press Start 2P"; src: url("PressStart2P-Regular.ttf") format("truetype"); font-display: block; }
 /* BlueWatch's colours, as the demo page and the cheat sheet */
@@ -104,7 +104,7 @@ footer p { margin: 4px 0; }
 
 /* print: A4, dark, a chapter a page, the page's number at the foot */
 @page { size: A4; margin: 13mm 12mm 15mm; background: #060410;
-        @bottom-center { content: "ARCTIC SCREAM 1.4 · VISUAL MANUAL · " counter(page); color: #45606e;
+        @bottom-center { content: "ARCTIC SCREAM 1.5 · VISUAL MANUAL · " counter(page); color: #45606e;
                          font: 7pt system-ui, sans-serif; letter-spacing: .08em; } }
 @page :first { @bottom-center { content: none; } }
 @media print {
@@ -141,7 +141,7 @@ footer p { margin: 4px 0; }
     <div class="shots" aria-hidden="true"><img src="screens/holvut.png" alt=""><img src="screens/drone.png" alt=""><img src="screens/voice.png" alt=""><img src="screens/space.png" alt=""></div>
     <div class="shots" aria-hidden="true"><img src="screens/env.png" alt=""><img src="screens/scale.png" alt=""><img src="screens/master.png" alt=""><img src="screens/perform.png" alt=""></div>
   </div>
-  <div class="sub">VISUAL MANUAL · 1.4<br>FOR THE M-VAVE FM-1</div>
+  <div class="sub">VISUAL MANUAL · 1.5<br>FOR THE M-VAVE FM-1</div>
   <p class="small">Dark ambient drones and feedback screams from the arctic tundra. Unofficial firmware by PolarPatch, free and open source (GPL-3.0); not made or endorsed by M-VAVE. Install at your own risk.</p>
 </section>
 
@@ -171,7 +171,7 @@ C("00", "How to read this manual", "var(--ice)",
     <li><b>A + B</b>: hold A, then press B.</li>
     <li><b>Keys from F2:</b> everything sits an octave down, for drones. <b>White keys 1–8</b> are counted from the left (F2, G2, A2, B2, C3, D3, E3, F3); the black keys from <b>F#2</b>.</li>
     <li><b>T1–T4:</b> the four tracks. Turn ALGORITHM to pick one; most pages show the selected track.</li>
-    <li>${NEW} marks what is new in 1.4.</li></ul>`),
+    <li>${NEW} marks what is new in 1.5.</li></ul>`),
   P("Arctic Scream p0larpatch", "by PolarPatch", "", [], [], `<div class="about"><img src="polarpatch-logo.png" alt="PolarPatch">
     <div><p>A drone firmware for the M-VAVE FM-1: four tracks, eight sources, long dark effects, a 64-step sequencer, chords, an arpeggiator and song mode, with its own feedback voice, Holvut, that wakes on its own and screams.</p>
     <p>Free and open source (GPL-3.0). Try it in your browser first: the demo, the editor and the cheat sheet are at <a href="https://polarpatch.github.io/Arctic-scream-FM-1/">polarpatch.github.io/Arctic-scream-FM-1</a>.</p></div></div>`)]),
@@ -191,7 +191,7 @@ C("01", "Getting around", "var(--ice)",
     ["REC: hold ~1 s", "Clears the selected track's pattern (undoable).", ""],
     ["EDIT + OCT− / OCT+", "Undo / redo the last edit.", ""],
     ["SEL + OCT+", "The selected track's LATCH on or off, from any page (off lets go of its latched notes).", ""],
-    ["Key lights " + NEW, "Latched and arpeggiated notes stay lit, and their lights follow OCT− and OCT+.", ""],
+    ["Key lights", "Latched and arpeggiated notes stay lit, and their lights follow OCT− and OCT+.", ""],
     ["OCT− + OCT+", "Sets SYSTEM 2's CPU PEAK and USB REC DROPS to 0.", ""],
   ], ["Saving is automatic: stopped and silent, your work saves itself and comes back at power-on. Under a latched drone it saves after 30 s left alone; a slot or a sound you save is written at once (a short gap in the sound). Knobs speed up: slowly for fine steps, fast to sweep."]),
   P("Buttons: tap and hold", "What each button opens", "", [], [], `<div class="btns"><div><b>HOME</b>HOME → MIXER 1 → MIXER 2. Hold: SYSTEM (then HOME: SYSTEM 2, SYSTEM 3).</div><div><b>EDIT</b>SOUND → SOURCE (FM: SOUND → FM ALGO → FM OP → SOURCE; Holvut: SOUND → LOOP → SOURCE).</div><div><b>ENV</b>ENV.</div><div><b>LFO</b>LFO → DRONE.</div><div><b>SEL</b>SCALE → CHORD. Hold and let go: chord mode on or off.</div><div><b>ARP</b>ARP. Hold: the arpeggiator on or off for the track.</div><div><b>SEQ</b>GRID → PATTERN SETTINGS. Hold + white keys: sequencer tools; hold + SELECT: pattern length.</div><div><b>SAVE</b>SOUNDS → PROJECTS. Hold + white keys 1–4: recall slots A–D, 5–8: save into them.</div><div><b>GLO</b>SONG. Hold + white keys 1–4: mute T1–T4, 5–8: solo them.</div><div><b>FX</b>TAPE → GRAIN → DELAY → SPACE → MASTER → DRIVE → AIR. Hold: PERFORM (+ black keys: GENERATE).</div></div>`)]),
@@ -227,7 +227,7 @@ C("03", "Sources: EDIT", "var(--violet)",
     ["DRIVE", "Tears it.", "0–100 %"]),
     ["Holvut is North Sami for to howl. A string and a resonant body sit inside a loop with saturation, filters and diffusion; nothing is struck. Each key sends a burst into the loop, so a note near the threshold sets it off.",
      "Pressure: from a MIDI keyboard with aftertouch, pressing harder feeds the note back more, then overblows."]),
-  P("LOOP " + NEW, "EDIT twice on a Holvut track", "loop", K(
+  P("LOOP", "EDIT twice on a Holvut track", "loop", K(
     ["GATE", "When the key is let go, the loop stops feeding itself: all the way up it dies into its own tail, in between it fades but lingers.", "OFF, 1–100 %"],
     ["BLOOM", "What GRAIN, DELAY and SPACE add to the mix goes back into the loop: an FX loop inside the feedback. Turn up the track's sends.", "OFF, 1–100 %"],
     ["LOWCUT", "A high-pass inside the loop, two poles: the howl thins and climbs; with DAMP, a band that screams.", "~70 Hz – ~1.9 kHz"],
@@ -355,7 +355,7 @@ C("09", "Destroy: FX", "var(--plasma)",
   P("TAPE", "Tap FX", "tape", K(
     ["WOW", "Slow wobble and flutter, up to a seasick ±2 % of pitch.", "0–100 %"],
     ["SATURATION", "Tape saturation, up to 12x drive.", "0–100 %"],
-    ["TONE", "Darker as it turns up, down to ~400 Hz (DRIVE's TONE goes the other way).", "OPEN, 10K … 400"],
+    ["TONE " + NEW, "Darker as it turns up, down to ~400 Hz (DRIVE's TONE goes the other way).", "OPEN, 10K … 400"],
     ["HISS", "Tape hiss, up to loud.", "0–100 %"]),
     ["All four at 0 switch TAPE off (BYPASS). It colours the whole mix at the very end."]),
   P("GRAIN", "Tap FX twice", "grain", K(
@@ -387,7 +387,7 @@ C("09", "Destroy: FX", "var(--plasma)",
     ["MIX", "Blends it with the clean sound.", "0–100 %"]),
     ["All four types are about equally loud at the same AMOUNT; all the way up is at most ~6 dB louder, and a limiter after it keeps the output safe. Turn AMOUNT on KNOB 1 for fast changes.",
      "MASTER and DRIVE are saved with the project, like the other effects."]),
-  P("AIR " + NEW, "Tap FX seven times", "air", K(
+  P("AIR", "Tap FX seven times", "air", K(
     ["PING", "PING-PONG: DELAY's echoes thrown left, right, left, wider as you turn it. While on, TIME goes up to 1.5 s.", "OFF, 1–100 %"],
     ["SHIMMR", "SHIMMER: SPACE's tail taken an octave up and back into the reverb, so it rises as it fades.", "OFF, 1–100 %"], ["", "", ""], ["", "", ""]),
     ["The picture: DELAY's echoes flying apart above, SHIMMER's octaves rising over SPACE's tail below.",
@@ -421,14 +421,16 @@ C("11", "System: hold HOME", "var(--sky, #4fb3e8)",
     ["The processor load, NOW and PEAK, and USB REC DROPS: gaps in the sound sent to a computer. OCT− + OCT+ sets them to 0."]),
   P("SYSTEM 3", "Hold HOME, then HOME twice", "system3", K(
     ["LATCH", "FROM SOUND: a sound you load brings its own LATCH (the seven Holvut sounds latch). ALWAYS OFF: loading sets it off; EDIT's LATCH and SEL + OCT+ still switch it.", "FROM SOUND / ALWAYS OFF"],
-    ["USB LEVEL " + NEW, "How loud a computer records the FM-1. 0 DB: the volume knob all the way up; higher makes quiet drones louder in the recording, a limiter keeps them from clipping.", "−12 … +24 DB"],
+    ["USB LEVEL", "How loud a computer records the FM-1. 0 DB: the volume knob all the way up; higher makes quiet drones louder in the recording, a limiter keeps them from clipping.", "−12 … +24 DB"],
     ["", "", ""], ["", "", ""])),
   P("MIDI, USB audio and good to know", "", "", [
     ["MIDI in", "USB (the MIDI port is called <b>Arctic Scream</b> too), or the TRS jack with a TRS-to-DIN adapter (type A). Notes play the tracks, a CC its MIDI LEARN link; ALL NOTES OFF lets go of MIDI's notes; aftertouch pushes Holvut's FEEDBACK.", ""],
     ["USB audio", "Class compliant, no driver: the FM-1 shows up on the computer, phone or tablet as <b>Arctic Scream</b>, an audio input, 16-bit stereo at 44.1 or 48 kHz, the whole mix at SYSTEM 3's USB LEVEL (the volume knob sets the speaker, not the recording). Solo each track (GLO + keys 5–8) to record them one by one.", ""],
-    ["Headphones " + NEW, "On wide, loud sound the FM-1's headphone amplifier used to crackle; a limiter now holds the difference between left and right in check near MASTER's top. Mono sound and the USB recording are untouched.", ""],
+    ["Headphones", "On wide, loud sound the FM-1's headphone amplifier used to crackle; a limiter now holds the difference between left and right in check near MASTER's top. Mono sound and the USB recording are untouched.", ""],
     ["CPU FULL: NOTE DROPPED", "It had more to play than it can: a fading or generated note goes first, your held notes last.", ""],
     ["WATCHDOG / LOW VOLTAGE RESET", "Why it restarted: it stood still, or the power dipped.", ""],
+    ["Screen reader " + NEW, "The FM-1 says its screen in words: open <b>charlesvestal.github.io/fm1-reader</b> in Chrome or Edge and connect. Pages, knobs as they turn, lists, steps and messages, in its own voice or through your screen reader.", ""],
+    ["Saves " + NEW, "A slot or a sound you save is written at once, a drone sounding or not; the automatic save goes through after 30 s left alone under a latched drone. The editor keeps a project's effects and tempo in its file.", ""],
     ["Saves", "Under a never-ending delay, SPACE on INF or a frozen GRAIN, saves go ahead 10 s after the last note. While a computer records over USB, it saves only after a minute left alone.", ""],
   ])]),
 

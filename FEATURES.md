@@ -1,6 +1,6 @@
 # Arctic Scream p0larpatch: features
 
-A complete overview of what Arctic Scream p0larpatch does, version 1.4. For the short version see the
+A complete overview of what Arctic Scream p0larpatch does, version 1.5. For the short version see the
 [README](README.md); for every button on one page, the [cheat sheet](https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html);
 for how it is built, [DEVELOPER.md](DEVELOPER.md).
 
@@ -12,9 +12,9 @@ feedback screams: slow, cold sounds that hum for minutes, and a voice that wakes
 
 | | |
 | --- | --- |
-| Version | 1.4 |
+| Version | 1.5 |
 | Firmware identity | `FM-1_977` (USB name "Arctic Scream" by "PolarPatch") |
-| Package | `arctic-scream-1.4.fwsc`, built and attested on GitHub |
+| Package | `arctic-scream-1.5.fwsc`, built and attested on GitHub |
 | Source | <https://github.com/PolarPatch/Arctic-scream-FM-1> |
 | Demo, editor, cheat sheet | <https://polarpatch.github.io/Arctic-scream-FM-1/> |
 | Licence | GPL-3.0 (the PolarPatch logo excepted) |
@@ -192,7 +192,7 @@ HOME draws each track's wave as it plays. The header shows the track, its sound 
 - **SAVE → PROJECTS**: slots A–D, each the four tracks, their sequences and locks (LOAD, SAVE, ERASE, NEW).
 - **Hold SAVE + a white key**: keys 1–4 recall A–D (at the next bar when playing), keys 5–8 save into them.
 - **Autosave**: the work saves itself when stopped and silent, and comes back at power-on as it was left. Under a
-  latched drone it saves after 30 s left alone (1.4.1); a slot or a sound you save is written at once, with a ~50 ms
+  latched drone it saves after 30 s left alone (1.5); a slot or a sound you save is written at once, with a ~50 ms
   gap in the sound.
 - **Undo / redo**: EDIT + OCT− / OCT+. **Hold REC ~1 s** clears the selected track's pattern (undoable).
 - **Hold SEL + OCT+**: the selected track's LATCH on or off, from any page.
@@ -258,7 +258,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 
 1. Download `arctic-scream-X.Y.fwsc` from [Releases](https://github.com/PolarPatch/Arctic-scream-FM-1/releases).
 2. `pip install mido python-rtmidi`, connect the FM-1 over USB, run
-   `python3 tools/fm1_install.py arctic-scream-1.4.fwsc`.
+   `python3 tools/fm1_install.py arctic-scream-1.5.fwsc`.
 
 - It installs over the original firmware or any other FM-1 firmware.
 - An interrupted install resumes: the FM-1 comes back in update mode and the same command finishes it.
@@ -271,6 +271,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 | --- | --- | --- |
 | 1.0 | 2026-10-25 | The first release: HOWL (now Holvut), six screaming presets, the HORROR scale, runaway echo, keys an octave down, 46 arctic factory sounds, the new look, the web editor with sound tools and sequencer, the demo and cheat sheet |
 | 1.1 | 2026-10-26 | DRONE (BORGA, STOARBMA, GOHCCAT); HOWL renamed Holvut; moving northern lights on ENV, LFO, FX and the mixers; SUSTAIN 40 % by default; DRONE in the editor |
+| 1.5 | 2026-11-07 | The screen reader: the screen said to fm1-reader (pages, knobs, lists, steps, PLAY, STOP, REC, the header's messages); saves under a latched drone (a slot or a sound saved at once, the autosave after 30 s at rest); the editor keeps a project's effects and tempo in its file; TAPE's TONE shows its corner (OPEN, 10K .. 400) |
 | 1.4 | 2026-11-06 | Holvut's LOOP page: GATE, BLOOM (the effects back into the loop), LOWCUT, EXCITE (the track's sample into the string); FX's AIR page: PING-PONG and SHIMMER; SYSTEM 3's USB LEVEL (−12 to +24 dB); a side limiter against the headphone amplifier's crackle; latched and ARP key lights follow OCT− and OCT+; no 64-bit multiplies beside 16-bit loads, which the FM-1's CPU now and then got wrong (FM, PHYS, VOICE, PERFORM, LFO, BLOOM), and a tool that checks it |
 | 1.3.1 | 2026-11-01 | USB audio on macOS 10.14 to 15: the audio input and MIDI each with an audio control of their own (macOS's older USB audio driver stopped at MIDI in the list and never reached the input); the computer records at full level, the volume knob sets the speaker only |
 | 1.3 | 2026-11-01 | Holvut overblows: FEEDBACK's last steps lift a high-pass in the loop, and the howl leaps up its overtones; MIDI aftertouch pushes FEEDBACK (press harder, it screams and climbs); BODY to ~92 ms; SAMPLE and Holvut share a voice's scratch memory. From GR!MM V2.0: GENERATE, MASTER and DRIVE, the track filter's TYPE and POS, MIDI clock in and out, TRS MIDI IN, CH n > SEL, SYSTEM 3's LATCH, SEL + OCT+, REC held to clear, 6 dB of headroom and a limiter, the voice rule, backups with the samples, the USB audio ring, saves under endless tails, reset reasons; ~6.5 KB of RAM freed. The editor: projects A–D to files, SETTINGS. Clearer page colours |

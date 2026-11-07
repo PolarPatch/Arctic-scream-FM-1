@@ -2,7 +2,7 @@
 
 # Arctic Scream p0larpatch: the manual
 
-**Version 1.4, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
+**Version 1.5, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
 (`tools/make_screens.py`).
 
 > **Try it as you read:** the [demo](https://polarpatch.github.io/Arctic-scream-FM-1/) runs the same code in your
@@ -48,8 +48,8 @@ Every track starts with **ICE WRAITH**, a Holvut sound that holds its notes: pre
   lit, and their lights follow OCT− and OCT+.
 - **Saving is automatic.** When the sequencer is stopped and everything is silent, your work saves itself, and it comes
   back at power-on as you left it. A latched drone never goes silent: the header says `SAVES WHEN SILENT`, and once you
-  have left the FM-1 alone for 30 seconds it saves anyway (since 1.4.1), with a short gap in the sound.
-- **Saves you ask for happen at once** (since 1.4.1): a slot saved with SAVE + keys 5–8 or on PROJECTS, a sound saved on
+  have left the FM-1 alone for 30 seconds it saves anyway (since 1.5), with a short gap in the sound.
+- **Saves you ask for happen at once** (since 1.5): a slot saved with SAVE + keys 5–8 or on PROJECTS, a sound saved on
   SOUNDS. If something is sounding you hear a gap of about 50 ms. While the sequencer plays they wait for STOP.
 - **Undo:** hold **EDIT** and press **OCT−**; **OCT+** redoes.
 

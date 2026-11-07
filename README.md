@@ -31,7 +31,11 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
   - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
   - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
-- **New in 1.5: a screen reader.** Arctic Scream says what its screen shows: pages, knobs as they turn, lists and messages. Open the [FM-1 Screen Reader](https://charlesvestal.github.io/fm1-reader/) in Chrome or Edge, connect, and it speaks with its own voice or through VoiceOver, NVDA, JAWS or TalkBack. See the [manual](MANUAL.md#the-screen-reader-new-in-15).
+- **New in 1.5:**
+  - **A screen reader.** Arctic Scream says what its screen shows: pages, knobs as they turn, lists and messages. Open the [FM-1 Screen Reader](https://charlesvestal.github.io/fm1-reader/) in Chrome or Edge, connect, and it speaks with its own voice or through VoiceOver, NVDA, JAWS or TalkBack. See the [manual](MANUAL.md#the-screen-reader-new-in-15).
+  - **Saves under a drone.** A latched drone never falls silent, and the FM-1 used to wait for silence before it saved. Now a slot or a sound you save is written at once, and the automatic save goes through after 30 s left alone.
+  - **Projects keep their effects.** The [editor](https://polarpatch.github.io/Arctic-scream-FM-1/editor.html) saves a project with its effects and tempo, and offers to set them when it loads one.
+  - **TAPE's TONE shows its corner** as CUTOFF does: `OPEN`, `10K` … `400` (it darkens as it turns up, the opposite way to DRIVE's TONE).
 - **New in 1.4:**
   - **Holvut's LOOP page** (press EDIT twice on a Holvut track): **GATE** lets the howl die into its own tail when you let go of the key; **BLOOM** feeds the grain, the echoes and the reverb back into the loop, so the scream grows inside its own effects; **LOWCUT** thins the loop from ~70 Hz up to ~1.9 kHz; **EXCITE** plays the track's sample into the string, so your own sound wakes the howl.
   - **AIR**, FX's new last page: **PING-PONG** throws DELAY's echoes left, right, left; **SHIMMER** sends SPACE's tail up an octave and back into the reverb, so it rises as it fades.
@@ -87,10 +91,10 @@ The **[editor](https://polarpatch.github.io/Arctic-scream-FM-1/editor.html)** ru
 Download `arctic-scream-X.Y.fwsc` (the newest) from [Releases](../../releases). Then, with Python 3 and `pip install mido python-rtmidi`, connect the FM-1 over USB and run:
 
 ```
-python3 tools/fm1_install.py arctic-scream-1.4.fwsc
+python3 tools/fm1_install.py arctic-scream-1.5.fwsc
 ```
 
-Every release is built and signed on GitHub from the tagged source (the FM-1 Firmware Hub's [fm1-build](https://github.com/zvenson/fm1-build)); check a file with `gh attestation verify arctic-scream-1.4.fwsc --repo PolarPatch/Arctic-scream-FM-1 --signer-workflow zvenson/fm1-build/.github/workflows/build.yml`.
+Every release is built and signed on GitHub from the tagged source (the FM-1 Firmware Hub's [fm1-build](https://github.com/zvenson/fm1-build)); check a file with `gh attestation verify arctic-scream-1.5.fwsc --repo PolarPatch/Arctic-scream-FM-1 --signer-workflow zvenson/fm1-build/.github/workflows/build.yml`.
 
 It installs over the FM-1's own firmware or any other FM-1 firmware. Don't unplug the FM-1 while it writes. If anything goes wrong, the **Rescue** page on the [FM-1 Firmware Hub](https://thefirmwarehub.com/) brings a stuck FM-1 back, and M-VAVE's own updater puts the original firmware back.
 
