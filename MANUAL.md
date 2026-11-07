@@ -2,7 +2,7 @@
 
 # Arctic Scream p0larpatch: the manual
 
-**Version 1.4, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
+**Version 1.5, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
 (`tools/make_screens.py`).
 
 > **Try it as you read:** the [demo](https://polarpatch.github.io/Arctic-scream-FM-1/) runs the same code in your
@@ -47,8 +47,10 @@ Every track starts with **ICE WRAITH**, a Holvut sound that holds its notes: pre
   LATCH on or off from any page (off lets go of all its latched notes). The keys of latched and arpeggiated notes stay
   lit, and their lights follow OCT− and OCT+.
 - **Saving is automatic.** When the sequencer is stopped and everything is silent, your work saves itself, and it comes
-  back at power-on as you left it. A latched note never goes silent: the header says `SAVES WHEN SILENT` until you let
-  it go.
+  back at power-on as you left it. A latched drone never goes silent: the header says `SAVES WHEN SILENT`, and once you
+  have left the FM-1 alone for 30 seconds it saves anyway (since 1.5), with a short gap in the sound.
+- **Saves you ask for happen at once** (since 1.5): a slot saved with SAVE + keys 5–8 or on PROJECTS, a sound saved on
+  SOUNDS. If something is sounding you hear a gap of about 50 ms. While the sequencer plays they wait for STOP.
 - **Undo:** hold **EDIT** and press **OCT−**; **OCT+** redoes.
 
 <br clear="right">
@@ -220,6 +222,8 @@ North Sami names.
 
 - **Destinations:** PITCH, VOLUME, PAN, the source's four knobs by name, REV SEND, GRAIN SEND, the track's CUTOFF.
 - **Shapes:** SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT.
+- **VOLUME swings around the track's VOLUME**, so a track at VOLUME 0 still sounds on the LFO's peaks. To silence a
+  track, mute it (**hold GLO + keys 1–4**). A square wave on VOLUME at a fast RATE (~6 Hz) is a tremolo-picked guitar.
 
 ---
 
@@ -362,7 +366,7 @@ colours the whole mix at the end. Each page has its own northern lights.
 - **Runaway echo:** past 100 % FEEDBACK the echo grows and saturates, and burns magenta on the screen.
 - GRAIN and DELAY both pour into SPACE. All four TAPE knobs at 0 switch TAPE off.
 - GRAIN and DELAY only hear what the tracks send them (MIXER 1). Turn a GRAIN or DELAY knob up while the selected track sends nothing, and its send goes to 50 % (the header says so), so you hear the page at once.
-- TAPE goes far: WOW to a seasick ±2 % of pitch, SATURATION to 12x drive, TONE down to ~500 Hz, HISS loud. DELAY's WEAR wobbles up to ~11 ms and drives the loop to 4x.
+- TAPE goes far: WOW to a seasick ±2 % of pitch, SATURATION to 12x drive, TONE darker as it turns up, from `OPEN` down to ~400 Hz (the screen shows its corner: `10K`, `2.4K`, `400`; the opposite way to DRIVE's TONE), HISS loud. DELAY's WEAR wobbles up to ~11 ms and drives the loop to 4x.
 
 - **MASTER** filters everything, in stereo. **POSITION** says where: `PRE FX` filters the tracks' dry mix before the effects return (the reverb and echoes stay bright), `POST REVERB` filters the tracks and the effects together (before DRIVE and TAPE), `END` filters the very end, after TAPE and the PERFORM tricks. `LP` with CUTOFF at the top or `HP` at the bottom switches it off completely.
 - **DRIVE** distorts everything after SPACE, before TAPE. **AMOUNT** is how hard (0 = off completely), **TYPE** the character: `SOFT` (warm saturation), `FUZZ` (lopsided, buzzy), `CLIP` (hard), `FOLD` (a wavefolder: the harder you drive it, the more it folds back into new overtones). All four are about equally loud at the same AMOUNT, so switching TYPE doesn't jump in volume, and turning AMOUNT all the way up makes it at most ~6 dB louder. **TONE** darkens it (`OPEN` at the top), **MIX** blends it with the clean sound. A limiter after it keeps even the loudest settings from blowing up the output.
@@ -573,6 +577,25 @@ mouse or the computer keyboard.
 
 Hold a button's key and press others for combos. With the mouse, right-click or Shift-click a button to keep it held.
 Drag or scroll a knob to turn it.
+
+### The screen reader (new in 1.5)
+
+Arctic Scream says what its screen shows, for blind and low-vision players. Connect the FM-1 over USB, open the
+**[FM-1 Screen Reader](https://charlesvestal.github.io/fm1-reader/)** in Chrome or Edge and press **Connect**. The page
+speaks with its own voice, or hands the words to your own screen reader (VoiceOver, NVDA, JAWS, TalkBack).
+
+- **A new page** says its name, the track and its source, its place in its button's round and its four knobs:
+  "loop, track 1 Holvut, page 2 of 3. gate off, bloom 45 percent, low cut 70 hertz, excite off".
+- **A knob turned** says its name and value, once it settles: "feedback minus 4 decibels".
+- **Lists** say the row and its place: on SAVE, "slot 5 drone 01, Holvut, 5 of 64"; on SEQ's grid, the step.
+- **Messages** in the header are said at once: a sound's name from PRESETS, SAVED, LATCH ON. Warnings ("empty: not
+  loaded", "C P U full: note dropped") are heard whole.
+- **PLAY, STOP and REC** are said as they happen.
+- The page's **Read the whole screen** button says everything on it, the picture's caption and the tempo too.
+
+The FM-1 says nothing until the page asks, so a DAW on the same USB port never sees a byte of it. How each word on the
+screen is said ("FDBK": feedback, "T1": track 1) lives in a small file on this project's site, not in the FM-1's
+memory. The reader is made by Charles Vestal for many FM-1 firmwares.
 
 ---
 

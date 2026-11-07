@@ -67,8 +67,10 @@
  *              held + white keys 1..4 (from F3): recall A..D (playing: at the next bar), 5..8: save into A..D (used:
  *              again within 3 s to overwrite); the header shows the slots in use (store.c)
  *   autosave   the work (all of it: tracks, mixer, FX, tempo, sequences, slots) saves itself when stopped and untouched
- *              2.5 s, at most every 20 s, only if changed, never while playing nor while a voice sounds (a release, a
- *              latched note: SAVES WHEN SILENT, as SOUNDS' SAVE / CLEAR); at power-on it comes back as left. (GR!MM
+ *              2.5 s, at most every 20 s, only if changed, never while playing; while a voice sounds (a release, a
+ *              latched note: SAVES WHEN SILENT) it waits, at most 30 s at rest (1.4.1: a drone never falls silent,
+ *              and a power-off lost the work); a slot saved or erased, a SOUNDS SAVE / CLEAR, at once (playing: at
+ *              the stop), the flash's ~50 ms gap in the sound asked for; at power-on it comes back as left. (GR!MM
  *              rc11) A computer recording the USB audio: the hands at rest a minute first (a save stops the key scan,
  *              the LEDs and the stream for ~50 ms). A watchdog restart says WATCHDOG RESET at boot, a supply that
  *              sagged LOW VOLTAGE RESET (a fault: platform.c's red crash screen, its PC)
@@ -119,6 +121,10 @@
  * What platform.c offers: docs/API.md. The chip's rules: docs/RULES.md. */
 #define APP_NAME "ARCTIC SCREAM p0larpatch"     /* the app, the rescue and the crash screen say this */
 #include "platform.c"
+#define ANN_NAME "Arctic Scream " APP_VER       /* (1.5) the screen reader (reader.c): its HELLO answer, */
+#define ANN_MAX 160u                            /* its longest SAY (platform.c's SysEx queue, 64 packets, holds it) */
+#include "ann_words.h"                          /* (tools/gen_words.py from firmware/words.tsv: the words file's link) */
+#include "announce.c"                           /* (fm1-base's, MPL-2.0: fm1-reader's tools/sync_announce.sh) */
 #include "dsp.c"
 #include "wear.c"
 #include "samples.c"
@@ -974,6 +980,12 @@ static uint32_t hd_until, as_err;               /* (as_err: an autosave failed, 
                                                  * recording had a hole); else 2.5 s, 2 s */
 static uint32_t as_wait, sv_wait;               /* an autosave waits for the voices to fall silent; that, or a SOUNDS
                                                  * SAVE / CLEAR, waits (ui.c: SAVES WHEN SILENT) */
+static uint32_t as_force;                       /* (1.4.1) a save asked for (a slot saved or erased): the autosave goes
+                                                 * now, a voice sounding or not (a drone is never silent: the flash's
+                                                 * ~50 ms gap in the sound, asked for) */
+#define AS_LOUD_MS 30000u                       /* (1.4.1) the hands at rest this long, a voice still sounding (a latched
+                                                 * drone): the autosave goes anyway, once (before, it waited for ever and a
+                                                 * power-off lost the work) */
 static uint32_t sv_said;                        /* (V2) when that wait began: the header says so SV_SAY_MS, then gives
                                                  * the page back (a drone: never silent); a new wait says it again */
 #define SV_SAY_MS 2000u
@@ -1234,6 +1246,15 @@ static char *hz_text(char *s, int32_t v, int32_t ty)   /* a filter's CUTOFF (0..
     if (hz < 10000u) return put_s(put_x10(s, (hz + 50u) / 100u), "K");
     return put_s(put_u(s, (hz + 500u) / 1000u), "K");
 }
+static char *tone_text(char *s, int32_t v)      /* TAPE's TONE: its low-pass corner, darker as it turns: "OPEN" (0), "9.8K",
+                                                 * "880", "400" */
+{
+    uint32_t hz = TF_TONE_HZ[clamp(v, 0, 127)];
+    if (!hz || hz >= 20000u) return put_s(s, "OPEN");
+    if (hz < 1000u) return put_u(s, hz);
+    if (hz < 10000u) return put_s(put_x10(s, (hz + 50u) / 100u), "K");
+    return put_s(put_u(s, (hz + 500u) / 1000u), "K");
+}
 static char *tempo_text(char *s, const char *pre)   /* the tempo: pre "120"; a MIDI clock's (V2): "EXT 120.4", "EXT"
                                                  * (not measured yet: its first beat) */
 {
@@ -1310,7 +1331,7 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
         if (v == 64) { put_s(s, "C"); return; }
         put_u(put_s(s, v < 64 ? "L " : "R "), (uint32_t)(v < 64 ? 64 - v : v - 64));
         return;
-    case PG_TAPE: put_pc(s, v); return;
+    case PG_TAPE: if (k == 2u) tone_text(s, v); else put_pc(s, v); return;   /* (TONE: its corner, as CUTOFF) */
     case PG_LOOP: hx_text(s, k, v, sel); return;
     case PG_AIR: if (v <= 0) put_s(s, "OFF"); else put_pc(s, v); return;
     case PG_MASTER:
@@ -1354,9 +1375,22 @@ static int same(const char *a, const char *b)
     return *a == *b;
 }
 
-static void hd_say(const char *m)               /* the header says m a moment (cut to what hd_msg holds) */
+static int hd_warn(const char *m)              /* (1.5) a message that says something did not happen: the screen
+                                                 * reader hears it whole */
+{
+    static const char *const W[] = {"NOT ", "NOTHING", "EMPTY", "STOP AND", "CPU FULL", "SAVE ERROR", "NO "};
+    uint32_t i, j;
+    for (i = 0; i < sizeof W / sizeof W[0]; i++) {
+        for (j = 0; W[i][j] && m[j] == W[i][j]; j++) {}
+        if (!W[i][j]) return 1;
+    }
+    return 0;
+}
+static void hd_say(const char *m)               /* the header says m a moment (cut to what hd_msg holds); (1.5) and
+                                                 * the screen reader, at once */
 {
     uint32_t i;
+    ann_say(m, 0, ANN_NOW | (hd_warn(m) ? ANN_KEEP : 0u));
     for (i = 0; m[i] && i < sizeof hd_msg - 1u; i++) hd_msg[i] = m[i];
     hd_msg[i] = 0;
     hd_until = fm1_ms + 1500u;
@@ -1445,13 +1479,14 @@ static void slot_do_save(uint32_t s)            /* the state into slot s (used: 
     }
     ow_slot = -1;
     slot_save(s);
+    as_force = 1;
     put_s(m, "SAVED "), m[6] = (char)('A' + s), m[7] = 0;
     hd_say(m);
 }
 static void slot_do_recall(uint32_t s)          /* slot s back: playing, at the next bar; stopped, now */
 {
     char m[24];
-    if (!slot_used(s)) { hd_say("EMPTY"); return; }
+    if (!slot_used(s)) { hd_say("EMPTY: NOT LOADED"); return; }
     if (playing) {                              /* (song record: at the pass's end, song.c) */
         seq_recall = (int32_t)s;
         char *e = put_s(m, song_rec == 2u ? "NEXT PASS: " : "NEXT BAR: ");
@@ -1474,15 +1509,15 @@ static void sv_do(void)                         /* OCT+ on a SAVE page: its ACTI
         uint32_t i = (uint32_t)clamp(sv_slot, 0, SND_N - 1);
         const uint8_t *r = snd_rec(i);
         if (sv_act == 0) {                      /* LOAD */
-            if (!r) { hd_say("EMPTY"); return; }
+            if (!r) { hd_say("EMPTY: NOT LOADED"); return; }
             undo_take(UK_SND | sel, -1);
             snd_apply(r, sel);
             brw_at(sel, r);
             hd_say("LOADED");
-        } else if (playing || !voices_silent()) {   /* SAVE, CLEAR: the flash only while the sequencer stands and
-                                                 * no voice sounds (latched notes too) */
+        } else if (playing) {                   /* SAVE, CLEAR: the flash only while the sequencer stands (1.4.1: a voice
+                                                 * sounding, a latched drone, no longer waits: the flash's ~50 ms gap) */
             sv_pend = sv_act, sv_pend_slot = i, sv_pend_cat = (uint32_t)clamp(sv_cat, 0, NCAT - 1), sv_pend_trk = sel;
-            hd_say(playing ? "SAVES ON STOP" : "SAVES WHEN SILENT");
+            hd_say("SAVES ON STOP");
         } else
             sv_sound((uint32_t)sv_act, i, (uint32_t)clamp(sv_cat, 0, NCAT - 1), sel);
         return;
@@ -1491,9 +1526,10 @@ static void sv_do(void)                         /* OCT+ on a SAVE page: its ACTI
     case 0: slot_do_recall((uint32_t)pj_slot & 3u); return;
     case 1: slot_do_save((uint32_t)pj_slot & 3u); return;
     case 2:
-        if (!slot_used((uint32_t)pj_slot & 3u)) { hd_say("EMPTY"); return; }
+        if (!slot_used((uint32_t)pj_slot & 3u)) { hd_say("EMPTY: NOT ERASED"); return; }
         undo_take(UK_ONE | ++uk_n, pj_slot & 3);
         slot_erase((uint32_t)pj_slot & 3u);
+        as_force = 1;
         hd_say("ERASED");
         return;
     default:
@@ -1532,6 +1568,7 @@ static void presets_turn(int32_t d)
     hd_say(m);
 }
 #include "ui.c"                                 /* the screens (after the concept designs) */
+#include "reader.c"                             /* (1.5) the screen reader: what the screen shows, said */
 
 static void set_source(int32_t e)               /* the selected track's source: its notes go over (a fade, then a new
                                                  * attack); each source keeps its own settings */
@@ -2419,6 +2456,16 @@ static void app_main(void)
         }
         batt_poll();
         if (!scr_dark) ui_update(set.oct);
+#ifdef DINGHY_HOST
+        rd_host();                              /* (host mode: a reader listening, the words' dump) */
+#endif
+        speak();                                /* (1.5) the screen reader: what changed, said */
+        ann_tick(fm1_ms);
+        {                                       /* (1.5) a screen reader's SysEx (F0 7D 53 52), before the editor's */
+            const uint8_t *fp;
+            uint32_t fn;
+            if (sysex_get(&fp, &fn) && ann_frame(fp, fn, fm1_ms)) sysex_done();
+        }
 #ifdef GRIMM_STRESS
         stress_poll();
 #endif
@@ -2441,7 +2488,7 @@ static void app_main(void)
             static uint32_t shed_seen;
             if (shed_n != shed_seen) shed_seen = shed_n, hd_say("CPU FULL: NOTE DROPPED");
         }
-        if (!playing && sv_pend >= 0 && voices_silent()) {   /* SOUNDS: a SAVE or CLEAR that waited (the stop, silence) */
+        if (!playing && sv_pend >= 0) {         /* SOUNDS: a SAVE or CLEAR that waited for the stop */
             sv_sound((uint32_t)sv_pend, sv_pend_slot, sv_pend_cat, sv_pend_trk);
             sv_pend = -1;
         }
@@ -2449,12 +2496,14 @@ static void app_main(void)
          * sounding (a release, a latched note: it waits, the header says so); a failed one: again in 3 s, the header
          * says so */
         if (playing) as_wait = 0;
-        if (!playing && !ed_open() && fm1_ms - t_touch >= (usb_recording() ? SAVE_REST_REC_MS : 2500u) &&
-            (!as_last || fm1_ms - as_last >= 20000u) &&
-            fm1_ms >= as_next) {                /* (an editor's PUT open: its bytes are in st_img) */
+        if (!playing && !ed_open() && fm1_ms >= as_next &&
+            (as_force || (fm1_ms - t_touch >= (usb_recording() ? SAVE_REST_REC_MS : 2500u) &&
+                          (!as_last || fm1_ms - as_last >= 20000u)))) {   /* (an editor's PUT open: its bytes are in
+                                                 * st_img; a save asked for: now) */
             uint32_t g = st_gen;
             as_next = fm1_ms + 500u;
-            if (!voices_silent())               /* (no flash while a voice sounds: it waits, if there is anything) */
+            if (!voices_silent() && !as_force && fm1_ms - t_touch < AS_LOUD_MS)   /* (no flash while a voice sounds:
+                                                 * it waits, if there is anything; a drone: AS_LOUD_MS at rest) */
                 as_wait = (uint32_t)autosave_due();
             else {
                 as_wait = 0;
@@ -2462,7 +2511,7 @@ static void app_main(void)
                     as_err = 1;
                     as_next = fm1_ms + 3000u;
                 } else {
-                    as_err = 0;
+                    as_err = 0, as_force = 0;
                     if (st_gen != g) as_last = fm1_ms ? fm1_ms : 1u;
                 }
             }

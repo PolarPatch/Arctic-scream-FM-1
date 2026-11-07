@@ -461,6 +461,9 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         if (k == 2u) { put_s(S->val, FT_NAME[clamp(v, 0, NFTYPE - 1)]); return; }
         if (k == 3u) { put_s(S->val, MP_SHORT[clamp(v, 0, NMPOS - 1)]); return; }
         break;
+    case PG_TAPE:                               /* TONE: its low-pass corner ("OPEN", "2.4K", "400") */
+        if (k == 2u) { tone_text(S->val, v); return; }
+        break;
     case PG_DRIVE:                              /* (V2) AMOUNT ("OFF": 0), TYPE, TONE ("OPEN"), MIX */
         if (k == 0u && !v) { put_s(S->val, "OFF"); return; }
         if (k == 1u) { put_s(S->val, DT_NAME[clamp(v, 0, NDTYPE - 1)]); return; }
@@ -506,8 +509,14 @@ static void ui_slab_draw(void)
 }
 
 /* ---- the pictures */
+static char ui_cap[2][28];                      /* (1.5) the caption as last drawn: the screen reader's WHERE */
 static void ui_caption(const char *l, const char *r)
 {
+    uint32_t i;
+    for (i = 0; i < 27u && l[i]; i++) ui_cap[0][i] = l[i];
+    ui_cap[0][i] = 0;
+    for (i = 0; r && i < 27u && r[i]; i++) ui_cap[1][i] = r[i];
+    ui_cap[1][i] = 0;
     ui_text(PX0, 31, l, 1, UI_M);
     if (r) ui_text(PX0 + 216 - 8 * ui_len(r), 31, r, 1, UI_M);
 }

@@ -1,0 +1,13 @@
+# words Arctic Scream means (tools/reader_audit.sh): names, North Sami words, the firmware's own
+holvut
+borga
+stoarbma
+gohccat
+polarpatch
+p0larpatch
+kilohertz
+pre
+pre-delay
+supersaw
+centre
+dropped

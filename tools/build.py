@@ -51,7 +51,7 @@ SDK_SHA256 = {
 PRODUCT = "FM-1_977"                # Arctic Scream 1.x: 977, every release (GR!MM's is 966) (FM-1_9NN: the installers resume its loader; the hub's
                                     # other firmwares hold 950, 95x, 961, so not Dinghy's 9 + minor); Dinghy is 99N
 VERSION = None                      # APP_VER for release builds (else DEFAULT_VERSION)
-DEFAULT_VERSION = "1.4"
+DEFAULT_VERSION = "1.5"
 
 
 def toolchain():
@@ -153,7 +153,13 @@ def build_loader():
 
 # ---- app
 
+def words():                                    # (1.5) the screen reader's words: web/words/<id>.json, its link
+    subprocess.run([sys.executable, "tools/gen_words.py", "firmware/words.tsv", "web/words", "firmware/gen/ann_words.h"],
+                   cwd=SRC, check=True, stdout=subprocess.DEVNULL)
+
+
 def build_app():
+    words()
     flags = [*CFLAGS, "-Ifirmware/hal", "-Ifirmware/src", "-Ifirmware/gen", f'-DFELUCCA_ID="{PRODUCT}"', f'-DAPP_VER="{VERSION or DEFAULT_VERSION}"']
     cmds = [("cc", "-c", FW / "crt0.S", "-o", OUT / "crt0.o"),
             ("cc", "-c", FW / "hal" / "fm1_vec.S", "-o", OUT / "fm1_vec.o"),
