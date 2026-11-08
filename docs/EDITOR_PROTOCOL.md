@@ -254,6 +254,10 @@ filters, levels and sends (MIX), GRAIN, DELAY, SPACE, TAPE, PERFORM, MASTER, DRI
 interrupts that land inside the audio, taken out of the stages they interrupt). NOW minus them all is the rest of the
 audio callback.
 
+Since 1.5.2 four more u35 follow, in bytes: how deep the main loop's stack has gone since power-on and its size, then
+the same for the interrupts' stack (each stack is filled with a pattern at power-on; the deepest word no longer
+holding it). A reader that takes only the first `3 + n` values is not disturbed; before 1.5.2 they are not there.
+
 ## 26 FX (GR!MM V2's 25)
 
 The project's effects, live (no protocol number of its own; an Arctic Scream before 1.3 does not answer it). A value set here acts at once and is kept by the project (the FM-1's autosave), as a knob's turn.

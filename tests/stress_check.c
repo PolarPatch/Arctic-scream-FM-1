@@ -466,8 +466,9 @@ static void stress_editor(void)                 /* "x_editor" */
     uint32_t i, rc = 0;
     st_fhead(ED_INFO), st_ed(1);
     if (st_sxn < 20u || st_sxr[5] != ED_PROTO || st_sxr[6] != ED_FMT) stress_fail("x_editor: no INFO (length)", st_sxn);
-    st_fhead(ED_CPU), st_ed(1);                 /* (24 CPU: the stages, the budget, NOW, PEAK, the split) */
-    if (st_sxn != 7u + 5u * (3u + CS_N) || st_sxr[5] != CS_N || ed_rd35(st_sxr + 6) != BUDGET_TICKS ||
+    st_fhead(ED_CPU), st_ed(1);                 /* (24 CPU: the stages, the budget, NOW, PEAK, the split; 1.5.2: the
+                                                 * stacks after them, 0 here) */
+    if (st_sxn != 7u + 5u * (3u + CS_N + 4u) || ed_rd35(st_sxr + 6u + 5u * (3u + CS_N)) != 0u || st_sxr[5] != CS_N || ed_rd35(st_sxr + 6) != BUDGET_TICKS ||
         ed_rd35(st_sxr + 11) != cpu_now || st_sxr[st_sxn - 1u] != 0xF7u)
         stress_fail("x_editor: CPU not as it should be (length)", st_sxn);
     {                                           /* (25 FX: READ (30 values since 1.4), a SET read back, the value as it was again) */

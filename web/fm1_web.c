@@ -125,6 +125,10 @@ static uint32_t midi_room(void) { return 64u; }
 static int32_t batt_raw(void) { return -1; }   /* (no battery in a browser: no icon) */
 static int usb_powered(void) { return 0; }
 static uint32_t usb_drops(void) { return 0u; }   /* (GR!MM rc9: no USB audio here) */
+static uint32_t stk_main(void) { return 0u; }   /* (1.5.2: the stacks are measured on the FM-1 only) */
+static uint32_t stk_irq(void) { return 0u; }
+#define STK_MAIN_SZ 0u
+#define STK_IRQ_SZ 0u
 static int usb_recording(void) { return 0; }
 static int usb_feeding(void) { return 0; }
 static void usb_feed(const int32_t *x, uint32_t n) { (void)x; (void)n; }

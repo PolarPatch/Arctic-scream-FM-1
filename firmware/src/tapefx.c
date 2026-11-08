@@ -22,9 +22,10 @@
 #define TF_CQ 2                                 /* its values kept >> TF_CQ (int16: |y| <= |x| <= 98304, so <= 24576;
                                                  * the rounding: at most 2 in 98304, under one bit of the output) */
 
-static int32_t tf_line[2][TF_LEN];
-static int32_t tf_dry[2u * VB];                 /* (a block turning on or off: the mix as it came) */
-static int16_t tf_curve[2][TF_NC + 1u];         /* SATURATION as one curve: drive, tanh, make-up, blend (tf_make): the
+/* (1.5.2) the three buffers in the pool (zero at boot as .bss is, the same RAM): ~9 KB out of .data + .bss */
+static int32_t tf_line[2][TF_LEN] __attribute__((section(".pool")));
+static int32_t tf_dry[2u * VB] __attribute__((section(".pool")));   /* (a block turning on or off: the mix as it came) */
+static int16_t tf_curve[2][TF_NC + 1u] __attribute__((section(".pool")));   /* SATURATION as one curve: drive, tanh, make-up, blend (tf_make): the
                                                  * one in use (tf.ci) and the next / the last */
 static struct {
     uint32_t w, p1, p2, p3, rng, on;            /* the write index; the wow's phases; the hiss; on (the last block) */

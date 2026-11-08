@@ -17,6 +17,7 @@
  *                              -> op, t, sel, rc, the tempo (lo, hi), playing, track t's step playing + 1 (0: none)
  *                                 (READ: then pack7 track t's sequence; Arctic Scream p0larpatch, protocol 3)
  *   25 CPU                     -> the budget, NOW, PEAK, then NOW split by stage (grimm.c cpu_stage), u35 fm1_ticks
+ *                                 (1.5.2) then the stacks' deepest and sizes, bytes (platform.c stk_used)
  *                              each (GR!MM V2's command 24, here 25: a diagnostic, tools/fm1_cpu.py; no protocol number
  *                              of its own)
  *   26 FX   op 0 READ          -> op, rc, the project's effects as their pages' knobs (TAPE, GRAIN, DELAY, SPACE, MASTER,
@@ -178,12 +179,15 @@ static int ed_frame(const uint8_t *f, uint32_t n, int silent)
         ed_send(cmd, a, i, 0, 0, 0);
         return 1;
     }
-    if (cmd == ED_CPU) {                        /* -> the stages' count, then u35: the budget, NOW, PEAK, each stage */
-        uint8_t a[1 + 5u * (3u + CS_N)], *w = a + 1;
+    if (cmd == ED_CPU) {                        /* -> the stages' count, then u35: the budget, NOW, PEAK, each stage;
+                                                 * (1.5.2) then the stacks: the main loop's deepest and size, the
+                                                 * interrupts' deepest and size (bytes; 0 where not measured) */
+        uint8_t a[1 + 5u * (3u + CS_N + 4u)], *w = a + 1;
         uint32_t k;
         a[0] = CS_N;
         w = ed_wr35(w, BUDGET_TICKS), w = ed_wr35(w, cpu_now), w = ed_wr35(w, cpu_peak);
         for (k = 0; k < CS_N; k++) w = ed_wr35(w, cpu_stage[k]);
+        w = ed_wr35(w, stk_main()), w = ed_wr35(w, STK_MAIN_SZ), w = ed_wr35(w, stk_irq()), w = ed_wr35(w, STK_IRQ_SZ);
         ed_send(cmd, a, (uint32_t)(w - a), 0, 0, 0);
         return 1;
     }

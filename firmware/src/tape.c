@@ -8,8 +8,8 @@
  * has them (softclip, soft_knee, sh_tz, the one-pole low-pass that keeps
  * its steps' remainders so a tail ends in exact silence).
  *
- *   at half the rate (22.05 kHz, as SPACE: 3 s fit in 133 KB, the work halves, the echoes stop near 10 kHz): the
- *   voices (every other sample, 1 2 1) -> the line (66432 samples) -> read TIME back, plus the wow (two slow sines,
+ *   at half the rate (22.05 kHz, as SPACE: 2.6 s fit in 116 KB, the work halves, the echoes stop near 10 kHz): the
+ *   voices (every other sample, 1 2 1) -> the line (57984 samples) -> read TIME back, plus the wow (two slow sines,
  *   0.5 and 0.19 Hz: not quite periodic) and a little flutter (6.1 Hz), between samples, gliding over the block; the
  *   right side 9 ms later -> the loop: a one-pole low-pass (WEAR: ~7 kHz .. ~1.2 kHz), FEEDBACK (0 .. 150 %), a tanh
  *   saturation (WEAR: 1x .. 4x drive, the level made up; and WEAR's wow up to ~11 ms: Arctic Scream 1.3), the DC block -> back into the line with the input,
@@ -19,15 +19,16 @@
  *   bus at that level: they fall into SPACE.
  *   PING-PONG (Arctic Scream 1.4, AIR's; the idea from ECHOFIELD's ping-pong delay, Philip Bos, MIT: its code float,
  *   none of it here): the loop reads 2 TIME back (its gain FEEDBACK squared), the left side TIME, the right 2 TIME at
- *   FEEDBACK: the echoes go left, right, left .., each FEEDBACK's gain after the last; TIME at most 1.5 s. PING-PONG's amount: how
+ *   FEEDBACK: the echoes go left, right, left .., each FEEDBACK's gain after the last; TIME at most 1.3 s. PING-PONG's amount: how
  *   far apart the sides are (the other side's share of each echo, 1 .. 0). Nothing runs at MIX 0, or once
  *   the line is all silence and nothing comes in.
  *
  * The audio ISR calls tape_render with the DLY bus, before SPACE (the echoes fall into the reverb); the main loop
- * sets the four parameters. The line and the state are in the pool (zero at boot): ~157 KB. */
+ * sets the four parameters. The line and the state are in the pool (zero at boot): ~117 KB. */
 
 #define DL_NC 128u                              /* a block at half the rate: app_audio's 256 frames */
-#define DL_LEN 66688u                           /* 3000 ms (66150 samples) + the wow's reach (1.3: ~11 ms) + the right side's 9 ms */
+#define DL_LEN 57984u                           /* 2600 ms (57332 samples; 1.5.2, was 3000: 17 KB of pool) + the wow's
+                                                 * reach (1.3: ~11 ms) + the right side's 9 ms, a whole number of blocks */
 #define DL_SPREAD (198 << 8)                    /* the right side reads 9 ms further back (Q8 samples) */
 #define DL_IN 8192                              /* the voices into the line, Q15: a quarter (headroom for the loop; V2:
                                                  * half of 1.0's, its return twice: loud chords never reach its knee) */
@@ -35,7 +36,7 @@
 #define DL_W1 12467522u                         /* the wow: 0.5 Hz, a block's step (2^32 * 256 / 44100 * Hz) */
 #define DL_W2 4737658u                          /* .. and 0.19 Hz beside it: not quite periodic */
 #define DL_W3 152103765u                        /* the flutter: 6.1 Hz */
-_Static_assert(66150u + 51u + 198u + 2u < DL_LEN, "DELAY: the longest read stays in the line");
+_Static_assert(2600u * 5645u / 256u + 1u + 51u + 198u + 2u < DL_LEN, "DELAY: the longest read stays in the line");
 
 static int16_t dl_buf[DL_LEN] __attribute__((section(".pool")));
 static struct {

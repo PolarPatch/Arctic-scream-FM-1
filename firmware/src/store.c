@@ -877,8 +877,9 @@ static void project_new(void)                   /* NEW: the four tracks' power-o
 /* ---- undo / redo: one level. A snapshot: the tracks and sequences (WORK_PK, the effects and tempo not restored), and
  * a slot if the action changed one */
 #define UNDO_SZ (WORK_PK + 1u + SLOT_ALL)
-static uint8_t undo_b[UNDO_SZ] __attribute__((section(".pool"))), redo_b[UNDO_SZ];   /* (one in the pool: RAM is
-                                                 * tight) */
+static uint8_t undo_b[UNDO_SZ] __attribute__((section(".pool")));   /* (both in the pool: RAM is tight; 1.5.2:
+                                                 * redo too) */
+static uint8_t redo_b[UNDO_SZ] __attribute__((section(".pool")));
 static uint32_t undo_ok, redo_ok, undo_key;
 static uint32_t undo_chain;                     /* the snapshot is a song record's (grimm.c sets it after undo_take):
                                                  * undo, redo bring the chain back too */

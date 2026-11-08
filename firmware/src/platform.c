@@ -524,11 +524,34 @@ static void fm1_fault(const fm1_crash_t *c)
     fm1_reboot();
 }
 
+/* (1.5.2) how deep the two stacks have gone: at power-on both are filled with STK_FILL (the running one below its
+ * frame), and a word still holding it was never reached; the editor's CPU (25) reports the deepest so far. The guard
+ * bands below each stack are left alone (a write there is a fault). */
+#define STK_FILL 0x5A5AA5A5u
+extern char _ustack_top[];                      /* (the others: fm1_guard.h) */
+#define STK_W(a) ((uint32_t *)(void *)(a))
+static void stk_fill(uint32_t *lo, uint32_t *top, uint32_t *here)
+{
+    uint32_t *end = here > lo && here <= top ? here - 64 : top;   /* (the running stack: 256 B below its frame) */
+    for (; lo < end; lo++) *lo = STK_FILL;
+}
+static uint32_t stk_used(const uint32_t *lo, const uint32_t *top)   /* bytes: the deepest word that is not STK_FILL */
+{
+    while (lo < top && *lo == STK_FILL) lo++;
+    return (uint32_t)((const char *)top - (const char *)lo);
+}
+static uint32_t stk_main(void) { return stk_used(STK_W(_ustack_lo), STK_W(_ustack_top)); }
+static uint32_t stk_irq(void) { return stk_used(STK_W(_sstack_lo), STK_W(_sstack_top)); }
+#define STK_MAIN_SZ ((uint32_t)(_ustack_top - _ustack_lo))
+#define STK_IRQ_SZ ((uint32_t)(_sstack_top - _sstack_lo))
+
 void fm1_cstart(void)
 {
     extern uint32_t _data_start[], _data_end[], _data_load[], _bss_start[], _bss_end[];
     extern uint32_t _pool_start[], _pool_end[], _rt_start[], _rt_end[], _rt_load[];
-    uint32_t *s, *d, p3, boot_mode;
+    uint32_t *s, *d, p3, boot_mode, here;
+    stk_fill(STK_W(_ustack_lo), STK_W(_ustack_top), &here);   /* (interrupts are off: crt0) */
+    stk_fill(STK_W(_sstack_lo), STK_W(_sstack_top), &here);
     fm1_time_init();
     fm1_reset_reason();
     p3 = fm1_boot.p3_rst;

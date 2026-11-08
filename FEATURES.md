@@ -142,7 +142,7 @@ New in 1.1. The idea follows Jangada's DRONE page; it is written from scratch. T
 | --- | --- | --- | --- | --- |
 | TAPE (over the whole mix) | WOW | SATURATION | TONE | HISS |
 | GRAIN | SIZE (10–390 ms) | DENSITY | SCATTER | MIX |
-| DELAY | TIME (20 ms–3 s) | FEEDBACK (to 150 %) | WEAR | MIX |
+| DELAY | TIME (20 ms–2.6 s) | FEEDBACK (to 150 %) | WEAR | MIX |
 | SPACE | SIZE (0.4 s–~32 s, then INF) | DAMP | MIX | PRE-DELAY (0–250 ms) |
 | MASTER (1.3) | CUTOFF | RESONANCE | TYPE (LP / HP / BP) | POSITION (PRE FX / POST REVERB / END) |
 | DRIVE (1.3) | AMOUNT (0: off) | TYPE (SOFT / FUZZ / CLIP / FOLD) | TONE | MIX |
@@ -150,7 +150,7 @@ New in 1.1. The idea follows Jangada's DRONE page; it is written from scratch. T
 
 - **Runaway echo**: DELAY FEEDBACK past 100 % lets the echo grow and saturate.
 - **AIR** (1.4), FX's last page. **PING-PONG** throws DELAY's echoes left, right, left, as wide as it is turned (the
-  loop runs at twice TIME, so TIME goes up to 1.5 s while it is on). **SHIMMER** takes SPACE's tail an octave up and back
+  loop runs at twice TIME, so TIME goes up to 1.3 s while it is on). **SHIMMER** takes SPACE's tail an octave up and back
   into the reverb, so it rises as it fades. Both are saved with the project; older projects load with them off.
 - **Hold FX ~0.3 s: PERFORM.** While FX is held, the white keys play eight tricks: FREEZE (a toggle: holds the grain
   cloud), REV THROW, ECHO THROW, TAPE STOP, REVERSE, FILTER DOWN, FILTER UP, STUTTER.

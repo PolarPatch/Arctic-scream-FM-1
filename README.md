@@ -59,7 +59,7 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - At 0 % the sound is exactly as set. The settings are saved with the sound, and all seven screaming presets start with BORGA on.
 - **Seven screaming presets:** POLAR HOWL, WENDIGO, FROZEN SCREAM, WHITEOUT, DEAD SIGNAL, III and ICE WRAITH. ICE WRAITH is the sound you start with, and all seven hold their notes (LATCH). III is a horrorscape: a cluster of three howling voices a semitone apart, dark and slowly waking ([how to play it](docs/iii/iii_en.md)).
 - **The HORROR scale:** close semitones, so every note is wrong in the right way.
-- **Runaway echo:** DELAY feedback goes up to 150 %, so the echo can grow and saturate. Delay times go up to 3 seconds.
+- **Runaway echo:** DELAY feedback goes up to 150 %, so the echo can grow and saturate. Delay times go up to 2.6 seconds.
 - **Built for drones:**
   - The keys sit an octave down, starting at F2.
   - The track defaults are darker.

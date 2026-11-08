@@ -11,8 +11,10 @@ set -e
 cd "$(dirname "$0")/.."
 mkdir -p build/stress
 python3 tests/device_names.py || { echo "stress test: FAILED (device names)"; exit 1; }
+MACHO=                                          # (macOS: Mach-O has no ".pool" section, as tests/run_host.sh)
+[ "$(uname -s)" = Darwin ] && MACHO="-Dsection(x)=used"
 cc -O1 -g -fsanitize=address,undefined -fno-sanitize=shift -fno-sanitize-recover=undefined -fno-omit-frame-pointer \
-   -Wall -Wno-unused-function -DDINGHY_HOST -DGRIMM_STRESS -DHOST_MATRIX -DAPP_VER="\"stress\"" -Ifirmware/src -Ifirmware/gen \
+   -Wall -Wno-unused-function -DDINGHY_HOST ${MACHO:+"$MACHO"} -DGRIMM_STRESS -DHOST_MATRIX -DAPP_VER="\"stress\"" -Ifirmware/src -Ifirmware/gen \
    -o build/stress/grimm firmware/src/grimm.c
 python3 tests/stress_gen.py "${1:-1}" build/stress/script.txt build/stress/checks.txt
 set +e

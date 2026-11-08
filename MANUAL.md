@@ -357,7 +357,7 @@ colours the whole mix at the end. Each page has its own northern lights.
 |---|---|---|---|---|
 | TAPE | WOW | SATURATION | TONE | HISS |
 | GRAIN | SIZE (10–390 ms) | DENSITY | SCATTER | MIX |
-| DELAY | TIME (20 ms – 3 s) | FEEDBACK (to 150 %) | WEAR | MIX |
+| DELAY | TIME (20 ms – 2.6 s) | FEEDBACK (to 150 %) | WEAR | MIX |
 | SPACE | SIZE (to ~32 s, then INF) | DAMP | MIX | PRE-DELAY |
 | MASTER | CUTOFF | RESONANCE | TYPE (LP / HP / BP) | POSITION (PRE FX / POST REVERB / END) |
 | DRIVE | AMOUNT | TYPE (SOFT / FUZZ / CLIP / FOLD) | TONE | MIX |
@@ -377,7 +377,7 @@ colours the whole mix at the end. Each page has its own northern lights.
 <img src="docs/manual/screens/air.png" alt="FX > AIR: PING-PONG and SHIMMER" width="300" align="right">
 
 - **PING-PONG** (KNOB 1) throws DELAY's echoes left, right, left, wider as you turn it up. The echoes come at the same
-  TIME as before; while PING-PONG is on, TIME goes up to 1.5 s. At `OFF` DELAY is as it was.
+  TIME as before; while PING-PONG is on, TIME goes up to 1.3 s. At `OFF` DELAY is as it was.
 - **SHIMMER** (KNOB 2) takes SPACE's tail an octave up and sends it back into the reverb, so the sound rises as it
   fades. Long SIZE and a high SHIMMER make a slow, bright choir out of any drone.
 - On the screen, DELAY's echoes fly apart as PING-PONG grows, and SHIMMER's octaves rise over SPACE's tail.

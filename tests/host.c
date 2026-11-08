@@ -157,6 +157,10 @@ static int save_flash_erase(uint32_t i)
     return 0;
 }
 static uint32_t usb_drops(void) { return 0u; }   /* (GR!MM rc9: no USB audio here) */
+static uint32_t stk_main(void) { return 0u; }   /* (1.5.2: the stacks are measured on the FM-1 only) */
+static uint32_t stk_irq(void) { return 0u; }
+#define STK_MAIN_SZ 0u
+#define STK_IRQ_SZ 0u
 static uint32_t host_rec_from = 1, host_rec_to;   /* (GRIMM_USB_REC=FROM,TO: a computer reads the USB audio from FROM to TO ms) */
 static int usb_recording(void) { return fm1_ms >= host_rec_from && fm1_ms < host_rec_to; }
 static int usb_feeding(void) { return 0; }      /* (no USB audio ring here) */
