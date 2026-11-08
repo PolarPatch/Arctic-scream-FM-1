@@ -8,7 +8,7 @@ mkdir -p build/host
 python3 tools/gen_words.py firmware/words.tsv web/words firmware/gen/ann_words.h >/dev/null   # (1.5: the reader's words)
 MACHO=                                          # (macOS: Mach-O has no ".pool" section; the pool is plain .bss there)
 [ "$(uname -s)" = Darwin ] && MACHO="-Dsection(x)=used"
-cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DAPP_VER="\"${APP_VER:-1.5}\"" ${MACHO:+"$MACHO"} -Ifirmware/src -Ifirmware/gen -o build/host/grimm firmware/src/grimm.c
+cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DAPP_VER="\"${APP_VER:-1.5.1}\"" ${MACHO:+"$MACHO"} -Ifirmware/src -Ifirmware/gen -o build/host/grimm firmware/src/grimm.c
 GRIMM_MASTER=1022 build/host/grimm build/host/grimm   # (GR!MM V2: MASTER as web/test_web.mjs turns it: 1022, Q12 4080)
 python3 - <<'PY'
 from pathlib import Path
