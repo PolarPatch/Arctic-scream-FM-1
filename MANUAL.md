@@ -2,7 +2,7 @@
 
 # Arctic Scream p0larpatch: the manual
 
-**Version 1.5, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
+**Version 1.5.1, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
 (`tools/make_screens.py`).
 
 > **Try it as you read:** the [demo](https://polarpatch.github.io/Arctic-scream-FM-1/) runs the same code in your
@@ -484,6 +484,9 @@ go of the notes MIDI holds (a latched note stays). Aftertouch pushes a Holvut tr
   and the USB recording is not touched.
 - While a computer records the FM-1 over USB, it saves only after you have left it alone for a minute (a save stops
   the sound ~50 ms), and at once when the recording stops.
+- **Newer FM-1s** (sold since autumn 2026) carry another flash chip, the UC25HQ80. Since 1.5.1 Arctic Scream saves and
+  updates on it as on the first one. With 1.5 or older on such a unit the saves were gone after power-off and updates
+  were refused: put 1.5.1 on once through the chip's download mode (the Firmware Hub's Rescue page, `#chip`).
 
 ### USB audio
 

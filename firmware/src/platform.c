@@ -559,7 +559,7 @@ void fm1_cstart(void)
     fm1_boot.p3_rst = (uint8_t)p3;
     if (boot_mode == BOOT_RECOVERY || recovery_key())
         recovery_main();                        /* OCT- at power-on: the USB rescue */
-    flash_ok = FL_FAR(fl_jedec_ram)() == 0x856014u;
+    flash_ok = fl_id_known(FL_FAR(fl_jedec_ram)());   /* either FM-1 chip (fm1_flash_id.h), else RAM only */
     if (flash_ok)
         fl_plain_window_init();                 /* GR!MM: the flash above 0x93000 (the samples) reads plain through XIP */
     ota_boot_cleanup();
