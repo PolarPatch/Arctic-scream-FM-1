@@ -101,6 +101,8 @@ It installs over the FM-1's own firmware or any other FM-1 firmware. Don't unplu
 
 **A newer FM-1 with Arctic Scream 1.5 or older on it** (saves gone after power-off, `SAVE ERROR`, every update refused): the FM-1 is fine, the old version only knows the first flash chip. Don't install again and again. Put 1.5.1 on through the chip's USB download mode instead, with [m-flasher](https://github.com/jvitkauskas/m-flasher/releases) or the steps on the Firmware Hub's [Rescue page](https://thefirmwarehub.com/tools/rescue/#chip). From 1.5.1 on, updates install the normal way.
 
+In the chip's download mode, Windows may ask to format the FM-1 as a disk. Always click **Cancel**: never format it.
+
 ## Good to know
 
 - **Saves:** Arctic Scream keeps its own saves, separate from other FM-1 firmwares. If you come from another one, your projects and slots start empty.
