@@ -1,6 +1,6 @@
 # Arctic Scream p0larpatch: features
 
-A complete overview of what Arctic Scream p0larpatch does, version 1.5.1. For the short version see the
+A complete overview of what Arctic Scream p0larpatch does, version 1.5.2. For the short version see the
 [README](README.md); for every button on one page, the [cheat sheet](https://polarpatch.github.io/Arctic-scream-FM-1/cheatsheet.html);
 for how it is built, [DEVELOPER.md](DEVELOPER.md).
 
@@ -12,9 +12,9 @@ feedback screams: slow, cold sounds that hum for minutes, and a voice that wakes
 
 | | |
 | --- | --- |
-| Version | 1.5.1 |
+| Version | 1.5.2 |
 | Firmware identity | `FM-1_977` (USB name "Arctic Scream" by "PolarPatch") |
-| Package | `arctic-scream-1.5.1.fwsc`, built and attested on GitHub |
+| Package | `arctic-scream-1.5.2.fwsc`, built and attested on GitHub |
 | Source | <https://github.com/PolarPatch/Arctic-scream-FM-1> |
 | Demo, editor, cheat sheet | <https://polarpatch.github.io/Arctic-scream-FM-1/> |
 | Licence | GPL-3.0 (the PolarPatch logo excepted) |
@@ -204,7 +204,7 @@ HOME draws each track's wave as it plays. The header shows the track, its sound 
 | --- | --- | --- | --- | --- |
 | SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF |
 | SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES (CLEAR) | CLOCK (INT, INT+OUT, USB, TRS) |
-| SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB, 1.4) | | |
+| SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB, 1.4) | MOD OUT (OFF, ON, 1.5.2) | |
 
 - **MIDI**: notes in and out over USB on each track's channel (or ALL > SEL, or CH n > SEL: channel n alone to the
   selected track). MIDI in on the TRS jack too, with a TRS-to-DIN adapter. MIDI LEARN links up to 32 CCs to any knob.
@@ -212,6 +212,10 @@ HOME draws each track's wave as it plays. The header shows the track, its sound 
 - **MIDI clock**: follow one from USB or the TRS jack (START, CONTINUE, STOP), or send one over USB (INT+OUT).
 - **USB LEVEL** (1.4): how loud a computer records the FM-1, in 6 dB steps; 0 dB is the volume knob all the way up,
   and a limiter after it keeps the louder steps from clipping.
+- **MOD OUT** (1.5.2): each track's level (CC 102, 0–127) and LFO (CC 103, 64 the middle) out over USB 50 times a
+  second on the track's own channel, for lights, motors, Max or another synth. Off by default.
+- **PANEL OUT** (1.5.2): an open protocol ([docs/PANEL_OUT.md](docs/PANEL_OUT.md), CC0; `panel_out.c` MIT) that tells an
+  app which buttons and keys are down, the octave and how each knob turns. Silent until an app says HELLO.
 - SYSTEM 2 shows the CPU load (NOW and PEAK) and USB REC DROPS (gaps in the USB recording); the header says CPU FULL:
   NOTE DROPPED when the FM-1 had to let a note go, and WATCHDOG RESET or LOW VOLTAGE RESET after such a restart.
 
@@ -258,7 +262,8 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 
 1. Download `arctic-scream-X.Y.fwsc` from [Releases](https://github.com/PolarPatch/Arctic-scream-FM-1/releases).
 2. `pip install mido python-rtmidi`, connect the FM-1 over USB, run
-   `python3 tools/fm1_install.py arctic-scream-1.5.1.fwsc`.
+   `python3 tools/fm1_install.py arctic-scream-1.5.2.fwsc`.
+- While it installs, the FM-1's screen shows UPDATE MODE, then WRITING with a bar and the per cent (1.5.2).
 
 - It installs over the original firmware or any other FM-1 firmware.
 - An interrupted install resumes: the FM-1 comes back in update mode and the same command finishes it.
@@ -274,6 +279,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 | --- | --- | --- |
 | 1.0 | 2026-10-25 | The first release: HOWL (now Holvut), six screaming presets, the HORROR scale, runaway echo, keys an octave down, 46 arctic factory sounds, the new look, the web editor with sound tools and sequencer, the demo and cheat sheet |
 | 1.1 | 2026-10-26 | DRONE (BORGA, STOARBMA, GOHCCAT); HOWL renamed Holvut; moving northern lights on ENV, LFO, FX and the mixers; SUSTAIN 40 % by default; DRONE in the editor |
+| 1.5.2 | 2026-11-10 | The update's own screen (UPDATE MODE, WRITING with a bar, DONE or FAILED); SYSTEM 3's MOD OUT (each track's level and LFO as CC 102, 103); PANEL OUT for apps (buttons, keys, knobs); INFO tells key 0's note and the octave; the browser demo in tune at 48 kHz; DELAY up to 2.6 s and more free memory (RAM 93.4 → 79.0 KB used); the stacks' depth in the CPU command |
 | 1.5.1 | 2026-11-08 | The newer FM-1s' flash chip (UC25HQ80): saves, the USB rescue and updates on it as on the first chip (P25Q80); on a newer unit with 1.5 or older, install through the chip's download mode once |
 | 1.5 | 2026-11-07 | The screen reader: the screen said to fm1-reader (pages, knobs, lists, steps, PLAY, STOP, REC, the header's messages); saves under a latched drone (a slot or a sound saved at once, the autosave after 30 s at rest); the editor keeps a project's effects and tempo in its file; TAPE's TONE shows its corner (OPEN, 10K .. 400) |
 | 1.4 | 2026-11-06 | Holvut's LOOP page: GATE, BLOOM (the effects back into the loop), LOWCUT, EXCITE (the track's sample into the string); FX's AIR page: PING-PONG and SHIMMER; SYSTEM 3's USB LEVEL (−12 to +24 dB); a side limiter against the headphone amplifier's crackle; latched and ARP key lights follow OCT− and OCT+; no 64-bit multiplies beside 16-bit loads, which the FM-1's CPU now and then got wrong (FM, PHYS, VOICE, PERFORM, LFO, BLOOM), and a tool that checks it |

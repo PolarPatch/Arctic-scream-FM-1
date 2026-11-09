@@ -138,7 +138,7 @@ SHOTS = {
 
 def build():
     os.makedirs(os.path.dirname(HOST), exist_ok=True)
-    subprocess.run(["cc", "-O2", "-w", "-DDINGHY_HOST", "-DAPP_VER=\"1.5.1\"", "-Dsection(x)=used",
+    subprocess.run(["cc", "-O2", "-w", "-DDINGHY_HOST", "-DAPP_VER=\"1.5.2\"", "-Dsection(x)=used",
                     "-Ifirmware/src", "-Ifirmware/gen", "-o", HOST, "firmware/src/grimm.c"], cwd=ROOT, check=True)
 
 
