@@ -31,6 +31,19 @@ fi
 # the update loader's screen (tests/ldr_screen_test.c): UPDATE MODE, WRITING and its bar, DONE, FAILED
 cc -O2 -Wall -Ifirmware/gen -o build/host/ldr_screen_test tests/ldr_screen_test.c
 build/host/ldr_screen_test
+# (1.5.3) the update path (tests/update_test.c): ota.c's step and the loader's against a served package, an older
+# build's flash first (the app cut short, packed by tools/fm1pkg_make.py); needs build/ from tools/build.py and the SDK
+if [ -f build/arctic-scream.fwsc ] && [ -f build/grimm.bin ] && [ -d "${AC79_SDK:-$HOME/fw-AC79_AIoT_SDK}" ]; then
+    head -c 60000 build/grimm.bin > build/host/old_app.bin
+    AC79_SDK="${AC79_SDK:-$HOME/fw-AC79_AIoT_SDK}" python3 tools/fm1pkg_make.py build/host/old_app.bin build/loader/ota.bin build/host/old.fwsc > /dev/null
+    python3 -c "import sys; sys.path.insert(0, 'tools'); import fm1_install as f
+for a, b in (('build/host/old.fwsc', 'build/host/old.img'), ('build/arctic-scream.fwsc', 'build/host/new.img')):
+    open(b, 'wb').write(f.logical_image(open(a, 'rb').read()))"
+    cc -O1 -Wall -Wno-unused-function -Ifirmware/hal -Ifirmware/src -o build/host/update_test tests/update_test.c
+    build/host/update_test build/host/old.img build/host/new.img
+else
+    echo "update_test: skipped (run tools/build.py first; the AC79 SDK for the older package)"
+fi
 # the flash chips (tests/flash_id_test.c): the newer FM-1s' UC25HQ80 saves as the first ones' P25Q80
 cc -O2 -Wall -Ifirmware/hal -o build/host/flash_id_test tests/flash_id_test.c
 build/host/flash_id_test
