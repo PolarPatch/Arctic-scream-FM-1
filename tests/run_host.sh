@@ -28,6 +28,9 @@ else
     echo "saves  FAILED: Arctic Scream 1.2's project loads otherwise (diff tests/data/a1.2-state.txt build/compat/a1.2-state.txt)"
     exit 1
 fi
+# the update loader's screen (tests/ldr_screen_test.c): UPDATE MODE, WRITING and its bar, DONE, FAILED
+cc -O2 -Wall -Ifirmware/gen -o build/host/ldr_screen_test tests/ldr_screen_test.c
+build/host/ldr_screen_test
 # the flash chips (tests/flash_id_test.c): the newer FM-1s' UC25HQ80 saves as the first ones' P25Q80
 cc -O2 -Wall -Ifirmware/hal -o build/host/flash_id_test tests/flash_id_test.c
 build/host/flash_id_test

@@ -21,6 +21,9 @@
 #include "fm1_flash.h"
 #include "../src/libc.c"
 #include "../src/usb.c"
+#include "fm1_lcd_hw.h"
+#include "../src/lcd.c"
+#include "ldr_screen.c"                         /* (1.5.2) the screen: UPDATE MODE, WRITING */
 
 static uint32_t ldr_ms(void)   /* monotonic ms; survives the TIMER4 wrap (178.9 s) */
 {
@@ -72,7 +75,7 @@ static void ldr_record_clear(void)
     fm1_updata_parm_clear();                        /* CRC 0: the SPL ignores it on a warm reset */
 }
 static int ldr_flash_known(void) { return fl_id_known(fl_jedec_ram()); }   /* as the app (platform.c) */
-static void ldr_progress(uint32_t done, uint32_t total) { (void)done; (void)total; ldr_poll(); }
+static void ldr_progress(uint32_t done, uint32_t total) { ldr_bar(done, total); ldr_poll(); }
 #include "ldr_core.c"
 
 extern uint32_t _bss_start[], _bss_end[];
@@ -81,6 +84,8 @@ void ldr_main(void)
 {
     fm1_wdt_arm(0x0D);                              /* ~8 s, fed by ldr_poll */
     fm1_time_init();
+    ldr_screen();                                   /* (1.5.2) before USB: see ldr_screen.c */
+    fm1_wdt_feed();
     usb_start();
     for (;;) {
         ldr_poll();
@@ -95,6 +100,7 @@ void ldr_main(void)
             int rc;
             usb.ota_req = 0;
             rc = ldr_session();
+            ldr_result(rc == 0 ? LS_DONE : rc == LDR_EFLASH ? LS_FLASH : LS_FAILED);   /* (the host may try again) */
             if (rc == 0 || rc == LDR_EFLASH) {      /* done, or another flash chip: the old firmware again */
                 fm1_delay_ms(200);                  /* the "success" reply leaves */
                 usb_detach();

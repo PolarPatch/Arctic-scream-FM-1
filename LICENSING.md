@@ -55,6 +55,7 @@ changes are Copyright (C) 2026 PolarPatch, GPL-3.0-only; everything else is as t
 | The saves' own magic ("ADPK", "ADLS"; `store.c`) and a track of 56 B (Holvut's four values at 52..55) | |
 | The web page's look (`web/index.html`, `web/site.js`: the glitching titles, after BlueWatch's CONFIG title) and its demos A1–A5 (`web/gen_demos.mjs`, `web/demos.json`; MANDALORIA is PolarPatch's own sound) | |
 | The manual `MANUAL.md`, written anew for Arctic Scream (its order and many of its facts follow GR!MM's manual), its banner `docs/manual/banner.png`, and the screens `docs/manual/screens/`, rendered from this firmware by `tools/make_screens.py` |  |
+| The update loader's screen `firmware/loader/ldr_screen.c`, `tests/ldr_screen_test.c` (1.5.2) | Its idea follows Skiff's loader screen (<https://github.com/illuminus5/skiff> `firmware/loader/ldr_screen.c`, GPL-3.0: UPDATE MODE, WRITING and a bar, drawn before USB starts), written anew with the app's pixfont and colours; none of its code is copied |
 | `tools/gen_logo.py` (its output `firmware/gen/polarpatch_logo.h`) | |
 
 **The PolarPatch logo** (`assets/polarpatch-logo.png`, and in the firmware as `firmware/gen/polarpatch_logo.h`, in the
