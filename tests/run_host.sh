@@ -8,7 +8,7 @@ mkdir -p build/host
 python3 tools/gen_words.py firmware/words.tsv web/words firmware/gen/ann_words.h >/dev/null   # (1.5: the reader's words)
 MACHO=                                          # (macOS: Mach-O has no ".pool" section; the pool is plain .bss there)
 [ "$(uname -s)" = Darwin ] && MACHO="-Dsection(x)=used"
-cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DAPP_VER="\"${APP_VER:-1.5.1}\"" ${MACHO:+"$MACHO"} -Ifirmware/src -Ifirmware/gen -o build/host/grimm firmware/src/grimm.c
+cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DAPP_VER="\"${APP_VER:-1.5.2}\"" ${MACHO:+"$MACHO"} -Ifirmware/src -Ifirmware/gen -o build/host/grimm firmware/src/grimm.c
 GRIMM_MASTER=1022 build/host/grimm build/host/grimm   # (GR!MM V2: MASTER as web/test_web.mjs turns it: 1022, Q12 4080)
 python3 - <<'PY'
 from pathlib import Path
@@ -28,6 +28,9 @@ else
     echo "saves  FAILED: Arctic Scream 1.2's project loads otherwise (diff tests/data/a1.2-state.txt build/compat/a1.2-state.txt)"
     exit 1
 fi
+# the update loader's screen (tests/ldr_screen_test.c): UPDATE MODE, WRITING and its bar, DONE, FAILED
+cc -O2 -Wall -Ifirmware/gen -o build/host/ldr_screen_test tests/ldr_screen_test.c
+build/host/ldr_screen_test
 # the flash chips (tests/flash_id_test.c): the newer FM-1s' UC25HQ80 saves as the first ones' P25Q80
 cc -O2 -Wall -Ifirmware/hal -o build/host/flash_id_test tests/flash_id_test.c
 build/host/flash_id_test
@@ -54,3 +57,5 @@ build/host/uac_ring_test
 python3 tests/rc11_test.py build/host/grimm
 # (1.5) the screen reader: what it says, when, and nothing before a reader asks (tests/reader_test.py)
 python3 tests/reader_test.py build/host/grimm
+# (1.5.2) PANEL OUT: the panel for an app, and nothing before an app asks (tests/panel_out_test.py)
+python3 tests/panel_out_test.py build/host/grimm

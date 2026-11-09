@@ -86,7 +86,7 @@
  *              TAPE:  WOW, SATURATION, TONE, HISS, over the whole mix (all 0: bypassed)
  *              GRAIN: SIZE (10 .. 390 ms), DENSITY (1 .. 98 a second), SCATTER, MIX (return); FX held + the lowest
  *                     white key (F3): FREEZE on or off
- *              DELAY: TIME (20 .. 3000 ms), FEEDBACK (0 .. 110 %), WEAR (darker, more wobbly repeats), MIX (return)
+ *              DELAY: TIME (20 .. 2600 ms), FEEDBACK (0 .. 110 %), WEAR (darker, more wobbly repeats), MIX (return)
  *              SPACE: SIZE (the decay, 0.4 .. ~32 s, then INF), DAMP, MIX (return), PRE-DELAY (0 .. 250 ms)
  *              held ~0.3 s: PERFORM (let go: back where it was); held + G3 .. F4, while held: REV THROW, ECHO THROW,
  *              TAPE STOP, REVERSE, FILTER DOWN, FILTER UP, STUTTER (the tricks' keys glow, lit while on; perform.c)
@@ -125,6 +125,8 @@
 #define ANN_MAX 160u                            /* its longest SAY (platform.c's SysEx queue, 64 packets, holds it) */
 #include "ann_words.h"                          /* (tools/gen_words.py from firmware/words.tsv: the words file's link) */
 #include "announce.c"                           /* (fm1-base's, MPL-2.0: fm1-reader's tools/sync_announce.sh) */
+#define PO_NAME "Arctic Scream " APP_VER        /* (1.5.2) PANEL OUT: the panel, for an app (docs/PANEL_OUT.md) */
+#include "panel_out.c"
 #include "dsp.c"
 #include "wear.c"
 #include "samples.c"
@@ -166,6 +168,7 @@ enum { PF_REV, PF_ECHO, PF_TAPE, PF_BACK, PF_FDOWN, PF_FUP, PF_STUT, NPF };   /*
 static volatile uint32_t pf_held;               /* main loop: bit PF_: its key held (FX held + it; perform.c) */
 static void perform_render(int32_t *out, uint32_t n);
 static volatile uint32_t trk_quiet;             /* audio: the tracks silent (muted, or another soloed: mute_watch) */
+static volatile uint32_t mod_pk[NT];            /* audio: (1.5.2) each track's peak, for MOD OUT (mod_out) */
 static volatile uint32_t vis_pk[NT], vis_lr[2]; /* audio: each track's peak (before LEVEL), the output's left and right,
                                                  * the highest since the main loop last took them (HOME's moving
                                                  * picture, ui.c; every 16th frame looked at) */
@@ -285,6 +288,7 @@ static void trk_peak(uint32_t t, const int32_t *x, uint32_t n)   /* its peak, ro
     for (k = 0; k < n; k += 16u)
         if ((a = (uint32_t)(x[k] < 0 ? -x[k] : x[k])) > pk) pk = a;
     if (pk > vis_pk[t]) vis_pk[t] = pk;
+    if (pk > mod_pk[t]) mod_pk[t] = pk;         /* (1.5.2: MOD OUT's, taken by its own clock) */
 }
 static int32_t fx_send(uint32_t t, int32_t s)   /* a send (0..127) times FX (0..200 %): x 258 its Q15 gain, to ~2x */
 {
@@ -959,10 +963,11 @@ static struct {
                                                  * ALWAYS OFF */
     uint8_t usb;                                /* (Arctic Scream p0larpatch, SET_VER 4) SYSTEM 3's USB LEVEL: 0 .. 6,
                                                  * -12 .. +24 dB; USB_L0 (0 dB) before */
+    uint8_t mod;                                /* (1.5.2, SET_VER 5) SYSTEM 3's MOD OUT: 0 OFF (before), 1 ON */
 } set;
-#define SET_VER 4u
+#define SET_VER 5u
 static uint32_t set_dirty, set_t;               /* the settings changed, when */
-static volatile int32_t sy_col, sy_mch, sy_tune, sy_scr, sy_learn, sy_out, sy_fac, sy_clk, sy_latch, sy_usb;   /* SYSTEM's,
+static volatile int32_t sy_col, sy_mch, sy_tune, sy_scr, sy_learn, sy_out, sy_fac, sy_clk, sy_latch, sy_usb, sy_mod;   /* SYSTEM's,
                                                  * SYSTEM 2's, SYSTEM 3's knobs (sy_fac: SAMPLES, 1 RESTORE: OCT+
                                                  * writes the factory ones) */
 static uint32_t fac_at;                         /* RESTORE confirmed: when it writes (the header said first), 0 none */
@@ -1091,7 +1096,7 @@ static const page_t PAGES[NPAGE] = {
                                                  * SOURCE's) */
     {"MASTER", BTN_FX, 1, 0, 1, {"CUTOFF", "RESONANCE", "TYPE", "POSITION"}},   /* (GR!MM V2: FX's 5th and 6th, master.c) */
     {"DRIVE", BTN_FX, 1, 0, 1, {"AMOUNT", "TYPE", "TONE", "MIX"}},
-    {"SYSTEM 3", BTN_HOME, 1, 0, 0, {"LATCH", "USB", "", ""}},   /* (V2: a NEW project's tracks' LATCH) */
+    {"SYSTEM 3", BTN_HOME, 1, 0, 0, {"LATCH", "USB", "MOD", ""}},   /* (V2: a NEW project's tracks' LATCH) */
     {"LOOP", BTN_EDIT, 1, 1, 1, {"GATE", "BLOOM", "LOWCUT", "EXCITE"}},   /* (1.4: a HOWL track's, after SOUND: its
                                                  * loop's GATE, BLOOM, LOWCUT and EXCITE, howl.c) */
     {"AIR", BTN_FX, 1, 0, 1, {"PING", "SHIMMR", "", ""}},   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
@@ -1183,7 +1188,7 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_PROJECTS: return k == 0u ? &pj_slot : k == 3u ? &pj_act : 0;   /* (CATEGORY, TYPE: "-") */
     case PG_SYSTEM: return k == 0u ? &sy_col : k == 1u ? &sy_mch : k == 2u ? &sy_tune : &sy_scr;
     case PG_SYS2: return k == 0u ? &sy_learn : k == 1u ? &sy_out : k == 2u ? &sy_fac : &sy_clk;
-    case PG_SYS3: return k == 0u ? &sy_latch : k == 1u ? &sy_usb : 0;
+    case PG_SYS3: return k == 0u ? &sy_latch : k == 1u ? &sy_usb : k == 2u ? &sy_mod : 0;
     case PG_LOOP: return &trk[sel].hw_x[k & 3u];
     case PG_AIR: return k == 0u ? &dl_pp : k == 1u ? &rv_shim : 0;
     default: return 0;                          /* (not built yet: the knobs do nothing) */
@@ -1596,6 +1601,8 @@ static int32_t enc_take(uint32_t e)             /* an encoder's detents (the scr
 {
     int32_t d = fm1_enc_take(e);
     if (d) {
+        static const uint8_t PO_ID[7] = {4, 5, 0, 1, 2, 3, 6};   /* (1.5.2) PANEL OUT's knob ids, by ENC_ */
+        po_knob(PO_ID[e % 7u], d);
         t_hand = fm1_ms;
         if (scr_dark) scr_woke = 1, d = 0;
     }
@@ -1767,6 +1774,50 @@ static void midi_out(void)
     }
 }
 
+/* ---- (1.5.2) MOD OUT (SYSTEM 3): the tracks' movement as CC over USB, for lights, motors, Max, an app. Every 20 ms,
+ * each track on its own channel (as its notes, MIDI CHANNEL): CC 102 LEVEL, how loud it plays now (0 .. 127, ~-60 dB
+ * .. full, a peak that falls 3 steps a send); CC 103 LFO, where its LFO is (64 the middle; 64 with DEPTH 0). A value
+ * goes out when it has changed; with no room in USB's ring, the rest wait for the next 20 ms */
+#define MOD_CC_LEVEL 102u
+#define MOD_CC_LFO 103u
+#define MOD_FLOOR 32u                           /* (a track's peak this low: 0; MOD_FULL: 127) */
+#define MOD_FULL 131072u
+static uint32_t mod_t;
+static uint8_t mod_sent[NT][2], mod_lv[NT];
+static uint32_t mod_log16(uint32_t x)           /* log2(x) x 16, x >= 1 */
+{
+    uint32_t e = 0, f;
+    while (x >> (e + 1u)) e++;
+    f = e >= 4u ? (x >> (e - 4u)) & 15u : (x << (4u - e)) & 15u;
+    return e * 16u + f;
+}
+static void mod_out(void)
+{
+    static const uint32_t LO = 5u * 16u, SPAN = 12u * 16u;   /* (log2: MOD_FLOOR's 5, MOD_FULL's 17) */
+    static uint32_t was;
+    uint32_t t, k, v[2], pk;
+    if (!set.mod) { was = 0; return; }
+    if (!was)                                   /* (turned on: everything sent once) */
+        for (was = 1, t = 0; t < NT; t++) mod_sent[t][0] = mod_sent[t][1] = 0xFFu;
+    if (fm1_ms - mod_t < 20u) return;
+    mod_t = fm1_ms;
+    for (t = 0; t < NT; t++) {
+        pk = mod_pk[t], mod_pk[t] = 0;
+        k = pk <= MOD_FLOOR ? 0u : mod_log16(pk < MOD_FULL ? pk : MOD_FULL) - LO;
+        k = k >= SPAN ? 127u : k * 127u / SPAN;
+        mod_lv[t] = (uint8_t)(k > mod_lv[t] ? k : mod_lv[t] > 3u ? mod_lv[t] - 3u : 0u);   /* (falls, as a meter) */
+        v[0] = mod_lv[t];
+        v[1] = (uint32_t)clamp(64 + lfo_amt[t] * 63 / 32767, 1, 127);
+        if (!trk[t].lfo_depth) v[1] = 64u;
+        for (k = 0; k < 2u; k++)
+            if (v[k] != mod_sent[t][k]) {
+                if (!midi_room()) return;
+                midi_send(0xB0u | out_ch(t), k ? MOD_CC_LFO : MOD_CC_LEVEL, v[k]);
+                mod_sent[t][k] = (uint8_t)v[k];
+            }
+    }
+}
+
 /* ---- SYSTEM's knobs into the settings (a change: saved), and where they act: the accent, TUNE, SEQ MIDI OUT, the
  * channels (changed: the notes out there let go, MIDI's held notes released) */
 static void sys_sync(void)
@@ -1774,7 +1825,7 @@ static void sys_sync(void)
     int8_t tn = (int8_t)clamp(sy_tune, -50, 50);
     uint8_t col = (uint8_t)clamp(sy_col, 0, 3), mch = (uint8_t)clamp(sy_mch, 0, MCH_MAX), scr = (uint8_t)clamp(sy_scr, 0, 4);
     uint8_t out = (uint8_t)clamp(sy_out, 0, 1), clk = (uint8_t)clamp(sy_clk, 0, CK_N - 1), la = (uint8_t)clamp(sy_latch, 0, 1);
-    uint8_t ul = (uint8_t)clamp(sy_usb, 0, (int32_t)USB_LMAX);
+    uint8_t ul = (uint8_t)clamp(sy_usb, 0, (int32_t)USB_LMAX), md = (uint8_t)clamp(sy_mod, 0, 1);
     uint32_t n, t;
     if (mch != set.mch || (set.out && !out)) mo_flush = 1;
     if (mch != set.mch)
@@ -1785,9 +1836,9 @@ static void sys_sync(void)
                     midi_held[n] &= (uint8_t)~(0x11u << t);
                 }
     if (tn != set.tune || col != set.col || mch != set.mch || scr != set.scr || out != set.out || clk != set.clk ||
-        la != set.latch || ul != set.usb) {
+        la != set.latch || ul != set.usb || md != set.mod) {
         set.tune = tn, set.col = col, set.mch = mch, set.scr = scr, set.out = out, set.clk = clk, set.latch = la;
-        set.usb = ul;
+        set.usb = ul, set.mod = md;
         set_dirty = 1, set_t = fm1_ms;
     }
     ck_mode = set.clk, rt_usb_fast = set.clk == CK_USB;   /* (CLOCK: the audio ISR's, platform.c's) */
@@ -1801,30 +1852,33 @@ static void sys_load(void)                      /* the settings at power-on into
 {
     int8_t o = 0;
     uint32_t i;
-    set.usb = USB_L0;                           /* (the older ones' below: no USB LEVEL, 0 dB) */
+    set.usb = USB_L0, set.mod = 0;              /* (the older ones' below: no USB LEVEL, 0 dB; no MOD OUT, OFF) */
     if (!settings_load(&set, sizeof set))
         ;
-    else if (!settings_load(&set, sizeof set - 1u))   /* (SET_VER 3's: no USB LEVEL) */
-        set.usb = USB_L0;
-    else if (!settings_load(&set, sizeof set - 2u))   /* (V2's before SET_VER 3: no LATCH, OFF) */
-        set.latch = 0, set.usb = USB_L0;
-    else if (!settings_load(&set, sizeof set - 3u))   /* (V1.0's: no CLOCK, INT) */
-        set.clk = CK_INT, set.latch = 0, set.usb = USB_L0;
-    else if (!settings_load(&set, sizeof set - 4u))   /* (steps 20..24's: no version either) */
-        set.ver = 0, set.clk = CK_INT, set.latch = 0, set.usb = USB_L0;
+    else if (!settings_load(&set, sizeof set - 1u))   /* (SET_VER 4's, 1.5.1 and before: no MOD OUT) */
+        set.mod = 0;
+    else if (!settings_load(&set, sizeof set - 2u))   /* (SET_VER 3's: no USB LEVEL) */
+        set.usb = USB_L0, set.mod = 0;
+    else if (!settings_load(&set, sizeof set - 3u))   /* (V2's before SET_VER 3: no LATCH, OFF) */
+        set.latch = 0, set.usb = USB_L0, set.mod = 0;
+    else if (!settings_load(&set, sizeof set - 4u))   /* (V1.0's: no CLOCK, INT) */
+        set.clk = CK_INT, set.latch = 0, set.usb = USB_L0, set.mod = 0;
+    else if (!settings_load(&set, sizeof set - 5u))   /* (steps 20..24's: no version either) */
+        set.ver = 0, set.clk = CK_INT, set.latch = 0, set.usb = USB_L0, set.mod = 0;
     else {
         set.oct = settings_load(&o, 1) ? 0 : o;
         set.tune = 0, set.col = set.mch = set.scr = set.out = set.nlk = 0, set.ver = 0, set.clk = CK_INT, set.latch = 0;
-        set.usb = USB_L0;
+        set.usb = USB_L0, set.mod = 0;
     }
     if (set.mch > MCH_MAX) set.mch = 0;
     if (set.clk >= CK_N) set.clk = CK_INT;
     if (set.latch > 1u) set.latch = 0;
     if (set.usb > USB_LMAX) set.usb = USB_L0;
+    if (set.mod > 1u) set.mod = 0;
     if (set.oct < -2 || set.oct > 2) set.oct = 0;
     if (set.nlk > NLINK) set.nlk = 0;
     sy_col = set.col, sy_mch = set.mch, sy_tune = set.tune, sy_scr = set.scr, sy_out = set.out, sy_clk = set.clk;
-    sy_latch = set.latch, sy_usb = set.usb;
+    sy_latch = set.latch, sy_usb = set.usb, sy_mod = set.mod;
     sys_sync();
     set_dirty = 0;
     if (!set.ver)                               /* (steps 20..24's; V1.0's are version 1: as they are) */
@@ -2400,6 +2454,7 @@ static void app_main(void)
             }
         }
         midi_out();                             /* the notes out over USB-MIDI (the echoes from the audio ISR) */
+        mod_out();                              /* (1.5.2) MOD OUT: the tracks' LEVEL and LFO as CC */
 
         base = (uint32_t)(KEY0 + 12 * set.oct);
         for (k = 0; k < nlat && k < NV; k++) {  /* the selected track's notes, on the keys they came from: the
@@ -2461,10 +2516,17 @@ static void app_main(void)
 #endif
         speak();                                /* (1.5) the screen reader: what changed, said */
         ann_tick(fm1_ms);
-        {                                       /* (1.5) a screen reader's SysEx (F0 7D 53 52), before the editor's */
+        if (po_on()) {                          /* (1.5.2) PANEL OUT: the panel as it is now, MASTER 0 .. 127 */
+            uint32_t m = (uint32_t)fm1_master() << 8, r = 0, q;
+            for (q = 1u << 20; q; q >>= 2)      /* (MASTER is squared, Q12: its square root, 0 .. 1023) */
+                if (m >= r + q) m -= r + q, r = (r >> 1) + q; else r >>= 1;
+            po_tick(fm1_ms, fm1_in.buttons, fm1_in.notes, set.oct, (uint32_t)(KEY0 + 12 * set.oct), (int32_t)(r >> 3));
+        }
+        {                                       /* (1.5) a screen reader's SysEx (F0 7D 53 52), (1.5.2) PANEL OUT's
+                                                 * (F0 7D 50 4F), before the editor's */
             const uint8_t *fp;
             uint32_t fn;
-            if (sysex_get(&fp, &fn) && ann_frame(fp, fn, fm1_ms)) sysex_done();
+            if (sysex_get(&fp, &fn) && (ann_frame(fp, fn, fm1_ms) || po_frame(fp, fn, fm1_ms))) sysex_done();
         }
 #ifdef GRIMM_STRESS
         stress_poll();

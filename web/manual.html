@@ -10,7 +10,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Arctic Scream Manual</title>
 <link rel="icon" href="polarpatch-logo.png">
-<meta name="description" content="The visual manual of Arctic Scream p0larpatch 1.5.1, drone firmware for the M-VAVE FM-1: every page as the screen shows it, and what each knob and button does.">
+<meta name="description" content="The visual manual of Arctic Scream p0larpatch 1.5.2, drone firmware for the M-VAVE FM-1: every page as the screen shows it, and what each knob and button does.">
 <style>
 @font-face { font-family: "Press Start 2P"; src: url("PressStart2P-Regular.ttf") format("truetype"); font-display: block; }
 /* BlueWatch's colours, as the demo page and the cheat sheet */
@@ -104,7 +104,7 @@ footer p { margin: 4px 0; }
 
 /* print: A4, dark, a chapter a page, the page's number at the foot */
 @page { size: A4; margin: 13mm 12mm 15mm; background: #060410;
-        @bottom-center { content: "ARCTIC SCREAM 1.5.1 · VISUAL MANUAL · " counter(page); color: #45606e;
+        @bottom-center { content: "ARCTIC SCREAM 1.5.2 · VISUAL MANUAL · " counter(page); color: #45606e;
                          font: 7pt system-ui, sans-serif; letter-spacing: .08em; } }
 @page :first { @bottom-center { content: none; } }
 @media print {
@@ -141,7 +141,7 @@ footer p { margin: 4px 0; }
     <div class="shots" aria-hidden="true"><img src="screens/holvut.png" alt=""><img src="screens/drone.png" alt=""><img src="screens/voice.png" alt=""><img src="screens/space.png" alt=""></div>
     <div class="shots" aria-hidden="true"><img src="screens/env.png" alt=""><img src="screens/scale.png" alt=""><img src="screens/master.png" alt=""><img src="screens/perform.png" alt=""></div>
   </div>
-  <div class="sub">VISUAL MANUAL · 1.5.1<br>FOR THE M-VAVE FM-1</div>
+  <div class="sub">VISUAL MANUAL · 1.5.2<br>FOR THE M-VAVE FM-1</div>
   <p class="small">Dark ambient drones and feedback screams from the arctic tundra. Unofficial firmware by PolarPatch, free and open source (GPL-3.0); not made or endorsed by M-VAVE. Install at your own risk.</p>
 </section>
 
@@ -171,7 +171,7 @@ C("00", "How to read this manual", "var(--ice)",
     <li><b>A + B</b>: hold A, then press B.</li>
     <li><b>Keys from F2:</b> everything sits an octave down, for drones. <b>White keys 1–8</b> are counted from the left (F2, G2, A2, B2, C3, D3, E3, F3); the black keys from <b>F#2</b>.</li>
     <li><b>T1–T4:</b> the four tracks. Turn ALGORITHM to pick one; most pages show the selected track.</li>
-    <li>${NEW} marks what is new in 1.5 and 1.5.1.</li></ul>`),
+    <li>${NEW} marks what is new in 1.5, 1.5.1 and 1.5.2.</li></ul>`),
   P("Arctic Scream p0larpatch", "by PolarPatch", "", [], [], `<div class="about"><img src="polarpatch-logo.png" alt="PolarPatch">
     <div><p>A drone firmware for the M-VAVE FM-1: four tracks, eight sources, long dark effects, a 64-step sequencer, chords, an arpeggiator and song mode, with its own feedback voice, Holvut, that wakes on its own and screams.</p>
     <p>Free and open source (GPL-3.0). Try it in your browser first: the demo, the editor and the cheat sheet are at <a href="https://polarpatch.github.io/Arctic-scream-FM-1/">polarpatch.github.io/Arctic-scream-FM-1</a>.</p></div></div>`)]),
@@ -365,7 +365,7 @@ C("09", "Destroy: FX", "var(--plasma)",
     ["MIX", "How loud the cloud is.", "0–100 %"]),
     ["FREEZE (PERFORM, F2) holds the grain cloud. GRAIN pours into SPACE.", "GRAIN hears what the tracks send it (MIXER 1). Turn a knob up while the selected track sends nothing and its send goes to 50 %."]),
   P("DELAY", "Tap FX three times", "delay", K(
-    ["TIME", "The echo's time.", "20 ms – 3 s"],
+    ["TIME", "The echo's time.", "20 ms – 2.6 s"],
     ["FEEDBACK", "Past 100 % the echo grows and saturates, and burns magenta on the screen: runaway.", "0–150 %"],
     ["WEAR", "Worn, wobbly echoes: darker, driven to 4x, wobbling up to ~11 ms.", "0–100 %"],
     ["MIX", "How loud they are.", "0–100 %"])),
@@ -388,7 +388,7 @@ C("09", "Destroy: FX", "var(--plasma)",
     ["All four types are about equally loud at the same AMOUNT; all the way up is at most ~6 dB louder, and a limiter after it keeps the output safe. Turn AMOUNT on KNOB 1 for fast changes.",
      "MASTER and DRIVE are saved with the project, like the other effects."]),
   P("AIR", "Tap FX seven times", "air", K(
-    ["PING", "PING-PONG: DELAY's echoes thrown left, right, left, wider as you turn it. While on, TIME goes up to 1.5 s.", "OFF, 1–100 %"],
+    ["PING", "PING-PONG: DELAY's echoes thrown left, right, left, wider as you turn it. While on, TIME goes up to 1.3 s.", "OFF, 1–100 %"],
     ["SHIMMR", "SHIMMER: SPACE's tail taken an octave up and back into the reverb, so it rises as it fades.", "OFF, 1–100 %"], ["", "", ""], ["", "", ""]),
     ["The picture: DELAY's echoes flying apart above, SHIMMER's octaves rising over SPACE's tail below.",
      "Saved with the project; older projects load with both off."])]),
@@ -422,7 +422,8 @@ C("11", "System: hold HOME", "var(--sky, #4fb3e8)",
   P("SYSTEM 3", "Hold HOME, then HOME twice", "system3", K(
     ["LATCH", "FROM SOUND: a sound you load brings its own LATCH (the seven Holvut sounds latch). ALWAYS OFF: loading sets it off; EDIT's LATCH and SEL + OCT+ still switch it.", "FROM SOUND / ALWAYS OFF"],
     ["USB LEVEL", "How loud a computer records the FM-1. 0 DB: the volume knob all the way up; higher makes quiet drones louder in the recording, a limiter keeps them from clipping.", "−12 … +24 DB"],
-    ["", "", ""], ["", "", ""])),
+    ["MOD " + NEW, "MOD OUT: each track's level (CC 102) and LFO (CC 103) out over USB 50 times a second, on the track's channel. For lights, motors, Max or another synth.", "OFF / ON"],
+    ["", "", ""])),
   P("MIDI, USB audio and good to know", "", "", [
     ["MIDI in", "USB (the MIDI port is called <b>Arctic Scream</b> too), or the TRS jack with a TRS-to-DIN adapter (type A). Notes play the tracks, a CC its MIDI LEARN link; ALL NOTES OFF lets go of MIDI's notes; aftertouch pushes Holvut's FEEDBACK.", ""],
     ["USB audio", "Class compliant, no driver: the FM-1 shows up on the computer, phone or tablet as <b>Arctic Scream</b>, an audio input, 16-bit stereo at 44.1 or 48 kHz, the whole mix at SYSTEM 3's USB LEVEL (the volume knob sets the speaker, not the recording). Solo each track (GLO + keys 5–8) to record them one by one.", ""],
@@ -431,6 +432,7 @@ C("11", "System: hold HOME", "var(--sky, #4fb3e8)",
     ["WATCHDOG / LOW VOLTAGE RESET", "Why it restarted: it stood still, or the power dipped.", ""],
     ["Screen reader " + NEW, "The FM-1 says its screen in words: open <b>charlesvestal.github.io/fm1-reader</b> in Chrome or Edge and connect. Pages, knobs as they turn, lists, steps and messages, in its own voice or through your screen reader.", ""],
     ["Saves " + NEW, "A slot or a sound you save is written at once, a drone sounding or not; the automatic save goes through after 30 s left alone under a latched drone. The editor keeps a project's effects and tempo in its file.", ""],
+    ["Updating " + NEW, "While a new firmware installs, the screen shows UPDATE MODE, then WRITING with a bar and the per cent. Keep USB in and the FM-1 on until it says DONE.", ""],
     ["Newer FM-1s " + NEW, "Units sold since autumn 2026 carry another flash chip (UC25HQ80). Since 1.5.1 saves and updates work on it as on the first one. With 1.5 or older on such a unit, install 1.5.1 once through the chip's download mode (the Firmware Hub's Rescue page).", ""],
     ["Saves", "Under a never-ending delay, SPACE on INF or a frozen GRAIN, saves go ahead 10 s after the last note. While a computer records over USB, it saves only after a minute left alone.", ""],
   ])]),

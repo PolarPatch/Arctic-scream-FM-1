@@ -9,7 +9,8 @@
 Each line: NOW and PEAK as SYSTEM 2 shows them (percent of the 5.8 ms a 256-frame block has), then NOW split:
 VOICES (the sources), MIX (the tracks' filters, levels and sends), GRAIN, DELAY, SPACE, TAPE, PERFORM, MASTER (its
 filter), DRIVE (its distortion and limiter), SCAN (the key scan's timer interrupts that land inside the audio) and REST
-(the rest of the audio callback). Each is the average of the same ~0.5 s as NOW. Needs mido and python-rtmidi (py -m pip install mido python-rtmidi), as tools\\fm1_install.py.
+(the rest of the audio callback). Each is the average of the same ~0.5 s as NOW. From Arctic Scream 1.5.2 a second line
+says how deep the two stacks have gone since power-on (the main loop's and the interrupts', of their sizes). Needs mido and python-rtmidi (py -m pip install mido python-rtmidi), as tools\\fm1_install.py.
 """
 import argparse
 import sys
@@ -36,7 +37,13 @@ def reading(link):
     names = NAMES[:n] + [f"STAGE{k}" for k in range(len(NAMES), n)]
     rest = now - sum(st)
     parts = "  ".join(f"{nm} {pct(t):4.1f}" for nm, t in zip(names, st))
-    return f"NOW {pct(now):5.1f}%  PEAK {pct(peak):5.1f}%  |  {parts}  REST {pct(rest):4.1f}"
+    line = f"NOW {pct(now):5.1f}%  PEAK {pct(peak):5.1f}%  |  {parts}  REST {pct(rest):4.1f}"
+    if len(r) >= 1 + 5 * (3 + n + 4):           # (1.5.2) the stacks: deepest, size; deepest, size (bytes)
+        mu, ms, iu, isz = (rd35(r[1 + 5 * k:6 + 5 * k]) for k in range(3 + n, 3 + n + 4))
+        if ms and isz:
+            line += (f"\nSTACK main {mu} of {ms} B ({100.0 * mu / ms:.0f}%)"
+                     f"  interrupts {iu} of {isz} B ({100.0 * iu / isz:.0f}%)")
+    return line
 
 
 def main():

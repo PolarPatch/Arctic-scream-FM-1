@@ -157,6 +157,10 @@ static int save_flash_erase(uint32_t i)
     return 0;
 }
 static uint32_t usb_drops(void) { return 0u; }   /* (GR!MM rc9: no USB audio here) */
+static uint32_t stk_main(void) { return 0u; }   /* (1.5.2: the stacks are measured on the FM-1 only) */
+static uint32_t stk_irq(void) { return 0u; }
+#define STK_MAIN_SZ 0u
+#define STK_IRQ_SZ 0u
 static uint32_t host_rec_from = 1, host_rec_to;   /* (GRIMM_USB_REC=FROM,TO: a computer reads the USB audio from FROM to TO ms) */
 static int usb_recording(void) { return fm1_ms >= host_rec_from && fm1_ms < host_rec_to; }
 static int usb_feeding(void) { return 0; }      /* (no USB audio ring here) */
@@ -208,6 +212,16 @@ static int ann_wire_send(const uint8_t *p, uint32_t n)
         if (log) fprintf(log, "%s\t%.*s\n", p[5] & 2u ? "WARN" : "MSG", (int)(n - 7u), (const char *)p + 6), fflush(log);
     } else if (p[4] == 1u)
         printf("%6u ms  reader HELLO: %.*s\n", fm1_ms, (int)(n - 7u), (const char *)p + 6);
+    return 0;
+}
+/* (1.5.2) PANEL OUT's frames (panel_out.c): printed as "panel: cmd args.." (tests/panel_out_test.py) */
+static int po_wire_send(const uint8_t *p, uint32_t n)
+{
+    uint32_t i;
+    if (n < 6u) return 0;
+    printf("%6u ms  panel:", fm1_ms);
+    for (i = 4; i + 1u < n; i++) printf(" %u", p[i]);
+    printf("\n");
     return 0;
 }
 

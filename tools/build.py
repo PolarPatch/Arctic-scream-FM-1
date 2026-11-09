@@ -51,7 +51,7 @@ SDK_SHA256 = {
 PRODUCT = "FM-1_977"                # Arctic Scream 1.x: 977, every release (GR!MM's is 966) (FM-1_9NN: the installers resume its loader; the hub's
                                     # other firmwares hold 950, 95x, 961, so not Dinghy's 9 + minor); Dinghy is 99N
 VERSION = None                      # APP_VER for release builds (else DEFAULT_VERSION)
-DEFAULT_VERSION = "1.5.1"
+DEFAULT_VERSION = "1.5.2"
 
 
 def toolchain():
@@ -125,7 +125,7 @@ def ldr_wrap(image):
 def build_loader():
     LDR.mkdir(parents=True, exist_ok=True)
     src = FW / "loader"
-    flags = [*CFLAGS, "-Ifirmware/hal", "-Ifirmware/src"]
+    flags = [*CFLAGS, "-Ifirmware/hal", "-Ifirmware/src", "-Ifirmware/gen"]
     tc_all(("cc", "-c", src / "crt0_ldr.S", "-o", LDR / "crt0_ldr.o"),
            ("cc", *flags, "-c", src / "loader.c", "-o", LDR / "loader.o"))
     elf = LDR / "loader.elf"

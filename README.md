@@ -31,6 +31,12 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
   - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
   - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
+- **New in 1.5.2:**
+  - **A screen while it updates.** Installing no longer leaves the screen black: the FM-1 shows UPDATE MODE and what it waits for, then WRITING with a bar and the per cent, and DONE or what to do if it failed.
+  - **MOD OUT** (SYSTEM 3): each track's level and LFO go out over USB as MIDI CC 102 and 103, 50 times a second, to drive lights, motors, a Max patch or another synth. Off by default.
+  - **PANEL OUT**, an open protocol for apps: which buttons and keys are down and how the knobs turn, so an app can draw the FM-1 as you play it. Silent until an app asks. See [docs/PANEL_OUT.md](docs/PANEL_OUT.md).
+  - **The browser demo plays in tune** in browsers that run their audio at 48 kHz.
+  - **More room inside.** DELAY's longest time is now 2.6 s (PING-PONG 1.3 s), which frees memory for what comes next; the steps up to 1.94 s are as before.
 - **New in 1.5.1: the newer FM-1s.** FM-1s sold since autumn 2026 carry another flash chip (UC25HQ80). Arctic Scream 1.5 did not know it, so on those units it kept the saves only until power-off and refused updates. 1.5.1 saves and updates on both chips. On such a unit with 1.5 on it, install 1.5.1 through the chip's download mode (see [Install](#install)).
 - **New in 1.5:**
   - **A screen reader.** Arctic Scream says what its screen shows: pages, knobs as they turn, lists and messages. Open the [FM-1 Screen Reader](https://charlesvestal.github.io/fm1-reader/) in Chrome or Edge, connect, and it speaks with its own voice or through VoiceOver, NVDA, JAWS or TalkBack. See the [manual](MANUAL.md#the-screen-reader-new-in-15).
@@ -59,7 +65,7 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - At 0 % the sound is exactly as set. The settings are saved with the sound, and all seven screaming presets start with BORGA on.
 - **Seven screaming presets:** POLAR HOWL, WENDIGO, FROZEN SCREAM, WHITEOUT, DEAD SIGNAL, III and ICE WRAITH. ICE WRAITH is the sound you start with, and all seven hold their notes (LATCH). III is a horrorscape: a cluster of three howling voices a semitone apart, dark and slowly waking ([how to play it](docs/iii/iii_en.md)).
 - **The HORROR scale:** close semitones, so every note is wrong in the right way.
-- **Runaway echo:** DELAY feedback goes up to 150 %, so the echo can grow and saturate. Delay times go up to 3 seconds.
+- **Runaway echo:** DELAY feedback goes up to 150 %, so the echo can grow and saturate. Delay times go up to 2.6 seconds.
 - **Built for drones:**
   - The keys sit an octave down, starting at F2.
   - The track defaults are darker.
@@ -92,10 +98,10 @@ The **[editor](https://polarpatch.github.io/Arctic-scream-FM-1/editor.html)** ru
 Download `arctic-scream-X.Y.fwsc` (the newest) from [Releases](../../releases). Then, with Python 3 and `pip install mido python-rtmidi`, connect the FM-1 over USB and run:
 
 ```
-python3 tools/fm1_install.py arctic-scream-1.5.1.fwsc
+python3 tools/fm1_install.py arctic-scream-1.5.2.fwsc
 ```
 
-Every release is built and signed on GitHub from the tagged source (the FM-1 Firmware Hub's [fm1-build](https://github.com/zvenson/fm1-build)); check a file with `gh attestation verify arctic-scream-1.5.1.fwsc --repo PolarPatch/Arctic-scream-FM-1 --signer-workflow zvenson/fm1-build/.github/workflows/build.yml`.
+Every release is built and signed on GitHub from the tagged source (the FM-1 Firmware Hub's [fm1-build](https://github.com/zvenson/fm1-build)); check a file with `gh attestation verify arctic-scream-1.5.2.fwsc --repo PolarPatch/Arctic-scream-FM-1 --signer-workflow zvenson/fm1-build/.github/workflows/build.yml`.
 
 It installs over the FM-1's own firmware or any other FM-1 firmware. Don't unplug the FM-1 while it writes. If anything goes wrong, the **Rescue** page on the [FM-1 Firmware Hub](https://thefirmwarehub.com/) brings a stuck FM-1 back, and M-VAVE's own updater puts the original firmware back.
 
