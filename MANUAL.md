@@ -444,7 +444,7 @@ FM-1, not the project.
 |---|---|---|---|---|
 | SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF |
 | SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES | CLOCK (INT, I+OUT, USB, TRS) |
-| SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB) | | |
+| SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB) | MOD OUT (OFF, ON) | |
 
 - **COLOUR:** pick the one that matches your FM-1.
 - **MIDI CHANNEL:** `1-4` puts T1–T4 on channels 1–4 (or higher, up to `13-16`); `ALL > SEL` sends everything to the
@@ -462,6 +462,13 @@ FM-1, not the project.
 - **USB LEVEL** (SYSTEM 3, new in 1.4): how loud a computer records the FM-1, in 6 dB steps from −12 to +24 dB. `0 DB` is
   the volume knob all the way up; higher steps make quiet drones louder in the recording, and a limiter keeps them from
   clipping. The volume knob itself only sets the speaker and the headphones.
+- **MOD OUT** (SYSTEM 3, new in 1.5.2): sends how each track moves out over USB as MIDI CC, 50 times a second, on the
+  track's own channel (as its notes, MIDI CHANNEL): **CC 102** is how loud the track plays now (0 silent, 127 full) and
+  **CC 103** is where its LFO is (64 the middle). Use it to drive lights, motors, a Max patch or another synth's filter
+  from the FM-1. OFF by default, so a DAW gets nothing it did not ask for.
+- **For app makers:** Arctic Scream 1.5.2 also answers **PANEL OUT**, an open protocol that tells an app which buttons
+  and keys are down and how the knobs turn, so it can draw the FM-1 as you play. It is silent until an app asks. See
+  [docs/PANEL_OUT.md](docs/PANEL_OUT.md).
 - SYSTEM 2 shows the processor load, NOW and PEAK, and over it **USB REC DROPS**: gaps in the sound sent to a computer
   over USB (stopping or pausing your DAW adds to it too). OCT− + OCT+ together sets both to 0.
 

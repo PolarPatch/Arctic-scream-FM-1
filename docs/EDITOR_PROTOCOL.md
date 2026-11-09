@@ -49,7 +49,7 @@ Request: none. Reply, in order:
 | 1 | a sound's size (64) |
 | 1 | factory sounds (47) |
 | 5 | a slot's size, u35 (2548) |
-| 5 | the settings' size, u35 (170; 1.2: 168) |
+| 5 | the settings' size, u35 (172; 1.4–1.5.1: 171; 1.3: 170; 1.2: 168) |
 | 1 | sample slots (4) |
 | 1 | sample slots in use (holding a good sample) |
 | 1 | (1.5.2) key 0's MIDI note at the octave set now (41, F2, at octave 0; the keys' notes go up from it, a semitone a key) |
@@ -60,7 +60,7 @@ Request: none. Reply, in order:
 
 | id | Object | Size | GET | PUT |
 | --- | --- | --- | --- | --- |
-| 0 | the settings | 170 (1.2: 168) | yes | yes |
+| 0 | the settings | 172 (1.4–1.5.1: 171; 1.3: 170; 1.2: 168) | yes | yes |
 | 1–4 | slots A–D | 2548 | yes | yes |
 | 5–8 | sample slots 1–4 (1.3, GR!MM V2's): the slot's header, 32 bytes of nothing, the data | 512 + the data's length | yes | no |
 | 16–79 | user sounds 1–64 (id 16 + slot) | 64 | yes | yes |
@@ -223,7 +223,7 @@ then the step's chord byte (0: a plain note; bit 7 set: a chord step).
 **Step locks (288 bytes):** 64 × 4 values (step n's lock of the source's knob k at 4 n + k), then 32 bytes of masks:
 step n's 4 bits in byte 256 + n / 2, the low nibble for even n, the high for odd (bit k: knob k locked).
 
-## The settings (170 bytes; 1.2: 168)
+## The settings (172 bytes; 1.4–1.5.1: 171; 1.3: 170; 1.2: 168)
 
 | Byte | |
 | --- | --- |
@@ -235,12 +235,15 @@ step n's 4 bits in byte 256 + n / 2, the low nibble for even n, the high for odd
 | 5 | SEQ MIDI OUT (0 / 1) |
 | 6 | MIDI LEARN's links in use (0–32) |
 | 7–166 | 32 links of 5 bytes, the oldest first: CC, page, knob (0–3), track (0–3), x (SOUND: the source; GRID: the step; SONG: the section; FM ALGO's FINE, FM OP: the operator) |
-| 167 | the settings' version (3; 1.2's: 1) |
+| 167 | the settings' version (5; 1.4–1.5.1's: 4; 1.3's: 3; 1.2's: 1) |
 | 168 | CLOCK (1.3, GR!MM V2's): 0 INT, 1 INT+OUT, 2 USB, 3 TRS |
 | 169 | SYSTEM 3's LATCH (1.3, GR!MM V2's; version 3): 0 FROM SOUND (a sound loaded brings its own LATCH), 1 ALWAYS OFF (a sound loaded sets the track's LATCH off) |
+| 170 | SYSTEM 3's USB LEVEL (1.4; version 4): 0 .. 6, −12 .. +24 dB in 6 dB steps (2: 0 dB) |
+| 171 | SYSTEM 3's MOD OUT (1.5.2; version 5): 0 OFF, 1 ON (CC 102 LEVEL, CC 103 LFO on each track's channel, every 20 ms) |
 
 A PUT of the settings also takes 1.2's 168 bytes (version 1): they apply with CLOCK INT and LATCH FROM SOUND, so a
-backup of then restores; and version 2's 169 bytes (LATCH FROM SOUND).
+backup of then restores; version 2's 169 bytes (LATCH FROM SOUND); version 3's 170 (USB LEVEL 0 dB); and version 4's
+171 (MOD OUT OFF).
 
 Pages (a link's page): 0 SOUND, 1 SOURCE, 2 ENV, 3 LFO, 4 SCALE, 5 CHORD, 6 SONG, 7 HOME, 8 MIXER 1, 9 MIXER 2,
 14 ARP, 15 GRID, 16 PATTERN SETTINGS, 17 TAPE, 18 GRAIN, 19 DELAY, 20 SPACE, 23 FM ALGO, 24 FM OP, 25 DRONE, 26 MASTER,

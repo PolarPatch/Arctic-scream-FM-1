@@ -147,7 +147,7 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   const vf = await VirtualFM1.create(readFileSync("web/dist/grimm.wasm"));
   vf.warmUp();
   const cl = new Client(vf), info = await cl.info(), meta = vf.meta();
-  check(info.proto === 3 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 171 && info.factory === 47,
+  check(info.proto === 3 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 172 && info.factory === 47,
         `editor: INFO (${info.firmware}, protocol ${info.proto}, ${info.sounds} sounds, slots ${info.slotSize} B)`);
   check(info.key0 === 41 && info.octave === 0 && info.keys === 27,
         `editor: INFO's keys (1.5.2: key 0 ${info.key0} at octave ${info.octave}, ${info.keys} keys)`);

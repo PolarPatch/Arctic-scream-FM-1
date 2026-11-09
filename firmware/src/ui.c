@@ -363,8 +363,10 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         put_s(S->val, k == 2u ? (v ? SMP_FACT_N ? "RESTORE" : "CLEAR" : "KEEP") : k ? (v ? "ON" : "OFF") :
               v == LEARN_CLEAR ? "CLEAR" : LEARN_NAME[clamp(v, 0, 2)]);
         return;
-    case PG_SYS3:                               /* (V2) LATCH: FROM SOUND, ALWAYS OFF; USB LEVEL: -12DB .. +24DB */
+    case PG_SYS3:                               /* (V2) LATCH: FROM SOUND, ALWAYS OFF; USB LEVEL: -12DB .. +24DB;
+                                                 * (1.5.2) MOD OUT: OFF, ON */
         if (k == 1u) { usb_db(S->val, v, ""); return; }
+        if (k == 2u) { put_s(S->val, v ? "ON" : "OFF"); return; }
         put_s(S->val, v ? "OFF" : "SOUND");
         return;
     case PG_SOUNDS:
@@ -2020,14 +2022,15 @@ static void pic_sys3(void)                      /* (V2) SYSTEM 3: LATCH, what it
                                                  * (Arctic Scream p0larpatch) USB LEVEL, the computer's recording */
 {
     char v[12];
-    ui_caption("LATCH, USB RECORDING", 0);
+    ui_caption("LATCH, USB, MOD OUT", 0);
     sys3_row(42, "LATCH", set.latch ? "ALWAYS OFF" : "FROM SOUND");
-    ui_text(PX0 + 6, 62, set.latch ? "A SOUND LOADED: THE" : "A SOUND BRINGS ITS OWN", 1, UI_M);
-    ui_text(PX0 + 6, 74, set.latch ? "TRACK'S LATCH OFF" : "LATCH WITH IT", 1, UI_M);
-    ui_text(PX0 + 6, 90, "SEL + OCT+: TRACK'S LATCH", 1, UI_M);
-    sys3_row(110, "USB LEVEL", usb_db(v, set.usb, " "));
-    ui_text(PX0 + 6, 130, "THE COMPUTER RECORDS AT", 1, UI_M);
-    ui_text(PX0 + 6, 142, "THIS LEVEL, NOT THE KNOB'S", 1, UI_M);
+    ui_text(PX0 + 6, 60, set.latch ? "A SOUND LOADED: THE" : "A SOUND BRINGS ITS OWN", 1, UI_M);
+    ui_text(PX0 + 6, 71, set.latch ? "TRACK'S LATCH OFF" : "LATCH WITH IT", 1, UI_M);
+    ui_text(PX0 + 6, 84, "SEL + OCT+: TRACK'S LATCH", 1, UI_M);
+    sys3_row(98, "USB LEVEL", usb_db(v, set.usb, " "));
+    ui_text(PX0 + 6, 116, "THE COMPUTER RECORDS AT", 1, UI_M);
+    ui_text(PX0 + 6, 127, "THIS LEVEL, NOT THE KNOB'S", 1, UI_M);
+    sys3_row(143, "MOD OUT", set.mod ? "CC 102, 103" : "OFF");   /* (1.5.2: LEVEL, LFO) */
 }
 
 static void pic_notbuilt(void) { ui_text(120 - 4 * 13, 96, "NOT BUILT YET", 1, UI_M); }
