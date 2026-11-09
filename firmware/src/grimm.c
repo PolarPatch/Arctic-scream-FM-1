@@ -120,6 +120,8 @@
  * tests/host.c runs this file on a computer (the screen as a PNG, the sound as a WAV), web/fm1_web.c in a browser.
  * What platform.c offers: docs/API.md. The chip's rules: docs/RULES.md. */
 #define APP_NAME "ARCTIC SCREAM p0larpatch"     /* the app, the rescue and the crash screen say this */
+static void app_idle(void);
+#define LCD_IDLE app_idle                       /* (1.5.3) lcd.c: while the screen's DMA runs, MIDI in (after Dinghy) */
 #include "platform.c"
 #define ANN_NAME "Arctic Scream " APP_VER       /* (1.5) the screen reader (reader.c): its HELLO answer, */
 #define ANN_MAX 160u                            /* its longest SAY (platform.c's SysEx queue, 64 packets, holds it) */
@@ -2044,6 +2046,81 @@ static void batt_poll(void)
 #include "../../tests/compat.c"                   /* (host mode: saves across versions, tests/run_host.sh) */
 #include "../../tests/probe.c"                    /* (host mode: "T probe", the MIDI clock's test) */
 #endif
+/* MIDI in (1.5.3: a function of its own, so it also runs while the screen's DMA goes out: app_idle, LCD_IDLE in lcd.c,
+ * after Dinghy's; idle_ok only around ui_update, never inside itself) */
+static uint32_t idle_ok, midi_touch;
+static void midi_in(void)
+{
+    uint8_t st, d1, d2;
+    uint32_t n;
+    while (midi_get(&st, &d1, &d2)) {       /* MIDI in (USB, the TRS jack): a note on MIDI CHANNEL's T1 .. T4
+                                             * channels plays that track as its keys (ALL > SEL: any channel, the
+                                             * selected track; CH n > SEL: channel n alone, the selected track); a
+                                             * CC: its link (MIDI LEARN) */
+        uint32_t ty = st & 0xF0u, c = st & 15u, on = ty == 0x90u && d2, off = ty == 0x80u || (ty == 0x90u && !d2), t, m;
+        uint32_t again;
+        midi_touch = 1;                     /* (app_main: t_touch) */
+        d1 &= 0x7Fu;
+        if (set.mch > MCH_ALL && c != (uint32_t)(set.mch - MCH_ALL - 1)) continue;   /* (CH n > SEL: another
+                                             * channel's, nothing; its CCs too) */
+        if (ty == 0xB0u) {
+            if (d1 == 120u || d1 == 123u)   /* (V2) ALL SOUND OFF, ALL NOTES OFF (a DAW's stop): the notes MIDI
+                                             * holds on that channel's track (ALL > SEL, CH n > SEL: all four) let
+                                             * go; a latched note stays */
+                for (n = 0; n < 128u; n++)
+                    for (m = 0; m < NT; m++)
+                        if ((midi_held[n] >> m & 1u) && (set.mch >= MCH_ALL || c - set.mch == m)) {
+                            nq_note(NQ_OFF, m, 0, MIDI_ID(n));
+                            midi_held[n] &= (uint8_t)~(0x11u << m);
+                        }
+            midi_cc(d1, d2 & 0x7Fu);
+            continue;
+        }
+        if (ty == 0xD0u || ty == 0xA0u) {   /* pressure (channel, poly: the last key's): the track's Holvut */
+            t = set.mch >= MCH_ALL ? sel : c - set.mch;
+            if (t < NT) hw_press[t] = (uint8_t)(ty == 0xD0u ? d1 : d2 & 0x7Fu);
+            continue;
+        }
+        if (!(on || off) || (echo_on[d1] >> c & 1u)) continue;   /* (our own notes come back: a computer's MIDI
+                                             * thru; never played again) */
+        if (set.mch >= MCH_ALL) t = sel;
+        else if (c - set.mch < NT) t = c - set.mch;
+        else continue;                      /* (not one of the tracks' channels) */
+        n = sc_snap(d1);                    /* (a SCALE: its nearest note) */
+        if (on && t == sel) ch_last = (int32_t)n;
+        if (off && (midi_held[d1] >> (4u + t) & 1u)) {   /* (V2) the off of a note that came again before it (a DAW's
+                                             * loop: the earlier one's off, late): passed over, the note goes on */
+            midi_held[d1] &= (uint8_t)~(0x10u << t);
+            continue;
+        }
+        again = on && !trk[t].latch && (midi_held[d1] >> t & 1u);   /* (V2: a note-on again before its off) */
+        if (again && trk[t].arp) {          /* (the arp has it: kept as it is, no new start) */
+            midi_held[d1] |= (uint8_t)(0x10u << t);
+            continue;
+        }
+        for (m = 0; m < NT; m++)            /* LATCH OFF: the voices it started released (a note-on again without
+                                             * its off: those first); ALL > SEL: whichever track it went to */
+            if ((midi_held[d1] >> m & 1u) && (m == t || set.mch >= MCH_ALL)) {
+                nq_note(NQ_OFF, m, 0, MIDI_ID(d1));
+                midi_held[d1] &= (uint8_t)~(0x11u << m);
+            }
+        if (on && trk[t].latch)
+            nq_note(NQ_TOGGLE, t, n, MIDI_ID(d1));
+        else if (on) {
+            nq_note(NQ_ON, t, n, MIDI_ID(d1));
+            midi_held[d1] |= (uint8_t)(1u << t);
+            if (again) midi_held[d1] |= (uint8_t)(0x10u << t);
+        }
+    }
+}
+static void app_idle(void)
+{
+    if (!idle_ok) return;
+    idle_ok = 0;                                /* (not inside itself) */
+    midi_in();
+    idle_ok = 1;
+}
+
 static void app_main(void)
 {
     uint32_t prev = 0, k, b_down = 0, b_used = 0, t_down[14] = {0}, rec = 0,
@@ -2102,7 +2179,6 @@ static void app_main(void)
 
     for (;;) {
         uint32_t keys, down, up, rel, b, n, lit = 0, base = (uint32_t)(KEY0 + 12 * set.oct);
-        uint8_t st, d1, d2;
         int32_t d;
         platform_poll();
         if (fm1_in.notes != prev || fm1_in.buttons) t_touch = t_hand = fm1_ms;   /* (the autosave waits for the hands
@@ -2394,65 +2470,8 @@ static void app_main(void)
         if ((page == PG_FMALGO || page == PG_FMOP) && sel_eng() != ENG_FM) page = PG_SOUND;   /* (not FM now: SOUND) */
         if (page == PG_LOOP && sel_eng() != ENG_HOWL) page = PG_SOUND;   /* (not HOWL now: SOUND) */
 
-        while (midi_get(&st, &d1, &d2)) {       /* MIDI in (USB, the TRS jack): a note on MIDI CHANNEL's T1 .. T4
-                                                 * channels plays that track as its keys (ALL > SEL: any channel, the
-                                                 * selected track; CH n > SEL: channel n alone, the selected track); a
-                                                 * CC: its link (MIDI LEARN) */
-            uint32_t ty = st & 0xF0u, c = st & 15u, on = ty == 0x90u && d2, off = ty == 0x80u || (ty == 0x90u && !d2), t, m;
-            uint32_t again;
-            t_touch = fm1_ms;
-            d1 &= 0x7Fu;
-            if (set.mch > MCH_ALL && c != (uint32_t)(set.mch - MCH_ALL - 1)) continue;   /* (CH n > SEL: another
-                                                 * channel's, nothing; its CCs too) */
-            if (ty == 0xB0u) {
-                if (d1 == 120u || d1 == 123u)   /* (V2) ALL SOUND OFF, ALL NOTES OFF (a DAW's stop): the notes MIDI
-                                                 * holds on that channel's track (ALL > SEL, CH n > SEL: all four) let
-                                                 * go; a latched note stays */
-                    for (n = 0; n < 128u; n++)
-                        for (m = 0; m < NT; m++)
-                            if ((midi_held[n] >> m & 1u) && (set.mch >= MCH_ALL || c - set.mch == m)) {
-                                nq_note(NQ_OFF, m, 0, MIDI_ID(n));
-                                midi_held[n] &= (uint8_t)~(0x11u << m);
-                            }
-                midi_cc(d1, d2 & 0x7Fu);
-                continue;
-            }
-            if (ty == 0xD0u || ty == 0xA0u) {   /* pressure (channel, poly: the last key's): the track's Holvut */
-                t = set.mch >= MCH_ALL ? sel : c - set.mch;
-                if (t < NT) hw_press[t] = (uint8_t)(ty == 0xD0u ? d1 : d2 & 0x7Fu);
-                continue;
-            }
-            if (!(on || off) || (echo_on[d1] >> c & 1u)) continue;   /* (our own notes come back: a computer's MIDI
-                                                 * thru; never played again) */
-            if (set.mch >= MCH_ALL) t = sel;
-            else if (c - set.mch < NT) t = c - set.mch;
-            else continue;                      /* (not one of the tracks' channels) */
-            n = sc_snap(d1);                    /* (a SCALE: its nearest note) */
-            if (on && t == sel) ch_last = (int32_t)n;
-            if (off && (midi_held[d1] >> (4u + t) & 1u)) {   /* (V2) the off of a note that came again before it (a DAW's
-                                                 * loop: the earlier one's off, late): passed over, the note goes on */
-                midi_held[d1] &= (uint8_t)~(0x10u << t);
-                continue;
-            }
-            again = on && !trk[t].latch && (midi_held[d1] >> t & 1u);   /* (V2: a note-on again before its off) */
-            if (again && trk[t].arp) {          /* (the arp has it: kept as it is, no new start) */
-                midi_held[d1] |= (uint8_t)(0x10u << t);
-                continue;
-            }
-            for (m = 0; m < NT; m++)            /* LATCH OFF: the voices it started released (a note-on again without
-                                                 * its off: those first); ALL > SEL: whichever track it went to */
-                if ((midi_held[d1] >> m & 1u) && (m == t || set.mch >= MCH_ALL)) {
-                    nq_note(NQ_OFF, m, 0, MIDI_ID(d1));
-                    midi_held[d1] &= (uint8_t)~(0x11u << m);
-                }
-            if (on && trk[t].latch)
-                nq_note(NQ_TOGGLE, t, n, MIDI_ID(d1));
-            else if (on) {
-                nq_note(NQ_ON, t, n, MIDI_ID(d1));
-                midi_held[d1] |= (uint8_t)(1u << t);
-                if (again) midi_held[d1] |= (uint8_t)(0x10u << t);
-            }
-        }
+        midi_in();                              /* MIDI in (USB, the TRS jack): notes, CCs, pressure */
+        if (midi_touch) t_touch = fm1_ms, midi_touch = 0;
         midi_out();                             /* the notes out over USB-MIDI (the echoes from the audio ISR) */
         mod_out();                              /* (1.5.2) MOD OUT: the tracks' LEVEL and LFO as CC */
 
@@ -2510,7 +2529,12 @@ static void app_main(void)
             lcd_light(0);
         }
         batt_poll();
-        if (!scr_dark) ui_update(set.oct);
+        if (!scr_dark) {
+            idle_ok = 1;                        /* (1.5.3) MIDI in while the screen's DMA runs (app_idle) */
+            ui_update(set.oct);
+            idle_ok = 0;
+        }
+        if (midi_touch) t_touch = fm1_ms, midi_touch = 0;
 #ifdef DINGHY_HOST
         rd_host();                              /* (host mode: a reader listening, the words' dump) */
 #endif

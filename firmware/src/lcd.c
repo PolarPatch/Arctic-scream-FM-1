@@ -23,6 +23,14 @@ static void lcd_sync(void)          /* finish the running transfer (before touch
 {
     if (!lcd_busy)
         return;
+#ifdef LCD_IDLE
+    {                              /* (1.5.3, after Dinghy's LCD_IDLE) the app's own work while the strip goes out:
+                                    * grimm.c's MIDI in; bounded, then fm1_lcd_wait as ever (its timeout counted) */
+        uint32_t n;
+        for (n = 0; n < 20000u && !fm1_lcd_done(); n++)
+            LCD_IDLE();
+    }
+#endif
     fm1_lcd_wait();
     fm1_lcd_deselect();
     lcd_busy = 0;
