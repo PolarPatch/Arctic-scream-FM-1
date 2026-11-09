@@ -57,6 +57,7 @@ changes are Copyright (C) 2026 PolarPatch, GPL-3.0-only; everything else is as t
 | The manual `MANUAL.md`, written anew for Arctic Scream (its order and many of its facts follow GR!MM's manual), its banner `docs/manual/banner.png`, and the screens `docs/manual/screens/`, rendered from this firmware by `tools/make_screens.py` |  |
 | PANEL OUT: `firmware/src/panel_out.c` (1.5.2), and its protocol `docs/PANEL_OUT.md` | Copyright (C) 2026 PolarPatch. `panel_out.c` alone is under the **MIT** licence (its header), so any FM-1 firmware can copy it; `docs/PANEL_OUT.md` is CC0 1.0. Its manner (silent until asked, gone after 5 s, never waiting on USB) follows the screen reader's `announce.c` (fm1-base, Charles Vestal, MPL-2.0); none of its code. `tests/panel_out_test.py` is GPL-3.0 |
 | The update loader's screen `firmware/loader/ldr_screen.c`, `tests/ldr_screen_test.c` (1.5.2) | Its idea follows Skiff's loader screen (<https://github.com/illuminus5/skiff> `firmware/loader/ldr_screen.c`, GPL-3.0: UPDATE MODE, WRITING and a bar, drawn before USB starts), written anew with the app's pixfont and colours; none of its code is copied |
+| The Firmware Hub's card: `fmhub.json` and its picture `docs/card.png`, the start screen rendered from this firmware (`tests/host.c`) | |
 | `tools/gen_logo.py` (its output `firmware/gen/polarpatch_logo.h`) | |
 
 **The PolarPatch logo** (`assets/polarpatch-logo.png`, and in the firmware as `firmware/gen/polarpatch_logo.h`, in the
