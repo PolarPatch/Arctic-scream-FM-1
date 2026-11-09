@@ -190,6 +190,7 @@ static int sysex_get(const uint8_t **p, uint32_t *n)
 }
 static void sysex_done(void) { web_sx_in_ready = 0; }
 static int ann_wire_send(const uint8_t *p, uint32_t n) { (void)p; (void)n; return -1; }   /* (1.5: no reader here yet) */
+static int po_wire_send(const uint8_t *p, uint32_t n) { (void)p; (void)n; return -1; }    /* (1.5.2: PANEL OUT, none here) */
 static int sysex_send(const uint8_t *p, uint32_t n)
 {
     if (web_sx_out_n + n > sizeof web_sx_out) return -1;

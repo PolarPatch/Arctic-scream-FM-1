@@ -125,6 +125,8 @@
 #define ANN_MAX 160u                            /* its longest SAY (platform.c's SysEx queue, 64 packets, holds it) */
 #include "ann_words.h"                          /* (tools/gen_words.py from firmware/words.tsv: the words file's link) */
 #include "announce.c"                           /* (fm1-base's, MPL-2.0: fm1-reader's tools/sync_announce.sh) */
+#define PO_NAME "Arctic Scream " APP_VER        /* (1.5.2) PANEL OUT: the panel, for an app (docs/PANEL_OUT.md) */
+#include "panel_out.c"
 #include "dsp.c"
 #include "wear.c"
 #include "samples.c"
@@ -1596,6 +1598,8 @@ static int32_t enc_take(uint32_t e)             /* an encoder's detents (the scr
 {
     int32_t d = fm1_enc_take(e);
     if (d) {
+        static const uint8_t PO_ID[7] = {4, 5, 0, 1, 2, 3, 6};   /* (1.5.2) PANEL OUT's knob ids, by ENC_ */
+        po_knob(PO_ID[e % 7u], d);
         t_hand = fm1_ms;
         if (scr_dark) scr_woke = 1, d = 0;
     }
@@ -2461,10 +2465,17 @@ static void app_main(void)
 #endif
         speak();                                /* (1.5) the screen reader: what changed, said */
         ann_tick(fm1_ms);
-        {                                       /* (1.5) a screen reader's SysEx (F0 7D 53 52), before the editor's */
+        if (po_on()) {                          /* (1.5.2) PANEL OUT: the panel as it is now, MASTER 0 .. 127 */
+            uint32_t m = (uint32_t)fm1_master() << 8, r = 0, q;
+            for (q = 1u << 20; q; q >>= 2)      /* (MASTER is squared, Q12: its square root, 0 .. 1023) */
+                if (m >= r + q) m -= r + q, r = (r >> 1) + q; else r >>= 1;
+            po_tick(fm1_ms, fm1_in.buttons, fm1_in.notes, set.oct, (uint32_t)(KEY0 + 12 * set.oct), (int32_t)(r >> 3));
+        }
+        {                                       /* (1.5) a screen reader's SysEx (F0 7D 53 52), (1.5.2) PANEL OUT's
+                                                 * (F0 7D 50 4F), before the editor's */
             const uint8_t *fp;
             uint32_t fn;
-            if (sysex_get(&fp, &fn) && ann_frame(fp, fn, fm1_ms)) sysex_done();
+            if (sysex_get(&fp, &fn) && (ann_frame(fp, fn, fm1_ms) || po_frame(fp, fn, fm1_ms))) sysex_done();
         }
 #ifdef GRIMM_STRESS
         stress_poll();

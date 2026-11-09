@@ -309,6 +309,7 @@ static int ann_wire_send(const uint8_t *p, uint32_t n)
     if (!usb.config || usb.suspended || sx_busy || SXQ - (so_w - so_r) < (n + 2u) / 3u + 1u) return -1;
     return ota_wire_send(p, n);
 }
+static int po_wire_send(const uint8_t *p, uint32_t n) { return ann_wire_send(p, n); }   /* (1.5.2) PANEL OUT's: the same */
 
 /* ---- MIDI over USB: 4-byte USB-MIDI packets, cable 0 */
 static int midi_get(uint8_t *st, uint8_t *d1, uint8_t *d2)   /* 1: a message (status, data 1, data 2) */

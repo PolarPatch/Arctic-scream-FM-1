@@ -214,6 +214,16 @@ static int ann_wire_send(const uint8_t *p, uint32_t n)
         printf("%6u ms  reader HELLO: %.*s\n", fm1_ms, (int)(n - 7u), (const char *)p + 6);
     return 0;
 }
+/* (1.5.2) PANEL OUT's frames (panel_out.c): printed as "panel: cmd args.." (tests/panel_out_test.py) */
+static int po_wire_send(const uint8_t *p, uint32_t n)
+{
+    uint32_t i;
+    if (n < 6u) return 0;
+    printf("%6u ms  panel:", fm1_ms);
+    for (i = 4; i + 1u < n; i++) printf(" %u", p[i]);
+    printf("\n");
+    return 0;
+}
 
 static void app_audio(int32_t *out, uint32_t n);
 static int32_t host_master = 4092;              /* (GR!MM V2) the MASTER knob as the app reads it (fm1_master, Q12): all

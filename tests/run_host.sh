@@ -57,3 +57,5 @@ build/host/uac_ring_test
 python3 tests/rc11_test.py build/host/grimm
 # (1.5) the screen reader: what it says, when, and nothing before a reader asks (tests/reader_test.py)
 python3 tests/reader_test.py build/host/grimm
+# (1.5.2) PANEL OUT: the panel for an app, and nothing before an app asks (tests/panel_out_test.py)
+python3 tests/panel_out_test.py build/host/grimm
