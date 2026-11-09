@@ -89,7 +89,8 @@ export class Client {
     if (j < 0 || r.length < i + 15) throw new EditorError(`a short INFO from the FM-1 (${r.length} bytes): see the MIDI LOG`, 95);
     return { proto: r[0], fmt: r[1], firmware: String.fromCharCode(...r.slice(2, j)), sounds: r[i], soundSize: r[i + 1],
              factory: r[i + 2], slotSize: rd35(r, i + 3), setSize: rd35(r, i + 8), sampleSlots: r[i + 13],
-             samplesUsed: r[i + 14] };
+             samplesUsed: r[i + 14],
+             ...(r.length >= i + 18 ? { key0: r[i + 15], octave: r[i + 16] - 64, keys: r[i + 17] } : {}) };   // (1.5.2)
   }
   async track(t, quiet = false) {                          // track t's sound now: { sel (the FM-1's track), rec, name (as
     const r = await this.req(CMD.TRACK, [0, t], 1500, quiet);  // its HOME shows it; "" none) }
@@ -536,7 +537,8 @@ export const FT_NAMES = ["LP", "HP", "BP"];
 // on the SETTINGS section; the rest (the octave, TUNE, COLOUR, SCREEN OFF, SEQ MIDI OUT, MIDI LEARN's links) as read
 export const SET_V1 = 168;                                   // V1.0's settings (version 1, no CLOCK)
 export const SET_V2 = 169;                                   // V2's version 2 (CLOCK, no LATCH)
-export const SET_V3 = 170;                                   // version 3's (LATCH, no USB LEVEL: 0 dB); version 4's: 171
+export const SET_V3 = 170;                                   // version 3's (LATCH, no USB LEVEL: 0 dB)
+export const SET_V4 = 171;                                   // version 4's, 1.4 .. 1.5.1 (no MOD OUT: OFF); version 5's: 172
 export const MCH_NAMES = [...Array.from({ length: 13 }, (_, k) => `${k + 1}-${k + 4}`), "ALL > SEL",
   ...Array.from({ length: 16 }, (_, k) => `CH ${k + 1} > SEL`)];
 export const CLOCK_NAMES = ["INT", "INT+OUT", "USB", "TRS"];
@@ -560,7 +562,7 @@ export function checkBackup(b, info) {                       // -> [{id, data, w
   const sizes = new Map(backupObjects(info).map(([id, size, what]) => [id, [size, what]]));
   return b.objects.map((o) => {
     const d = unb64(o.data), s = sizes.get(o.id);
-    const oldset = o.id === OBJ.SET && (d.length === SET_V1 || d.length === SET_V2 || d.length === SET_V3) && s && s[0] > d.length;   // (an
+    const oldset = o.id === OBJ.SET && (d.length === SET_V1 || d.length === SET_V2 || d.length === SET_V3 || d.length === SET_V4) && s && s[0] > d.length;   // (an
                                                              // older GR!MM's settings: 1.0's, V2's version 2: taken)
     if (!s || (d.length !== s[0] && !oldset) || crc32(d) !== o.crc) throw new EditorError(`object ${o.id} is damaged or not this firmware's`, 90);
     return { id: o.id, data: d, what: s[1] };

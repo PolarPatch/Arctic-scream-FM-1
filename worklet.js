@@ -109,10 +109,8 @@ class Grimm extends AudioWorkletProcessor {
     if (msg.fb || msg.leds || msg.settings || msg.seq !== undefined) this.port.postMessage(msg, transfer);
   }
 
-  process(inputs, outputs) {
+  pull(n) {                                                  // n frames of the FM-1's 44.1 kHz (at most 1024)
     const ex = this.ex;
-    if (!ex) return true;
-    const out = outputs[0], n = out[0].length;
     ex.web_want_frames(n);
     if (this.sx.length && !ex.web_sysex_busy()) {
       const f = this.sx.shift();
@@ -122,8 +120,44 @@ class Grimm extends AudioWorkletProcessor {
     if (!ex.web_ready()) this.run();
     ex.web_sysex_out_clear();
     ex.web_take();
-    out[0].set(new Float32Array(ex.memory.buffer, ex.web_out_l(), n));
-    if (out[1]) out[1].set(new Float32Array(ex.memory.buffer, ex.web_out_r(), n));
+    return [new Float32Array(ex.memory.buffer, ex.web_out_l(), n), new Float32Array(ex.memory.buffer, ex.web_out_r(), n)];
+  }
+
+  // (1.5.2) a browser that will not run at 44.1 kHz (48 kHz, 96 kHz): the FM-1's frames resampled to its rate, a cubic
+  // (Catmull-Rom) between them, so the pitch and the tempo stay the FM-1's. After ECHOFIELD's emulator playing in tune at
+  // 48 kHz (Philip-Bos/echofield-fm1, MIT: the idea), written anew
+  resample(out, n) {
+    const step = 44100 / sampleRate;
+    if (!this.rs) this.rs = { l: new Float32Array(4096), r: new Float32Array(4096), len: 2, pos: 1 };
+    const rs = this.rs, need = Math.floor(rs.pos + (n - 1) * step) + 3 - rs.len;
+    if (need > 0) {
+      const [l, r] = this.pull(Math.min(need, 1024));
+      rs.l.set(l, rs.len), rs.r.set(r, rs.len);
+      rs.len += l.length;
+    }
+    const L = out[0], R = out[1], cr = (a, b, c, d, t) => b + 0.5 * t * (c - a + t * (2 * a - 5 * b + 4 * c - d + t * (3 * (b - c) + d - a)));
+    for (let k = 0; k < n; k++, rs.pos += step) {
+      const i = Math.floor(rs.pos), t = rs.pos - i;
+      L[k] = cr(rs.l[i - 1], rs.l[i], rs.l[i + 1], rs.l[i + 2], t);
+      if (R) R[k] = cr(rs.r[i - 1], rs.r[i], rs.r[i + 1], rs.r[i + 2], t);
+    }
+    const drop = Math.floor(rs.pos) - 1;                     // (keep the frame before the next one)
+    if (drop > 0) {
+      rs.l.copyWithin(0, drop, rs.len), rs.r.copyWithin(0, drop, rs.len);
+      rs.len -= drop, rs.pos -= drop;
+    }
+  }
+
+  process(inputs, outputs) {
+    const ex = this.ex;
+    if (!ex) return true;
+    const out = outputs[0], n = out[0].length;
+    if (sampleRate !== 44100) this.resample(out, n);
+    else {
+      const [l, r] = this.pull(n);
+      out[0].set(l);
+      if (out[1]) out[1].set(r);
+    }
     if (currentTime - this.lastFrame >= 1 / 30) {
       this.lastFrame = currentTime;
       this.publish();
