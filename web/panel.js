@@ -375,8 +375,8 @@ async function switchOn() {
     });
     await ac.resume();
     $("start").hidden = true;
-    if (ac.sampleRate !== 44100)
-      console.warn(`GR!MM: the browser plays at ${ac.sampleRate} Hz; the pitch is off by ${(1200 * Math.log2(ac.sampleRate / 44100)).toFixed(0)} cents.`);
+    if (ac.sampleRate !== 44100)                            // (1.5.2: worklet.js resamples, in tune)
+      console.info(`Arctic Scream: the browser plays at ${ac.sampleRate} Hz; the FM-1's 44.1 kHz is resampled to it.`);
     syncButtons();
     syncKeys();
     midiOn();
