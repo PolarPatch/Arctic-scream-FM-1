@@ -149,6 +149,8 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   const cl = new Client(vf), info = await cl.info(), meta = vf.meta();
   check(info.proto === 3 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 171 && info.factory === 47,
         `editor: INFO (${info.firmware}, protocol ${info.proto}, ${info.sounds} sounds, slots ${info.slotSize} B)`);
+  check(info.key0 === 41 && info.octave === 0 && info.keys === 27,
+        `editor: INFO's keys (1.5.2: key 0 ${info.key0} at octave ${info.octave}, ${info.keys} keys)`);
   const iw = parseSound(Uint8Array.from(meta.factory[46].rec), meta);
   check(meta.factory[46].name === "ICE WRAITH" && iw.latch === 1 && iw.drone.borga === 65 && iw.drone.storm === 0 && iw.drone.rise === 4 &&
         iw.lfo.join() === "35,30,3,6", "editor: ICE WRAITH's DRONE (BORGA 65 %, GOHCCAT 8 bars), its LATCH and LFO as they were");

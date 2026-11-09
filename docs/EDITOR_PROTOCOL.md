@@ -52,6 +52,9 @@ Request: none. Reply, in order:
 | 5 | the settings' size, u35 (170; 1.2: 168) |
 | 1 | sample slots (4) |
 | 1 | sample slots in use (holding a good sample) |
+| 1 | (1.5.2) key 0's MIDI note at the octave set now (41, F2, at octave 0; the keys' notes go up from it, a semitone a key) |
+| 1 | (1.5.2) the octave set now + 64 (62 .. 66: −2 .. +2) |
+| 1 | (1.5.2) the keys (27) |
 
 ## Objects
 

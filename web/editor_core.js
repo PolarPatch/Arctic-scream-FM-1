@@ -89,7 +89,8 @@ export class Client {
     if (j < 0 || r.length < i + 15) throw new EditorError(`a short INFO from the FM-1 (${r.length} bytes): see the MIDI LOG`, 95);
     return { proto: r[0], fmt: r[1], firmware: String.fromCharCode(...r.slice(2, j)), sounds: r[i], soundSize: r[i + 1],
              factory: r[i + 2], slotSize: rd35(r, i + 3), setSize: rd35(r, i + 8), sampleSlots: r[i + 13],
-             samplesUsed: r[i + 14] };
+             samplesUsed: r[i + 14],
+             ...(r.length >= i + 18 ? { key0: r[i + 15], octave: r[i + 16] - 64, keys: r[i + 17] } : {}) };   // (1.5.2)
   }
   async track(t, quiet = false) {                          // track t's sound now: { sel (the FM-1's track), rec, name (as
     const r = await this.req(CMD.TRACK, [0, t], 1500, quiet);  // its HOME shows it; "" none) }

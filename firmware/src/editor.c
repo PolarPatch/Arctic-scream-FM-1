@@ -165,7 +165,8 @@ static int ed_frame(const uint8_t *f, uint32_t n, int silent)
     if (n < 4u || f[1] != 0x41 || f[2] != 0x53 || f[3] < ED_INFO || f[3] > ED_EFFECTS) return 0;
     cmd = f[3], f += 4, n -= 4;
     if (cmd == ED_INFO) {                       /* proto, fmt, the version (0-ended), sounds, a sound's size, the
-                                                 * factory's, a slot's size, the settings' size, sample slots, used */
+                                                 * factory's, a slot's size, the settings' size, sample slots, used;
+                                                 * (1.5.2) key 0's MIDI note now, the octave + 64, the keys */
         uint8_t a[48], k, used = 0;
         const char *v = APP_VER;
         uint32_t i = 0;
@@ -176,6 +177,7 @@ static int ed_frame(const uint8_t *f, uint32_t n, int silent)
         ed_wr35(a + i, SLOT_ALL), i += 5;
         ed_wr35(a + i, sizeof set), i += 5;
         a[i++] = SMP_SLOTS, a[i++] = used;
+        a[i++] = (uint8_t)(KEY0 + 12 * set.oct), a[i++] = (uint8_t)(64 + set.oct), a[i++] = 27;
         ed_send(cmd, a, i, 0, 0, 0);
         return 1;
     }
