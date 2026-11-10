@@ -2,7 +2,7 @@
 
 # Arctic Scream p0larpatch: the manual
 
-**Version 1.5.2, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
+**Version 1.5.3, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
 (`tools/make_screens.py`).
 
 > **Try it as you read:** the [demo](https://polarpatch.github.io/Arctic-scream-FM-1/) runs the same code in your
@@ -15,7 +15,7 @@
 | [01 · The basics](#01--the-basics) | [07 · Sequencer](#07--sequencer-seq-play-rec) |
 | [02 · HOME](#02--home) | [08 · Slots, sounds and songs](#08--slots-sounds-and-songs-save-glo) |
 | [03 · Sources: EDIT](#03--sources-edit) | [09 · Destroy: FX](#09--destroy-fx) |
-| [04 · DRONE](#04--drone-a-sound-that-lives-on-its-own) | [10 · Perform: hold FX](#10--perform-hold-fx) |
+| [04 · DRONE and JIEHKKI](#04--drone-a-sound-that-lives-on-its-own) | [10 · Perform: hold FX](#10--perform-hold-fx) |
 | [05 · ENV and LFO](#05--env-and-lfo) | [11 · System: hold HOME](#11--system-hold-home) |
 | [06 · Scales, chords, arpeggiator](#06--scales-chords-and-the-arpeggiator-sel-arp) | [12 · Factory sounds](#12--factory-sounds) · [13 · Combos](#13--combos-at-a-glance) · [14 · Editor and demo](#14--the-editor-and-the-demo) |
 
@@ -109,6 +109,7 @@ across the stereo field.
 | **WHEEL** | DRAWBARS | PERC | CLICK | DRIVE | A tonewheel organ |
 | **PHYS** | MODEL | STRUCTURE | DAMP | BOW | Bowed and struck strings, bars, plates, membranes |
 | **PHASE** | WAVE | WAVE2 | DCW | DETUNE | Phase distortion |
+| **Biegga** | GUST | HOWL | TONE | SNOW | The wind: noise singing at the note (new in 1.5.3) |
 
 ### Holvut, the feedback voice
 
@@ -150,6 +151,28 @@ sound as before 1.4. They are saved with the sound and the project.
   the SAMPLE source first, then switch the track back to Holvut.
 - Each knob is a ribbon on the screen: GATE's tail fades out, BLOOM's echoes appear around it, LOWCUT takes the slow
   swell out of its ribbon, EXCITE throws sparks along it.
+
+<br clear="right">
+
+### Biegga, the wind (new in 1.5.3)
+
+<img src="docs/manual/screens/biegga.png" alt="Biegga's SOUND page: the wind's streaks, its whistle and the snow" width="300" align="right">
+
+*Biegga* is North Sami for "wind" (and the same word in Lule Sami). Noise is shaped into wind over the tundra: two
+narrow bands at the note and its octave sing like wind in a gap, a broad rush blows under them, and gusts swell and
+drop the whole sound. The note sets the howl's pitch, so a chord of Biegga is a chord the wind sings.
+
+| KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
+|---|---|---|---|
+| GUST | HOWL | TONE (~150 Hz – ~10 kHz) | SNOW |
+
+- **GUST:** how hard and how often it gusts. At 0 a steady wind; all the way up, gusts every second or so, from a lull
+  to full, and the howl bends up as they blow.
+- **HOWL:** the howl's share and how narrow it sings: a breath of rush at 0, a whistle at the top.
+- **TONE:** the rush, from a far storm to snow hissing past.
+- **SNOW:** grains of snow ticking on the ice.
+- It costs about as much as VA, half of Holvut. DRONE's BORGA moves GUST, HOWL and TONE.
+- The factory sound **BIEGGA** (TEXTURE) holds its note, gusts, and its storm rises over 4 bars.
 
 <br clear="right">
 
@@ -200,6 +223,39 @@ North Sami names.
 
 <br clear="right">
 
+### JIEHKKI: a piece that plays itself (new in 1.5.3)
+
+<img src="docs/manual/screens/jiehkki.png" alt="JIEHKKI: a 15 minute piece playing its own notes, 14:20 left" width="360" align="right">
+
+**Press LFO a third time.** *Jiehkki* is North Sami for "glacier". Set how long, turn START on, and the FM-1 plays a
+whole piece by itself, moving as slowly as a glacier, and then dies out.
+
+| KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
+|---|---|---|---|
+| LENGTH | DRIFT | **RUOHČAT** (to creak) | START |
+
+- **LENGTH:** 5, 10, 15, 25, 30 or 60 minutes, or ENDLESS.
+- **START with nothing playing:** it plays its own notes, one on each track, from the SCALE: the root low on T1, its
+  fifth on T2, a third and a high note over them on T3 and T4 (SCALE OFF: natural minor). The tracks play the sounds
+  you have on them, so pick four drones first. It rises out of silence.
+- **START with notes playing** (held, latched, the sequencer): it takes them as they are and moves only the mix.
+- **DRIFT, 0–100 %:** how much moves. Its own notes step through the scale (every few minutes at 1 %, every half minute
+  at 100 %), the root goes to its fourth or fifth and home again, a track rests for a while and comes back, the
+  filters open most in the middle of the piece. **At 0 nothing moves**: the piece only rises and dies out. That is a
+  sleep timer: play your drone, set LENGTH, DRIFT 0, START.
+- **The end:** over its last fifth (one to eight minutes) everything fades out. Then the notes are let go, the
+  sequencer and GENERATE stop, the screen goes dark, and the FM-1 stays silent until you touch it (a key, a button, a
+  knob or a MIDI note). The first touch only wakes it, as with SCREEN OFF.
+- **START OFF** before the end: its own notes are let go and the mix is as you set it.
+- **RUOHČAT, 0–100 %:** the ice around the drone: cracks, drips and a deep boom now and then, each one different, in
+  the mix and the reverb. At 1 % about one a minute; at 100 % a storm of them. It plays whenever it is up, the piece
+  running or not.
+- The screen draws the piece as a glacier: its height is the sound, the part played lit, now a white line; under it
+  each track's presence and its note. A crack flashes on the ice when RUOHČAT sounds.
+- LENGTH, DRIFT and RUOHČAT are saved with the project; START is not.
+
+<br clear="right">
+
 ---
 
 ## 05 · ENV and LFO
@@ -235,13 +291,18 @@ North Sami names.
 
 **SEL** opens **SCALE → CHORD**. **Hold SEL** (and let go) for chord mode on or off: one key, a whole chord.
 
-| Page | KNOB 1 | KNOB 2 |
-|---|---|---|
-| SCALE | ROOT (C–B) | SCALE |
-| CHORD | CHORD TYPE | VOICING |
+| Page | KNOB 1 | KNOB 2 | KNOB 3 |
+|---|---|---|---|
+| SCALE | ROOT (C–B) | SCALE | **ŠUOKŊA** (the tuning) |
+| CHORD | CHORD TYPE | VOICING | |
 
 - **SCALE**, shared by all tracks: OFF and fourteen scales, the last of them **HORROR**: close semitones, every note
   wrong in the right way. With a scale set, keys, MIDI and recordings snap to it.
+- **ŠUOKŊA** (new in 1.5.3; North Sami for a tone and its sound, `SUOKNA` on the screen): how the notes are tuned
+  from ROOT up, for every source. `EQUAL` as ever. `JUST`: pure thirds and fifths, so a held chord stands still instead
+  of beating. `PYTHAG`: pure fifths, bright and open. `HARMONIC`: the notes of the harmonic series over ROOT, with the
+  7th, 11th and 13th harmonics far from the keys' notes: old, strange colours for a drone. Set ROOT to your drone's
+  root. Saved with the project.
 - **CHORD TYPE:** SCALE (the scale's own chord), MIN, MAJ, SUS2, SUS4, FIFTH, MIN7, MAJ7, DIM, ADD9, CLUSTER.
 - **VOICING:** CLOSE, OPEN, SPREAD, +OCT, DROP. Big chords use more of the six voices.
 
@@ -440,16 +501,24 @@ FM-1, not the project.
 |---|---|
 | <img src="docs/manual/screens/system.png" alt="SYSTEM" width="320"> | <img src="docs/manual/screens/system2.png" alt="SYSTEM 2" width="320"> |
 
+| COLOUR: MONO | SCREEN OFF: GUOVSSAHAS |
+|---|---|
+| <img src="docs/manual/screens/mono.png" alt="HOME in MONO" width="320"> | <img src="docs/manual/screens/aurora.png" alt="GUOVSSAHAS: the northern lights" width="320"> |
+
 | Page | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 |---|---|---|---|---|
-| SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF |
+| SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA, MONO) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF |
 | SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES | CLOCK (INT, I+OUT, USB, TRS) |
 | SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB) | MOD OUT (OFF, ON) | |
 
-- **COLOUR:** pick the one that matches your FM-1.
+- **COLOUR:** pick the one that matches your FM-1. **MONO** (new in 1.5.3) turns the whole screen black and white, the
+  greys as a fine pattern of dots, as on an old one-bit screen. The header stays clean so the sound's name reads.
 - **MIDI CHANNEL:** `1-4` puts T1–T4 on channels 1–4 (or higher, up to `13-16`); `ALL > SEL` sends everything to the
   selected track; `CH 1 > SEL` … `CH 16 > SEL` sends only that channel to the selected track and ignores the others.
 - **SCREEN OFF:** the screen goes dark after the chosen time; the music goes on. The first touch only wakes it.
+  **GUOVSSAHAS** (new in 1.5.3; North Sami for the northern lights): after two minutes untouched the screen becomes a
+  night sky over the tundra with the aurora waving across it, brighter as the sound grows. The first touch brings the
+  page back.
 - **MIDI LEARN:** set LEARN, turn a knob on the FM-1, then move one on your controller. Up to 32 links.
 - **SEQ MIDI OUT:** sends the sequencer's and the arpeggiator's notes out over USB.
 - **SAMPLES:** CLEAR and **OCT+** empties all four sample slots (stop and let the sound die out first).
@@ -466,7 +535,7 @@ FM-1, not the project.
   track's own channel (as its notes, MIDI CHANNEL): **CC 102** is how loud the track plays now (0 silent, 127 full) and
   **CC 103** is where its LFO is (64 the middle). Use it to drive lights, motors, a Max patch or another synth's filter
   from the FM-1. OFF by default, so a DAW gets nothing it did not ask for.
-- **For app makers:** Arctic Scream 1.5.2 also answers **PANEL OUT**, an open protocol that tells an app which buttons
+- **For app makers:** since 1.5.2 Arctic Scream also answers **PANEL OUT**, an open protocol that tells an app which buttons
   and keys are down and how the knobs turn, so it can draw the FM-1 as you play. It is silent until an app asks. See
   [docs/PANEL_OUT.md](docs/PANEL_OUT.md).
 - SYSTEM 2 shows the processor load, NOW and PEAK, and over it **USB REC DROPS**: gaps in the sound sent to a computer
@@ -509,7 +578,7 @@ Since 1.3.1 it shows up on macOS 10.14 to 15 too.
 
 ## 12 · Factory sounds
 
-47 sounds with arctic names. Turn **PRESETS** to step through them by category, then your own.
+48 sounds with arctic names. Turn **PRESETS** to step through them by category, then your own.
 
 | Category | Sounds |
 |---|---|
@@ -521,7 +590,7 @@ Since 1.3.1 it shows up on macOS 10.14 to 15 too.
 | ORGAN | Ice Organ, Base Camp |
 | KEYS | Frost Keys, Snow Globe, Polar Keys, Ice Piano, Snow Owl, Signal Flare, Icicle Pluck, Frost Lute, Northern Light |
 | OTHER | Tundra Strings, Icebreaker, Fog Horn, Svalbard Cello, North Strings |
-| TEXTURE | Wind over Ice |
+| TEXTURE | Wind over Ice, **Biegga** (the wind source) |
 
 The seven Holvut sounds hold their notes (LATCH) and start with DRONE on.
 

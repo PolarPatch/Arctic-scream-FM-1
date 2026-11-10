@@ -141,7 +141,7 @@ footer p { margin: 4px 0; }
   </div>
   <div class="t">
     <p>Arctic Scream p0larpatch 1.3, drone firmware for the M-VAVE FM-1 by PolarPatch. Every button, knob and combo on
-      one page: four tracks, eight sources, and a feedback loop that wakes on its own.</p>
+      one page: four tracks, nine sources, a feedback loop that wakes on its own, and a piece that plays itself.</p>
     <div class="actions">
       <a class="main" href="index.html">PLAY THE DEMO</a>
       <a href="editor.html">EDITOR</a>
@@ -236,8 +236,10 @@ footer p { margin: 4px 0; }
     <tr><td>PHASE</td><td>WAVE</td><td>WAVE2</td><td>DCW</td><td>DETUNE</td></tr>
     <tr><td style="color:var(--plasma)">Holvut</td><td>FEEDBACK</td><td>BODY</td><td>DAMP</td><td>DRIVE</td></tr>
     <tr><td style="color:var(--plasma)">LOOP</td><td>GATE</td><td>BLOOM</td><td>LOWCUT</td><td>EXCITE</td></tr>
+    <tr><td style="color:var(--sky)">Biegga</td><td>GUST</td><td>HOWL</td><td>TONE</td><td>SNOW</td></tr>
   </table>
   <dl>
+    <dt>Biegga</dt><dd><i>Wind.</i> Noise singing at the note like wind in a gap. GUST: steady … gusting, the howl bending up. HOWL: a breath … a whistle. TONE: the rush, ~150 Hz – ~10 kHz. SNOW: grains on the ice.</dd>
     <dt>LOOP</dt><dd>Holvut's loop. GATE: dies into its tail once let go. BLOOM: the effects back into the loop. LOWCUT: ~70 Hz – ~1.9 kHz. EXCITE: the track's sample into the string.</dd>
     <dt>FM ALGO</dt><dd>ALGO 1–32, FEEDBACK, OP (pick 1–6), FINE.</dd>
     <dt>FM OP</dt><dd>RATIO, LEVEL, ATTACK, DECAY of that operator.</dd>
@@ -251,6 +253,7 @@ footer p { margin: 4px 0; }
     <tr><td>ENV</td><td>ATTACK</td><td>DECAY</td><td>SUSTAIN</td><td>RELEASE</td></tr>
     <tr><td>LFO</td><td>RATE</td><td>DEPTH</td><td>DESTINATION</td><td>SHAPE</td></tr>
     <tr><td style="color:var(--ice)">DRONE</td><td>BORGA</td><td>STOARBMA</td><td>GOHCCAT</td><td>LATCH</td></tr>
+    <tr><td style="color:var(--sky)">JIEHKKI</td><td>LENGTH</td><td>DRIFT</td><td>RUOHCAT</td><td>START</td></tr>
   </table>
   <dl>
     <dt>DESTINATION</dt><dd>PITCH, VOLUME, PAN, <b>the source's four knobs</b> by name, REV SEND, GRAIN SEND, the track's CUTOFF.</dd>
@@ -263,12 +266,20 @@ footer p { margin: 4px 0; }
     <dt>STOARBMA</dt><dd><i>Storm.</i> The tension: the filter opens, resonance and drive rise, the voices spread up to ±12 cents, the walks get deeper and faster.</dd>
     <dt>GOHCCAT</dt><dd><i>To wake.</i> OFF or 1–32 bars for the storm to reach STOARBMA, on the tempo. A drone woken from silence starts calm and rises.</dd>
   </dl>
+  <p style="margin:6px 0 4px;color:var(--label)"><b style="color:var(--fg)">LFO</b> a third time: <b style="color:var(--fg)">JIEHKKI</b> (<i>glacier</i>), a piece that plays itself.</p>
+  <dl>
+    <dt>LENGTH</dt><dd>5, 10, 15, 25, 30, 60 MIN or ENDLESS. At the end it fades out, stops, the screen goes dark; a touch wakes it.</dd>
+    <dt>DRIFT</dt><dd>How much moves: its own notes, a track resting, the filters. 0: only the rise and the fade (a sleep timer).</dd>
+    <dt>RUOHCAT</dt><dd><i>To creak.</i> Ice cracks, drips and deep booms around the drone, one a minute … a storm. Plays whenever it is up.</dd>
+    <dt>START</dt><dd>Nothing playing: its own notes, one a track from the SCALE, rising out of silence. Notes playing: it takes them.</dd>
+  </dl>
 </section>
 
 <section class="card" style="--c: var(--lavender)">
   <h2>Scales and chords: SEL</h2>
   <dl>
     <dt>SCALE</dt><dd>ROOT, SCALE (shared by all tracks): the keys snap to it. Last in the list: <b>HORROR</b>.</dd>
+    <dt>SUOKNA</dt><dd><i>A tone, its sound</i> (KNOB 3): the tuning from ROOT. EQUAL, JUST (pure thirds and fifths), PYTHAG (pure fifths), HARMONIC (the harmonic series).</dd>
     <dt>CHORD</dt><dd>CHORD TYPE (SCALE, MIN, MAJ, SUS2, SUS4, FIFTH, MIN7, MAJ7, DIM, ADD9, CLUSTER), VOICING (CLOSE, OPEN, SPREAD, +OCT, DROP).</dd>
     <dt>ARP</dt><dd>MODE (UP, DOWN, UP-DOWN, RANDOM, AS PLAYED, CHORD), RATE, OCTAVES 1–4, GATE.</dd>
   </dl>
@@ -340,10 +351,11 @@ footer p { margin: 4px 0; }
     <tr><th></th><th>K1</th><th>K2</th><th>K3</th><th>K4</th></tr>
     <tr><td>SYSTEM</td><td>COLOUR</td><td>MIDI CHANNEL</td><td>TUNE</td><td>SCREEN OFF</td></tr>
     <tr><td>SYSTEM 2</td><td>MIDI LEARN</td><td>SEQ MIDI OUT</td><td>SAMPLES</td><td>CLOCK</td></tr>
-    <tr><td>SYSTEM 3</td><td>LATCH</td><td>USB LEVEL</td><td></td><td></td></tr>
+    <tr><td>SYSTEM 3</td><td>LATCH</td><td>USB LEVEL</td><td>MOD</td><td></td></tr>
   </table>
   <dl>
-    <dt>COLOUR</dt><dd>ICE, AURORA, VIOLET, PLASMA.</dd>
+    <dt>COLOUR</dt><dd>ICE, AURORA, VIOLET, PLASMA, MONO (black and white, in dots).</dd>
+    <dt>SCREEN OFF</dt><dd>NEVER, 1 … 30 MIN dark, or GUOVSSAHAS (<i>the northern lights</i>): the aurora after 2 min. The first touch only wakes it.</dd>
     <dt>MIDI CHANNEL</dt><dd>1-4 … 13-16, ALL &gt; SEL, CH n &gt; SEL (channel n alone, the selected track). MIDI in: USB or the TRS jack.</dd>
     <dt>CLOCK</dt><dd>INT; I+OUT (clock out over USB); USB or TRS (follows a MIDI clock: START, CONTINUE, STOP).</dd>
     <dt>LATCH</dt><dd>FROM SOUND (a sound brings its own) or ALWAYS OFF. Any page: hold SEL + OCT+ for the track's LATCH.</dd>

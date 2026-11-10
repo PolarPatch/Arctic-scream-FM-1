@@ -39,6 +39,7 @@ static volatile int32_t sc_root, sc_scale;      /* SCALE: ROOT (C .. B), SCALE (
  *              13th harmonics far from the keys' notes, the old, strange colours of a drone */
 enum { TN_EQUAL, TN_JUST, TN_PYTHAG, TN_HARMONIC, NTUNING };
 static const char *const TN_NAME[NTUNING] = {"EQUAL", "JUST", "PYTHAG", "HARMONIC"};
+static const char *const TN_SHORT[NTUNING] = {"EQUAL", "JUST", "PYTHAG", "HARMON"};   /* (slabs) */
 static const int8_t TN_FINE[NTUNING][12] = {
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {0, 28, 9, 37, -32, -5, -41, 5, 32, -37, 42, -28},

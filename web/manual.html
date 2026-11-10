@@ -10,7 +10,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Arctic Scream Manual</title>
 <link rel="icon" href="polarpatch-logo.png">
-<meta name="description" content="The visual manual of Arctic Scream p0larpatch 1.5.2, drone firmware for the M-VAVE FM-1: every page as the screen shows it, and what each knob and button does.">
+<meta name="description" content="The visual manual of Arctic Scream p0larpatch 1.5.3, drone firmware for the M-VAVE FM-1: every page as the screen shows it, and what each knob and button does.">
 <style>
 @font-face { font-family: "Press Start 2P"; src: url("PressStart2P-Regular.ttf") format("truetype"); font-display: block; }
 /* BlueWatch's colours, as the demo page and the cheat sheet */
@@ -104,7 +104,7 @@ footer p { margin: 4px 0; }
 
 /* print: A4, dark, a chapter a page, the page's number at the foot */
 @page { size: A4; margin: 13mm 12mm 15mm; background: #060410;
-        @bottom-center { content: "ARCTIC SCREAM 1.5.2 · VISUAL MANUAL · " counter(page); color: #45606e;
+        @bottom-center { content: "ARCTIC SCREAM 1.5.3 · VISUAL MANUAL · " counter(page); color: #45606e;
                          font: 7pt system-ui, sans-serif; letter-spacing: .08em; } }
 @page :first { @bottom-center { content: none; } }
 @media print {
@@ -141,7 +141,7 @@ footer p { margin: 4px 0; }
     <div class="shots" aria-hidden="true"><img src="screens/holvut.png" alt=""><img src="screens/drone.png" alt=""><img src="screens/voice.png" alt=""><img src="screens/space.png" alt=""></div>
     <div class="shots" aria-hidden="true"><img src="screens/env.png" alt=""><img src="screens/scale.png" alt=""><img src="screens/master.png" alt=""><img src="screens/perform.png" alt=""></div>
   </div>
-  <div class="sub">VISUAL MANUAL · 1.5.2<br>FOR THE M-VAVE FM-1</div>
+  <div class="sub">VISUAL MANUAL · 1.5.3<br>FOR THE M-VAVE FM-1</div>
   <p class="small">Dark ambient drones and feedback screams from the arctic tundra. Unofficial firmware by PolarPatch, free and open source (GPL-3.0); not made or endorsed by M-VAVE. Install at your own risk.</p>
 </section>
 
@@ -171,16 +171,16 @@ C("00", "How to read this manual", "var(--ice)",
     <li><b>A + B</b>: hold A, then press B.</li>
     <li><b>Keys from F2:</b> everything sits an octave down, for drones. <b>White keys 1–8</b> are counted from the left (F2, G2, A2, B2, C3, D3, E3, F3); the black keys from <b>F#2</b>.</li>
     <li><b>T1–T4:</b> the four tracks. Turn ALGORITHM to pick one; most pages show the selected track.</li>
-    <li>${NEW} marks what is new in 1.5, 1.5.1 and 1.5.2.</li></ul>`),
+    <li>${NEW} marks what is new since 1.5, up to 1.5.3.</li></ul>`),
   P("Arctic Scream p0larpatch", "by PolarPatch", "", [], [], `<div class="about"><img src="polarpatch-logo.png" alt="PolarPatch">
-    <div><p>A drone firmware for the M-VAVE FM-1: four tracks, eight sources, long dark effects, a 64-step sequencer, chords, an arpeggiator and song mode, with its own feedback voice, Holvut, that wakes on its own and screams.</p>
+    <div><p>A drone firmware for the M-VAVE FM-1: four tracks, nine sources, long dark effects, a 64-step sequencer, chords, an arpeggiator and song mode, with its own feedback voice, Holvut, that wakes on its own and screams, and JIEHKKI, a whole piece it plays by itself.</p>
     <p>Free and open source (GPL-3.0). Try it in your browser first: the demo, the editor and the cheat sheet are at <a href="https://polarpatch.github.io/Arctic-scream-FM-1/">polarpatch.github.io/Arctic-scream-FM-1</a>.</p></div></div>`)]),
 
 C("01", "Getting around", "var(--ice)",
   "Four tracks play together and share six voices. The buttons open the pages, the four knobs set the four tiles at the bottom of the screen, and these controls work everywhere. Every track starts with ICE WRAITH: press a low key and let it howl.", [
   P("Every page", "No button needed", "", [
     ["ALGORITHM", "Picks the track. Every page shows that track.", "T1–T4"],
-    ["PRESETS", "Loads the next or previous sound into the track (factory first, then yours). On the sequencer pages: the tempo.", "47 factory + 64 yours"],
+    ["PRESETS", "Loads the next or previous sound into the track (factory first, then yours). On the sequencer pages: the tempo.", "48 factory + 64 yours"],
     ["SELECT", "On HOME: the tempo. On the sequencer: the cursor.", "20–300 BPM"],
     ["MASTER", "Volume.", ""],
     ["OCT− / OCT+", "Octave down and up. In the save menus: back and confirm.", ""],
@@ -216,9 +216,9 @@ C("02", "HOME and the mixers", "var(--aurora)",
     ["RESONANCE", "The track filter's resonance (on HOME before 1.3).", "0–100 %"]))]),
 
 C("03", "Sources: EDIT", "var(--violet)",
-  "EDIT opens the track's SOUND page, the source's four knobs, then SOURCE (a Holvut track has LOOP between them). Eight sources, each with its own picture.", [
+  "EDIT opens the track's SOUND page, the source's four knobs, then SOURCE (a Holvut track has LOOP between them). Nine sources, each with its own picture.", [
   P("SOURCE", "Tap EDIT twice (Holvut: three times)", "source", K(
-    ["SOURCE", "Picks the track's source.", "VA, FM, SAMPLE, VOICE, WHEEL, PHYS, PHASE, Holvut"],
+    ["SOURCE", "Picks the track's source.", "VA, FM, SAMPLE, VOICE, WHEEL, PHYS, PHASE, Holvut, Biegga"],
     ["LATCH", "Holds the notes: a key starts its note, the same key again stops it.", "OFF / ON"], ["", "", ""], ["", "", ""])),
   P("Holvut, the feedback voice", "EDIT, source Holvut", "holvut", K(
     ["FEEDBACK", "Wakes the loop. Below the threshold it sleeps (THE LOOP: ASLEEP); past ~2/3 it grows out of silence and howls by itself (HOWLING). Its last steps (120–127) overblow: the howl leaps up the overtones.", "0–100 %"],
@@ -274,7 +274,14 @@ C("03", "Sources: EDIT", "var(--violet)",
     ["WAVE", "Phase distortion: the wave.", ""],
     ["WAVE2", "The second cycle's wave.", ""],
     ["DCW", "How far it is bent.", "0–100 %"],
-    ["DETUNE", "Detune.", "0–100 %"]))]),
+    ["DETUNE", "Detune.", "0–100 %"])),
+  P("Biegga, the wind " + NEW, "EDIT, source Biegga", "biegga", K(
+    ["GUST", "How hard and how often it gusts: steady at 0, every second or so at the top, the howl bending up as it blows.", "0–100 %"],
+    ["HOWL", "The howl's share and how narrow it sings: a breath of rush at 0, a whistle at the top.", "0–100 %"],
+    ["TONE", "The rush under it: a far storm … snow hissing past.", "~150 Hz – ~10 kHz"],
+    ["SNOW", "Grains of snow ticking on the ice.", "0–100 %"]),
+    ["Biegga is North Sami (and Lule Sami) for wind. Noise sings at the note like wind in a gap, so a chord of Biegga is a chord the wind sings. About as light on the processor as VA.",
+     "The factory sound BIEGGA (TEXTURE) holds its note, gusts, and its storm rises over 4 bars."])]),
 
 C("04", "DRONE: a sound that lives on its own", "var(--teal)",
   "Press LFO twice. DRONE makes a held sound move by itself, slowly, and never the same way twice. The knobs have North Sami names.", [
@@ -283,7 +290,14 @@ C("04", "DRONE: a sound that lives on its own", "var(--teal)",
     ["STOARBMA (storm)", "The tension: opens the filter, raises resonance and drive, spreads the voices, makes the walks deeper and faster.", "0–100 %"],
     ["GOHCCÁT (to wake)", "How long the storm takes to rise, in tempo. A drone woken from silence starts calm and builds.", "OFF, 1–32 bars"],
     ["LATCH", "Holds the notes.", "OFF / ON"]),
-    ["At 0 % nothing is added. The settings are saved with the sound; the seven Holvut presets start with BORGA on."])]),
+    ["At 0 % nothing is added. The settings are saved with the sound; the seven Holvut presets start with BORGA on."]),
+  P("JIEHKKI " + NEW, "Tap LFO three times", "jiehkki", K(
+    ["LENGTH", "How long the piece plays.", "5, 10, 15, 25, 30, 60 MIN, ENDLESS"],
+    ["DRIFT", "How much moves: its own notes step through the scale, the root goes to its fourth or fifth and home, a track rests a while, the filters open most mid-piece. 0: nothing moves, the piece only rises and dies out (a sleep timer).", "0–100 %"],
+    ["RUOHČAT (to creak)", "The ice around the drone: cracks, drips and a deep boom now and then, from about one a minute to a storm. Plays whenever it is up.", "0–100 %"],
+    ["START", "The piece. With nothing playing it plays its own notes, one a track from the SCALE, rising out of silence; with notes playing it takes them and moves the mix.", "OFF / ON"]),
+    ["Jiehkki is North Sami for glacier. Over its last fifth everything fades out; then the notes are let go, the sequencer stops, the screen goes dark and the FM-1 stays silent until you touch it.",
+     "The glacier on the screen is the piece: its height the sound, the part played lit, now a white line. LENGTH, DRIFT and RUOHČAT are saved with the project."])]),
 
 C("05", "ENV and LFO", "var(--amber)",
   "How each note starts and ends, and slow movement. Both belong to the track.", [
@@ -303,7 +317,8 @@ C("06", "Scales, chords and the arpeggiator", "var(--pink)",
   P("SCALE", "Tap SEL", "scale", K(
     ["ROOT", "The scale's root, shared by all tracks.", "C–B"],
     ["SCALE", "Keys, MIDI and recordings snap to it. The last is HORROR: close semitones, every note wrong in the right way.", "OFF + 14 scales"],
-    ["", "", ""], ["", "", ""])),
+    ["ŠUOKŊA " + NEW, "The tuning from ROOT up, for every source (North Sami: a tone, its sound; SUOKNA on the screen). JUST: pure thirds and fifths, a held chord stands still. PYTHAG: pure fifths. HARMONIC: the harmonic series over ROOT, strange old colours. Saved with the project.", "EQUAL, JUST, PYTHAG, HARMONIC"],
+    ["", "", ""])),
   P("CHORD", "Tap SEL twice", "chord", K(
     ["CHORD TYPE", "The chord a key plays in chord mode.", "SCALE, MIN, MAJ, SUS2, SUS4, FIFTH, MIN7, MAJ7, DIM, ADD9, CLUSTER"],
     ["VOICING", "How it is spread. Big chords use more of the six voices.", "CLOSE, OPEN, SPREAD, +OCT, DROP"],
@@ -409,10 +424,12 @@ C("10", "Perform and GENERATE: hold FX", "var(--amber)",
 C("11", "System: hold HOME", "var(--sky, #4fb3e8)",
   "Hold HOME for SYSTEM; press HOME again for SYSTEM 2, again for SYSTEM 3. These settings belong to the FM-1, not the project.", [
   P("SYSTEM", "Hold HOME", "system", K(
-    ["COLOUR", "Pick the one that matches your FM-1.", "ICE, AURORA, VIOLET, PLASMA"],
+    ["COLOUR", "Pick the one that matches your FM-1. MONO " + NEW + ": the whole screen black and white, its greys as fine dots.", "ICE, AURORA, VIOLET, PLASMA, MONO"],
     ["MIDI CHANNEL", "1-4: T1–T4 on channels 1–4 (or higher, to 13-16). ALL > SEL: everything to the selected track. CH n > SEL: only that channel, to the selected track.", "1-4 … 13-16, ALL, CH 1–16"],
     ["TUNE", "Fine tuning.", "±50 cents"],
-    ["SCREEN OFF", "The screen goes dark after this; the music goes on. The first touch only wakes it.", "1–… min, NEVER"])),
+    ["SCREEN OFF", "The screen goes dark after this; the music goes on. The first touch only wakes it. GUOVSSAHAS " + NEW + " (the northern lights): after 2 minutes untouched, the aurora over the tundra instead, brighter as the sound grows.", "NEVER, 1–30 MIN, GUOVSSAHAS"])),
+  P("MONO " + NEW, "Hold HOME, KNOB 1 to MONO", "mono", [], ["The idea after Inigo Hernandez's MONO2K. The header stays clean, so the sound's name reads."]),
+  P("GUOVSSAHAS " + NEW, "Hold HOME, KNOB 4 to GUOVSSAHAS", "aurora", [], ["Two aurora curtains wave across a night sky, green at their edge, teal and violet above. The first touch brings the page back."]),
   P("SYSTEM 2", "Hold HOME, then HOME", "system2", K(
     ["MIDI LEARN", "Set LEARN, turn a knob on the FM-1, then move one on your controller. Up to 32 links.", "OFF, LEARN, CLEAR"],
     ["SEQ MIDI OUT", "Sends the sequencer's and the arpeggiator's notes out over USB.", "OFF / ON"],
@@ -438,7 +455,7 @@ C("11", "System: hold HOME", "var(--sky, #4fb3e8)",
   ])]),
 
 C("12", "Factory sounds and combos", "var(--aurora)",
-  "47 sounds with arctic names. Turn PRESETS to step through them by category, then your own.", [
+  "48 sounds with arctic names. Turn PRESETS to step through them by category, then your own.", [
   P("Factory sounds", "PRESETS", "", [
     ["DRONE", "Permafrost, Deep Fjord, Cracking Ice, Arctic Hum, Solar Wind, Under the Ice", ""],
     ["DRONE · Holvut", "Polar Howl, Wendigo, Frozen Scream, Whiteout, Dead Signal, III, Ice Wraith", "latched, DRONE on"],
@@ -448,7 +465,7 @@ C("12", "Factory sounds and combos", "var(--aurora)",
     ["ORGAN", "Ice Organ, Base Camp", ""],
     ["KEYS", "Frost Keys, Snow Globe, Polar Keys, Ice Piano, Snow Owl, Signal Flare, Icicle Pluck, Frost Lute, Northern Light", ""],
     ["OTHER", "Tundra Strings, Icebreaker, Fog Horn, Svalbard Cello, North Strings", ""],
-    ["TEXTURE", "Wind over Ice", ""],
+    ["TEXTURE", "Wind over Ice, Biegga", ""],
   ]),
   P("Combos at a glance", "Hold + press", "", [
     ["EDIT + OCT− / OCT+", "Undo / redo", ""],

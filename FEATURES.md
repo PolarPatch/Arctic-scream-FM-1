@@ -12,9 +12,9 @@ feedback screams: slow, cold sounds that hum for minutes, and a voice that wakes
 
 | | |
 | --- | --- |
-| Version | 1.5.2 |
+| Version | 1.5.3 |
 | Firmware identity | `FM-1_977` (USB name "Arctic Scream" by "PolarPatch") |
-| Package | `arctic-scream-1.5.2.fwsc`, built and attested on GitHub |
+| Package | `arctic-scream-1.5.3.fwsc`, built and attested on GitHub |
 | Source | <https://github.com/PolarPatch/Arctic-scream-FM-1> |
 | Demo, editor, cheat sheet | <https://polarpatch.github.io/Arctic-scream-FM-1/> |
 | Licence | GPL-3.0 (the PolarPatch logo excepted) |
@@ -22,12 +22,16 @@ feedback screams: slow, cold sounds that hum for minutes, and a voice that wakes
 ## At a glance
 
 - Four tracks, six voices shared between them.
-- Eight sound sources, among them **Holvut**, a feedback loop that howls by itself.
+- Nine sound sources, among them **Holvut**, a feedback loop that howls by itself, and **Biegga**, the wind.
 - **DRONE**: a sound that lives on its own (BORGA, STOARBMA, GOHCCAT).
-- 47 factory sounds with arctic names, and 64 slots for your own.
+- **JIEHKKI**: a whole piece the FM-1 plays by itself for 5 to 60 minutes (or ENDLESS), then dies out; **RUOHČAT**,
+  the ice cracking around it.
+- Pure tunings for drones (**ŠUOKŊA**: JUST, PYTHAG, HARMONIC).
+- 48 factory sounds with arctic names, and 64 slots for your own.
 - Effects on seven pages (TAPE, GRAIN, DELAY, SPACE, MASTER, DRIVE, AIR) and eight performance tricks.
 - A 64-step sequencer per track, an arpeggiator, chords, scales and song mode.
-- An arctic cyberpunk screen with moving northern lights.
+- An arctic cyberpunk screen with moving northern lights, a black and white **MONO** look, and the aurora
+  (**GUOVSSAHAS**) as a screen saver.
 - A web editor and a browser demo that run the same code as the instrument.
 
 ## The tracks and voices
@@ -54,6 +58,7 @@ EDIT opens SOUND (the source's four knobs), then SOURCE (the source and LATCH). 
 | PHYS | MODEL | STRUCTURE | DAMP | BOW | Physical models: modal, string, membrane, sympathetic strings |
 | PHASE | WAVE | WAVE2 | DCW | DETUNE | Phase distortion |
 | **Holvut** | FEEDBACK | BODY | DAMP | DRIVE | A feedback loop that howls (below) |
+| **Biegga** | GUST | HOWL | TONE | SNOW | The wind (1.5.3, below) |
 
 **FM ALGO**: ALGO 1–32, FEEDBACK, OP (the operator, 1–6), FINE. **FM OP**: that operator's RATIO, LEVEL, ATTACK,
 DECAY.
@@ -87,6 +92,17 @@ scratch for the FM-1.
 - The howl's pitch comes mostly from the loop itself, not the key, so OCT− and OCT+ do not move it by an octave.
   [DEVELOPER.md](DEVELOPER.md) describes a possible change.
 
+### Biegga, the wind (1.5.3)
+
+*Biegga* is North Sami for "wind" (the same word in Lule Sami). Written for Arctic Scream.
+
+- Noise through two narrow band-passes at the note and its octave (the howl: wind singing in a gap), a one-pole
+  low-passed rush under them, and a gust: a slow random walk of each voice's own that swells and drops the sound and
+  bends the howl up to ~2 semitones as it blows.
+- **GUST**: steady at 0, gusts every second or so at the top. **HOWL**: a breath of rush at 0, a whistle at the top (the
+  bands ~20× narrower). **TONE**: the rush ~150 Hz to ~10 kHz. **SNOW**: grains ticking on the ice, up to ~85 a second.
+- About VA's cost, half of Holvut's. DRONE's BORGA moves GUST, HOWL and TONE.
+
 ## DRONE: a sound that lives on its own (LFO, tapped twice)
 
 New in 1.1. The idea follows Jangada's DRONE page; it is written from scratch. The knob names are North Sami.
@@ -101,6 +117,26 @@ New in 1.1. The idea follows Jangada's DRONE page; it is written from scratch. T
 - At 0 % the sound is exactly as set: nothing is added.
 - The settings are saved with the sound. All seven Holvut presets start with BORGA on and GOHCCAT at 8 bars.
 - The screen shows the four walks as aurora ribbons and the storm as a bar with its target mark.
+
+## JIEHKKI: a piece that plays itself (LFO, tapped three times)
+
+New in 1.5.3, written for Arctic Scream. *Jiehkki* is North Sami for "glacier", *ruohčat* for "to creak" (sanit.oahpa.no).
+
+| Knob | What it does |
+| --- | --- |
+| **LENGTH** | 5, 10, 15, 25, 30, 60 MIN or ENDLESS |
+| **DRIFT** 0–100 % | How much moves: its own notes through the scale (every ~4 min at 1 %, ~25 s at 100 %), the root to its fourth or fifth and home, a track resting a while, the filters opening most mid-piece. 0: nothing moves (a sleep timer) |
+| **RUOHČAT** 0–100 % | The ice around the drone: cracks (noise through band-passes, one to six), drips (a falling sine) and deep booms (a slow low sine and rumble), each one different, into the mix and the reverb. ~1 a minute at 1 %, a storm at 100 %. Plays whenever it is up |
+| **START** | OFF, ON |
+
+- **Nothing sounding at START**: it plays its own notes, one a track, from the SCALE (the root low on T1, its fifth, a
+  third and a high note over them; SCALE OFF: natural minor), rising out of silence over an eighth of LENGTH (a minute
+  at most). **Notes sounding**: it takes them and moves the mix alone.
+- **The end**: everything fades over the last fifth (1 to 8 minutes); then the notes are let go, the sequencer and
+  GENERATE stop, the screen goes dark, and it stays silent until a hand (or a MIDI note) wakes it.
+- LENGTH, DRIFT and RUOHČAT are saved with the project (save version 9); START is not.
+- The screen draws the piece as a glacier (its height the sound, the part played lit), each track's presence and note,
+  and a crack on the ice for each RUOHČAT sound.
 
 ## ENV and LFO
 
@@ -118,6 +154,9 @@ New in 1.1. The idea follows Jangada's DRONE page; it is written from scratch. T
 
 - **SEL → SCALE**: ROOT and SCALE, shared by all tracks. Keys, MIDI in and recordings snap to it. OFF and fourteen
   scales, the last of them **HORROR**: close semitones, every note wrong in the right way.
+- **ŠUOKŊA** (SCALE's KNOB 3, 1.5.3; North Sami: a tone and its sound; `SUOKNA` on the screen), the tuning from ROOT up,
+  for every source: EQUAL; JUST (5-limit: pure thirds and fifths, a chord that stands still); PYTHAG (3-limit, pure
+  fifths); HARMONIC (the harmonic series over ROOT: 7/6, 11/8, 13/8, 7/4 among them). Saved with the project.
 - **SEL → CHORD**: CHORD TYPE (SCALE, MIN, MAJ, SUS2, SUS4, FIFTH, MIN7, MAJ7, DIM, ADD9, CLUSTER) and VOICING (CLOSE,
   OPEN, SPREAD, +OCT, DROP). **Hold SEL** for chord mode on or off: one key, a whole chord.
 - **ARP**: MODE (UP, DOWN, UP-DOWN, RANDOM, AS PLAYED, CHORD), RATE (1/1–1/32 and triplets), OCTAVES 1–4, GATE.
@@ -181,8 +220,8 @@ HOME draws each track's wave as it plays. The header shows the track, its sound 
 
 ## Sounds and saving (SAVE)
 
-- **47 factory sounds** with arctic names, in PAD, DRONE, BELL, VOICE, ORGAN, KEYS, OTHER and TEXTURE. Among them
-  POLAR NIGHT, PERMAFROST, GLACIER PAD, SVALBARD CELLO, NORTHERN LIGHT, WIND OVER ICE.
+- **48 factory sounds** with arctic names, in PAD, DRONE, BELL, VOICE, ORGAN, KEYS, OTHER and TEXTURE. Among them
+  POLAR NIGHT, PERMAFROST, GLACIER PAD, SVALBARD CELLO, NORTHERN LIGHT, WIND OVER ICE and BIEGGA (1.5.3, the wind).
 - **Seven Holvut presets** at the end of DRONE: POLAR HOWL, WENDIGO, FROZEN SCREAM, WHITEOUT, DEAD SIGNAL, III and
   **ICE WRAITH**, the sound every track starts with. All seven latch and have DRONE on. III is a horrorscape: three
   Holvut voices in a cluster chord, rubbing a semitone apart, dark and slowly waking.
@@ -202,7 +241,7 @@ HOME draws each track's wave as it plays. The header shows the track, its sound 
 
 | Page | K1 | K2 | K3 | K4 |
 | --- | --- | --- | --- | --- |
-| SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF |
+| SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA, MONO) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF (NEVER, 1–30 MIN, GUOVSSAHAS) |
 | SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES (CLEAR) | CLOCK (INT, INT+OUT, USB, TRS) |
 | SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB, 1.4) | MOD OUT (OFF, ON, 1.5.2) | |
 
@@ -222,6 +261,11 @@ HOME draws each track's wave as it plays. The header shows the track, its sound 
 ## The screen
 
 - An arctic cyberpunk palette after PolarPatch's BlueWatch: a colour per page and per knob.
+- **MONO** (COLOUR's fifth, 1.5.3): the whole screen black and white, its greys as a 4×4 Bayer pattern of dots fixed to
+  the screen; the header clean. The idea after Inigo Hernandez's MONO2K, written anew.
+- **GUOVSSAHAS** (SCREEN OFF's last, 1.5.3; North Sami: the northern lights): after 2 minutes untouched, a night sky
+  over the tundra, two aurora curtains waving across it, green at the edge, teal and violet above, brightening with
+  the sound. The first touch brings the page back.
 - **Boot**: ARCTIC SCREAM out of the dark in a glitch storm, settling into the banner's torn rows, with p0larpatch and the four tracks' lines (about 5.6 s).
 - **HOME**: each track's wave glowing as it plays, under a starry sky.
 - **Moving northern lights** (new in 1.1), a ribbon per knob:
@@ -279,6 +323,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 | --- | --- | --- |
 | 1.0 | 2026-10-25 | The first release: HOWL (now Holvut), six screaming presets, the HORROR scale, runaway echo, keys an octave down, 46 arctic factory sounds, the new look, the web editor with sound tools and sequencer, the demo and cheat sheet |
 | 1.1 | 2026-10-26 | DRONE (BORGA, STOARBMA, GOHCCAT); HOWL renamed Holvut; moving northern lights on ENV, LFO, FX and the mixers; SUSTAIN 40 % by default; DRONE in the editor |
+| 1.5.3 | 2026-11-11 | The drone machine: JIEHKKI (a piece played by itself for LENGTH, then dying out; DRIFT; a sleep timer at DRIFT 0), RUOHČAT (ice cracks, drips, booms), ŠUOKŊA tunings (JUST, PYTHAG, HARMONIC), Biegga (the wind, a ninth source) and the factory sound BIEGGA, GUOVSSAHAS (the aurora as a screen saver), COLOUR MONO (black and white, Bayer dots); MIDI in while the screen draws (LCD_IDLE); saves version 9; update tests |
 | 1.5.2 | 2026-11-10 | The update's own screen (UPDATE MODE, WRITING with a bar, DONE or FAILED); SYSTEM 3's MOD OUT (each track's level and LFO as CC 102, 103); PANEL OUT for apps (buttons, keys, knobs); INFO tells key 0's note and the octave; the browser demo in tune at 48 kHz; DELAY up to 2.6 s and more free memory (RAM 93.4 → 79.0 KB used); the stacks' depth in the CPU command |
 | 1.5.1 | 2026-11-08 | The newer FM-1s' flash chip (UC25HQ80): saves, the USB rescue and updates on it as on the first chip (P25Q80); on a newer unit with 1.5 or older, install through the chip's download mode once |
 | 1.5 | 2026-11-07 | The screen reader: the screen said to fm1-reader (pages, knobs, lists, steps, PLAY, STOP, REC, the header's messages); saves under a latched drone (a slot or a sound saved at once, the autosave after 30 s at rest); the editor keeps a project's effects and tempo in its file; TAPE's TONE shows its corner (OPEN, 10K .. 400) |

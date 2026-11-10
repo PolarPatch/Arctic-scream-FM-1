@@ -133,6 +133,12 @@ SHOTS = {
     "wheel": lambda: src(S(), 3).turn(K1, 6).hold("C3", "G3").w(1500),
     "phys": lambda: src(S(), 2).hold("C3", "G3").w(1500),
     "phase": lambda: src(S(), 1).hold("C3", "G3").w(1500),
+    # (1.5.3) the drone machine
+    "biegga": lambda: src(S(), -1).hold("C3", "G3").w(2500),
+    "jiehkki": lambda: S().tap(LFO, LFO, LFO).turn(K3, 40).turn(K4, 1).w(40000),
+    "suokna": lambda: S().tap(SEL).turn(K3, 3).w(800),
+    "aurora": lambda: S().keys("C3").down(HOME).w(900).up(HOME).turn(K4, 5).w(126000),
+    "mono": lambda: S().down(HOME).w(900).up(HOME).turn(K1, 4).w(400).tap(EDIT).tap(HOME).keys("C3").keys("G3").w(2500),
 }
 
 

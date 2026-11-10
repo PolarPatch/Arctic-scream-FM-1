@@ -277,7 +277,7 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
 <main>
 <section class="hero">
   <div class="wrap">
-    <div class="kicker">DRONE FIRMWARE FOR THE M-VAVE FM-1 · v1.5.2</div>
+    <div class="kicker">DRONE FIRMWARE FOR THE M-VAVE FM-1 · v1.5.3</div>
     <div class="head">
       <h1 aria-label="Arctic Scream"><span class="gl" data-t="ARCTIC">ARCTIC</span><span class="gl" data-t="SCREAM">SCREAM</span></h1>
       <p>Dark ambient drones and feedback screams from the arctic tundra. Slow, cold drones that hum for minutes, and a
@@ -369,7 +369,7 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
           <dt>KNOB 1–4</dt><dd>The four values at the bottom of the screen, on every page.</dd>
           <dt><kbd>←</kbd> <kbd>→</kbd> ALGORITHM</dt><dd>Picks the track, T1–T4. Every page shows that track.</dd>
           <dt><kbd>↑</kbd> <kbd>↓</kbd> SELECT</dt><dd>HOME: the tempo. The sequencer: the cursor.</dd>
-          <dt>PRESETS</dt><dd>The next sound, by category: 47 factory sounds with arctic names.</dd>
+          <dt>PRESETS</dt><dd>The next sound, by category: 48 factory sounds with arctic names.</dd>
           <dt>MASTER</dt><dd>The volume.</dd>
           <dt><kbd>[</kbd> <kbd>]</kbd> OCT− OCT+</dt><dd>Octave down and up. In SAVE's pages: back, and do it.</dd>
         </dl>
@@ -383,7 +383,7 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
     <div class="sec-head">
       <div class="num" aria-hidden="true">02</div>
       <h2><span class="gl" data-t="SOURCES">SOURCES</span></h2>
-      <p>Eight sound sources, one per track, each with four knobs. Six voices are shared by the four tracks. EDIT twice
+      <p>Nine sound sources, one per track, each with four knobs. Six voices are shared by the four tracks. EDIT twice
         for SOURCE, KNOB 1 to pick.</p>
     </div>
     <div class="cards">
@@ -439,6 +439,13 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
         <p>Phase distortion: two waves and a DCW that opens them.</p>
         <div class="k">WAVE · WAVE2 · DCW · DETUNE</div>
       </article>
+      <article class="card" style="--c: var(--ice)">
+        <svg viewBox="0 0 74 34" aria-hidden="true"><path d="M2 12 C14 8 22 16 34 12 S56 8 72 13 M6 22 C18 19 28 26 40 22 S60 18 70 23"/></svg>
+        <h3>Biegga</h3><div class="tags"><span>WIND</span><span>NEW</span><span>NORTH SAMI: WIND</span></div>
+        <p>Noise that sings at the note like wind in a gap, gusting and dropping, the howl bending up as it blows, with
+          snow ticking on the ice. A chord of Biegga is a chord the wind sings.</p>
+        <div class="k">GUST · HOWL · TONE · SNOW</div>
+      </article>
     </div>
   </div>
 </section>
@@ -473,6 +480,32 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
         <div class="tags"><span>KNOB 4</span><span>HOLD</span></div>
         <div class="big">LATCH</div>
         <p>Press once to start a note, again to stop it. For drones that hum for minutes.</p>
+      </article>
+    </div>
+    <p style="margin:28px 0 12px">Press LFO a third time for <b>JIEHKKI</b> (<i lang="se">glacier</i>), new in 1.5.3: the
+      FM-1 plays a whole piece by itself, as slowly as a glacier, then dies out, stops and goes dark until you touch it.</p>
+    <div class="cards">
+      <article class="card" style="--c: var(--ice)">
+        <div class="tags"><span>KNOB 1</span><span>5 TO 60 MIN</span></div>
+        <div class="big">LENGTH</div>
+        <p>5, 10, 15, 25, 30 or 60 minutes, or ENDLESS. Over its last fifth everything fades out.</p>
+      </article>
+      <article class="card" style="--c: var(--aurora)">
+        <div class="tags"><span>KNOB 2</span><span>MOVEMENT</span></div>
+        <div class="big">DRIFT</div>
+        <p>Its own notes step through your scale, a track rests and comes back, the filters open mid-piece. At 0 only
+          the rise and the fade: a sleep timer.</p>
+      </article>
+      <article class="card" style="--c: var(--violet)">
+        <div class="tags"><span>KNOB 3</span><span>TO CREAK</span></div>
+        <div class="big">RUOHČAT</div>
+        <p>The ice around the drone: cracks, drips and a deep boom now and then, from one a minute to a storm.</p>
+      </article>
+      <article class="card" style="--c: var(--plasma)">
+        <div class="tags"><span>KNOB 4</span><span>GO</span></div>
+        <div class="big">START</div>
+        <p>With nothing playing it plays its own notes, a track each, rising out of silence. With notes playing it takes
+          them as they are.</p>
       </article>
     </div>
   </div>
@@ -536,12 +569,12 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
     <div class="sec-head">
       <div class="num" aria-hidden="true">06</div>
       <h2><span class="gl" data-t="STATUS">STATUS</span></h2>
-      <p>Version 1.5.2. Free and open source, GPL-3.0. Unofficial firmware, not made or endorsed by M-VAVE:
+      <p>Version 1.5.3. Free and open source, GPL-3.0. Unofficial firmware, not made or endorsed by M-VAVE:
         install at your own risk.</p>
     </div>
     <div class="status">
       <article class="card" style="--c: var(--ice)"><h3>INSTALL</h3>
-        <p>Download <code>arctic-scream-1.1.fwsc</code> from the <a href="https://github.com/PolarPatch/Arctic-scream-FM-1/releases">releases</a>, connect the FM-1 over USB, then:</p>
+        <p>Download <code>arctic-scream-1.5.3.fwsc</code> from the <a href="https://github.com/PolarPatch/Arctic-scream-FM-1/releases">releases</a>, connect the FM-1 over USB, then:</p>
         <pre>pip install mido python-rtmidi
 python3 tools/fm1_install.py arctic-scream-1.1.fwsc</pre>
         <p style="margin-top: 10px">Stuck? The Rescue page on the <a href="https://thefirmwarehub.com/">FM-1 Firmware Hub</a> brings it back.</p></article>

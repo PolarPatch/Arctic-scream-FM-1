@@ -31,6 +31,14 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
   - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
   - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
+- **New in 1.5.3: the drone machine.** The names are North Sami, checked in the dictionary at sanit.oahpa.no.
+  - **JIEHKKI** (glacier; press LFO three times): set a LENGTH, 5 to 60 minutes or ENDLESS, and START. With nothing playing, the FM-1 plays a whole piece by itself, a note on each track from your SCALE, rising out of silence, moving as slowly as a glacier (DRIFT), and dying out at the end. Then it stops, the screen goes dark and it stays silent until you touch it. With DRIFT at 0 it is a sleep timer for your own drone.
+  - **RUOHČAT** (to creak), on the same page: the ice around the drone, cracks, drips and a deep boom now and then, from one a minute to a storm.
+  - **ŠUOKŊA** (a tone and its sound; SEL, KNOB 3): pure tunings for drones. JUST, PYTHAG and HARMONIC, so a held chord stands still instead of beating, or takes on the strange colours of the harmonic series.
+  - **Biegga** (wind), a ninth sound source: noise that sings at the note like wind in a gap, with GUST, HOWL, TONE and SNOW, and a factory sound of its own, BIEGGA.
+  - **GUOVSSAHAS** (the northern lights): a new SCREEN OFF choice. After two minutes untouched the screen turns into a night sky with the aurora waving across it, brighter as the sound grows.
+  - **COLOUR MONO**: the whole screen in black and white, its greys as fine dots, as on an old one-bit screen.
+  - MIDI notes and the clock come in while the screen is drawing, and the update process has tests of its own.
 - **New in 1.5.2:**
   - **A screen while it updates.** Installing no longer leaves the screen black: the FM-1 shows UPDATE MODE and what it waits for, then WRITING with a bar and the per cent, and DONE or what to do if it failed.
   - **MOD OUT** (SYSTEM 3): each track's level and LFO go out over USB as MIDI CC 102 and 103, 50 times a second, to drive lights, motors, a Max patch or another synth. Off by default.
@@ -71,7 +79,7 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - The track defaults are darker.
   - The knobs on HOME, EDIT and LFO all audibly change the sound from the start.
   - HOME's knobs set the selected track's VOLUME and CUTOFF, and two that twist it: **WARP** (eight layers of motion, from a still sound to a wild one, smoothly) and **MORPH** (one knob through all four of the source's knobs at once, never quite still).
-- **47 factory sounds** with arctic names, such as POLAR NIGHT, PERMAFROST, SVALBARD CELLO and NORTHERN LIGHT.
+- **48 factory sounds** with arctic names, such as POLAR NIGHT, PERMAFROST, SVALBARD CELLO, NORTHERN LIGHT and BIEGGA.
 - **A new look:**
   - an arctic cyberpunk palette from PolarPatch's BlueWatch;
   - waveforms that glow on HOME;
@@ -98,10 +106,10 @@ The **[editor](https://polarpatch.github.io/Arctic-scream-FM-1/editor.html)** ru
 Download `arctic-scream-X.Y.fwsc` (the newest) from [Releases](../../releases). Then, with Python 3 and `pip install mido python-rtmidi`, connect the FM-1 over USB and run:
 
 ```
-python3 tools/fm1_install.py arctic-scream-1.5.2.fwsc
+python3 tools/fm1_install.py arctic-scream-1.5.3.fwsc
 ```
 
-Every release is built and signed on GitHub from the tagged source (the FM-1 Firmware Hub's [fm1-build](https://github.com/zvenson/fm1-build)); check a file with `gh attestation verify arctic-scream-1.5.2.fwsc --repo PolarPatch/Arctic-scream-FM-1 --signer-workflow zvenson/fm1-build/.github/workflows/build.yml`.
+Every release is built and signed on GitHub from the tagged source (the FM-1 Firmware Hub's [fm1-build](https://github.com/zvenson/fm1-build)); check a file with `gh attestation verify arctic-scream-1.5.3.fwsc --repo PolarPatch/Arctic-scream-FM-1 --signer-workflow zvenson/fm1-build/.github/workflows/build.yml`.
 
 It installs over the FM-1's own firmware or any other FM-1 firmware. Don't unplug the FM-1 while it writes. If anything goes wrong, the **Rescue** page on the [FM-1 Firmware Hub](https://thefirmwarehub.com/) brings a stuck FM-1 back, and M-VAVE's own updater puts the original firmware back.
 

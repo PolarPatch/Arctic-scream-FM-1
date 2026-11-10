@@ -377,7 +377,7 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         if (k == 2u) { put_s(S->val, v ? ENGINES[clamp(v - 1, 0, NENG - 1)]->name : "ALL"); return; }
         put_s(S->val, SV_ACT[clamp(v, 0, 2)]);
         return;
-    case PG_SCALE: put_s(S->val, k == 2u ? TN_NAME[clamp(v, 0, NTUNING - 1)] : k ? SC_SHORT[clamp(v, 0, NSCALE - 1)] :
+    case PG_SCALE: put_s(S->val, k == 2u ? TN_SHORT[clamp(v, 0, NTUNING - 1)] : k ? SC_SHORT[clamp(v, 0, NSCALE - 1)] :
                                      SC_NOTE[clamp(v, 0, 11)]); return;
     case PG_SONG:
         if (k == 0u || k == 2u) {               /* SECTION, REPEATS: "03" */

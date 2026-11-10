@@ -152,6 +152,7 @@ static void jk_move(uint32_t now)               /* DRIFT: a note, a track's pres
     if (jk.own && (int32_t)(now - jk.next_move) >= 0) {   /* (a note: every ~4 min at 1 %, ~25 s at 100 %) */
         uint32_t m = 240000u - (uint32_t)d * 2150u;
         jk.next_move = now + m * 6u / 10u + jk_rnd(m * 8u / 10u);
+        int32_t k;
         t = jk_rnd(6) ? 1 + (int32_t)jk_rnd(3) : 0;
         n = jk.note[t];
         if (n) {
@@ -159,13 +160,15 @@ static void jk_move(uint32_t now)               /* DRIFT: a note, a track's pres
                 int32_t home = jk_fit(0, 36 + clamp(sc_root, 0, 11));
                 n = n != home && jk_rnd(10) < 6 ? home : jk_fit(0, jk_step(home, jk_rnd(2) ? 3 : 4));
             } else {
-                int32_t s = 1 + (int32_t)jk_rnd(2), k;
+                int32_t s = 1 + (int32_t)jk_rnd(2);
                 n = jk_step(n, jk_rnd(2) ? s : -s);
                 if (n < JK_LO[t] || n > JK_HI[t]) n = jk_step(jk.note[t], n < JK_LO[t] ? s : -s);
                 for (k = 0; k < (int32_t)NT; k++)   /* (never on another track's note) */
                     if (k != t && jk.note[k] == n) n = jk_step(n, 1);
                 n = clamp(n, JK_LO[t], JK_HI[t]);
             }
+            for (k = 0; k < (int32_t)NT; k++)   /* (never on another track's note: this move left out) */
+                if (k != t && jk.note[k] == n) n = jk.note[t];
             jk_play((uint32_t)t, n);
         }
     }

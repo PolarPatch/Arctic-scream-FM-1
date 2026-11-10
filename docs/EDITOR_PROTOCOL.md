@@ -47,7 +47,7 @@ Request: none. Reply, in order:
 | n + 1 | the firmware version, ASCII, 0-terminated ("1.0") |
 | 1 | user sound slots (64) |
 | 1 | a sound's size (64) |
-| 1 | factory sounds (47) |
+| 1 | factory sounds (48; 1.5.2 and before: 47) |
 | 5 | a slot's size, u35 (2548) |
 | 5 | the settings' size, u35 (172; 1.4–1.5.1: 171; 1.3: 170; 1.2: 168) |
 | 1 | sample slots (4) |
@@ -64,10 +64,10 @@ Request: none. Reply, in order:
 | 1–4 | slots A–D | 2548 | yes | yes |
 | 5–8 | sample slots 1–4 (1.3, GR!MM V2's): the slot's header, 32 bytes of nothing, the data | 512 + the data's length | yes | no |
 | 16–79 | user sounds 1–64 (id 16 + slot) | 64 | yes | yes |
-| 80–126 | factory sounds 1–47 (id 80 + index, in the firmware's order) | 64 | yes | no |
+| 80–127 | factory sounds 1–48 (id 80 + index, in the firmware's order; 1.5.3 put BIEGGA, the 41st, before POLAR HOWL) | 64 | yes | no |
 
 A factory sound reads as a user sound's record, so it can be written into a user slot as it comes. An object is one
-7-bit byte (0–127): the 47 factory sounds end at 126. An empty sample slot is no object (rc 1); a restore writes a
+7-bit byte (0–127): the 48 factory sounds end at 127, the last id there is. An empty sample slot is no object (rc 1); a restore writes a
 sample back as an upload (11–13).
 
 ## 21 GET
@@ -156,7 +156,7 @@ sequence now (298 bytes).
 | 0 | `0x54` ("T") |
 | 1 | CATEGORY: 0 DRONE, 1 PAD, 2 BELL, 3 ORGAN, 4 KEYS, 5 BASS, 6 TEXTURE, 7 VOICE, 8 OTHER |
 | 2 | its number in the category (the name "DRONE 03"), 1–99 |
-| 3 | the source: 0 VA, 1 FM, 2 SAMPLE, 3 VOICE, 4 WHEEL, 5 PHYS, 6 PHASE, 7 Holvut |
+| 3 | the source: 0 VA, 1 FM, 2 SAMPLE, 3 VOICE, 4 WHEEL, 5 PHYS, 6 PHASE, 7 Holvut, 8 Biegga (1.5.3) |
 | 4–7 | the source's four knobs (SOUND page), each 0..its range |
 | 8–11 | ENV: ATTACK, DECAY, SUSTAIN, RELEASE (0–127) |
 | 12 | bit 0 LATCH; bits 1–7 DRONE's BORGA (0–100) |
@@ -171,7 +171,7 @@ An empty slot is 64 × `0xFF`. A PUT of 64 × `0xFF` empties the slot.
 Source knob ranges: VA WAVE 0–2, DETUNE, CUTOFF, RESONANCE 0–127. FM PATCH 0–3, BRIGHT, DECAY, DETUNE 0–127. SAMPLE
 SLOT 0–3, START, LENGTH 0–127, REVERSE 0–1. VOICE VOWEL 0–127, SHIFT 0–24, BUZZ, BREATH 0–127. WHEEL DRAWBARS 0–15,
 PERC 0–6, CLICK, DRIVE 0–127. PHYS MODEL 0–3, STRUCTURE, DAMP, BOW 0–127. PHASE WAVE 0–7, WAVE2 0–8, DCW, DETUNE
-0–127. Holvut FEEDBACK, BODY, DAMP, DRIVE 0–127.
+0–127. Holvut FEEDBACK, BODY, DAMP, DRIVE 0–127. Biegga (1.5.3) GUST, HOWL, TONE, SNOW 0–127.
 
 **DRONE** (Arctic Scream p0larpatch; all 0 in a sound from before it: off): BORGA in byte 12 bits 1–7; GOHCCAT (0 OFF,
 1–6: 1, 2, 4, 8, 16, 32 bars) in byte 16 bits 4–6; STOARBMA (0–100) bits 0–4 in byte 17 bits 3–7, bit 5 in byte 16
@@ -196,6 +196,8 @@ row of 5 an operator, OP1 first: RATIO (0–31, 0 = 0.5), FINE, LEVEL, ATTACK, D
 | 228–1267 | the four sequences, 260 bytes each (below) |
 | 1268–2419 | the four tracks' step locks, 288 bytes each (below) |
 | 2420–2547 | the four tracks' FM patches, 32 bytes each (as in a sound) |
+
+A slot's Biegga knobs (1.5.3) are kept on the FM-1 beside the slot, not in these 2548 bytes: a slot read here has none, and a slot written here keeps the tracks' Biegga as they are when it is recalled.
 
 **A track (56 bytes):**
 
@@ -229,9 +231,9 @@ step n's 4 bits in byte 256 + n / 2, the low nibble for even n, the high for odd
 | --- | --- |
 | 0 | the octave, signed, −2..2 |
 | 1 | TUNE, signed, −50..50 cents |
-| 2 | COLOUR: 0 RED, 1 AMBER, 2 TEAL, 3 VIOLET |
+| 2 | COLOUR: 0 ICE, 1 AURORA, 2 VIOLET, 3 PLASMA, 4 MONO (1.5.3) |
 | 3 | MIDI CHANNEL: 0 "1-4" .. 12 "13-16", 13 ALL > SEL, 14 .. 29 "CH 1 > SEL" .. "CH 16 > SEL" (V2) |
-| 4 | SCREEN OFF: 0 NEVER, 1, 5, 15, 30 MIN |
+| 4 | SCREEN OFF: 0 NEVER, 1, 5, 15, 30 MIN, 5 GUOVSSAHAS (1.5.3: the aurora after 2 min) |
 | 5 | SEQ MIDI OUT (0 / 1) |
 | 6 | MIDI LEARN's links in use (0–32) |
 | 7–166 | 32 links of 5 bytes, the oldest first: CC, page, knob (0–3), track (0–3), x (SOUND: the source; GRID: the step; SONG: the section; FM ALGO's FINE, FM OP: the operator) |
