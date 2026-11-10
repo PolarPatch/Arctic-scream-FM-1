@@ -144,10 +144,23 @@ static int32_t jk_arc_at(uint32_t e, uint32_t L, uint32_t own)   /* the output's
 }
 static int32_t jk_arc(uint32_t now) { return jk_arc_at(now - jk.t0, jk.len, jk.own); }
 
-static void jk_move(uint32_t now)               /* DRIFT: a note, a track's presence, the filters */
+static void jk_glide(uint32_t now)              /* the filters' moves glide to where they go (~3 s; while it plays,
+                                                 * opened most mid-piece: + 10 at DRIFT 100 %), back to 0 once it is off */
 {
-    int32_t d = clamp(jk_drift, 0, 100), t, n, mid;
+    int32_t d = jk.run ? clamp(jk_drift, 0, 100) : 0, mid = 0, t;
     uint32_t e = now - jk.t0;
+    if (d && jk.len && e < jk.len) {
+        mid = (int32_t)((uint64_t)e * 128u / jk.len);
+        mid = mid * (128 - mid) / 256;          /* (0 .. 16 .. 0: the piece's middle) */
+    }
+    for (t = 0; t < (int32_t)NT; t++) {
+        jk.cut[t] += (jk.cut_t[t] + mid * d * 256 / 160 - jk.cut[t]) / 64;
+        jk_cut[t] = jk.cut[t];
+    }
+}
+static void jk_move(uint32_t now)               /* DRIFT: a note, a track's presence, the filters' targets */
+{
+    int32_t d = clamp(jk_drift, 0, 100), t, n;
     if (!d) { jk_calm(); return; }
     if (jk.own && (int32_t)(now - jk.next_move) >= 0) {   /* (a note: every ~4 min at 1 %, ~25 s at 100 %) */
         uint32_t m = 240000u - (uint32_t)d * 2150u;
@@ -172,8 +185,6 @@ static void jk_move(uint32_t now)               /* DRIFT: a note, a track's pres
             jk_play((uint32_t)t, n);
         }
     }
-    mid = jk.len && e < jk.len ? (int32_t)((uint64_t)e * 128u / jk.len) : 0;
-    mid = mid * (128 - mid) / 256;              /* (0 .. 16 .. 0: the piece's middle) */
     for (t = 0; t < (int32_t)NT; t++) {
         if ((int32_t)(now - jk.next_g[t]) >= 0) {   /* (a track's presence, its filter: every 40 .. 120 s) */
             int32_t g = 32767 - (int32_t)jk_rnd((uint32_t)d * 200u);
@@ -182,9 +193,6 @@ static void jk_move(uint32_t now)               /* DRIFT: a note, a track's pres
             jk_tg[t] = g;
             jk.cut_t[t] = ((int32_t)jk_rnd(29) - 14) * d * 256 / 100;
         }
-        jk.cut[t] += (jk.cut_t[t] + mid * d * 256 / 160 - jk.cut[t]) / 64;   /* (~3 s; opened most mid-piece: + 10 at
-                                                 * 100 %) */
-        jk_cut[t] = jk.cut[t];
     }
 }
 
@@ -352,5 +360,6 @@ static void jk_tick(uint32_t now, uint32_t touched)
         jk_move(now);
         if (jk.len && now - jk.t0 >= jk.len) jk_end(now);
     }
+    jk_glide(now);
     ru_tick(now);
 }

@@ -96,9 +96,9 @@ static void host_probe(void)
                                         (unsigned)vc[i].note, voice_latched(i));
     }
     printf("\n");
-    printf("jkprobe %u run %u ended %u own %u go %d len %d drift %d ruo %d tun %d og %d scr %u aur %u bg", fm1_ms,
+    printf("jkprobe %u run %u ended %u own %u go %d len %d drift %d ruo %d tun %d og %d scr %u aur %u cut %d bg", fm1_ms,
            jk.run, jk.ended, jk.own, (int)jk_go, (int)jk_len, (int)jk_drift, (int)jk_ruo, (int)sc_tun, (int)jk_og, scr_dark,
-           scr_aur);                            /* (1.5.3: JIEHKKI, TUNING, the screen, the tracks' Biegga:
+           scr_aur, (int)(abs(jk_cut[0]) + abs(jk_cut[1]) + abs(jk_cut[2]) + abs(jk_cut[3])));                            /* (1.5.3: JIEHKKI, TUNING, the screen, the tracks' Biegga:
                                                  * tests/drone_test.py) */
     for (i = 0; i < NT; i++)
         printf(" %d,%d,%d,%d", (int)trk[i].p[ENG_BIEGGA][0], (int)trk[i].p[ENG_BIEGGA][1], (int)trk[i].p[ENG_BIEGGA][2],

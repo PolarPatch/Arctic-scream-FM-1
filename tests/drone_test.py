@@ -81,10 +81,13 @@ check(".. a key wakes it (the first touch only wakes, as ever), the next one hea
       jk[330500]["scr"] == 0 and rms(a, 332, 334) > 50, (jk[330500], rms(a, 332, 334)))
 
 # turned OFF early: its notes let go, the gain back
-ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (7000, f"enc {K4} 1"), (20000, f"enc {K4} -1")]
-out, a, jk, notes = run("off", ev + P(19000, 22000), 23000)
-check("turned OFF: its notes let go, the output's gain back", notes[19000] and not notes[22000] and
-      jk[22000]["og"] == 32767 and jk[22000]["run"] == 0, (notes[19000], notes[22000], jk[22000]))
+ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (6800, f"enc {K2} 60"), (7000, f"enc {K4} 1"),
+      (130000, f"enc {K4} -1")]
+out, a, jk, notes = run("off", ev + P(129000, 132000, 150000), 151000)
+check("DRIFT 100 %: the filters moved", jk[129000]["cut"] > 0, jk[129000])
+check("turned OFF: its notes let go, the output's gain back", notes[129000] and not notes[132000] and
+      jk[132000]["og"] == 32767 and jk[132000]["run"] == 0, (notes[129000], notes[132000], jk[132000]))
+check(".. the filters back as set", jk[150000]["cut"] < jk[129000]["cut"] / 10 + 30, (jk[129000]["cut"], jk[150000]["cut"]))
 
 # with a note held (LATCH OFF, plain VA): it takes it, no notes of its own, no rise
 ev = [(6200, "keys 1"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (6800, f"btn {LFO}"), (7000, f"enc {K4} 1")]
