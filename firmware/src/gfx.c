@@ -76,7 +76,9 @@ static void cv_begin(uint32_t w, uint32_t h, uint16_t bg)
 #define CV_MONO_LO 24u                       /* brightness (0 .. 250) at or below this: black */
 #define CV_MONO_HI 84u                       /* .. at or above this: white */
 static uint8_t cv_mono;
+#define CV_MONO_TOP 24u                      /* the header (rows 0 .. 23): no dots, black or white alone, so its words read */
 static const uint8_t CV_BAYER[16] = {0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5};
+static const uint8_t CV_SOLID[4] = {7, 7, 7, 7};   /* (the header's: half bright or more, white) */
 
 static uint32_t cv_mono_level(uint32_t c)    /* RGB565 -> white dots in 16 (0 .. 16) */
 {
@@ -92,7 +94,7 @@ static void cv_mono_rows(uint32_t x, uint32_t y, uint32_t r0)   /* canvas rows r
     uint16_t *p;
     lcd_sync();                              /* (a blit of this canvas may still be reading it) */
     for (r = r0; r < cv_h; r++) {
-        const uint8_t *row = CV_BAYER + ((y + r) & 3u) * 4u;
+        const uint8_t *row = y + r < CV_MONO_TOP ? CV_SOLID : CV_BAYER + ((y + r) & 3u) * 4u;
         p = cv_px + r * cv_w;
         for (i = 0; i < cv_w; i++) {
             if (p[i] != last) last = p[i], lv = cv_mono_level(swap16(last));
