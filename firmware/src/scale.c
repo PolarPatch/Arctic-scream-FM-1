@@ -29,6 +29,25 @@ static const uint8_t CH_IV[NCHORD][5] = {       /* its notes' count, then their 
     {3, 0, 3, 6}, {4, 0, 4, 7, 14}, {3, 0, 2, 3}};
 static const char *const VC_NAME[NVOICING] = {"CLOSE", "OPEN", "SPREAD", "+OCT", "DROP"};
 static volatile int32_t sc_root, sc_scale;      /* SCALE: ROOT (C .. B), SCALE (0: OFF) */
+/* (Arctic Scream 1.5.3, PolarPatch) SCALE's TUNING (KNOB 3): the notes from ROOT up as pure intervals, a drone's
+ * fifths and thirds still, not beating as equal temperament's do. A note's cents off equal temperament in tune_f units
+ * (x 2.366: 0.42 cents each), by its place over ROOT; every source's pitch (voices.c vc_fine). EQUAL: as ever.
+ *   JUST       5-limit (1/1 16/15 9/8 6/5 5/4 4/3 45/32 3/2 8/5 5/3 9/5 15/8)
+ *   PYTHAG     3-limit, fifths alone (256/243 9/8 32/27 81/64 4/3 729/512 3/2 128/81 27/16 16/9 243/128)
+ *   HARMONIC   the harmonic series over ROOT (17/16 9/8 7/6 5/4 21/16 11/8 3/2 13/8 5/3 7/4 15/8): the 7th, 11th and
+ *              13th harmonics far from the keys' notes, the old, strange colours of a drone */
+enum { TN_EQUAL, TN_JUST, TN_PYTHAG, TN_HARMONIC, NTUNING };
+static const char *const TN_NAME[NTUNING] = {"EQUAL", "JUST", "PYTHAG", "HARMONIC"};
+static const int8_t TN_FINE[NTUNING][12] = {
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 28, 9, 37, -32, -5, -41, 5, 32, -37, 42, -28},
+    {0, -23, 9, -14, 19, -5, 28, 5, -19, 14, -9, 23},
+    {0, 12, 9, -78, -32, -69, -115, 5, 96, -37, -74, -28}};
+static volatile int32_t sc_tun;                 /* TUNING (TN_) */
+static int32_t tn_fine(uint32_t n)              /* note n's, in tune_f units */
+{
+    return TN_FINE[clamp(sc_tun, 0, NTUNING - 1)][(n + 132u - (uint32_t)clamp(sc_root, 0, 11)) % 12u];
+}
 
 static int sc_in(int32_t n)                     /* note n (from 0) in the scale */
 {

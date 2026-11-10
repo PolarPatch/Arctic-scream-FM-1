@@ -238,13 +238,19 @@ static void mix_add(int32_t *o, uint32_t st, const int32_t *x, int32_t g0, int32
  * GR!MM V2: MIXER 2's TYPE: LP (as V1.0, the same code), HP (open, bypassed: CUTOFF at the bottom), BP (never open), the
  * same SVF's outputs (dsp.c tsvf_any); POS: PRE (as V1.0: the sends hear it filtered) or POST (mix_tracks: the sends
  * hear the track before it, only its dry sound filtered) */
+#define JK_NLEN 7                               /* (1.5.3, jiehkki.c: JIEHKKI's LENGTHs; its knobs (store.c saves them); */
+static volatile int32_t jk_len, jk_drift, jk_ruo, jk_go;
+static volatile int32_t jk_cut[NT];             /* .. a track filter's move, << 8; */
+static int32_t jk_trk(uint32_t t);              /* .. a track's gain, ramped; */
+static void jk_out(int32_t *out, uint32_t n);   /* .. the output's; */
+static void ru_render(int32_t *out, int32_t *rev, uint32_t n);   /* .. RUOHCAT's sounds) */
 static int32_t tf_cs[NT] = {127 << 8, 127 << 8, 127 << 8, 127 << 8}, tf_ic[NT][2];   /* audio: the cutoff now (<< 8),
                                                  * the states */
 static uint8_t tf_on[NT];
 static int32_t tf_tgt(uint32_t t)               /* the track filter's cutoff to glide to (<< 8): CUTOFF, its LFO, DRONE's
-                                                 * (drone.c), WARP's (chaos.c) */
+                                                 * (drone.c), WARP's (chaos.c), JIEHKKI's (jiehkki.c) */
 {
-    return clamp((lfo_move(t, LD_CUT, clamp(trk[t].cut, 0, 127), 127) << 8) + dr_cut[t] + ch_cut[t], 0, 127 << 8);
+    return clamp((lfo_move(t, LD_CUT, clamp(trk[t].cut, 0, 127), 127) << 8) + dr_cut[t] + ch_cut[t] + jk_cut[t], 0, 127 << 8);
 }
 static int32_t tf_px[NT];                       /* audio: POS's share of the sends taken before the filter, 0 (PRE) ..
                                                  * TF_PX1 (POST): a switch crosses over in 8 blocks (~46 ms), no click */
@@ -303,7 +309,8 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
     uint32_t t, k;
     for (t = 0; t < NT; t++) {
         int32_t *x = tbuf[t];
-        int32_t lv = (trk_quiet >> t & 1u) ? 0 : lfo_move(t, LD_VOLUME, clamp(trk[t].level, 0, 127), 127) * 258;   /* (a
+        int32_t jg = jk_trk(t);                 /* (1.5.3: JIEHKKI's presence, jiehkki.c) */
+        int32_t lv = (trk_quiet >> t & 1u) ? 0 : mulq15(lfo_move(t, LD_VOLUME, clamp(trk[t].level, 0, 127), 127) * 258, jg);   /* (a
                                                  * silent track: all its gains down, ramped) */
         int32_t pan = lfo_move(t, LD_PAN, clamp(trk[t].pan, 0, 127), 127), g[5];
         g[0] = mulq15(lv, pan <= 64 ? 32767 : (127 - pan) * 520);   /* PAN: the far side down, the near one full */
@@ -430,6 +437,7 @@ static void app_audio(int32_t *out, uint32_t n)
     for (i = 0; i < n; i++)
         dbus[i] = rbus[i] = gbus[i] = 0;
     mix_tracks(out, used, n);
+    ru_render(out, rbus, n);                    /* (1.5.3) RUOHCAT: the ice around the drone (jiehkki.c) */
     CS_MARK(CS_MIX);
     master_filter(out, n, MP_PRE);              /* (V2) MASTER, PRE FX: the tracks' dry mix */
     CS_MARK(CS_MASTER);
@@ -455,6 +463,7 @@ static void app_audio(int32_t *out, uint32_t n)
     CS_MARK(CS_PERFORM);
     master_filter(out, n, MP_END);              /* (V2) MASTER, END: the very last */
     CS_MARK(CS_MASTER);
+    jk_out(out, n);                             /* (1.5.3) JIEHKKI: the piece's rise and fall (jiehkki.c) */
     out_stage(out, n);                          /* (V2) the headroom, the MASTER knob, the limiter */
     CS_MARK(CS_MASTER);
 #undef CS_MARK
@@ -976,7 +985,10 @@ static uint32_t fac_at;                         /* RESTORE confirmed: when it wr
 static uint32_t learn_st;                       /* MIDI LEARN: 0 none; 1 TURN A KNOB; 2 MOVE A CC (learn_to: the knob) */
 static uint8_t learn_to[4];                     /* (the page, the knob, the track, x) */
 static uint32_t scr_dark, scr_woke, t_hand;     /* SCREEN OFF: dark; a touch woke it (this pass); the hands' last touch */
-static const uint16_t SCR_S[5] = {0, 60, 300, 900, 1800};   /* SCREEN OFF: NEVER, 1, 5, 15, 30 min (s) */
+#define NSCR 6
+static const uint16_t SCR_S[NSCR] = {0, 60, 300, 900, 1800, 120};   /* SCREEN OFF: NEVER, 1, 5, 15, 30 min (s); (1.5.3)
+                                                 * GUOVSSAHAS: the northern lights after 2 min (ui.c ui_aurora) */
+static uint32_t scr_aur;                        /* (1.5.3) the screen "dark" as GUOVSSAHAS: lit, the aurora on it */
 static char *link_name(char *s, const uint8_t *L);
 static char hd_msg[24];                         /* (ui.c: in the header's place until hd_until) */
 static int32_t bat_lvl = -1;                    /* the battery's level (batt_poll; ui.c's header) */
@@ -1008,6 +1020,7 @@ static int32_t ch_last = -1;                    /* SEL's picture: the note last 
 /* ---- the screen: plain text, a row per value; only what changed is drawn */
 #define KEY0 41u                                /* key 0 = F2 (Arctic Scream p0larpatch: an octave down, for drones) */
 #include "gen.c"                                /* GR!MM V2: GENERATE (FX held + the black keys) */
+#include "jiehkki.c"                            /* (1.5.3) JIEHKKI: a piece played on its own, LENGTH long; RUOHCAT */
 #define OCT_BOTH (1u << BTN_OCT_DOWN | 1u << BTN_OCT_UP)
 #define HOLD_MS 600u                            /* a button held this long: its hold function (HOME: SYSTEM) */
 
@@ -1054,7 +1067,7 @@ static char *put_ms(char *s, uint32_t q16)      /* a time, ms in Q16: "5 ms", "1
  * tap opens its first page, again the next (round); SYSTEM is HOME's, held */
 enum { PG_SOUND, PG_SOURCE, PG_ENV, PG_LFO, PG_SCALE, PG_CHORD, PG_SONG, PG_HOME, PG_MIX1, PG_MIX2, PG_SYSTEM,
        PG_SYS2, PG_SOUNDS, PG_PROJECTS, PG_ARP, PG_GRID, PG_PATTERN, PG_TAPE, PG_GRAIN, PG_DELAY, PG_SPACE, PG_PERFORM,
-       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
+       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
                                                  * have; in their button's round by pg_key. TRACK: gone in step 25, its
                                                  * number kept: sys_load moves its links onto HOME) */
 typedef struct {
@@ -1068,7 +1081,7 @@ static const page_t PAGES[NPAGE] = {
     {"SOURCE", BTN_EDIT, 1, 1, 1, {"SOURCE", "LATCH", "", ""}},
     {"ENV", BTN_ENV, 1, 1, 1, {"ATTACK", "DECAY", "SUSTAIN", "RELEASE"}},
     {"LFO", BTN_LFO, 1, 1, 1, {"RATE", "DEPTH", "DESTINATION", "SHAPE"}},
-    {"SCALE", BTN_SEL, 1, 0, 1, {"ROOT", "SCALE", "", ""}},
+    {"SCALE", BTN_SEL, 1, 0, 1, {"ROOT", "SCALE", "TUNING", ""}},   /* (1.5.3: TUNING, scale.c) */
     {"CHORD", BTN_SEL, 1, 0, 1, {"CHORD TYPE", "VOICING", "", ""}},
     {"SONG", BTN_GLO, 1, 0, 1, {"SECTION", "PATTERN", "REPEATS", "MODE"}},
     {"HOME", BTN_HOME, 1, 1, 1, {"VOLUME", "CUTOFF", "WARP", "MORPH"}},   /* (the track's: its LEVEL, its filter,
@@ -1101,7 +1114,9 @@ static const page_t PAGES[NPAGE] = {
     {"SYSTEM 3", BTN_HOME, 1, 0, 0, {"LATCH", "USB", "MOD", ""}},   /* (V2: a NEW project's tracks' LATCH) */
     {"LOOP", BTN_EDIT, 1, 1, 1, {"GATE", "BLOOM", "LOWCUT", "EXCITE"}},   /* (1.4: a HOWL track's, after SOUND: its
                                                  * loop's GATE, BLOOM, LOWCUT and EXCITE, howl.c) */
-    {"AIR", BTN_FX, 1, 0, 1, {"PING", "SHIMMR", "", ""}},   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
+    {"AIR", BTN_FX, 1, 0, 1, {"PING", "SHIMMR", "", ""}},
+    {"JIEHKKI", BTN_LFO, 1, 0, 1, {"LENGTH", "DRIFT", "RUOHCAT", "START"}},   /* (1.5.3: LFO's third, after DRONE: a
+                                                 * piece on its own, jiehkki.c; North Sami: a glacier, to creak) */   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
                                                  * (tape.c), SPACE's SHIMMER (hall.c)) */
 };
 static uint32_t pg_key(uint32_t p)              /* its place in its button's round */
@@ -1167,7 +1182,7 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
                         &trk[sel].lfo_shape;
     case PG_DRONE: return k == 0u ? &trk[sel].dr_borga : k == 1u ? &trk[sel].dr_storm : k == 2u ? &trk[sel].dr_rise :
                           &trk[sel].latch;
-    case PG_SCALE: return k == 0u ? &sc_root : k == 1u ? &sc_scale : 0;
+    case PG_SCALE: return k == 0u ? &sc_root : k == 1u ? &sc_scale : k == 2u ? &sc_tun : 0;
     case PG_CHORD: return k == 0u ? &trk[sel].ch_type : k == 1u ? &trk[sel].ch_voice : 0;
     case PG_ARP: return k == 0u ? &trk[sel].arp_mode : k == 1u ? &trk[sel].arp_rate : k == 2u ? &trk[sel].arp_oct :
                         &trk[sel].arp_gate;
@@ -1193,6 +1208,7 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_SYS3: return k == 0u ? &sy_latch : k == 1u ? &sy_usb : k == 2u ? &sy_mod : 0;
     case PG_LOOP: return &trk[sel].hw_x[k & 3u];
     case PG_AIR: return k == 0u ? &dl_pp : k == 1u ? &rv_shim : 0;
+    case PG_JIEHKKI: return k == 0u ? &jk_len : k == 1u ? &jk_drift : k == 2u ? &jk_ruo : &jk_go;
     default: return 0;                          /* (not built yet: the knobs do nothing) */
     }
 }
@@ -1203,12 +1219,13 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
     return pg == PG_SOUND ? sel_engine()->max[k] : pg == PG_SOURCE ? (k ? 1 : (int32_t)NENG - 1) :
            pg == PG_GRID ? GRID_MAX[k] : pg == PG_PATTERN ? PATT_MAX[k] :
            pg == PG_SOUNDS ? (k == 0u ? SND_N - 1 : k == 1u ? NCAT - 1 : k == 2u ? (int32_t)NENG : 2) :
-           pg == PG_PROJECTS ? 3 : pg == PG_SCALE ? (k ? NSCALE - 1 : 11) : pg == PG_CHORD ? (k ? NVOICING - 1 : NCHORD - 1) :
+           pg == PG_PROJECTS ? 3 : pg == PG_SCALE ? (k == 2u ? NTUNING - 1 : k ? NSCALE - 1 : 11) : pg == PG_CHORD ? (k ? NVOICING - 1 : NCHORD - 1) :
            pg == PG_ARP ? (k == 0u ? NARPMODE - 1 : k == 1u ? NARPRATE - 1 : k == 2u ? 4 : 100) :
            pg == PG_LFO ? (k == 0u ? 127 : k == 1u ? 100 : k == 2u ? NLFODEST - 1 : NLFOSHAPE - 1) :
            pg == PG_DRONE ? (k < 2u ? 100 : k == 2u ? DR_NRISE - 1 : 1) :
+           pg == PG_JIEHKKI ? (k == 0u ? JK_NLEN - 1 : k == 3u ? 1 : 100) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
-           pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : 4) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
+           pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : NSCR - 1) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
            pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_LMAX : 1) :
            pg == PG_FMALGO ? (k == 0u ? 31 : k == 1u ? 7 : k == 2u ? 5 : 99) :
            pg == PG_FMOP ? (k ? 99 : 31) : pg == PG_MIX2 ? (k == 1u ? NFTYPE - 1 : k == 2u ? 1 : 127) :
@@ -1236,7 +1253,7 @@ static const char *lfo_dest_name(int32_t d)     /* DESTINATION: its name (a knob
     return d >= LD_K1 && d <= LD_K4 ? knob_name(PG_SOUND, (uint32_t)(d - LD_K1)) : LFO_DEST_NAME[d];
 }
 static const char *const COL_NAME[5] = {"ICE", "AURORA", "VIOLET", "PLASMA", "MONO"};   /* SYSTEM: COLOUR */
-static const char *const SCR_NAME[5] = {"NEVER", "1 MIN", "5 MIN", "15 MIN", "30 MIN"};   /* SCREEN OFF */
+static const char *const SCR_NAME[NSCR] = {"NEVER", "1 MIN", "5 MIN", "15 MIN", "30 MIN", "GUOVSSAHAS"};   /* SCREEN OFF */
 static const char *const LEARN_NAME[3] = {"OFF", "LEARN", "CLEAR ALL"};   /* SYSTEM 2: MIDI LEARN */
 static char *mch_text(char *s, int32_t v)       /* MIDI CHANNEL: "1-4" .. "13-16", "ALL > SEL", "CH 1 > SEL" .. */
 {
@@ -1825,7 +1842,7 @@ static void mod_out(void)
 static void sys_sync(void)
 {
     int8_t tn = (int8_t)clamp(sy_tune, -50, 50);
-    uint8_t col = (uint8_t)clamp(sy_col, 0, 4), mch = (uint8_t)clamp(sy_mch, 0, MCH_MAX), scr = (uint8_t)clamp(sy_scr, 0, 4);
+    uint8_t col = (uint8_t)clamp(sy_col, 0, 4), mch = (uint8_t)clamp(sy_mch, 0, MCH_MAX), scr = (uint8_t)clamp(sy_scr, 0, NSCR - 1);
     uint8_t out = (uint8_t)clamp(sy_out, 0, 1), clk = (uint8_t)clamp(sy_clk, 0, CK_N - 1), la = (uint8_t)clamp(sy_latch, 0, 1);
     uint8_t ul = (uint8_t)clamp(sy_usb, 0, (int32_t)USB_LMAX), md = (uint8_t)clamp(sy_mod, 0, 1);
     uint32_t n, t;
@@ -2520,18 +2537,23 @@ static void app_main(void)
         fm1_led_key(BTN_PLAY, playing);
         fm1_led_key(BTN_REC, rec || song_rec);
 
+        jk_tick(fm1_ms, t_touch - t_hand < 0x80000000u ? t_touch : t_hand);   /* (1.5.3) JIEHKKI, RUOHCAT */
+        if (jk_sleep) jk_sleep = 0, scr_dark = 1, scr_aur = 0, lcd_light(0);   /* (its piece over: dark till a touch) */
         if (scr_woke) {                         /* SCREEN OFF: a touch woke it; no touch so long: dark (the panel keeps
-                                                 * its picture; nothing drawn meanwhile) */
-            scr_woke = scr_dark = 0;
+                                                 * its picture; nothing drawn meanwhile); GUOVSSAHAS: the aurora */
+            if (scr_aur) ui_force = 1;
+            scr_woke = scr_dark = scr_aur = 0;
             lcd_light(1);
-        } else if (!scr_dark && set.scr && fm1_ms - t_hand >= SCR_S[set.scr % 5u] * 1000u) {
+        } else if (!scr_dark && set.scr && fm1_ms - t_hand >= SCR_S[set.scr % NSCR] * 1000u) {
             scr_dark = 1;
-            lcd_light(0);
+            if (set.scr == NSCR - 1u) scr_aur = 1;
+            else lcd_light(0);
         }
         batt_poll();
-        if (!scr_dark) {
+        if (!scr_dark || scr_aur) {
             idle_ok = 1;                        /* (1.5.3) MIDI in while the screen's DMA runs (app_idle) */
-            ui_update(set.oct);
+            if (scr_aur) ui_aurora(fm1_ms);
+            else ui_update(set.oct);
             idle_ok = 0;
         }
         if (midi_touch) t_touch = fm1_ms, midi_touch = 0;

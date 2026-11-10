@@ -66,7 +66,10 @@ static void compat_exit(void)                   /* tests/host.c: at the end of t
             }
         }
         pk_work(st_img);
-#ifdef FX2_PK
+#if defined(FX2_PK) && defined(EXT_PK)
+        compat_hex(f, "work", st_img, WORK_PK - FX2_PK - EXT_PK);   /* (V1.0's part: V2's MASTER and DRIVE, 1.5.3's EXT
+                                                 * after it, not 1.0's) */
+#elif defined(FX2_PK)
         compat_hex(f, "work", st_img, WORK_PK - FX2_PK);   /* (V1.0's part: V2's MASTER and DRIVE after it, not 1.0's) */
 #else
         compat_hex(f, "work", st_img, WORK_PK);

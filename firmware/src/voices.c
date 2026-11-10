@@ -29,7 +29,7 @@
 #define REL_END (1 << 15)                       /* Q24: a release ends here, 54 dB down (a voice's last ~16 LSB, -66 dBFS;
                                                  * Felucca's 1 << 12 rendered the last ~2.7 s of a 6 s release unheard) */
 enum { ST_OFF, ST_ATK, ST_SUS, ST_REL, ST_FADE };
-enum { ENG_VA, ENG_FM, ENG_SAMPLE, ENG_VOICE, ENG_WHEEL, ENG_PHYS, ENG_PHASE, ENG_HOWL, NENG };
+enum { ENG_VA, ENG_FM, ENG_SAMPLE, ENG_VOICE, ENG_WHEEL, ENG_PHYS, ENG_PHASE, ENG_HOWL, ENG_BIEGGA, NENG };   /* (1.5.3: Biegga) */
 
 typedef struct {
     volatile uint32_t req;                      /* main loop: + 1 after want_* */
@@ -76,14 +76,15 @@ typedef struct {
                                                  * 0..127 (howl.c; 0: as before it) */
 } track_t;
 enum { HX_GATE, HX_BLOOM, HX_LCUT, HX_EXCITE };
-#define TRK_DEF {ENG_VA, {{0, 10, 90, 30}, {0, 64, 64, 20}, {0, 0, 127, 0}, {0, 12, 64, 10}, {4, 0, 40, 0}, {0, 64, 80, 64}, {0, 0, 60, 0}, {96, 64, 50, 40}}, 100, 0, 100, 0, 64, 0, \
+#define TRK_DEF {ENG_VA, {{0, 10, 90, 30}, {0, 64, 64, 20}, {0, 0, 127, 0}, {0, 12, 64, 10}, {4, 0, 40, 0}, {0, 64, 80, 64}, {0, 0, 60, 0}, {96, 64, 50, 40}, {64, 64, 64, 16}}, 100, 0, 100, 0, 64, 0, \
                  {60, 85, 51, 105}, 0, 0, 0, 0, 0, 4, 1, 50, 40, 30, 9, 0, 84, 24, 100, 0, 0, {{0}}}
 static track_t trk[NT] = {TRK_DEF, TRK_DEF, TRK_DEF, TRK_DEF};   /* VA: SAW, DETUNE 10, CUTOFF 90, RESONANCE 30
                                                  * (Felucca's ANALOG); FM: BELL as made, DETUNE 20; SAMPLE: slot 1,
                                                  * the whole sample, forward; VOICE: A, SHIFT 0, BUZZ 64, BREATH 10
                                                  * (Felucca's); WHEEL: 3BAR, PERC OFF, CLICK 40, DRIVE 0 (Felucca's);
                                                  * PHYS: MODAL, STRUCTURE 64, DAMP 80, bowed at 50 %; PHASE: SAW,
-                                                 * DCW 60, one line (Felucca's); HOWL: FEEDBACK 96 (awake), BODY 64, DAMP 50, DRIVE 40; LEVEL 100,
+                                                 * DCW 60, one line (Felucca's); HOWL: FEEDBACK 96 (awake), BODY 64, DAMP 50, DRIVE 40; (1.5.3) BIEGGA:
+                                                 * GUST, HOWL, TONE half way, SNOW 16; LEVEL 100,
                                                  * DLY 0, REV 100, GRN 0, PAN the middle; LATCH OFF; ENV: ATTACK
                                                  * ~0.2 s, DECAY 1 s, SUSTAIN 40 %, RELEASE ~5 s; chord mode OFF (SCALE, CLOSE); ARP OFF (UP,
                                                  * 1/16, 1 octave, GATE 50 %); LFO DEPTH 30 % (slow, TRK CUTOFF,
@@ -135,6 +136,7 @@ static int32_t dr_fine[NV], dr_gain[NV] = {32767, 32767, 32767, 32767, 32767, 32
 static int32_t dr_gain_was[NV] = {32767, 32767, 32767, 32767, 32767, 32767};   /* (the last block's: ramped) */
 static int32_t ch_fine[NV];                     /* audio: chaos.c's, a voice's (WARP: its drift, vibrato, flutter, as
                                                  * tune_f) */
+static int32_t tn_fine(uint32_t n);             /* (scale.c: SCALE's TUNING, a note's) */
 static inline uint32_t vinc(int32_t p16)
 {
     uint32_t inc = pitch_inc((uint32_t)clamp(p16, 0, 2047));
@@ -154,8 +156,9 @@ static int16_t vx_pool[NV][VX_POOL] __attribute__((section(".pool")));
 #include "phys.c"
 #include "phase.c"
 #include "howl.c"                               /* (Arctic Scream p0larpatch: the feedback loop, after Audrey II) */
+#include "biegga.c"                             /* (1.5.3: the wind) */
 static const engine_t *const ENGINES[NENG] = {&VA_ENGINE, &FM_ENGINE, &SAMPLE_ENGINE, &FORMANT_ENGINE, &WHEEL_ENGINE,
-                                              &PHYS_ENGINE, &PHASE_ENGINE, &HOWL_ENGINE};   /* (by ENG_) */
+                                              &PHYS_ENGINE, &PHASE_ENGINE, &HOWL_ENGINE, &BIEGGA_ENGINE};   /* (by ENG_) */
 
 /* (V2) GENERATE's notes (gen.c): a voice's volume (0: full; else x / 256) and attack (0: the track's ATTACK; else
  * GEN_ATK's k - 1), asked with the note (gen_vel, gen_atk: the next note_on's), taken as it begins */
@@ -315,7 +318,8 @@ static uint32_t voices_render(int32_t (*tb)[VB], uint32_t n)
                 for (i = 0; i < n; i++)
                     tb[t][i] = 0;
             }
-            vc_fine = dr_fine[k] + ch_fine[k];  /* (DRONE: its detune and breath, drone.c; WARP's, chaos.c) */
+            vc_fine = dr_fine[k] + ch_fine[k] + tn_fine(v->note);   /* (DRONE: its detune and breath, drone.c; WARP's,
+                                                 * chaos.c; 1.5.3 SCALE's TUNING, scale.c) */
             if (dr_gain[k] < 32767 || dr_gain_was[k] < 32767) amp0 = mulq15(amp0, dr_gain_was[k]), amp1 = mulq15(amp1, dr_gain[k]);
             dr_gain_was[k] = dr_gain[k];
             vc_at = b;

@@ -49,26 +49,33 @@
 #define SONG_PK 20u                             /* the song: its chain (16), MODE, the mutes and solos; (1.4, spare
                                                  * till then: 0) AIR's PING-PONG and SHIMMER */
 #define FX2_PK 8u                               /* (V2, version 8) MASTER's four, DRIVE's four */
-#define WORK_LEN(tn, sg, sq, lk, fm, fx) (NT * ((tn) + (sq) + (lk)) + 16u + 4u + (sg) + (fm) + (fx))   /* the working
+#define EXT_PK 24u                              /* (1.5.3, version 9) the tracks' Biegga (4 x 4), JIEHKKI's LENGTH,
+                                                 * DRIFT, RUOHCAT, SCALE's TUNING, 4 spare */
+#define BG_SLOT (1u + NT * 4u)                  /* (1.5.3) a slot's Biegga: BG_MARK, then the tracks' four each, in the
+                                                 * slots' stream's tail (after the FM patches: zeros before it) */
+#define BG_MARK 0xB9u
+#define WORK_LEN(tn, sg, sq, lk, fm, fx, ex) (NT * ((tn) + (sq) + (lk)) + 16u + 4u + (sg) + (fm) + (fx) + (ex))   /* the working
                                                  * project: tracks, effects, tempo, slot, .., sequences, locks, the
                                                  * song, the FM patches, MASTER and DRIVE (an older version's sizes: sg
                                                  * 0 before the song, lk 0 before locks, fm 0 before the FM patches, fx
                                                  * 0 before V2) */
 #define SLOT_PK SLOT_LEN(TRK_PK, SEQ_PK, LOCK_PK)
 #define SLOT_ALL (SLOT_PK + FM_ALL)             /* a slot in RAM: SLOT_PK, its FM patches after (the stream's tail) */
-#define WORK_PK WORK_LEN(TRK_PK, SONG_PK, SEQ_PK, LOCK_PK, FM_ALL, FX2_PK)
+#define WORK_PK WORK_LEN(TRK_PK, SONG_PK, SEQ_PK, LOCK_PK, FM_ALL, FX2_PK, EXT_PK)
 #define OBJ_HDR 12u                             /* magic, the save count, type, version, length */
 #define OBJ_MAGIC 0x4B504441u                   /* "ADPK" (Arctic Scream p0larpatch's own: its tracks are longer than GR!MM's,
                                                  * so neither reads the other's saves; GR!MM's was "GRMK") */
-#define OBJ_VER 8u
+#define OBJ_VER 9u
 #define SLS_VER 6u                              /* the slots' stream (its layout as version 6's) */
-#define NOBJV 7u
-static const uint16_t OBJ_VERS[NOBJV][7] = {{8, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK}, {7, TRK_PK, 20, 260, 288, FM_ALL, 0},
-                                            {6, 52, 20, 260, 288, 0, 0}, {5, 52, 20, 196, 0, 0, 0},
-                                            {4, 52, 0, 196, 0, 0, 0}, {3, 48, 0, 196, 0, 0, 0},
-                                            {2, 44, 0, 196, 0, 0, 0}};   /* the versions loaded, newest first: a
+#define NOBJV 8u
+static const uint16_t OBJ_VERS[NOBJV][8] = {{9, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK, EXT_PK},
+                                            {8, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK, 0}, {7, TRK_PK, 20, 260, 288, FM_ALL, 0, 0},
+                                            {6, 52, 20, 260, 288, 0, 0, 0}, {5, 52, 20, 196, 0, 0, 0, 0},
+                                            {4, 52, 0, 196, 0, 0, 0, 0}, {3, 48, 0, 196, 0, 0, 0, 0},
+                                            {2, 44, 0, 196, 0, 0, 0, 0}};   /* the versions loaded, newest first: a
                                                  * track's, the song's, a sequence's, the locks', the FM patches', MASTER
-                                                 * and DRIVE's size (8: 1.3, GR!MM V2's MASTER and DRIVE; 7, Arctic
+                                                 * and DRIVE's, 1.5.3's EXT size (9: 1.5.3, Biegga, JIEHKKI, TUNING;
+                                                 * 8: 1.3, GR!MM V2's MASTER and DRIVE; 7, Arctic
                                                  * Scream 1.0 .. 1.2's: before MASTER and DRIVE; 6: before
                                                  * the FM patches; 5: before chord steps and locks; 4: before the song;
                                                  * 3: before the LFO; 2: before ARP) */
@@ -78,8 +85,9 @@ static const uint16_t OBJ_VERS[NOBJV][7] = {{8, TRK_PK, 20, 260, 288, FM_ALL, FX
 enum { OBJ_WORK, OBJ_SLOTS };
 enum { CAT_DRONE, CAT_PAD, CAT_BELL, CAT_ORGAN, CAT_KEYS, CAT_BASS, CAT_TEXTURE, CAT_VOICE, CAT_OTHER, NCAT };
 static const char *const CAT_NAME[NCAT] = {"DRONE", "PAD", "BELL", "ORGAN", "KEYS", "BASS", "TEXTURE", "VOICE", "OTHER"};
-_Static_assert(NENG <= PK_ENG + 1u, "a save keeps every source's settings (the eighth, HOWL, at bytes 52..55)");
-_Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4u * SLOT_ALL <= SLS_N * SLS_P &&
+_Static_assert(NENG <= PK_ENG + 2u, "a save keeps every source's settings (the eighth, HOWL, at bytes 52..55; the ninth, "
+               "Biegga, in WORK's EXT and the slots' tail)");
+_Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4u * (SLOT_ALL + BG_SLOT) <= SLS_N * SLS_P &&
                SAVE_NSECT >= 3u + SLS_N, "the save sectors");
 
 /* the factory sounds: GR!MM's own (first drafts; Arctic Scream p0larpatch's names), records as the user's (no CRC: in the image, read-only), first in
@@ -577,13 +585,19 @@ static void pk_work(uint8_t *q)
     q[2] = (uint8_t)clamp(mf_type, 0, NFTYPE - 1), q[3] = (uint8_t)clamp(mf_pos, 0, NMPOS - 1);
     q[4] = (uint8_t)clamp(dr_amt, 0, 127), q[5] = (uint8_t)clamp(dr_type, 0, NDTYPE - 1);
     q[6] = (uint8_t)clamp(dr_tone, 0, 127), q[7] = (uint8_t)clamp(dr_mix, 0, 127);
+    q += FX2_PK;                                /* (1.5.3) EXT: Biegga, JIEHKKI, TUNING */
+    for (k = 0; k < EXT_PK; k++) q[k] = 0;
+    for (t = 0; t < NT; t++)
+        for (k = 0; k < 4u; k++) q[t * 4u + k] = (uint8_t)clamp(trk[t].p[ENG_BIEGGA][k], 0, 127);
+    q[16] = (uint8_t)clamp(jk_len, 0, JK_NLEN - 1), q[17] = (uint8_t)clamp(jk_drift, 0, 100);
+    q[18] = (uint8_t)clamp(jk_ruo, 0, 100), q[19] = (uint8_t)clamp(sc_tun, 0, NTUNING - 1);
 }
 enum { UW_GLOBALS = 1, UW_CHAIN = 2 };
 static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: UW_GLOBALS, the effects, tempo, slot,
                                                  * SCALE, MODE, mutes too; UW_CHAIN, the song's chain too; vs: its
                                                  * version's row of OBJ_VERS, the sizes) */
 {
-    uint32_t t, k, tn = vs[1], sg = vs[2], sq = vs[3], lk = vs[4], fm = vs[5], fx = vs[6];
+    uint32_t t, k, tn = vs[1], sg = vs[2], sq = vs[3], lk = vs[4], fm = vs[5], fx = vs[6], ex = vs[7];
     int globals = (f & UW_GLOBALS) != 0;
     for (t = 0; t < NT; t++) q = uk_track(q, t, 0, tn);
     if (globals) {
@@ -604,6 +618,17 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
         dr_amt = fx ? clamp(x[4], 0, 127) : 0, dr_type = fx ? clamp(x[5], 0, NDTYPE - 1) : DT_SOFT;
         dr_tone = fx ? clamp(x[6], 0, 127) : 127, dr_mix = fx ? clamp(x[7], 0, 127) : 127;
     }
+    {                                           /* (1.5.3) EXT; saved before it: Biegga as at power-on, JIEHKKI's
+                                                 * 15 MIN, 40 %, RUOHCAT off, TUNING EQUAL */
+        static const track_t T0 = TRK_DEF;
+        const uint8_t *x = q + sg + fm + fx;
+        for (t = 0; t < NT; t++)
+            for (k = 0; k < 4u; k++) trk[t].p[ENG_BIEGGA][k] = ex ? clamp(x[t * 4u + k], 0, 127) : T0.p[ENG_BIEGGA][k];
+        if (globals) {
+            jk_len = ex ? clamp(x[16], 0, JK_NLEN - 1) : 2, jk_drift = ex ? clamp(x[17], 0, 100) : 40;
+            jk_ruo = ex ? clamp(x[18], 0, 100) : 0, sc_tun = ex ? clamp(x[19], 0, NTUNING - 1) : TN_EQUAL;
+        }
+    }
     if (globals && !sg) dl_pp = rv_shim = 0;    /* (saved before the song: AIR off) */
     if (!sg) return;                            /* (saved before the song: as it is) */
     if (f & UW_CHAIN)
@@ -613,6 +638,15 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
         trk_mute = q[17] & 15u, trk_solo = q[17] >> 4 & 15u;
         dl_pp = clamp(q[18], 0, 127), rv_shim = clamp(q[19], 0, 127);   /* (1.4 AIR; saved before it: 0, off) */
     }
+}
+static uint8_t slot_bg[4][BG_SLOT];             /* (1.5.3) a slot's Biegga ([0] BG_MARK: saved with it; else the
+                                                 * tracks' as they are, kept on a recall) */
+static void pk_slot_bg(uint32_t s)
+{
+    uint32_t t, k;
+    slot_bg[s][0] = BG_MARK;
+    for (t = 0; t < NT; t++)
+        for (k = 0; k < 4u; k++) slot_bg[s][1u + t * 4u + k] = (uint8_t)clamp(trk[t].p[ENG_BIEGGA][k], 0, 127);
 }
 static void pk_slot(uint8_t *q)                 /* the four tracks, their sequences and locks into a slot (used) */
 {
@@ -626,12 +660,19 @@ static void pk_slot(uint8_t *q)                 /* the four tracks, their sequen
 }
 static void uk_slot(const uint8_t *q, int isr)
 {
+    const uint8_t *q0 = q;
     uint32_t t;
     q += 4;
     for (t = 0; t < NT; t++) q = uk_track(q, t, isr, TRK_PK);
     for (t = 0; t < NT; t++) q = uk_seq(q, t, SEQ_PK);
     for (t = 0; t < NT; t++) q = uk_lock(q, t, LOCK_PK);
     for (t = 0; t < NT; t++) uk_fm(q + t * FM_PK, t);
+    if (q0 >= slots[0] && q0 < slots[0] + 4u * SLOT_ALL && slot_bg[(q0 - slots[0]) / SLOT_ALL][0] == BG_MARK) {   /* (1.5.3: its Biegga) */
+        const uint8_t *b = slot_bg[(q0 - slots[0]) / SLOT_ALL] + 1;
+        uint32_t k;
+        for (t = 0; t < NT; t++)
+            for (k = 0; k < 4u; k++) trk[t].p[ENG_BIEGGA][k] = clamp(b[t * 4u + k], 0, 127);
+    }
 }
 
 /* ---- the objects: WORK and SLOTS, each in a pair of sectors, the newer copy good */
@@ -656,7 +697,7 @@ static const uint8_t *obj_find(uint32_t type, const uint16_t **vs, uint32_t *s_o
     uint32_t v;
     for (v = type == OBJ_SLOTS ? 2u : 0u; v < NOBJV; v++) {
         const uint16_t *r = OBJ_VERS[v];
-        uint32_t len = type == OBJ_WORK ? WORK_LEN(r[1], r[2], r[3], r[4], r[5], r[6]) : 4u * SLOT_LEN(r[1], r[3], r[4]);
+        uint32_t len = type == OBJ_WORK ? WORK_LEN(r[1], r[2], r[3], r[4], r[5], r[6], r[7]) : 4u * SLOT_LEN(r[1], r[3], r[4]);
         const uint8_t *f = obj_newest(type, len, r[0], s_out);
         if (f) { *vs = r; return f; }
     }
@@ -689,8 +730,11 @@ static uint8_t *sls_byte(uint32_t b)            /* the slot byte at stream byte 
 {
     if (b < 4u * SLOT_PK) return &slots[b / SLOT_PK][b % SLOT_PK];
     b -= 4u * SLOT_PK;
-    return b < 4u * FM_ALL ? &slots[b / FM_ALL][SLOT_PK + b % FM_ALL] : 0;
+    if (b < 4u * FM_ALL) return &slots[b / FM_ALL][SLOT_PK + b % FM_ALL];
+    b -= 4u * FM_ALL;
+    return b < 4u * BG_SLOT ? &slot_bg[b / BG_SLOT][b % BG_SLOT] : 0;   /* (1.5.3: the slots' Biegga) */
 }
+static uint32_t sls_bg(uint32_t k) { return (4u * (SLOT_PK + FM_ALL) + k * BG_SLOT) / SLS_P; }   /* (.. its sector) */
 static uint32_t sls_fm(uint32_t k) { return (4u * SLOT_PK + k * FM_ALL) / SLS_P; }   /* slot k's FM patches' sector */
 static const uint8_t *sls_ok(uint32_t i)        /* sector i, good (its CRC), or 0 */
 {
@@ -731,7 +775,7 @@ static int slots_save(void)                     /* the slots changed, their sect
     static const uint8_t ORD[2][SLS_N] = {{2, 1, 0}, {2, 0, 1}};   /* (the old newest in sector 3 + 0, or + 1) */
     uint32_t m = 0, k, n;
     for (k = 0; k < 4u; k++)
-        if (slot_dirty >> k & 1u) m |= sls_of(k) | 1u << sls_fm(k);
+        if (slot_dirty >> k & 1u) m |= sls_of(k) | 1u << sls_fm(k) | 1u << sls_bg(k);
     for (n = 0; n < SLS_N; n++) {
         uint32_t i = slot_up ? ORD[slot_up == 3u ? 0 : 1][n] : n;
         if ((m >> i & 1u) && sls_write(i)) return -1;
@@ -815,12 +859,20 @@ static void store_boot(void)                    /* power-on: the newest good cop
             uint32_t sb = 4u * SLOT_PK + k * FM_ALL + b;
             slots[k][SLOT_PK + b] = good >> sls_fm(k) & 1u ? save_flash(3u + sb / SLS_P)[OBJ_HDR + sb % SLS_P] : 0u;
         }
+        for (b = 0; b < BG_SLOT; b++) {          /* (1.5.3) its Biegga (saved before it: zeros, none) */
+            uint32_t sb = 4u * (SLOT_PK + FM_ALL) + k * BG_SLOT + b;
+            slot_bg[k][b] = good >> sls_bg(k) & 1u ? save_flash(3u + sb / SLS_P)[OBJ_HDR + sb % SLS_P] : 0u;
+        }
     }
 }
 
 /* ---- the slots A..D */
-static void slot_save(uint32_t s) { pk_slot(slots[s & 3u]); slot_cur = (int32_t)(s & 3u); slot_dirty |= 1u << (s & 3u); }
-static void slot_erase(uint32_t s) { slots[s & 3u][0] = 0; slot_dirty |= 1u << (s & 3u); }
+static void slot_save(uint32_t s)
+{
+    pk_slot(slots[s & 3u]), pk_slot_bg(s & 3u);
+    slot_cur = (int32_t)(s & 3u), slot_dirty |= 1u << (s & 3u);
+}
+static void slot_erase(uint32_t s) { slots[s & 3u][0] = 0, slot_bg[s & 3u][0] = 0; slot_dirty |= 1u << (s & 3u); }
 static int slot_used(uint32_t s) { return slots[s & 3u][0] == 1u; }
 static int slot_has(uint32_t s, uint32_t t)     /* slot s used, track t's sequence in it with a note (SONG's lanes) */
 {

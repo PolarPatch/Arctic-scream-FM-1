@@ -197,7 +197,7 @@ static void sampler_block(voice_t *v, const volatile int32_t *p, int32_t *mono, 
     /* the speed: the key against the root (varispeed) */
     d16 = VP16(v) - smp[t->cur.slot].root16;
     step = (pow2_q16(clamp(d16, -2304, 384)) >> 8) * (SMP_RATE_Q16 >> 8);
-    step += (uint32_t)((int32_t)(step >> 12) * tune_f);   /* (TUNE) */
+    step += (uint32_t)((int32_t)(step >> 12) * (tune_f + vc_fine));   /* (TUNE; a voice's own: DRONE, WARP, TUNING) */
     step = step > SP_STEP_MAX ? SP_STEP_MAX : step < 256u ? 256u : step;
 
     /* the heads: A, and B as they cross; their places move by the step, backward in a REVERSE loop */

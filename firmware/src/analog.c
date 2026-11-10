@@ -63,7 +63,7 @@ static void va_block(voice_t *v, const volatile int32_t *p, int32_t *mono, int32
         for (k = 0; k < NSAW; k++)
             v->ph[k] = ph[k];
     } else {
-        uint32_t inc2 = det ? cents_inc(p16, det, tune_f) : inc1;          /* DTN in cents */
+        uint32_t inc2 = det ? cents_inc(p16, det, tune_f + vc_fine) : inc1;          /* DTN in cents */
         uint32_t ph0 = v->ph[0], ph1 = v->ph[1];
         for (i = 0; i < (int32_t)CTL; i++) {
             int32_t a, b, s, y;

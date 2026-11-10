@@ -21,6 +21,7 @@
 #define UI_M0 RGB(0x45, 0x60, 0x6e)             /* mid */
 #define UI_L0 RGB(0x7f, 0xa8, 0xb8)             /* light */
 #define UI_W RGB(0xea, 0xf6, 0xfa)              /* white */
+static uint32_t ui_force;                       /* (1.5.3: everything drawn again: back from GUOVSSAHAS) */
 static uint16_t ui_d = UI_D0, ui_m = UI_M0, ui_l = UI_L0;   /* dark, mid, light as the page is drawn: tinted on ENV,
                                                  * LFO, EDIT and SEQ (ui_tint) */
 #define UI_D ui_d
@@ -107,7 +108,7 @@ static char *ui_3(char *s, uint32_t v) { s[0] = (char)('0' + v / 100u % 10u), s[
 static uint32_t ui_pc(int32_t v) { return ((uint32_t)clamp(v, 0, 127) * 100u + 63u) / 127u; }
 
 /* a source's short name (the HOME slabs: "T2 FM") */
-static const char *const SRC_CODE[NENG] = {"VA", "FM", "SA", "VO", "WH", "PH", "PD", "HW"};
+static const char *const SRC_CODE[NENG] = {"VA", "FM", "SA", "VO", "WH", "PH", "PD", "HW", "BI"};
 
 /* ---- the header */
 static char ui_hb[12], ui_hl[24], ui_hr[12];    /* the button, the left, the right */
@@ -355,7 +356,8 @@ static void ui_slab_make(uint32_t k, slab_t *S)
             else mch_text(S->val, v);
         }
         else if (k == 2u) S->fill = (uint8_t)((clamp(v, -50, 50) + 50) * 8 / 100), tune_text(S->val, v);
-        else if (v) S->fill = (uint8_t)(2 * v), put_s(put_u(S->val, SCR_S[clamp(v, 0, 4)] / 60u), "M");
+        else if (v == NSCR - 1) S->fill = 8, put_s(S->val, "GUOVS");   /* (1.5.3: the northern lights) */
+        else if (v) S->fill = (uint8_t)(2 * v), put_s(put_u(S->val, SCR_S[clamp(v, 0, NSCR - 1)] / 60u), "M");
         else S->fill = 8, put_s(S->val, "NVR");
         return;
     case PG_SYS2:                               /* MIDI LEARN, SEQ MIDI OUT, SAMPLES, CLOCK ("I+OUT": INT+OUT) */
@@ -375,7 +377,8 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         if (k == 2u) { put_s(S->val, v ? ENGINES[clamp(v - 1, 0, NENG - 1)]->name : "ALL"); return; }
         put_s(S->val, SV_ACT[clamp(v, 0, 2)]);
         return;
-    case PG_SCALE: put_s(S->val, k ? SC_SHORT[clamp(v, 0, NSCALE - 1)] : SC_NOTE[clamp(v, 0, 11)]); return;
+    case PG_SCALE: put_s(S->val, k == 2u ? TN_NAME[clamp(v, 0, NTUNING - 1)] : k ? SC_SHORT[clamp(v, 0, NSCALE - 1)] :
+                                     SC_NOTE[clamp(v, 0, 11)]); return;
     case PG_SONG:
         if (k == 0u || k == 2u) {               /* SECTION, REPEATS: "03" */
             v = clamp(v + (k ? 0 : 1), 1, 16);
@@ -391,6 +394,11 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         else if (k == 1u) ui_3(S->val, (uint32_t)clamp(v, 0, 100));
         else if (k == 2u) ui_label(S->val, lfo_dest_name(v));
         else put_s(S->val, LFO_SHAPE_SHORT[clamp(v, 0, NLFOSHAPE - 1)]);
+        return;
+    case PG_JIEHKKI:                            /* (1.5.3) LENGTH, DRIFT %, RUOHCAT %, START */
+        if (k == 0u) put_s(S->val, JK_LEN_NAME[clamp(v, 0, JK_NLEN - 1)]);
+        else if (k < 3u) ui_3(S->val, (uint32_t)clamp(v, 0, 100));
+        else put_s(S->val, v ? "ON" : "OFF");
         return;
     case PG_DRONE:                              /* BORGA, STOARBMA %, GOHCCAT ("8BAR"), LATCH */
         if (k < 2u) ui_3(S->val, (uint32_t)clamp(v, 0, 100));
@@ -537,6 +545,7 @@ static void ui_tint(uint32_t pg)
     case PG_ENV: a = BW_AMBER, b = BW_TEAL, c = BW_PERIWINKLE, x = BW_MAGENTA; break;
     case PG_LFO: a = BW_PINK, b = BW_CYAN, c = BW_AMBER, x = UI_W; break;
     case PG_DRONE: a = BW_CYAN, b = BW_VIOLET, c = BW_TEAL, x = BW_MAGENTA; break;
+    case PG_JIEHKKI: a = BW_SKY, b = BW_CYAN, c = BW_BLUE, x = BW_GREEN; break;
     case PG_SOUND: case PG_SOURCE: case PG_FMALGO: case PG_FMOP: case PG_LOOP: a = BW_PERIWINKLE, b = BW_TEAL, c = BW_PINK, x = BW_AMBER; break;
     case PG_GRID: case PG_PATTERN: a = BW_VIOLET, b = BW_CYAN, c = BW_PINK, x = BW_MAGENTA; break;
     case PG_SCALE: case PG_CHORD: a = BW_LAVENDER, b = BW_CYAN, c = BW_TEAL, x = BW_AMBER; break;
@@ -1197,13 +1206,95 @@ static void pic_drone(void)
     ui_rect(80 + st * (w - 2) / 100, 126, 2, 16, UI_W);
 }
 
-static void pic_source(void)                    /* the eight sources, the track's in the accent; LATCH */
+/* (1.5.3) Jiehkki: the piece as a glacier, its height the sound's (rising out of silence, its own notes; dying out
+ * over its last fifth), the part played lit, where it is now marked; under it the four tracks, each its presence as
+ * it is now and its own note; a crack of RUOHCAT flashes on the ice. ENDLESS: an even ridge, moving */
+static void pic_jiehkki(void)
+{
+    static uint32_t hit_seen, hit_t, hit_x;
+    uint32_t now = fm1_ms, e = jk.run ? now - jk.t0 : 0, L = jk.run ? jk.len : jk_len_ms(), x, t, at;
+    int32_t base = 118, top, g;
+    char l[28], r[12], *p;
+    if (jk.run && L) {                          /* the caption: the time left, LENGTH */
+        uint32_t s = (jk_left(now) + 999u) / 1000u;
+        p = put_u(l, s / 60u), *p++ = ':', *p++ = (char)('0' + s % 60u / 10u), *p++ = (char)('0' + s % 10u);
+        put_s(p, jk.own ? " LEFT, ITS OWN" : " LEFT");
+    } else if (jk.run) {
+        uint32_t s = e / 1000u;
+        p = put_s(put_u(put_s(l, "PLAYING "), s / 60u), ":"), *p++ = (char)('0' + s % 60u / 10u), *p++ = (char)('0' + s % 10u), *p = 0;
+    } else
+        put_s(l, tracks_latched() || playing ? "START: WITH THESE NOTES" : "START: ITS OWN NOTES");
+    put_s(r, JK_LEN_NAME[clamp(jk_len, 0, JK_NLEN - 1)]);
+    ui_caption(l, r);
+    at = L && jk.run ? (uint32_t)((uint64_t)(e < L ? e : L) * 216u / L) : 0;
+    for (x = 0; x < 216u; x += 3u) {            /* the glacier, a column every 3 px */
+        uint32_t own = jk.run ? jk.own : !(tracks_latched() || playing);
+        int32_t w;
+        g = L ? jk_arc_at((uint32_t)((uint64_t)L * x / 216u), L, own) : 26000;
+        w = hw_wave((x * 2u + hw_ph * (L ? 0u : 1u)) & 255u) / 16 + hw_wave((x * 7u + 40u) & 255u) / 24;   /* (its ice) */
+        top = base - 8 - g * 54 / 32767 + w;
+        ui_rect(PX0 + (int32_t)x, top, 2, base - top, x < at ? ui_mix(UI_K, ui_acc, 12, 16) : UI_D);
+        ui_rect(PX0 + (int32_t)x, top, 2, 2, x < at ? UI_W : UI_L);
+    }
+    if (jk.run && L) ui_rect(PX0 + (int32_t)at, 50, 2, base - 48, UI_W);   /* (now) */
+    if (ru_hit != hit_seen) hit_seen = ru_hit, hit_t = now, hit_x = (hit_x * 7u + 61u) % 200u;
+    if (now - hit_t < 400u) {                   /* (RUOHCAT: a crack on the ice) */
+        int32_t cx = PX0 + 8 + (int32_t)hit_x, cy = 66 + (int32_t)(hit_x % 23u);
+        uint16_t c = ru_last == RU_DRIP ? BW_SKY : ru_last == RU_BOOM ? BW_VIOLET : UI_W;
+        ui_line(cx, cy, cx + 5, cy + 7, c), ui_line(cx + 5, cy + 7, cx + 2, cy + 13, c), ui_line(cx + 2, cy + 13, cx + 8, cy + 20, c);
+    }
+    for (t = 0; t < NT; t++) {                  /* the tracks: presence, their own note */
+        int32_t tx = PX0 + (int32_t)t * 55, gw = jk_tga[t] * 50 / 32767;
+        char n[8];
+        ui_text(tx, 126, (char[]){'T', (char)('1' + t), 0}, 1, UI_L);
+        if (jk.run && jk.note[t]) ui_note(n, jk.note[t]), ui_text(tx + 22, 126, n, 1, UI_KC[t]);
+        ui_rect(tx, 138, 50, 4, UI_D0);
+        ui_rect(tx, 138, gw, 4, UI_KC[t]);
+    }
+}
+
+/* (1.5.3) EditBiegga: the wind as streaks blowing across, torn into gusts (GUST: how far they swing and how fast),
+ * their colour TONE's (dark .. bright); HOWL's whistle a thin line singing through them, tighter as it narrows; SNOW's
+ * grains drifting down and across; moving (a frame every UI_ANIM_MS) */
+static void pic_biegga(void)
+{
+    const volatile int32_t *p = trk[sel].p[ENG_BIEGGA];
+    int32_t g = clamp(p[0], 0, 127), h = clamp(p[1], 0, 127), tn = clamp(p[2], 0, 127), sn = clamp(p[3], 0, 127);
+    int32_t y[55], i, j, k;
+    char l[16], r[16];
+    put_s(put_u(put_s(l, "GUST "), (uint32_t)(g * 100 / 127)), "%");
+    put_s(put_u(put_s(r, "HOWL "), (uint32_t)(h * 100 / 127)), "%");
+    ui_caption(l, r);
+    for (j = 0; j < 6; j++) {                   /* the streaks */
+        uint32_t sp = 3u + (uint32_t)j % 3u + (uint32_t)g / 24u;
+        for (i = 0; i < 55; i++) {
+            uint32_t ph = (uint32_t)(i * (3 + j)) + hw_ph * sp + (uint32_t)j * 37u;
+            y[i] = 52 + j * 16 + hw_wave(ph & 255u) * (2 + g / 16) / 64 + hw_wave((ph / 2u + hw_ph) & 255u) / 32;
+        }
+        for (i = 0; i + 1 < 55; i++)            /* (torn: a gust's dash, a lull's gap) */
+            if (hw_wave(((uint32_t)i * 9u + hw_ph * sp * 2u + (uint32_t)j * 70u) & 255u) > 40 - g / 2)
+                ui_line(PX0 + i * 4, y[i], PX0 + i * 4 + 4, y[i + 1],
+                        ui_mix(UI_K, ui_mix(UI_KC[0], UI_W, (uint32_t)tn, 127u), (uint32_t)(5 + j * 2), 16u));
+    }
+    if (h > 8) {                                /* the whistle */
+        for (i = 0; i < 55; i++)
+            y[i] = 98 + hw_wave(((uint32_t)i * (uint32_t)(4 + h / 8) + hw_ph * 6u) & 255u) * (4 + (127 - h) / 16) / 64;
+        ui_glow(PX0, 4, y, 55, ui_mix(UI_K, UI_KC[1], (uint32_t)(4 + h / 10), 16u));
+    }
+    for (k = 0; k < sn / 4; k++) {              /* the snow */
+        int32_t sx = (int32_t)(((uint32_t)k * 53u + hw_ph * (2u + (uint32_t)k % 3u)) % 216u);
+        int32_t sy = 46 + (int32_t)(((uint32_t)k * 37u + hw_ph * (1u + (uint32_t)k % 2u)) % 100u);
+        ui_rect(PX0 + sx, sy, 2, 2, (k & 3) ? UI_L : UI_W);
+    }
+}
+
+static void pic_source(void)                    /* the nine sources, the track's in the accent; LATCH */
 {
     int32_t i, e = (int32_t)sel_eng();
     ui_caption("SOURCE", 0);
     for (i = 0; i < (int32_t)NENG; i++) {
-        int32_t y = 44 + i * 14;
-        if (i == e) ui_rect(PX0, y - 3, 108, 13, UI_D);
+        int32_t y = 43 + i * 12;                /* (1.5.3: nine of them, 12 px apart) */
+        if (i == e) ui_rect(PX0, y - 2, 108, 11, UI_D);
         ui_text(PX0 + 4, y, i == e ? ">" : " ", 1, ui_acc);
         ui_text(PX0 + 16, y, ENGINES[i]->name, 1, i == e ? ui_acc : UI_M);
     }
@@ -1254,7 +1345,7 @@ static int ui_anim_page(uint32_t p)             /* the pages whose ribbons move 
 {
     return p == PG_DRONE || p == PG_ENV || p == PG_TAPE || p == PG_GRAIN || p == PG_DELAY || p == PG_SPACE || p == PG_LFO ||
            p == PG_MIX1 || p == PG_MIX2 || p == PG_MASTER || p == PG_DRIVE || p == PG_SOUND || p == PG_FMOP || p == PG_FMALGO || p == PG_SCALE ||
-           p == PG_CHORD || p == PG_PERFORM || p == PG_ARP || p == PG_LOOP || p == PG_AIR;
+           p == PG_CHORD || p == PG_PERFORM || p == PG_ARP || p == PG_LOOP || p == PG_AIR || p == PG_JIEHKKI;
 }
 
 /* ---- the aurora pages (Arctic Scream p0larpatch, after the DRONE and Holvut pages): every knob a ribbon of northern
@@ -1647,7 +1738,8 @@ static void pic_sel(void)                       /* Scale: the 27 keys as rays of
     for (i = 0; i < n; i++)
         if (ns[i] >= base && ns[i] < base + 27u) lit |= 1u << (ns[i] - base);
     e = put_s(put_s(l, SC_NOTE[clamp(sc_root, 0, 11)]), " ");
-    put_s(e, SC_NAME[clamp(sc_scale, 0, NSCALE - 1)]);
+    e = put_s(e, (sc_tun > 0 ? SC_SHORT : SC_NAME)[clamp(sc_scale, 0, NSCALE - 1)]);
+    if (sc_tun > 0) put_s(put_s(e, " "), TN_NAME[clamp(sc_tun, 0, NTUNING - 1)]);   /* (1.5.3: "C MINOR JUST") */
     ui_note(put_s(ui_note(rg, base), "-"), base + 26u);   /* (the keys' range: "F2-G4") */
     ui_caption(l, rg);
     for (i = 0; i < 55; i++) y[i] = 50 + hw_wave(((uint32_t)i * 3u + hw_ph * 2u) & 255u) * 3 / 64;
@@ -1959,7 +2051,7 @@ static void pic_system(void)
     sys_row(0, "MIDI CHANNEL", (mch_text(v, set.mch), v));
     tune_text(v, set.tune);
     sys_row(1, "TUNE", v);
-    sys_row(2, "SCREEN OFF", SCR_NAME[set.scr % 5u]);
+    sys_row(2, "SCREEN OFF", SCR_NAME[set.scr % NSCR]);
     put_s(put_u(v, set.nlk), set.nlk == 1u ? " LINK" : " LINKS");
     sys_row(3, "MIDI LEARN", v);
     sys_row(4, "SEQ MIDI OUT", set.out ? "ON" : "OFF");
@@ -2052,6 +2144,7 @@ static void ui_pic_draw(void)
         case ENG_WHEEL: pic_wheel(); return;
         case ENG_PHYS: pic_phys(); return;
         case ENG_HOWL: pic_howl(); return;
+        case ENG_BIEGGA: pic_biegga(); return;
         default: pic_phase(); return;
         }
     case PG_SOURCE: pic_source(); return;
@@ -2070,6 +2163,7 @@ static void ui_pic_draw(void)
     case PG_ARP: pic_arp(); return;
     case PG_LFO: pic_lfo(); return;
     case PG_DRONE: pic_drone(); return;
+    case PG_JIEHKKI: pic_jiehkki(); return;
     case PG_SONG: pic_song(); return;
     case PG_PERFORM: pic_perform(); return;
     case PG_SOUNDS: pic_sounds(); return;
@@ -2095,7 +2189,7 @@ static uint32_t ui_pic_key(void)
         UI_H(trk[t].level), UI_H(trk[t].dly), UI_H(trk[t].rev), UI_H(trk[t].grn), UI_H(trk[t].pan), UI_H(trk[t].eng),
             UI_H(trk[t].ftype), UI_H(trk[t].fpos);
     UI_H(trk[sel].fm_alg), UI_H(trk[sel].fm_fb), UI_H(fm_op), UI_H(trk[sel].p[ENG_FM][0]);
-    UI_H(trk[sel].latch), UI_H(trk[sel].chord), UI_H(trk[sel].ch_type), UI_H(trk[sel].ch_voice), UI_H(sc_root), UI_H(sc_scale);
+    UI_H(trk[sel].latch), UI_H(trk[sel].chord), UI_H(trk[sel].ch_type), UI_H(trk[sel].ch_voice), UI_H(sc_root), UI_H(sc_scale), UI_H(sc_tun);
     if (PAGES[page].btn == BTN_SEL) UI_H(ch_last), UI_H(ui_oct);
     UI_H(trk_quiet);
     if (page == PG_PERFORM) {                   /* (V2: GENERATE's tiles too) */
@@ -2120,6 +2214,9 @@ static uint32_t ui_pic_key(void)
         UI_H(smp[k].state), UI_H(smp[k].ready), UI_H(smp[k].n);
     }
     if (page == PG_TAPE) UI_H(tf_wow), UI_H(tf_sat), UI_H(tf_tone), UI_H(tf_hiss);
+    if (page == PG_JIEHKKI)                     /* (1.5.3: its caption, the time a second; playing or not, its notes) */
+        UI_H(jk.run), UI_H(jk.ended), UI_H(jk_left(fm1_ms) / 1000u), UI_H(jk.run ? (fm1_ms - jk.t0) / 1000u : 0u),
+            UI_H(tracks_latched()), UI_H(playing);
     if (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3) {   /* the settings, the links */
         UI_H(set.col), UI_H(set.mch), UI_H(set.tune), UI_H(set.scr), UI_H(set.out), UI_H(set.nlk), UI_H(set.latch), UI_H(set.usb);
         for (k = 0; k < NLINK * 5u; k++) UI_H(set.lk[k / 5u][k % 5u]);
@@ -2251,16 +2348,17 @@ static void ui_update(int32_t oct)
     static uint32_t an_t;
     int all;
     ui_tint(page);
-    all = page != shown_page || ui_acc != shown_acc || cv_mono != shown_mono;   /* (a new COLOUR: everything again) */
+    all = page != shown_page || ui_acc != shown_acc || cv_mono != shown_mono || ui_force;   /* (a new COLOUR, back from
+                                                 * GUOVSSAHAS: everything again) */
     if (fm1_ms - ui_boot_t < UI_BOOT_MS) {      /* (the boot screen still) */
         ui_boot_frame();
         return;
     }
     if (all) {
-        if (shown_page == 0xFFFFFFFFu || cv_mono != shown_mono)   /* (after the boot screen: all of it cleared once;
+        if (shown_page == 0xFFFFFFFFu || cv_mono != shown_mono || ui_force)   /* (after the boot screen: all of it cleared once;
                                                  * MONO on or off: again) */
             lcd_fill(0, 0, 240, 240, cv_mono ? C_BLACK : UI_K);
-        shown_page = page, shown_acc = ui_acc, shown_mono = cv_mono;
+        shown_page = page, shown_acc = ui_acc, shown_mono = cv_mono, ui_force = 0;
         for (k = 0; k < 4u; k++) ui_slab_shown[k].lab[0] = '\x01';
         pic_key = ~ui_pic_key();
     }
@@ -2310,5 +2408,69 @@ static void ui_update(int32_t oct)
             ui_k = k;
             ui_region(3 + (int32_t)k * 59, 165, 56, 72, UI_K, ui_slab_draw);
         }
+    }
+}
+
+/* ---- (1.5.3) GUOVSSAHAS (North Sami: the northern lights, sanit.oahpa.no), SCREEN OFF's last: after two minutes
+ * untouched the whole screen is a night sky over the tundra, two curtains of aurora waving across it, green at their
+ * lower edge, teal and violet higher up, their rays drifting; they brighten with the sound (the output's peaks). A
+ * frame every UI_AUR_MS, four canvases of 240 x 60 (CV_MAX; main loop; the first touch only wakes the screen, grimm.c). MONO:
+ * its dots, as every screen's */
+#define UI_AUR_MS 80u
+static void ui_aurora(uint32_t now)
+{
+    static uint32_t t_last, ph, lvl;
+    static uint16_t ramp[4][16];
+    static const uint16_t HUE[4] = {RGB(0x3f, 0xe8, 0x70), RGB(0x2f, 0xd8, 0xa8), RGB(0x30, 0x9c, 0xe0),
+                                    RGB(0xa0, 0x6a, 0xf0)};   /* (green at the edge, teal, blue, violet high up) */
+    static const uint8_t ST_X[24] = {12, 37, 58, 71, 94, 110, 131, 149, 160, 177, 199, 221, 8, 44, 66, 87, 121, 139,
+                                     168, 188, 207, 230, 101, 25};
+    static const uint8_t ST_Y[24] = {14, 40, 9, 62, 25, 51, 12, 33, 70, 18, 47, 29, 88, 97, 81, 104, 92, 78, 99, 85,
+                                     70, 101, 3, 64};
+    int32_t edge[2][240], br[2][240], ground[240], x, y, s, c;
+    uint32_t i, l = vis_lr[0] > vis_lr[1] ? vis_lr[0] : vis_lr[1];
+    if (now - t_last < UI_AUR_MS) return;
+    t_last = now, ph++;
+    vis_lr[0] = vis_lr[1] = 0;
+    l = l > 20000u ? 16u : l * 16u / 20000u;    /* (the sound: 0 .. 16, its rise at once, its fall slow) */
+    lvl = l > lvl ? l : lvl - (lvl > 0u && !(ph & 3u));
+    for (i = 0; i < 4u; i++)
+        for (s = 0; s < 16; s++) ramp[i][s] = swap16(ui_mix(0, HUE[i], (uint32_t)s, 16u));
+    for (x = 0; x < 240; x++) {
+        uint32_t u = (uint32_t)x;
+        for (c = 0; c < 2; c++) {               /* a curtain: its lower edge, its brightness (its rays) */
+            uint32_t p = ph * (uint32_t)(c ? 2 : 3);
+            edge[c][x] = (c ? 128 : 162) + (hw_wave((u * (c ? 2u : 3u) + p) & 255u) * (c ? 22 : 30) +
+                                            hw_wave((u * 5u - p / 2u + (uint32_t)c * 90u) & 255u) * 12) / 64;
+            br[c][x] = 6 + (hw_wave((u * 4u + p * 2u + (uint32_t)c * 60u) & 255u) + 64) * 5 / 128 +
+                       (hw_wave((u * 37u + ph) & 255u) + hw_wave((u * 91u - ph * 2u) & 255u)) / 48 + (int32_t)lvl / 3;
+            if (c) br[c][x] -= 3;
+        }
+        ground[x] = 222 + hw_wave((u * 2u + 30u) & 255u) / 10 + hw_wave((u * 9u) & 255u) / 40;
+    }
+    for (s = 0; s < 4; s++) {                   /* four canvases, 60 rows each */
+        cv_oy = 0;
+        cv_begin(240, 60, 0);
+        for (y = 0; y < 60; y++) {
+            int32_t sy = s * 60 + y;
+            uint16_t *row = cv_px + (uint32_t)y * 240u;
+            for (x = 0; x < 240; x++) {
+                int32_t best = 0, band = 0;
+                if (sy >= ground[x]) { row[x] = sy == ground[x] ? swap16(RGB(0x50, 0x60, 0x70)) : 0; continue; }
+                for (c = 0; c < 2; c++) {
+                    int32_t d = edge[c][x] - sy, v;
+                    if (d < -3) continue;       /* (under its edge: dark at once) */
+                    v = d < 0 ? br[c][x] * (4 + d) / 4 : br[c][x] * 64 / (64 + d * d / 40);   /* (it fades up) */
+                    if (v > best) best = v, band = d < 18 ? 0 : d < 45 ? 1 : d < 80 ? 2 : 3;
+                }
+                row[x] = best > 0 ? ramp[band][best > 15 ? 15 : best] : 0;
+            }
+        }
+        for (i = 0; i < 24u; i++)               /* (the stars, twinkling, where the sky is dark) */
+            if (ST_Y[i] >= (uint32_t)(s * 60) && ST_Y[i] < (uint32_t)(s * 60 + 60)) {
+                uint16_t *q = cv_px + (uint32_t)(ST_Y[i] - s * 60) * 240u + ST_X[i];
+                if (!*q) *q = swap16(((ph + i * 7u) & 15u) < 3u ? RGB(0x60, 0x60, 0x70) : RGB(0xd0, 0xd8, 0xe0));
+            }
+        cv_blit(0, (uint32_t)(s * 60));
     }
 }

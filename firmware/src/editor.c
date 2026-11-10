@@ -123,7 +123,7 @@ static uint32_t ed_commit(uint32_t o)
             s.ver = SET_VER, s.mod = 0;
         }
         if (s.ver != SET_VER || s.oct < -2 || s.oct > 2 || s.tune < -50 || s.tune > 50 || s.col > 4u ||
-            s.mch > MCH_MAX || s.scr > 4u || s.out > 1u || s.nlk > NLINK || s.clk >= CK_N || s.latch > 1u || s.usb > USB_LMAX || s.mod > 1u)
+            s.mch > MCH_MAX || s.scr >= NSCR || s.out > 1u || s.nlk > NLINK || s.clk >= CK_N || s.latch > 1u || s.usb > USB_LMAX || s.mod > 1u)
             return ER_BAD;
         for (i = 0; i < s.nlk; i++)
             if (s.lk[i][1] >= NPAGE || s.lk[i][2] > 3u || s.lk[i][3] > 3u) return ER_BAD;
@@ -141,6 +141,7 @@ static uint32_t ed_commit(uint32_t o)
     if (o < EO_SND) {                           /* a slot: used or not, then into the stream (its sectors read back) */
         if (ED_RX[0] > 1u) return ER_BAD;
         memcpy(slots[o - EO_SLOT], ED_RX, SLOT_ALL);
+        slot_bg[o - EO_SLOT][0] = 0;            /* (1.5.3: its Biegga not in the editor's slot: the tracks' kept) */
         slot_dirty |= 1u << (o - EO_SLOT);
         if (slots_save()) return ER_FLASH;
         put_s(m, "EDITOR: SLOT A SAVED"), m[13] = (char)('A' + o - EO_SLOT);
