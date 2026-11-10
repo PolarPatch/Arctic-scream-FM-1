@@ -94,7 +94,7 @@ _Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4
  * each CATEGORY's list; their names beside them. Bytes: CATEGORY, its number, the source, its four, ENV (ATTACK, DECAY,
  * SUSTAIN, RELEASE), LATCH, CHORD (0x80 chord mode on, VOICING << 4 | CHORD TYPE), LFO (RATE, DEPTH, DESTINATION, SHAPE).
  * Sources: 0 VA (WAVE 0 SAW, 1 SQUARE, 2 SUPERSAW), 1 FM (PATCH 0 BELL, 1 ORGAN, 2 SOFT PAD, 3 REED), 3 VOICE, 4 WHEEL,
- * 5 PHYS (MODEL 0 MODAL, 1 STRING, 2 MEMBRANE, 3 SYMPATH), 6 PHASE. LFO DESTINATION 0 PITCH, 1 VOLUME, 3 .. 6 KNOB 1 .. 4;
+ * 5 PHYS (MODEL 0 MODAL, 1 STRING, 2 MEMBRANE, 3 SYMPATH), 6 PHASE, 7 HOWL, 8 BIEGGA (1.5.3; North Sami: the wind). LFO DESTINATION 0 PITCH, 1 VOLUME, 3 .. 6 KNOB 1 .. 4;
  * SHAPE 0 SINE, 1 TRIANGLE, 5 RANDOM, 6 DRIFT */
 #define FSND(c, n, e, k0, k1, k2, k3, a, d, s, r, la, ch, lr, ld, lt, ls)                                              \
     FSNDD(c, n, e, k0, k1, k2, k3, a, d, s, r, la, ch, lr, ld, lt, ls, 0, 0, 0)
@@ -151,6 +151,9 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSND(CAT_KEYS, 9, ENG_PHASE, 3, 0, 40, 4, 80, 90, 70, 80, 0, 0x00, 100, 1, 0, 0),       /* NORTHERN LIGHT */
     /* TEXTURES */
     FSND(CAT_TEXTURE, 1, ENG_VOICE, 96, 12, 0, 127, 100, 90, 120, 105, 1, 0x00, 30, 90, 4, 0), /* WIND OVER ICE */
+    /* (1.5.3) Biegga, the wind: LATCH ON, gusting, its TONE drifting on the LFO, a storm rising over 4 bars (the
+     * editor's ids leave room for one factory sound more: this one) */
+    FSNDD(CAT_TEXTURE, 2, ENG_BIEGGA, 95, 75, 65, 30, 100, 90, 127, 105, 1, 0x00, 20, 25, 5, 6, 55, 20, 3),  /* BIEGGA */
     /* HOWLS (Arctic Scream p0larpatch: the HOWL source, after Audrey II, together at the end of DRONE; LATCH ON, slow in and out; the LFO on BODY, DAMP,
      * FEEDBACK or TRK CUTOFF, wandering) */
     FSNDD(CAT_DRONE, 7, ENG_HOWL, 92, 70, 50, 40, 90, 90, 127, 110, 1, 0x00, 30, 25, 4, 6, 60, 0, 4),  /* POLAR HOWL */
@@ -169,7 +172,7 @@ static const char *const SND_FNAME[] = {
     "CRYSTAL HARP", "BOWED ICICLE", "STARLIGHT", "AURORA CHOIR", "TUNDRA VOICES", "BLIZZARD BREATH", "NORTHERN CALL",
     "EMPTY HORIZON", "ICE ORGAN", "BASE CAMP", "FROST KEYS", "SNOW GLOBE", "POLAR KEYS", "ICE PIANO",
     "TUNDRA STRINGS", "ICEBREAKER", "FOG HORN", "SVALBARD CELLO", "NORTH STRINGS", "SNOW OWL", "SIGNAL FLARE",
-    "ICICLE PLUCK", "FROST LUTE", "NORTHERN LIGHT", "WIND OVER ICE", "POLAR HOWL", "WENDIGO", "FROZEN SCREAM",
+    "ICICLE PLUCK", "FROST LUTE", "NORTHERN LIGHT", "WIND OVER ICE", "BIEGGA", "POLAR HOWL", "WENDIGO", "FROZEN SCREAM",
     "WHITEOUT", "DEAD SIGNAL", "III", "ICE WRAITH",
 };   /* (16 characters at most: the header beside HOME's tempo) */
 #define SND_NFACT (sizeof SND_FACTORY / sizeof SND_FACTORY[0])

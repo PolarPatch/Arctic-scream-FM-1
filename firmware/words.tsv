@@ -64,6 +64,9 @@ STRNG	strings
 CHAPL	chapel
 BRITE	bright
 TOPS	tops
+# (1.5.3) SCREEN OFF's northern lights, SUOKNA's tunings
+GUOVS	guovssahas
+PYTHAG	pythagorean
 # Holvut's LOOP, FX's AIR
 LOWCUT	low cut
 PING	ping-pong

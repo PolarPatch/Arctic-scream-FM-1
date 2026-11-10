@@ -1081,7 +1081,8 @@ static const page_t PAGES[NPAGE] = {
     {"SOURCE", BTN_EDIT, 1, 1, 1, {"SOURCE", "LATCH", "", ""}},
     {"ENV", BTN_ENV, 1, 1, 1, {"ATTACK", "DECAY", "SUSTAIN", "RELEASE"}},
     {"LFO", BTN_LFO, 1, 1, 1, {"RATE", "DEPTH", "DESTINATION", "SHAPE"}},
-    {"SCALE", BTN_SEL, 1, 0, 1, {"ROOT", "SCALE", "TUNING", ""}},   /* (1.5.3: TUNING, scale.c) */
+    {"SCALE", BTN_SEL, 1, 0, 1, {"ROOT", "SCALE", "SUOKNA", ""}},   /* (1.5.3: the tuning, scale.c; North Sami
+                                                 * Šuokŋa: a tone, its sound) */
     {"CHORD", BTN_SEL, 1, 0, 1, {"CHORD TYPE", "VOICING", "", ""}},
     {"SONG", BTN_GLO, 1, 0, 1, {"SECTION", "PATTERN", "REPEATS", "MODE"}},
     {"HOME", BTN_HOME, 1, 1, 1, {"VOLUME", "CUTOFF", "WARP", "MORPH"}},   /* (the track's: its LEVEL, its filter,
