@@ -68,13 +68,52 @@ static void cv_begin(uint32_t w, uint32_t h, uint16_t bg)
         cv_px[i] = swap16(bg);
 }
 
-static void cv_blit(uint32_t x, uint32_t y) { lcd_blit(x, y, cv_w, cv_h, cv_px); }
+/* MONO (SYSTEM: COLOUR, PolarPatch): the canvas in black and white as it goes out. A colour's brightness picks how
+ * many dots of a 4 x 4 Bayer pattern are white, the pattern fixed to the screen (x, y), so a grey is the same dots
+ * wherever it is drawn; the light colours (text, values, the accent) solid white, the near black solid black.
+ * In place: black and white come out as they went in, so a canvas blitted twice is the same. The 1-bit dithered look
+ * after Inigo Hernandez's Mono2k (FM-1), none of its code. */
+#define CV_MONO_LO 24u                       /* brightness (0 .. 250) at or below this: black */
+#define CV_MONO_HI 84u                       /* .. at or above this: white */
+static uint8_t cv_mono;
+static const uint8_t CV_BAYER[16] = {0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5};
+
+static uint32_t cv_mono_level(uint32_t c)    /* RGB565 -> white dots in 16 (0 .. 16) */
+{
+    uint32_t y = ((c >> 11) * 432u + (c >> 5 & 63u) * 732u + (c & 31u) * 152u) >> 8;   /* (Rec. 709 weights) */
+    if (y <= CV_MONO_LO) return 0;
+    if (y >= CV_MONO_HI) return 16;
+    return (y - CV_MONO_LO) * 16u / (CV_MONO_HI - CV_MONO_LO);
+}
+
+static void cv_mono_rows(uint32_t x, uint32_t y, uint32_t r0)   /* canvas rows r0 .. cv_h-1, at screen (x, y) */
+{
+    uint32_t r, i, last = 1u << 16, lv = 0;   /* (last: no pixel yet) */
+    uint16_t *p;
+    lcd_sync();                              /* (a blit of this canvas may still be reading it) */
+    for (r = r0; r < cv_h; r++) {
+        const uint8_t *row = CV_BAYER + ((y + r) & 3u) * 4u;
+        p = cv_px + r * cv_w;
+        for (i = 0; i < cv_w; i++) {
+            if (p[i] != last) last = p[i], lv = cv_mono_level(swap16(last));
+            p[i] = lv > row[(x + i) & 3u] ? 0xFFFFu : 0x0000u;
+        }
+    }
+}
+
+static void cv_blit(uint32_t x, uint32_t y)
+{
+    if (cv_mono) cv_mono_rows(x, y, 0);
+    lcd_blit(x, y, cv_w, cv_h, cv_px);
+}
 
 /* canvas rows r0 .. cv_h-1 only, to screen row y + r0 */
 static void cv_blit_from(uint32_t x, uint32_t y, uint32_t r0)
 {
-    if (r0 < cv_h)
-        lcd_blit(x, y + r0, cv_w, cv_h - r0, cv_px + r0 * cv_w);
+    if (r0 >= cv_h)
+        return;
+    if (cv_mono) cv_mono_rows(x, y, r0);
+    lcd_blit(x, y + r0, cv_w, cv_h - r0, cv_px + r0 * cv_w);
 }
 
 static inline void cv_pset(int32_t x, int32_t y, uint16_t c)

@@ -122,7 +122,7 @@ static uint32_t ed_commit(uint32_t o)
             if (s.ver != 4u) return ER_BAD;
             s.ver = SET_VER, s.mod = 0;
         }
-        if (s.ver != SET_VER || s.oct < -2 || s.oct > 2 || s.tune < -50 || s.tune > 50 || s.col > 3u ||
+        if (s.ver != SET_VER || s.oct < -2 || s.oct > 2 || s.tune < -50 || s.tune > 50 || s.col > 4u ||
             s.mch > MCH_MAX || s.scr > 4u || s.out > 1u || s.nlk > NLINK || s.clk >= CK_N || s.latch > 1u || s.usb > USB_LMAX || s.mod > 1u)
             return ER_BAD;
         for (i = 0; i < s.nlk; i++)

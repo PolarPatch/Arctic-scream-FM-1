@@ -348,7 +348,7 @@ static void ui_slab_make(uint32_t k, slab_t *S)
     case PG_SOURCE: put_s(S->val, k ? (v ? "ON" : "OFF") : ENGINES[clamp(v, 0, NENG - 1)]->name); return;
     case PG_SYSTEM:                             /* COLOUR, MIDI ("ALL": ALL > SEL; "CH5>S": CH 5 > SEL), TUNE, SCREEN
                                                  * OFF ("NVR": full) */
-        if (k == 0u) S->fill = (uint8_t)(2 * v + 2), put_s(S->val, COL_NAME[clamp(v, 0, 3)]);
+        if (k == 0u) S->fill = (uint8_t)((v + 1) * 8 / 5), put_s(S->val, COL_NAME[clamp(v, 0, 4)]);
         else if (k == 1u) {
             if (v > MCH_ALL) put_s(put_u(put_s(S->val, "CH"), (uint32_t)(v - MCH_ALL)), ">S");
             else if (v == MCH_ALL) put_s(S->val, "ALL");
@@ -1935,7 +1935,7 @@ static void pic_projects(void)                  /* Save: the slots A..D, used or
     }
 }
 
-/* System (halved): COLOUR's four swatches (the chosen one ringed), then a row a setting; SYSTEM 2: MIDI LEARN's links,
+/* System (halved): COLOUR's five swatches (the chosen one ringed; MONO's a checkerboard), then a row a setting; SYSTEM 2: MIDI LEARN's links,
  * the newest first */
 static void sys_row(int32_t i, const char *l, const char *v)
 {
@@ -1949,11 +1949,12 @@ static void pic_system(void)
     int32_t i;
     char v[24];
     ui_caption("COLOUR (MATCH YOUR FM-1)", 0);
-    for (i = 0; i < 4; i++) {
-        int32_t x = PX0 + i * 55;
-        if (i == (int32_t)set.col) ui_rect(x - 4, 42, 58, 28, UI_W), ui_rect(x - 2, 44, 54, 24, UI_K);
-        ui_rect(x, 46, 50, 20, UI_ACCENTS[i]);
-        ui_text(x + 2, 55, COL_NAME[i], 1, UI_K);
+    for (i = 0; i < 5; i++) {
+        int32_t x = PX0 + 3 + i * 43, j;
+        if (i == (int32_t)set.col) ui_rect(x - 4, 42, 44, 28, UI_W), ui_rect(x - 2, 44, 40, 24, UI_K);
+        ui_rect(x, 46, 36, 20, i < 4 ? UI_ACCENTS[i] : UI_W);
+        for (j = 0; i == 4 && j < 36; j++)      /* (the name: on the knob's slab) */
+            if ((j % 9 + j / 9) & 1) ui_rect(x + j % 9 * 4, 46 + j / 9 * 5, 4, 5, UI_K);
     }
     sys_row(0, "MIDI CHANNEL", (mch_text(v, set.mch), v));
     tune_text(v, set.tune);
@@ -2243,22 +2244,23 @@ static void ui_boot_frame(void)
 
 static void ui_update(int32_t oct)
 {
-    static uint32_t shown_page = 0xFFFFFFFFu, pic_key, pic_t, stat_key, dot_shown, shown_acc;
+    static uint32_t shown_page = 0xFFFFFFFFu, pic_key, pic_t, stat_key, dot_shown, shown_acc, shown_mono;
     static int32_t shown_bat = -2;
     static char hb[12], hl[24], hr[12];
     uint32_t k, key, st;
     static uint32_t an_t;
     int all;
     ui_tint(page);
-    all = page != shown_page || ui_acc != shown_acc;   /* (a new COLOUR: everything again) */
+    all = page != shown_page || ui_acc != shown_acc || cv_mono != shown_mono;   /* (a new COLOUR: everything again) */
     if (fm1_ms - ui_boot_t < UI_BOOT_MS) {      /* (the boot screen still) */
         ui_boot_frame();
         return;
     }
     if (all) {
-        if (shown_page == 0xFFFFFFFFu)
-            lcd_fill(0, 0, 240, 240, UI_K);     /* (after the boot screen: all of it cleared once) */
-        shown_page = page, shown_acc = ui_acc;
+        if (shown_page == 0xFFFFFFFFu || cv_mono != shown_mono)   /* (after the boot screen: all of it cleared once;
+                                                 * MONO on or off: again) */
+            lcd_fill(0, 0, 240, 240, cv_mono ? C_BLACK : UI_K);
+        shown_page = page, shown_acc = ui_acc, shown_mono = cv_mono;
         for (k = 0; k < 4u; k++) ui_slab_shown[k].lab[0] = '\x01';
         pic_key = ~ui_pic_key();
     }

@@ -50,7 +50,7 @@
  *              knob turned: what it changed a moment; the battery beside the tempo; the slabs: T1 .. T4, their
  *              LEVEL) ->
  *              MIXER 1 (the track's LEVEL, DLY SEND, REV SEND, GRAIN SEND) -> MIXER 2 (PAN);
- *              held: SYSTEM (COLOUR: RED, AMBER, TEAL, VIOLET, the accent everywhere; MIDI CHANNEL: "1-4" (T1 .. T4 on
+ *              held: SYSTEM (COLOUR: ICE, AURORA, VIOLET, PLASMA, the accent everywhere, or MONO, black and white; MIDI CHANNEL: "1-4" (T1 .. T4 on
  *              channels 1..4) .. "13-16", ALL > SEL (any channel plays the selected track), for MIDI in and out; TUNE
  *              -50 .. +50 cents, every source; SCREEN OFF: NEVER, 1, 5, 15, 30 MIN untouched, the screen dark, all else
  *              running, the first touch only wakes it), HOME again: SYSTEM 2 (MIDI LEARN: LEARN, a knob turned on any
@@ -1208,7 +1208,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_LFO ? (k == 0u ? 127 : k == 1u ? 100 : k == 2u ? NLFODEST - 1 : NLFOSHAPE - 1) :
            pg == PG_DRONE ? (k < 2u ? 100 : k == 2u ? DR_NRISE - 1 : 1) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
-           pg == PG_SYSTEM ? (k == 0u ? 3 : k == 1u ? MCH_MAX : k == 2u ? 50 : 4) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
+           pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : 4) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
            pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_LMAX : 1) :
            pg == PG_FMALGO ? (k == 0u ? 31 : k == 1u ? 7 : k == 2u ? 5 : 99) :
            pg == PG_FMOP ? (k ? 99 : 31) : pg == PG_MIX2 ? (k == 1u ? NFTYPE - 1 : k == 2u ? 1 : 127) :
@@ -1235,7 +1235,7 @@ static const char *lfo_dest_name(int32_t d)     /* DESTINATION: its name (a knob
     d = clamp(d, 0, NLFODEST - 1);
     return d >= LD_K1 && d <= LD_K4 ? knob_name(PG_SOUND, (uint32_t)(d - LD_K1)) : LFO_DEST_NAME[d];
 }
-static const char *const COL_NAME[4] = {"ICE", "AURORA", "VIOLET", "PLASMA"};   /* SYSTEM: COLOUR */
+static const char *const COL_NAME[5] = {"ICE", "AURORA", "VIOLET", "PLASMA", "MONO"};   /* SYSTEM: COLOUR */
 static const char *const SCR_NAME[5] = {"NEVER", "1 MIN", "5 MIN", "15 MIN", "30 MIN"};   /* SCREEN OFF */
 static const char *const LEARN_NAME[3] = {"OFF", "LEARN", "CLEAR ALL"};   /* SYSTEM 2: MIDI LEARN */
 static char *mch_text(char *s, int32_t v)       /* MIDI CHANNEL: "1-4" .. "13-16", "ALL > SEL", "CH 1 > SEL" .. */
@@ -1825,7 +1825,7 @@ static void mod_out(void)
 static void sys_sync(void)
 {
     int8_t tn = (int8_t)clamp(sy_tune, -50, 50);
-    uint8_t col = (uint8_t)clamp(sy_col, 0, 3), mch = (uint8_t)clamp(sy_mch, 0, MCH_MAX), scr = (uint8_t)clamp(sy_scr, 0, 4);
+    uint8_t col = (uint8_t)clamp(sy_col, 0, 4), mch = (uint8_t)clamp(sy_mch, 0, MCH_MAX), scr = (uint8_t)clamp(sy_scr, 0, 4);
     uint8_t out = (uint8_t)clamp(sy_out, 0, 1), clk = (uint8_t)clamp(sy_clk, 0, CK_N - 1), la = (uint8_t)clamp(sy_latch, 0, 1);
     uint8_t ul = (uint8_t)clamp(sy_usb, 0, (int32_t)USB_LMAX), md = (uint8_t)clamp(sy_mod, 0, 1);
     uint32_t n, t;
@@ -1844,7 +1844,7 @@ static void sys_sync(void)
         set_dirty = 1, set_t = fm1_ms;
     }
     ck_mode = set.clk, rt_usb_fast = set.clk == CK_USB;   /* (CLOCK: the audio ISR's, platform.c's) */
-    ui_acc_user = UI_ACCENTS[set.col & 3u];
+    ui_acc_user = UI_ACCENTS[set.col & 3u], cv_mono = set.col == 4u;   /* (MONO: ICE's accent, all of it black and white) */
     tune_f = (set.tune * 23666 + set.tune * set.tune * 7) / 10000;   /* (2^(c / 1200) - 1, x 4096) */
     mo_seq = set.out, snd_latch_off = set.latch, usb_lvl = set.usb;
 }
