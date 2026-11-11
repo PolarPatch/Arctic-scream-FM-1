@@ -130,8 +130,9 @@ New in 1.5.3, written for Arctic Scream. *Jiehkki* is North Sami for "glacier", 
 | **START** | OFF, ON |
 
 - **Nothing sounding at START**: it plays its own notes, one a track, from the SCALE (the root low on T1, its fifth, a
-  third and a high note over them; SCALE OFF: natural minor), rising out of silence over an eighth of LENGTH (a minute
-  at most). **Notes sounding**: it takes them and moves the mix alone.
+  third and a fifth or second over them; SCALE OFF: natural minor). T1 starts at once, the others come in 5 to 12 s
+  apart, and it rises out of silence over a sixteenth of LENGTH (10 to 30 s), heard from its first seconds. In its
+  opening (a sixth of LENGTH, 4 min at most) the filters open and the notes move twice as often. **Notes sounding**: it takes them and moves the mix alone.
 - **The end**: everything fades over the last fifth (1 to 8 minutes); then the notes are let go, the sequencer and
   GENERATE stop, the screen goes dark, and it stays silent until a hand (or a MIDI note) wakes it.
 - LENGTH, DRIFT and RUOHČAT are saved with the project (save version 9); START is not.

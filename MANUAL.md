@@ -236,12 +236,14 @@ whole piece by itself, moving as slowly as a glacier, and then dies out.
 
 - **LENGTH:** 5, 10, 15, 25, 30 or 60 minutes, or ENDLESS.
 - **START with nothing playing:** it plays its own notes, one on each track, from the SCALE: the root low on T1, its
-  fifth on T2, a third and a high note over them on T3 and T4 (SCALE OFF: natural minor). The tracks play the sounds
-  you have on them, so pick four drones first. It rises out of silence.
+  fifth on T2, a third and a fifth or second over them on T3 and T4 (SCALE OFF: natural minor). The tracks play the
+  sounds you have on them, so pick four drones first. T1 starts at once and the others come in one after another, 5 to
+  12 seconds apart. You hear it from the first seconds; it is at full level after 10 to 30 seconds.
 - **START with notes playing** (held, latched, the sequencer): it takes them as they are and moves only the mix.
 - **DRIFT, 0–100 %:** how much moves. Its own notes step through the scale (every few minutes at 1 %, every half minute
   at 100 %), the root goes to its fourth or fifth and home again, a track rests for a while and comes back, the
-  filters open most in the middle of the piece. **At 0 nothing moves**: the piece only rises and dies out. That is a
+  filters open over the first minutes and close again as it dies out. In the opening (a sixth of LENGTH, four minutes
+  at most) the notes move twice as often. **At 0 nothing moves**: the piece only rises and dies out. That is a
   sleep timer: play your drone, set LENGTH, DRIFT 0, START.
 - **The end:** over its last fifth (one to eight minutes) everything fades out. Then the notes are let go, the
   sequencer and GENERATE stop, the screen goes dark, and the FM-1 stays silent until you touch it (a key, a button, a
