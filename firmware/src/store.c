@@ -50,7 +50,8 @@
                                                  * till then: 0) AIR's PING-PONG and SHIMMER */
 #define FX2_PK 8u                               /* (V2, version 8) MASTER's four, DRIVE's four */
 #define EXT_PK 24u                              /* (1.5.3, version 9) the tracks' Biegga (4 x 4), JIEHKKI's LENGTH,
-                                                 * DRIFT, RUOHCAT, SCALE's TUNING, 4 spare */
+                                                 * DRIFT, RUOHCAT, SCALE's TUNING, the RUOHCAT page's SAMPLE, SHARE,
+                                                 * VARY, 1 spare */
 #define BG_SLOT (1u + NT * 4u)                  /* (1.5.3) a slot's Biegga: BG_MARK, then the tracks' four each, in the
                                                  * slots' stream's tail (after the FM patches: zeros before it) */
 #define BG_MARK 0xB9u
@@ -118,12 +119,11 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSND(CAT_DRONE, 5, ENG_VOICE, 96, 6, 100, 90, 90, 90, 115, 100, 1, 0x05, 115, 30, 1, 5), /* SOLAR WIND */
     FSND(CAT_DRONE, 6, ENG_FM, 1, 50, 64, 12, 95, 90, 120, 100, 1, 0x05, 40, 0, 0, 0),      /* UNDER THE ICE */
     /* BELLS & METAL */
+    /* (1.5.3: FROST CHIME and STARLIGHT gone, room for RIDDU and POLAR STILL) */
     FSND(CAT_BELL, 1, ENG_FM, 0, 64, 90, 10, 0, 120, 0, 110, 0, 0x00, 40, 0, 0, 0),         /* ICE BELL */
-    FSND(CAT_BELL, 2, ENG_FM, 0, 80, 50, 0, 0, 100, 0, 95, 0, 0x00, 40, 0, 0, 0),           /* FROST CHIME */
-    FSND(CAT_BELL, 3, ENG_PHYS, 0, 110, 115, 0, 0, 90, 127, 110, 0, 0x00, 40, 0, 0, 0),     /* ICEBERG GONG */
-    FSND(CAT_BELL, 4, ENG_FM, 0, 85, 30, 20, 80, 100, 70, 95, 0, 0x00, 40, 0, 0, 0),        /* CRYSTAL HARP */
-    FSND(CAT_BELL, 5, ENG_PHYS, 0, 70, 110, 45, 85, 90, 90, 100, 0, 0x00, 40, 0, 0, 0),     /* BOWED ICICLE */
-    FSND(CAT_BELL, 6, ENG_FM, 0, 110, 20, 30, 0, 70, 0, 70, 0, 0x00, 40, 0, 0, 0),          /* STARLIGHT */
+    FSND(CAT_BELL, 2, ENG_PHYS, 0, 110, 115, 0, 0, 90, 127, 110, 0, 0x00, 40, 0, 0, 0),     /* ICEBERG GONG */
+    FSND(CAT_BELL, 3, ENG_FM, 0, 85, 30, 20, 80, 100, 70, 95, 0, 0x00, 40, 0, 0, 0),        /* CRYSTAL HARP */
+    FSND(CAT_BELL, 4, ENG_PHYS, 0, 70, 110, 45, 85, 90, 90, 100, 0, 0x00, 40, 0, 0, 0),     /* BOWED ICICLE */
     /* CHOIRS & VOICES */
     FSND(CAT_VOICE, 1, ENG_VOICE, 0, 14, 30, 40, 85, 90, 90, 95, 0, 0x12, 100, 1, 0, 0),    /* AURORA CHOIR */
     FSND(CAT_VOICE, 2, ENG_VOICE, 120, 4, 90, 45, 75, 80, 65, 90, 0, 0x05, 40, 0, 0, 0),    /* TUNDRA VOICES */
@@ -151,9 +151,10 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSND(CAT_KEYS, 9, ENG_PHASE, 3, 0, 40, 4, 80, 90, 70, 80, 0, 0x00, 100, 1, 0, 0),       /* NORTHERN LIGHT */
     /* TEXTURES */
     FSND(CAT_TEXTURE, 1, ENG_VOICE, 96, 12, 0, 127, 100, 90, 120, 105, 1, 0x00, 30, 90, 4, 0), /* WIND OVER ICE */
-    /* (1.5.3) Biegga, the wind: LATCH ON, gusting, its TONE drifting on the LFO, a storm rising over 4 bars (the
-     * editor's ids leave room for one factory sound more: this one) */
-    FSNDD(CAT_TEXTURE, 2, ENG_BIEGGA, 95, 75, 65, 30, 100, 90, 127, 105, 1, 0x00, 20, 25, 5, 6, 55, 20, 3),  /* BIEGGA */
+    /* (1.5.3) Biegga, the wind: LATCH ON, a gentle wind, gusting a little, its TONE drifting on the LFO, a breeze
+     * rising over 4 bars; RIDDU (North Sami: a gale), the storm: hard gusts, the howl and the snow up, HOWL drifting */
+    FSNDD(CAT_TEXTURE, 2, ENG_BIEGGA, 60, 60, 50, 20, 100, 90, 127, 105, 1, 0x00, 20, 15, 5, 6, 35, 8, 3),   /* BIEGGA */
+    FSNDD(CAT_TEXTURE, 3, ENG_BIEGGA, 120, 95, 85, 60, 90, 90, 127, 100, 1, 0x00, 30, 30, 4, 6, 60, 40, 3),  /* RIDDU */
     /* HOWLS (Arctic Scream p0larpatch: the HOWL source, after Audrey II, together at the end of DRONE; LATCH ON, slow in and out; the LFO on BODY, DAMP,
      * FEEDBACK or TRK CUTOFF, wandering) */
     FSNDD(CAT_DRONE, 7, ENG_HOWL, 92, 70, 50, 40, 90, 90, 127, 110, 1, 0x00, 30, 25, 4, 6, 60, 0, 4),  /* POLAR HOWL */
@@ -161,6 +162,9 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSNDD(CAT_DRONE, 9, ENG_HOWL, 112, 40, 35, 60, 60, 90, 120, 100, 1, 0x00, 20, 20, 5, 0, 50, 0, 4), /* FROZEN SCREAM */
     FSNDD(CAT_DRONE, 10, ENG_HOWL, 88, 106, 95, 20, 110, 90, 127, 115, 1, 0x00, 25, 40, 9, 6, 75, 0, 4), /* WHITEOUT */
     FSNDD(CAT_DRONE, 11, ENG_HOWL, 104, 8, 30, 105, 40, 90, 110, 90, 1, 0x00, 60, 30, 4, 4, 55, 0, 4),  /* DEAD SIGNAL */
+    /* (1.5.3) POLAR STILL: WHITEOUT's calm sister: the loop awake and steady, hardly drifting (the LFO slow and
+     * shallow, BORGA low), slow in and slower out; for a long JIEHKKI piece where little happens */
+    FSNDD(CAT_DRONE, 14, ENG_HOWL, 92, 100, 95, 20, 115, 90, 127, 120, 1, 0x00, 10, 12, 9, 6, 25, 0, 5),  /* POLAR STILL */
     /* III: three Holvut voices in a CLUSTER chord (SPREAD), their semitone rubbing, dark (DAMP), BODY drifting on the LFO,
      * waking over 8 bars; a horrorscape for a held key around C4 */
     FSNDD(CAT_DRONE, 13, ENG_HOWL, 95, 62, 88, 55, 100, 90, 127, 115, 1, 0xAA, 14, 30, 4, 6, 65, 35, 4), /* III */
@@ -168,12 +172,12 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
 };
 static const char *const SND_FNAME[] = {
     "POLAR NIGHT", "SNOW VEIL", "GLACIER PAD", "MIDNIGHT SUN", "LICHEN", "SNOWDRIFT", "PERMAFROST", "DEEP FJORD",
-    "CRACKING ICE", "ARCTIC HUM", "SOLAR WIND", "UNDER THE ICE", "ICE BELL", "FROST CHIME", "ICEBERG GONG",
-    "CRYSTAL HARP", "BOWED ICICLE", "STARLIGHT", "AURORA CHOIR", "TUNDRA VOICES", "BLIZZARD BREATH", "NORTHERN CALL",
+    "CRACKING ICE", "ARCTIC HUM", "SOLAR WIND", "UNDER THE ICE", "ICE BELL", "ICEBERG GONG",
+    "CRYSTAL HARP", "BOWED ICICLE", "AURORA CHOIR", "TUNDRA VOICES", "BLIZZARD BREATH", "NORTHERN CALL",
     "EMPTY HORIZON", "ICE ORGAN", "BASE CAMP", "FROST KEYS", "SNOW GLOBE", "POLAR KEYS", "ICE PIANO",
     "TUNDRA STRINGS", "ICEBREAKER", "FOG HORN", "SVALBARD CELLO", "NORTH STRINGS", "SNOW OWL", "SIGNAL FLARE",
-    "ICICLE PLUCK", "FROST LUTE", "NORTHERN LIGHT", "WIND OVER ICE", "BIEGGA", "POLAR HOWL", "WENDIGO", "FROZEN SCREAM",
-    "WHITEOUT", "DEAD SIGNAL", "III", "ICE WRAITH",
+    "ICICLE PLUCK", "FROST LUTE", "NORTHERN LIGHT", "WIND OVER ICE", "BIEGGA", "RIDDU", "POLAR HOWL", "WENDIGO",
+    "FROZEN SCREAM", "WHITEOUT", "DEAD SIGNAL", "POLAR STILL", "III", "ICE WRAITH",
 };   /* (16 characters at most: the header beside HOME's tempo) */
 #define SND_NFACT (sizeof SND_FACTORY / sizeof SND_FACTORY[0])
 #define SND_DEFAULT (SND_NFACT - 1u)            /* the four tracks' sound at first power-on and at NEW: ICE WRAITH */
@@ -594,6 +598,8 @@ static void pk_work(uint8_t *q)
         for (k = 0; k < 4u; k++) q[t * 4u + k] = (uint8_t)clamp(trk[t].p[ENG_BIEGGA][k], 0, 127);
     q[16] = (uint8_t)clamp(jk_len, 0, JK_NLEN - 1), q[17] = (uint8_t)clamp(jk_drift, 0, 100);
     q[18] = (uint8_t)clamp(jk_ruo, 0, 100), q[19] = (uint8_t)clamp(sc_tun, 0, NTUNING - 1);
+    q[20] = (uint8_t)clamp(ru_smp, 0, RU_NSMP - 1), q[21] = (uint8_t)clamp(ru_share, 0, 100);
+    q[22] = (uint8_t)clamp(ru_vary, 0, 100);
 }
 enum { UW_GLOBALS = 1, UW_CHAIN = 2 };
 static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: UW_GLOBALS, the effects, tempo, slot,
@@ -630,6 +636,8 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
         if (globals) {
             jk_len = ex ? clamp(x[16], 0, JK_NLEN - 1) : 2, jk_drift = ex ? clamp(x[17], 0, 100) : 40;
             jk_ruo = ex ? clamp(x[18], 0, 100) : 0, sc_tun = ex ? clamp(x[19], 0, NTUNING - 1) : TN_EQUAL;
+            ru_smp = ex ? clamp(x[20], 0, RU_NSMP - 1) : 0, ru_share = ex ? clamp(x[21], 0, 100) : 50;
+            ru_vary = ex ? clamp(x[22], 0, 100) : 30;
         }
     }
     if (globals && !sg) dl_pp = rv_shim = 0;    /* (saved before the song: AIR off) */

@@ -125,7 +125,7 @@ New in 1.5.3, written for Arctic Scream. *Jiehkki* is North Sami for "glacier", 
 | Knob | What it does |
 | --- | --- |
 | **LENGTH** | 5, 10, 15, 25, 30, 60 MIN or ENDLESS |
-| **DRIFT** 0–100 % | How much moves: its own notes through the scale (every ~4 min at 1 %, ~25 s at 100 %), the root to its fourth or fifth and home, a track resting a while, the filters opening most mid-piece. 0: nothing moves (a sleep timer) |
+| **DRIFT** 0–100 % | How much moves: its own notes through the scale (every ~4 min at 1 %, ~25 s at 100 %), the root to its fourth or fifth and home, a track resting a while, the filters opening over the first minutes and closing as it dies out. 0: nothing moves (a sleep timer) |
 | **RUOHČAT** 0–100 % | The ice around the drone: cracks (noise through band-passes, one to six), drips (a falling sine) and deep booms (a slow low sine and rumble), each one different, into the mix and the reverb. ~1 a minute at 1 %, a storm at 100 %. Plays whenever it is up |
 | **START** | OFF, ON |
 
@@ -138,6 +138,11 @@ New in 1.5.3, written for Arctic Scream. *Jiehkki* is North Sami for "glacier", 
 - LENGTH, DRIFT and RUOHČAT are saved with the project (save version 9); START is not.
 - The screen draws the piece as a glacier (its height the sound, the part played lit), each track's presence and note,
   and a crack on the ice for each RUOHČAT sound.
+- **The RUOHČAT page** (LFO, tapped four times): your own samples among RUOHČAT's sounds. AMOUNT (RUOHČAT's knob),
+  SAMPLE (OFF, SLOT 1–4, ALL), SHARE (how many of its sounds are samples, 0–100 %), VARY (0: a sample whole, as
+  recorded; up: from further in, shorter, now and then a fourth, a fifth or an octave away). Read from the slots as
+  they play (IMA ADPCM, from the seek index), 20 ms in, 100 ms out, panned, into SPACE too; two at once at most.
+  Saved with the project.
 
 ## ENV and LFO
 
@@ -324,7 +329,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 | --- | --- | --- |
 | 1.0 | 2026-10-25 | The first release: HOWL (now Holvut), six screaming presets, the HORROR scale, runaway echo, keys an octave down, 46 arctic factory sounds, the new look, the web editor with sound tools and sequencer, the demo and cheat sheet |
 | 1.1 | 2026-10-26 | DRONE (BORGA, STOARBMA, GOHCCAT); HOWL renamed Holvut; moving northern lights on ENV, LFO, FX and the mixers; SUSTAIN 40 % by default; DRONE in the editor |
-| 1.5.3 | 2026-11-11 | The drone machine: JIEHKKI (a piece played by itself for LENGTH, then dying out; DRIFT; a sleep timer at DRIFT 0), RUOHČAT (ice cracks, drips, booms), ŠUOKŊA tunings (JUST, PYTHAG, HARMONIC), Biegga (the wind, a ninth source) and the factory sound BIEGGA, GUOVSSAHAS (the aurora as a screen saver), COLOUR MONO (black and white, Bayer dots); MIDI in while the screen draws (LCD_IDLE); saves version 9; update tests |
+| 1.5.3 | 2026-11-11 | The drone machine: JIEHKKI (a piece played by itself for LENGTH, then dying out; DRIFT; a sleep timer at DRIFT 0), RUOHČAT (ice cracks, drips, booms; its own page with your samples among them), ŠUOKŊA tunings (JUST, PYTHAG, HARMONIC), Biegga (the wind, a ninth source) and the factory sounds BIEGGA, RIDDU and POLAR STILL (FROST CHIME and STARLIGHT gone), GUOVSSAHAS (the aurora as a screen saver), COLOUR MONO (black and white, Bayer dots); MIDI in while the screen draws (LCD_IDLE); saves version 9; update tests |
 | 1.5.2 | 2026-11-10 | The update's own screen (UPDATE MODE, WRITING with a bar, DONE or FAILED); SYSTEM 3's MOD OUT (each track's level and LFO as CC 102, 103); PANEL OUT for apps (buttons, keys, knobs); INFO tells key 0's note and the octave; the browser demo in tune at 48 kHz; DELAY up to 2.6 s and more free memory (RAM 93.4 → 79.0 KB used); the stacks' depth in the CPU command |
 | 1.5.1 | 2026-11-08 | The newer FM-1s' flash chip (UC25HQ80): saves, the USB rescue and updates on it as on the first chip (P25Q80); on a newer unit with 1.5 or older, install through the chip's download mode once |
 | 1.5 | 2026-11-07 | The screen reader: the screen said to fm1-reader (pages, knobs, lists, steps, PLAY, STOP, REC, the header's messages); saves under a latched drone (a slot or a sound saved at once, the autosave after 30 s at rest); the editor keeps a project's effects and tempo in its file; TAPE's TONE shows its corner (OPEN, 10K .. 400) |

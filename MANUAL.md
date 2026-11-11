@@ -258,6 +258,30 @@ whole piece by itself, moving as slowly as a glacier, and then dies out.
 
 <br clear="right">
 
+### RUOHČAT with your own samples (new in 1.5.3)
+
+<img src="docs/manual/screens/ruohcat.png" alt="RUOHCAT: the four sample slots as strips of ice, a sample playing" width="300" align="right">
+
+**Press LFO a fourth time.** RUOHČAT can play your own samples among the ice's sounds: a joik heard far off over the
+drone, water, wind. Load WAVs into the four sample slots with the [editor](#14--the-editor-and-the-demo) first.
+
+| KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
+|---|---|---|---|
+| AMOUNT | SAMPLE | SHARE | VARY |
+
+- **AMOUNT** is RUOHČAT's knob on JIEHKKI, the same setting: how often.
+- **SAMPLE:** OFF, SLOT 1 to 4, or ALL (any slot that holds a sample).
+- **SHARE, 0–100 %:** how many of its sounds are your samples. 100 %: only the samples.
+- **VARY, 0–100 %:** at 0 a sample plays whole, from its start, as recorded. Turned up, it starts further in, plays
+  shorter, and now and then a fourth, a fifth or an octave down or up.
+- A sample fades in over 20 ms and out over its last 100 ms, panned, with some of it in the reverb. Two play at once
+  at most.
+- A slot holds 6.6 seconds (22 kHz, mono). SAMPLE, SHARE and VARY are saved with the project.
+- The screen shows the four slots as strips of ice, as long as their samples; the ones SAMPLE plays are lit, and a
+  white line runs along a sample while it plays.
+
+<br clear="right">
+
 ---
 
 ## 05 · ENV and LFO
@@ -585,16 +609,16 @@ Since 1.3.1 it shows up on macOS 10.14 to 15 too.
 | Category | Sounds |
 |---|---|
 | DRONE | Permafrost, Deep Fjord, Cracking Ice, Arctic Hum, Solar Wind, Under the Ice |
-| DRONE · Holvut | Polar Howl, Wendigo, Frozen Scream, Whiteout, Dead Signal, III, **Ice Wraith** |
+| DRONE · Holvut | Polar Howl, Wendigo, Frozen Scream, Whiteout, Dead Signal, **Polar Still** (calm, little happens), III, **Ice Wraith** |
 | PAD | Polar Night, Snow Veil, Glacier Pad, Midnight Sun, Lichen, Snowdrift |
-| BELL | Ice Bell, Frost Chime, Iceberg Gong, Crystal Harp, Bowed Icicle, Starlight |
+| BELL | Ice Bell, Iceberg Gong, Crystal Harp, Bowed Icicle |
 | VOICE | Aurora Choir, Tundra Voices, Blizzard Breath, Northern Call, Empty Horizon |
 | ORGAN | Ice Organ, Base Camp |
 | KEYS | Frost Keys, Snow Globe, Polar Keys, Ice Piano, Snow Owl, Signal Flare, Icicle Pluck, Frost Lute, Northern Light |
 | OTHER | Tundra Strings, Icebreaker, Fog Horn, Svalbard Cello, North Strings |
-| TEXTURE | Wind over Ice, **Biegga** (the wind source) |
+| TEXTURE | Wind over Ice, **Biegga** (a gentle wind), **Riddu** (a gale) |
 
-The seven Holvut sounds hold their notes (LATCH) and start with DRONE on.
+The eight Holvut sounds hold their notes (LATCH) and start with DRONE on.
 
 ---
 

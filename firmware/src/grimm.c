@@ -240,6 +240,8 @@ static void mix_add(int32_t *o, uint32_t st, const int32_t *x, int32_t g0, int32
  * hear the track before it, only its dry sound filtered) */
 #define JK_NLEN 7                               /* (1.5.3, jiehkki.c: JIEHKKI's LENGTHs; its knobs (store.c saves them); */
 static volatile int32_t jk_len, jk_drift, jk_ruo, jk_go;
+#define RU_NSMP 6                               /* (.. the RUOHCAT page's SAMPLE: OFF, SLOT 1 .. 4, ALL; its knobs;) */
+static volatile int32_t ru_smp, ru_share, ru_vary;
 static volatile int32_t jk_cut[NT];             /* .. a track filter's move, << 8; */
 static int32_t jk_trk(uint32_t t);              /* .. a track's gain, ramped; */
 static void jk_out(int32_t *out, uint32_t n);   /* .. the output's; */
@@ -1067,7 +1069,7 @@ static char *put_ms(char *s, uint32_t q16)      /* a time, ms in Q16: "5 ms", "1
  * tap opens its first page, again the next (round); SYSTEM is HOME's, held */
 enum { PG_SOUND, PG_SOURCE, PG_ENV, PG_LFO, PG_SCALE, PG_CHORD, PG_SONG, PG_HOME, PG_MIX1, PG_MIX2, PG_SYSTEM,
        PG_SYS2, PG_SOUNDS, PG_PROJECTS, PG_ARP, PG_GRID, PG_PATTERN, PG_TAPE, PG_GRAIN, PG_DELAY, PG_SPACE, PG_PERFORM,
-       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
+       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, PG_RUOHCAT, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
                                                  * have; in their button's round by pg_key. TRACK: gone in step 25, its
                                                  * number kept: sys_load moves its links onto HOME) */
 typedef struct {
@@ -1117,7 +1119,9 @@ static const page_t PAGES[NPAGE] = {
                                                  * loop's GATE, BLOOM, LOWCUT and EXCITE, howl.c) */
     {"AIR", BTN_FX, 1, 0, 1, {"PING", "SHIMMR", "", ""}},
     {"JIEHKKI", BTN_LFO, 1, 0, 1, {"LENGTH", "DRIFT", "RUOHCAT", "START"}},   /* (1.5.3: LFO's third, after DRONE: a
-                                                 * piece on its own, jiehkki.c; North Sami: a glacier, to creak) */   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
+                                                 * piece on its own, jiehkki.c; North Sami: a glacier, to creak) */
+    {"RUOHCAT", BTN_LFO, 1, 0, 1, {"AMOUNT", "SAMPLE", "SHARE", "VARY"}},   /* (1.5.3: LFO's fourth: RUOHCAT with
+                                                 * your samples among its sounds, jiehkki.c) */   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
                                                  * (tape.c), SPACE's SHIMMER (hall.c)) */
 };
 static uint32_t pg_key(uint32_t p)              /* its place in its button's round */
@@ -1210,6 +1214,7 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_LOOP: return &trk[sel].hw_x[k & 3u];
     case PG_AIR: return k == 0u ? &dl_pp : k == 1u ? &rv_shim : 0;
     case PG_JIEHKKI: return k == 0u ? &jk_len : k == 1u ? &jk_drift : k == 2u ? &jk_ruo : &jk_go;
+    case PG_RUOHCAT: return k == 0u ? &jk_ruo : k == 1u ? &ru_smp : k == 2u ? &ru_share : &ru_vary;
     default: return 0;                          /* (not built yet: the knobs do nothing) */
     }
 }
@@ -1224,7 +1229,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_ARP ? (k == 0u ? NARPMODE - 1 : k == 1u ? NARPRATE - 1 : k == 2u ? 4 : 100) :
            pg == PG_LFO ? (k == 0u ? 127 : k == 1u ? 100 : k == 2u ? NLFODEST - 1 : NLFOSHAPE - 1) :
            pg == PG_DRONE ? (k < 2u ? 100 : k == 2u ? DR_NRISE - 1 : 1) :
-           pg == PG_JIEHKKI ? (k == 0u ? JK_NLEN - 1 : k == 3u ? 1 : 100) :
+           pg == PG_JIEHKKI ? (k == 0u ? JK_NLEN - 1 : k == 3u ? 1 : 100) : pg == PG_RUOHCAT ? (k == 1u ? RU_NSMP - 1 : 100) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : NSCR - 1) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
            pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_LMAX : 1) :
@@ -1359,6 +1364,15 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
     case PG_TAPE: if (k == 2u) tone_text(s, v); else put_pc(s, v); return;   /* (TONE: its corner, as CUTOFF) */
     case PG_LOOP: hx_text(s, k, v, sel); return;
     case PG_AIR: if (v <= 0) put_s(s, "OFF"); else put_pc(s, v); return;
+    case PG_JIEHKKI:                            /* (1.5.3) LENGTH, DRIFT, RUOHCAT, START */
+        if (k == 0u) put_s(s, JK_LEN_NAME[clamp(v, 0, JK_NLEN - 1)]);
+        else if (k < 3u) put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
+        else put_s(s, v ? "ON" : "OFF");
+        return;
+    case PG_RUOHCAT:                            /* (1.5.3) AMOUNT, SAMPLE, SHARE, VARY */
+        if (k == 1u) put_s(s, RU_SMP_NAME[clamp(v, 0, RU_NSMP - 1)]);
+        else put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
+        return;
     case PG_MASTER:
         if (k == 0u) hz_text(s, v, mf_type);
         else if (k == 2u) put_s(s, FT_NAME[clamp(v, 0, NFTYPE - 1)]);

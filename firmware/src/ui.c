@@ -400,6 +400,10 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         else if (k < 3u) ui_3(S->val, (uint32_t)clamp(v, 0, 100));
         else put_s(S->val, v ? "ON" : "OFF");
         return;
+    case PG_RUOHCAT:                            /* (1.5.3) AMOUNT %, SAMPLE ("S1", "ALL"), SHARE %, VARY % */
+        if (k == 1u) put_s(S->val, RU_SMP_SHORT[clamp(v, 0, RU_NSMP - 1)]);
+        else ui_3(S->val, (uint32_t)clamp(v, 0, 100));
+        return;
     case PG_DRONE:                              /* BORGA, STOARBMA %, GOHCCAT ("8BAR"), LATCH */
         if (k < 2u) ui_3(S->val, (uint32_t)clamp(v, 0, 100));
         else if (k == 2u) dr_rise_text(S->val, v, "");
@@ -545,7 +549,7 @@ static void ui_tint(uint32_t pg)
     case PG_ENV: a = BW_AMBER, b = BW_TEAL, c = BW_PERIWINKLE, x = BW_MAGENTA; break;
     case PG_LFO: a = BW_PINK, b = BW_CYAN, c = BW_AMBER, x = UI_W; break;
     case PG_DRONE: a = BW_CYAN, b = BW_VIOLET, c = BW_TEAL, x = BW_MAGENTA; break;
-    case PG_JIEHKKI: a = BW_SKY, b = BW_CYAN, c = BW_BLUE, x = BW_GREEN; break;
+    case PG_JIEHKKI: case PG_RUOHCAT: a = BW_SKY, b = BW_CYAN, c = BW_BLUE, x = BW_GREEN; break;
     case PG_SOUND: case PG_SOURCE: case PG_FMALGO: case PG_FMOP: case PG_LOOP: a = BW_PERIWINKLE, b = BW_TEAL, c = BW_PINK, x = BW_AMBER; break;
     case PG_GRID: case PG_PATTERN: a = BW_VIOLET, b = BW_CYAN, c = BW_PINK, x = BW_MAGENTA; break;
     case PG_SCALE: case PG_CHORD: a = BW_LAVENDER, b = BW_CYAN, c = BW_TEAL, x = BW_AMBER; break;
@@ -1253,6 +1257,35 @@ static void pic_jiehkki(void)
     }
 }
 
+/* (1.5.3) RUOHCAT's page: the four sample slots as strips of ice, each as long as its sample, the ones SAMPLE plays
+ * lit, a sample playing a white line moving along it; RUOHCAT's crack flashing as on JIEHKKI */
+static void pic_ruohcat(void)
+{
+    static uint32_t hit_seen, hit_t;
+    uint32_t k, i, ready = 0, now = fm1_ms;
+    char l[28], r[12];
+    for (k = 0; k < SMP_SLOTS; k++) ready += smp[k].ready;
+    if (!ready) put_s(l, "NO SAMPLES: THE EDITOR");
+    else put_s(put_u(put_s(l, "SAMPLES "), ready), ready == 1u ? " SLOT" : " SLOTS");
+    if (jk_ruo <= 0) put_s(r, "OFF");
+    else put_s(put_u(r, (uint32_t)clamp(jk_ruo, 0, 100)), " %");
+    ui_caption(l, r);
+    if (ru_hit != hit_seen) hit_seen = ru_hit, hit_t = now;
+    for (k = 0; k < SMP_SLOTS; k++) {
+        int32_t y = 56 + (int32_t)k * 21, w = smp[k].ready ? (int32_t)((uint64_t)smp[k].n * 150u / SMP_MAX_N) : 0;
+        int on = smp[k].ready && (ru_smp >= RU_NSMP - 1 || ru_smp == (int32_t)k + 1);
+        uint16_t c = on ? UI_KC[k] : UI_L;
+        ui_text(PX0, y, (char[]){'S', (char)('1' + k), 0}, 1, c);
+        ui_text(PX0 + 20, y, smp[k].ready ? smp[k].name : "EMPTY", 1, on ? UI_W : UI_L);
+        ui_rect(PX0 + 64, y + 4, 150, 6, UI_D0);
+        if (w) ui_rect(PX0 + 64, y + 4, w < 2 ? 2 : w, 6, on ? ui_mix(UI_K, c, 12, 16) : UI_D);
+        for (i = 0; i < RS_N; i++)              /* (a sample playing: where) */
+            if (ru_sp[i].on && ru_sp[i].slot == k && smp[k].n)
+                ui_rect(PX0 + 64 + (int32_t)((uint64_t)ru_sp[i].pos * 150u / SMP_MAX_N), y + 1, 2, 12, UI_W);
+    }
+    if (now - hit_t < 300u) ui_rect(PX0, 141, 214, 2, ru_last == RU_SMP ? UI_W : BW_SKY);   /* (RUOHCAT: a sound begun) */
+}
+
 /* (1.5.3) EditBiegga: the wind as streaks blowing across, torn into gusts (GUST: how far they swing and how fast),
  * their colour TONE's (dark .. bright); HOWL's whistle a thin line singing through them, tighter as it narrows; SNOW's
  * grains drifting down and across; moving (a frame every UI_ANIM_MS) */
@@ -1345,7 +1378,8 @@ static int ui_anim_page(uint32_t p)             /* the pages whose ribbons move 
 {
     return p == PG_DRONE || p == PG_ENV || p == PG_TAPE || p == PG_GRAIN || p == PG_DELAY || p == PG_SPACE || p == PG_LFO ||
            p == PG_MIX1 || p == PG_MIX2 || p == PG_MASTER || p == PG_DRIVE || p == PG_SOUND || p == PG_FMOP || p == PG_FMALGO || p == PG_SCALE ||
-           p == PG_CHORD || p == PG_PERFORM || p == PG_ARP || p == PG_LOOP || p == PG_AIR || p == PG_JIEHKKI;
+           p == PG_CHORD || p == PG_PERFORM || p == PG_ARP || p == PG_LOOP || p == PG_AIR || p == PG_JIEHKKI ||
+           p == PG_RUOHCAT;
 }
 
 /* ---- the aurora pages (Arctic Scream p0larpatch, after the DRONE and Holvut pages): every knob a ribbon of northern
@@ -2164,6 +2198,7 @@ static void ui_pic_draw(void)
     case PG_LFO: pic_lfo(); return;
     case PG_DRONE: pic_drone(); return;
     case PG_JIEHKKI: pic_jiehkki(); return;
+    case PG_RUOHCAT: pic_ruohcat(); return;
     case PG_SONG: pic_song(); return;
     case PG_PERFORM: pic_perform(); return;
     case PG_SOUNDS: pic_sounds(); return;
@@ -2214,6 +2249,8 @@ static uint32_t ui_pic_key(void)
         UI_H(smp[k].state), UI_H(smp[k].ready), UI_H(smp[k].n);
     }
     if (page == PG_TAPE) UI_H(tf_wow), UI_H(tf_sat), UI_H(tf_tone), UI_H(tf_hiss);
+    if (page == PG_RUOHCAT)                     /* (1.5.3: the slots, what plays) */
+        for (k = 0; k < SMP_SLOTS; k++) UI_H(smp[k].ready), UI_H(smp[k].n), UI_H(smp[k].name[0]);
     if (page == PG_JIEHKKI)                     /* (1.5.3: its caption, the time a second; playing or not, its notes) */
         UI_H(jk.run), UI_H(jk.ended), UI_H(jk_left(fm1_ms) / 1000u), UI_H(jk.run ? (fm1_ms - jk.t0) / 1000u : 0u),
             UI_H(tracks_latched()), UI_H(playing);

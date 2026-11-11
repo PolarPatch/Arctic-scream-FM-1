@@ -20,7 +20,17 @@
  * The main loop decides (jk_tick, every JK_TICK ms): the notes go through nq (as a key's, the ids JK_ID ..), the
  * gains and the filters' moves through jk_og, jk_tg, jk_cut; the audio ISR ramps them (jk_out, mix_tracks, trk_filter)
  * and plays RUOHCAT's sounds (ru_render: noise through band-passes, a falling sine, a slow low one; into the mix and
- * the REV bus). LENGTH, DRIFT and RUOHCAT are the project's (store.c, version 9); START is not saved. */
+ * the REV bus). LENGTH, DRIFT and RUOHCAT are the project's (store.c, version 9); START is not saved.
+ *
+ * The RUOHCAT page (LFO, tapped a fourth time): the ice's sounds with your own samples among them (a joik heard far off
+ * over the drone, the wind, water):
+ *   AMOUNT     RUOHCAT's knob, as on JIEHKKI: how often
+ *   SAMPLE     OFF, SLOT 1 .. 4, ALL: which sample slots it plays from (ALL: any that holds one)
+ *   SHARE      0 .. 100 %: of its sounds, how many are the samples (100 %: the samples alone)
+ *   VARY       0 .. 100 %: 0, a sample whole, from its start, as recorded; up, from further in, shorter, now and then a
+ *              fourth, a fifth or an octave down or up
+ * A sample comes in over 20 ms and goes over its last 100 ms, panned, with a share into SPACE; two at most at once.
+ * SAMPLE, SHARE and VARY are the project's too (store.c's EXT). */
 
 #define JK_TICK 50u                             /* ms between the main loop's looks */
 #define JK_ENDLESS 6                            /* (JK_NLEN: grimm.c) */
@@ -221,18 +231,50 @@ static void jk_move(uint32_t now)               /* DRIFT: a note, a track's pres
 }
 
 /* ---- RUOHCAT: the main loop picks an event's time and its sound, the audio plays it */
-enum { RU_CRACK, RU_DRIP, RU_BOOM };
+enum { RU_CRACK, RU_DRIP, RU_BOOM, RU_SMP };
 typedef struct {
     uint8_t type, hits;                         /* RU_; a crack's sub-cracks to come */
     uint16_t gap;                               /* .. samples between them (at most) */
     int32_t cut1, cut2, amp, pan, send;         /* band-passes (CUTOFF << 8), level (Q15), PAN (0 .. 32767), REV send */
-    uint32_t inc;                               /* a drip's, a boom's pitch (phase step) */
+    uint32_t inc;                               /* a drip's, a boom's pitch (phase step); a sample's speed (Q16 of its
+                                                 * samples an output sample) */
+    uint32_t slot, seg, len;                    /* a sample's slot, its first segment, its length (its samples) */
 } ru_ev_t;
+static volatile int32_t ru_smp, ru_share = 50, ru_vary = 30;   /* the RUOHCAT page's knobs: SAMPLE (0 OFF, 1 .. 4 a slot,
+                                                 * 5 ALL), SHARE %, VARY % */
+static const char *const RU_SMP_NAME[RU_NSMP] = {"OFF", "SLOT 1", "SLOT 2", "SLOT 3", "SLOT 4", "ALL"};
+static const char *const RU_SMP_SHORT[RU_NSMP] = {"OFF", "S1", "S2", "S3", "S4", "ALL"};
+#define RS_N 2u                                 /* samples playing at once at most */
 static volatile uint32_t ru_w;                  /* main loop: + 1 an event (ru_q[ru_w % 4]) */
 static ru_ev_t ru_q[4];
 static uint32_t ru_next;                        /* main loop: the next event's time */
 static volatile uint32_t ru_hit;                /* audio: + 1 an event begun (the screen's flash) */
 static uint8_t ru_last;                         /* main loop: the last event's type (the screen) */
+
+static volatile uint32_t rs_busy;               /* audio: the samples playing now (the main loop: room for one more) */
+static int ru_pick(ru_ev_t *E)                  /* main loop: a sample event into E (0: none to play, no room) */
+{
+    uint32_t k, n, ok = 0, v = (uint32_t)clamp(ru_vary, 0, 100), sg, nseg;
+    int32_t semi = 0;
+    static const int8_t SEMI[5] = {-12, -7, -5, 5, 7};
+    if (ru_smp <= 0 || rs_busy >= RS_N) return 0;
+    for (k = 0; k < SMP_SLOTS; k++)             /* (the slots it may play: ready ones) */
+        if (smp[k].ready && smp[k].n >= SMP_SEG * 4u && (ru_smp >= RU_NSMP - 1 || (uint32_t)ru_smp == k + 1u)) ok |= 1u << k;
+    if (!ok) return 0;
+    do k = jk_rnd(SMP_SLOTS); while (!(ok >> k & 1u));
+    n = smp[k].n, nseg = n / SMP_SEG;
+    sg = v ? jk_rnd(nseg * v / 100u / 2u + 1u) : 0;   /* (VARY: from up to half way in) */
+    E->type = RU_SMP, E->slot = k, E->seg = sg;
+    E->len = n - sg * SMP_SEG;
+    if (v) E->len -= (uint32_t)(((uint64_t)E->len * jk_rnd(v * 7u + 1u)) / 1000u);   /* (shorter: up to 70 %) */
+    if (E->len < SMP_SEG * 4u) E->len = SMP_SEG * 4u;
+    if (v && jk_rnd(140) < v) semi = SEMI[jk_rnd(5)];   /* (now and then a fourth, a fifth, an octave) */
+    E->inc = pow2_q16(semi * 16) >> 1;          /* (22050 Hz: half a sample of it an output sample) */
+    E->amp = 13000 + (int32_t)jk_rnd(5000);
+    E->pan = 6000 + (int32_t)jk_rnd(20768);
+    E->send = 10000 + (int32_t)jk_rnd(14000);
+    return 1;
+}
 
 static void ru_tick(uint32_t now)
 {
@@ -247,6 +289,12 @@ static void ru_tick(uint32_t now)
     E = &ru_q[ru_w % 4u];
     r = jk_rnd(100);
     E->type = r < 55u ? RU_CRACK : r < 85u ? RU_DRIP : RU_BOOM;
+    if (jk_rnd(100) < (uint32_t)clamp(ru_share, 0, 100) && ru_pick(E)) {
+        ru_last = RU_SMP;
+        ru_w = ru_w + 1u;
+        return;
+    }
+    if (ru_smp && ru_share >= 100) return;      /* (the samples alone: none ready, nothing) */
     E->pan = (int32_t)jk_rnd(32768);
     E->send = 12000 + (int32_t)jk_rnd(16000);
     switch (E->type) {
@@ -277,12 +325,66 @@ static struct {
     tsvf_t f1, f2;
     int32_t k1, k2;
 } ru[RU_N];
+static struct {                                /* audio: the samples playing */
+    uint8_t on, slot;
+    uint32_t pos, end, frac, step, att;         /* the next sample to decode, its end; Q16 between; samples played */
+    int32_t pred, idx, y0, y1, amp, gl, gr, send;
+} ru_sp[RS_N];
 static uint32_t ru_r;                           /* audio: the events taken */
 static int32_t ru_rng = 0x1B873593;
+
+static void rs_begin(const ru_ev_t *E)
+{
+    uint32_t i, best = 0;
+    const smp_slot_t *S = &smp[E->slot & 3u];
+    if (!S->ready) return;
+    for (i = 0; i < RS_N; i++) {                /* (a free one; none: the one furthest on goes) */
+        if (!ru_sp[i].on) { best = i; break; }
+        if (ru_sp[i].att > ru_sp[best].att) best = i;
+    }
+    i = best;
+    ru_sp[i].on = 1, ru_sp[i].slot = (uint8_t)(E->slot & 3u);
+    ru_sp[i].pos = E->seg * SMP_SEG, ru_sp[i].end = ru_sp[i].pos + E->len;
+    if (ru_sp[i].end > S->n) ru_sp[i].end = S->n;
+    ru_sp[i].pred = smp_ipred[E->slot & 3u][E->seg], ru_sp[i].idx = smp_iidx[E->slot & 3u][E->seg];
+    ru_sp[i].frac = 0, ru_sp[i].step = E->inc, ru_sp[i].att = 0, ru_sp[i].y0 = ru_sp[i].y1 = 0;
+    ru_sp[i].amp = E->amp, ru_sp[i].send = E->send;
+    ru_sp[i].gl = 32767 - (E->pan >> 1), ru_sp[i].gr = 16384 + (E->pan >> 1);
+    ru_hit++;
+}
+static void rs_render(int32_t *out, int32_t *rev, uint32_t n)   /* audio: the samples, read on from their slots */
+{
+    uint32_t k, i, busy = 0;
+    for (k = 0; k < RS_N; k++) {
+        const smp_slot_t *S = &smp[ru_sp[k].slot];
+        if (!ru_sp[k].on) continue;
+        if (!S->ready) { ru_sp[k].on = 0; continue; }   /* (its slot cleared, written over) */
+        for (i = 0; i < n; i++) {
+            int32_t y, g, left;
+            for (ru_sp[k].frac += ru_sp[k].step; ru_sp[k].frac >= 65536u; ru_sp[k].frac -= 65536u) {
+                ru_sp[k].y0 = ru_sp[k].y1;
+                ru_sp[k].y1 = ru_sp[k].pos < ru_sp[k].end ? ima_dec(S->data, ru_sp[k].pos, &ru_sp[k].pred, &ru_sp[k].idx) : 0;
+                ru_sp[k].pos++;
+            }
+            y = ru_sp[k].y0 + (((ru_sp[k].y1 - ru_sp[k].y0) * (int32_t)(ru_sp[k].frac >> 2)) >> 14);
+            left = (int32_t)ru_sp[k].end - (int32_t)ru_sp[k].pos;   /* (its last 100 ms: out) */
+            g = left <= 0 ? 0 : left < 2205 ? left * 14 : 32767;
+            if (ru_sp[k].att < 882u) g = g * (int32_t)ru_sp[k].att / 882;   /* (its first 20 ms: in) */
+            ru_sp[k].att++;
+            y = mulq15(mulq15(y, g), ru_sp[k].amp);
+            out[2u * i] += mulq15(y, ru_sp[k].gl), out[2u * i + 1u] += mulq15(y, ru_sp[k].gr);
+            rev[i] += mulq15(y, ru_sp[k].send);
+        }
+        if (ru_sp[k].pos >= ru_sp[k].end + 2u) ru_sp[k].on = 0;
+        busy += ru_sp[k].on;
+    }
+    rs_busy = busy;
+}
 
 static void ru_begin(const ru_ev_t *E)
 {
     uint32_t i, best = 0;
+    if (E->type == RU_SMP) { rs_begin(E); return; }
     for (i = 0; i < RU_N; i++) {                /* (a free one; none: the quietest goes) */
         if (!ru[i].on) { best = i; break; }
         if (ru[i].e1 < ru[best].e1) best = i;
@@ -310,6 +412,7 @@ static void ru_render(int32_t *out, int32_t *rev, uint32_t n)   /* audio: RUOHCA
     uint32_t i, k, w = ru_w;
     if (w - ru_r > 4u) ru_r = w - 4u;
     while (ru_r != w) ru_begin(&ru_q[ru_r++ % 4u]);
+    rs_render(out, rev, n);
     for (k = 0; k < RU_N; k++) {
         if (!ru[k].on) continue;
         for (i = 0; i < n; i++) {

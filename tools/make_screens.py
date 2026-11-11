@@ -85,6 +85,31 @@ class S:
         return self
 
 
+def sample(s, slot, name, hz, secs, t0):
+    """a tone into a sample slot before the script's start, as tools/fm1_sample_upload.py sends it, from t0 ms (after
+    the boot screen, before 6200); tests/host.c holds 64 KiB of frames: ~4.5 s of samples in all"""
+    import math, struct, wave
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    import fm1_sample_upload as up
+    n = int(secs * 22050)
+    with tempfile.TemporaryDirectory() as tmp:
+        p = os.path.join(tmp, "t.wav")
+        w = wave.open(p, "w")
+        w.setparams((1, 2, 22050, 0, "NONE", "not compressed"))
+        w.writeframes(struct.pack("<%dh" % n, *(int(9000 * math.sin(2 * math.pi * hz * i / 22050) *
+                                                    min(1, i / 2000, (n - i) / 2000)) for i in range(n))))
+        w.close()
+        hdr, data, _, _ = up.build(__import__("pathlib").Path(p), name, 60)
+    hx = lambda b: " ".join(f"{x:02X}" for x in b)
+    s.lines.append((t0, "sysex " + hx(up.HDR + [up.CMD_BEGIN, slot])))
+    for off in range(0, len(data), 256):
+        o, t0 = up.DATA_OFF + off, t0 + 5
+        s.lines.append((t0, "sysex " + hx(up.HDR + [up.CMD_WRITE, slot, o & 0x7F, (o >> 7) & 0x7F, (o >> 14) & 0x7F] +
+                                          up.pack7(data[off:off + 256]))))
+    s.lines.append((t0 + 40, "sysex " + hx(up.HDR + [up.CMD_END, slot] + up.pack7(hdr))))
+    return s
+
+
 def va(s):                                   # T1 (ICE WRAITH, Holvut) to VA, LATCH OFF; back on its SOUND page
     return s.tap(EDIT, EDIT, EDIT).turn(K1, -7).turn(K2, -1).tap(EDIT)
 
@@ -136,6 +161,8 @@ SHOTS = {
     # (1.5.3) the drone machine
     "biegga": lambda: src(S(), -1).hold("C3", "G3").w(2500),
     "jiehkki": lambda: S().tap(LFO, LFO, LFO).turn(K3, 40).turn(K4, 1).w(40000),
+    "ruohcat": lambda: sample(sample(S(), 0, "JOIK", 330, 3.0, 3500), 2, "ELV", 220, 1.5, 5000)
+                       .tap(LFO, LFO, LFO, LFO).turn(K2, 5).turn(K3, 30).turn(K1, 100).w(9000),
     "suokna": lambda: S().tap(SEL).turn(K3, 3).w(800),
     "aurora": lambda: S().keys("C3").down(HOME).w(900).up(HOME).turn(K4, 5).w(126000),
     "mono": lambda: S().down(HOME).w(900).up(HOME).turn(K1, 4).w(400).tap(EDIT).tap(HOME).keys("C3").keys("G3").w(2500),

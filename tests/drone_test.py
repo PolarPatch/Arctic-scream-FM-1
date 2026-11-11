@@ -177,6 +177,36 @@ check("GUOVSSAHAS: not before 2 min", jk[100000]["aur"] == 0, jk[100000])
 check("GUOVSSAHAS: after 2 min untouched, the aurora (lit)", jk[129000]["aur"] == 1 and jk[129000]["scr"] == 1, jk[129000])
 check("GUOVSSAHAS: a touch, back", jk[131000]["aur"] == 0 and jk[131000]["scr"] == 0, jk[131000])
 
+# RUOHCAT's page (LFO x 4) with a sample: a 1.5 s tone of 440 Hz into slot 1 (as tools/fm1_sample_upload.py sends it),
+# SAMPLE SLOT 1, SHARE 100 %, AMOUNT 100 %: the sample heard (440 Hz the loudest), nothing else of the ice
+sys.path.insert(0, "tools")
+import fm1_sample_upload as up                  # noqa: E402
+wav = OUT / "tone440.wav"
+w = wave.open(str(wav), "w")
+w.setparams((1, 2, 22050, 0, "NONE", "not compressed"))
+w.writeframes(struct.pack("<%dh" % 33075, *(int(12000 * math.sin(2 * math.pi * 440 * i / 22050)) for i in range(33075))))
+w.close()
+hdr, data, _, _ = up.build(wav, "TONE440", 69)
+hx = lambda b: " ".join(f"{x:02X}" for x in b)
+ev, t = [(4000, "sysex " + hx(up.HDR + [up.CMD_BEGIN, 0]))], 4000   # (after the boot screen)
+for off in range(0, len(data), 256):
+    o, t = up.DATA_OFF + off, t + 5
+    ev.append((t, "sysex " + hx(up.HDR + [up.CMD_WRITE, 0, o & 0x7F, (o >> 7) & 0x7F, (o >> 14) & 0x7F] +
+                               up.pack7(data[off:off + 256]))))
+ev.append((t + 50, "sysex " + hx(up.HDR + [up.CMD_END, 0] + up.pack7(hdr))))
+ev += [(6200, f"btn {LFO}"), (6300, f"btn {LFO}"), (6400, f"btn {LFO}"), (6500, f"btn {LFO}"), (6700, f"enc {K2} 1"),
+       (6800, f"enc {K3} 50"), (6900, f"enc {K1} 100")]
+out, a, jk, notes = run("ruo_smp", ev + P(7000), 27000)
+spec = [0.0] * 3
+x = a[2 * 8 * 44100:2 * 27 * 44100:2]
+for k, f in enumerate((440, 300, 3000)):        # (the tone; beside it; a crack's band)
+    c = sum(v * math.cos(2 * math.pi * f * i / 44100) for i, v in enumerate(x))
+    q = sum(v * math.sin(2 * math.pi * f * i / 44100) for i, v in enumerate(x))
+    spec[k] = math.hypot(c, q) / len(x)
+check("RUOHCAT page: SLOT 1, SHARE 100 %: the sample heard", rms(a, 8, 27) > 100 and spec[0] > 8 * spec[1] and
+      spec[0] > 8 * spec[2], (rms(a, 8, 27), spec))
+check("RUOHCAT page: never clipping", peak(a) < 32000, peak(a))
+
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT, TUNING, Biegga, GUOVSSAHAS ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS ok")

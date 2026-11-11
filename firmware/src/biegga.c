@@ -40,8 +40,8 @@ static void bg_begin(voice_t *v)
     uint32_t k;
     for (k = 0; k < 4u; k++) v->s[k] = 0;
     for (k = 0; k < VPH; k++) v->ph[k] = 0;
-    v->BG_GUST = 24000;
-    v->ph[0] = 24000, v->ph[1] = 1;             /* (the gust's target; blocks to its next) */
+    v->BG_GUST = 24000;                         /* (ph[6]: the gust's target, smoothed once) */
+    v->ph[0] = v->ph[6] = 24000, v->ph[1] = 1;  /* (the gust's target, on its way; blocks to its next) */
     if (!v->rng) v->rng = 0x6F4A7C15;
 }
 
@@ -58,7 +58,9 @@ static void bg_block(voice_t *v, const volatile int32_t *p, int32_t *mono, int32
         v->ph[1] = nb / 2u + ((uint32_t)bg_noise(v) & 0x7FFFu) * nb / 32768u;
         v->ph[0] = (uint32_t)(32767 - (((bg_noise(v) & 0x7FFF) * g * 258) >> 15));
     }
-    gust += ((int32_t)v->ph[0] - gust) >> 8;    /* (~0.2 s) */
+    v->ph[6] = (uint32_t)((int32_t)v->ph[6] + (((int32_t)v->ph[0] - (int32_t)v->ph[6]) >> 9));   /* (two poles, ~0.4 s
+                                                 * each: a gust swells and drops smoothly, never a step) */
+    gust += ((int32_t)v->ph[6] - gust) >> 9;
     ag = 8192 + gust * 3 / 4;                   /* (a lull: a quarter) */
     if (!g) ag = 32767 * 3 / 4 + 8192 / 4;      /* (no gust: steady) */
     k = bg_tab(BG_K, h), comp = bg_tab(BG_C, h);
