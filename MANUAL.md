@@ -604,7 +604,7 @@ Since 1.3.1 it shows up on macOS 10.14 to 15 too.
 
 ## 12 · Factory sounds
 
-48 sounds with arctic names. Turn **PRESETS** to step through them by category, then your own.
+44 sounds with arctic names. Turn **PRESETS** to step through them by category, then your own.
 
 | Category | Sounds |
 |---|---|
@@ -613,8 +613,7 @@ Since 1.3.1 it shows up on macOS 10.14 to 15 too.
 | PAD | Polar Night, Snow Veil, Glacier Pad, Midnight Sun, Lichen, Snowdrift |
 | BELL | Ice Bell, Iceberg Gong, Crystal Harp, Bowed Icicle |
 | VOICE | Aurora Choir, Tundra Voices, Blizzard Breath, Northern Call, Empty Horizon |
-| ORGAN | Ice Organ, Base Camp |
-| KEYS | Frost Keys, Snow Globe, Polar Keys, Ice Piano, Snow Owl, Signal Flare, Icicle Pluck, Frost Lute, Northern Light |
+| KEYS | Frost Keys, Polar Keys, Snow Owl, Signal Flare, Icicle Pluck, Frost Lute, Northern Light |
 | OTHER | Tundra Strings, Icebreaker, Fog Horn, Svalbard Cello, North Strings |
 | TEXTURE | Wind over Ice, **Biegga** (a gentle wind), **Riddu** (a gale) |
 

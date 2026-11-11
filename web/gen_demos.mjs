@@ -58,7 +58,7 @@ const DEMOS = [
     seqs: [[1, seq(0, ["D3/3", "-", "-", "-", "-", "-", "A3/2*80", "-", "-", "-", "F3/4", "-", "-", "-", "-", "-"])]],
     latch: [[0, ["D3"]]], play: true },
   { id: "A3", name: "NIGHT TERROR", sub: "close semitones and a dead signal", tempo: 92,
-    tracks: [[0, "ICE PIANO"], [1, "DEAD SIGNAL", { borga: 55, storm: 30, rise: 3 }]],
+    tracks: [[0, "FROST LUTE"], [1, "DEAD SIGNAL", { borga: 55, storm: 30, rise: 3 }]],
     seqs: [[0, seq(2, ["C4", "C#4*80", "-", "G3", "F#4*70", "-", "C4x2", "-", "D#4", "E4*60", "-", "B3", "C4", "-",
                        "F#3*80", "-"])]],
     latch: [[1, ["F2"]]], play: true },
