@@ -124,6 +124,10 @@ static const int16_t *hw_excite(uint32_t t)    /* track t's sample this control 
     hw_exc_t *E = &hw_ex[t];
     sp_loop_t L;
     uint32_t i;
+#ifdef FM1_LIVE_IN
+    if ((live_ex >> t & 1u) && li_cur && vc_at + (uint32_t)CTL <= li_n)
+        return li_cur + vc_at;                  /* (Arctic Scream VIBE: the sound in, in place of the sample) */
+#endif
     if (E->vb == vblock && E->on) return E->buf;
     if (!sp_loop(trk[t].p[ENG_SAMPLE], &L)) {   /* (the slot empty: nothing; REVERSE: read forward all the same) */
         E->on = 0;
@@ -164,7 +168,11 @@ static void howl_block(voice_t *v, const volatile int32_t *p, int32_t *mono, int
     int32_t x = (int32_t)(fc * 4669u / 1000u), a = x * 16384 / (32768 + x);   /* (DAMP's one-pole, Q14) */
     int32_t tgt, bd0 = S->bd, dbd, gate = clamp(X[HX_GATE], 0, 127), lc = clamp(X[HX_LCUT], 0, 127);
     int32_t bl = clamp(X[HX_BLOOM], 0, 127), ex = clamp(X[HX_EXCITE], 0, 127);
-    const int16_t *exs = ex ? hw_excite(v->trk < NT ? v->trk : 0) : 0;
+    const int16_t *exs;
+#ifdef FM1_LIVE_IN
+    if (live_ex >> (v->trk & 3u) & 1u) ex = clamp(live_amt, 0, 127);   /* (Arctic Scream VIBE: the input's own amount) */
+#endif
+    exs = ex ? hw_excite(v->trk < NT ? v->trk : 0) : 0;
     const int32_t *ret = bl && hw_bloom_on && vc_at + (uint32_t)CTL <= HW_RN ? hw_ret + vc_at : 0;
     S->fb = hw_glide(S->fb, hw_fb(v, p[0]));    /* (FEEDBACK and the pressure glide: ~6 ms) */
     g = hw_gain(S->fb) >> 4;

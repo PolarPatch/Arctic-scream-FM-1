@@ -129,6 +129,14 @@ static void app_idle(void);
 #include "announce.c"                           /* (fm1-base's, MPL-2.0: fm1-reader's tools/sync_announce.sh) */
 #define PO_NAME "Arctic Scream " APP_VER        /* (1.5.2) PANEL OUT: the panel, for an app (docs/PANEL_OUT.md) */
 #include "panel_out.c"
+#ifdef FM1_LIVE_IN
+/* (Arctic Scream VIBE) sound in, on a host that has it (VIBE FM; never on the FM-1): the platform hands over this
+ * render's input, n frames, mono, Q15 at the engine's 44.1 kHz (live_take: through whatever the platform does to it
+ * first), and says where it goes: live_ex, the tracks (bit t) whose Holvut strings hear it in place of their sample
+ * (EXCITE the amount); live_g, its levels into the mix and the DLY, REV and GRAIN buses (Q15, live_mix) */
+static const int16_t *li_cur;                   /* audio: this render's input (0: none) */
+static uint32_t li_n;
+#endif
 #include "dsp.c"
 #include "wear.c"
 #include "samples.c"
@@ -358,6 +366,25 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
     }
 }
 
+#ifdef FM1_LIVE_IN
+static void live_mix(int32_t *out, uint32_t n)  /* audio: the input into the mix and the DLY, REV and GRAIN buses, at the
+                                                 * platform's levels (live_g), each ramped over the block */
+{
+    static int32_t x[VB], gm[4];
+    int32_t *bus[3] = {dbus, rbus, gbus};
+    uint32_t i, k;
+    if (!li_cur) {                              /* (no input: the levels back to 0, so it comes in ramped) */
+        gm[0] = gm[1] = gm[2] = gm[3] = 0;
+        return;
+    }
+    for (i = 0; i < n; i++) x[i] = li_cur[i];
+    mix_add(out, 2u, x, gm[0], live_g[0], n);
+    mix_add(out + 1, 2u, x, gm[0], live_g[0], n);
+    for (k = 0; k < 3u; k++) mix_add(bus[k], 1u, x, gm[1u + k], live_g[1u + k], n);
+    for (k = 0; k < 4u; k++) gm[k] = live_g[k];
+}
+#endif
+
 /* the output: 6 dB of headroom after every effect (the mix at half: six loud voices, four tracks fit), MASTER
  * (2.0: the knob's turn to the power 1.5: half way ~9 dB under the top, 3/4 ~4 dB; V2's was the knob squared and
  * halved up to 3/4, half way 18 dB under; at the top, as ever, the level before V2), then a limiter: a
@@ -442,12 +469,18 @@ static void app_audio(int32_t *out, uint32_t n)
     ck_e = rt_now(), ck_j = 0;                  /* (the MIDI clock: this block's time, clock.c) */
 #define CS_MARK(k) (t = fm1_ticks(), s = isr_in_audio, cs_sum[k] += t - tp - (s - sp), tp = t, sp = s)
     if (n > VB) n = VB;
+#ifdef FM1_LIVE_IN
+    li_cur = live_take(n), li_n = n;            /* (sound in: before the voices, Holvut's strings may hear it) */
+#endif
     used = voices_render(tbuf, n);
     CS_MARK(CS_VOICES);
     for (i = 0; i < n; i++)
         dbus[i] = rbus[i] = gbus[i] = 0;
     mix_tracks(out, used, n);
     ru_render(out, rbus, n);                    /* (2.0) RUOHCAT: the ice around the drone (jiehkki.c) */
+#ifdef FM1_LIVE_IN
+    live_mix(out, n);                           /* (sound in: into the mix and the effects' buses) */
+#endif
     CS_MARK(CS_MIX);
     master_filter(out, n, MP_PRE);              /* MASTER, PRE FX: the tracks' dry mix */
     CS_MARK(CS_MASTER);
