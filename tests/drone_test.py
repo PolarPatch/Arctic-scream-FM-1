@@ -35,10 +35,10 @@ def check(name, ok, info=""):
     fails += not ok
 
 
-def run(name, ev, end, env=None):
+def run(name, ev, end, env=None, plain=True):     # (plain: GR!MM's VA tracks; else the factory's, ICE WRAITH)
     s = OUT / f"{name}.txt"
     s.write_text("".join(f"{t} {l}\n" for t, l in sorted(ev, key=lambda e: e[0])) + f"{end} end\n")
-    e = dict(os.environ, GRIMM_PLAIN="1")
+    e = dict(os.environ, GRIMM_PLAIN="1") if plain else dict(os.environ)
     e.update(env or {})
     out = subprocess.run([BIN, str(OUT / name), str(s)], capture_output=True, text=True, check=True, env=e).stdout
     w = wave.open(str(OUT / f"{name}.wav"))
@@ -207,6 +207,16 @@ check("RUOHCAT page: SLOT 1, SHARE 100 %: the sample heard", rms(a, 8, 27) > 100
       spec[0] > 8 * spec[2], (rms(a, 8, 27), spec))
 check("RUOHCAT page: never clipping", peak(a) < 32000, peak(a))
 
+# (1.5.3) PRESETS on a latched drone: ICE WRAITH (Holvut) on C3, then POLAR NIGHT (VA): the two cross over (the old one
+# fading as the new one's ATTACK rises); then POLAR STILL (Holvut again): its knobs glide. Never a hole, never a jump
+for what, step, most in (("another source: the notes cross over", 1, 6), ("the same source: the knobs glide", -2, 8)):   # (Holvut
+    # itself: its loop settles anew as BODY arrives, ~0.5 s: before 1.5.3 a hole to -16 dB and 9.5 dB steps)
+    out, a, jk, notes = run(f"xf{step}", [(6200, "keys 128"), (6400, "keys 0"), (16000, f"enc 6 {step}")], 20000, plain=False)
+    seq = [rms(a, 15.5 + i * 0.1, 15.6 + i * 0.1) for i in range(30)]
+    jump = max(abs(20 * math.log10((seq[i + 1] + 1) / (seq[i] + 1))) for i in range(29))
+    check(f"PRESETS on a drone, {what}: no hole (under -6 dB of before), no step over {most} dB in 0.1 s",
+          min(seq[5:]) > 0.5 * min(seq[:5]) and jump < most, ([round(x) for x in seq], round(jump, 1)))
+
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, PRESETS' crossing over ok")

@@ -606,6 +606,11 @@ Since 1.3.1 it shows up on macOS 10.14 to 15 too.
 
 44 sounds with arctic names. Turn **PRESETS** to step through them by category, then your own.
 
+Turning PRESETS while a drone is sounding blends the two sounds (new in 1.5.3). If the new sound uses another source, the
+old notes fade out while the new ones rise with their own ATTACK, over 1.5–6 s. If the source is the same, its four
+knobs glide to the new values over 1.5 s. Turning a knob during the glide stops it for that knob. With all six voices
+busy, the change is quick as before.
+
 | Category | Sounds |
 |---|---|
 | DRONE | Permafrost, Deep Fjord, Cracking Ice, Arctic Hum, Solar Wind, Under the Ice |

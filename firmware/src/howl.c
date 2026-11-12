@@ -169,7 +169,8 @@ static void howl_block(voice_t *v, const volatile int32_t *p, int32_t *mono, int
     S->fb = hw_glide(S->fb, hw_fb(v, p[0]));    /* (FEEDBACK and the pressure glide: ~6 ms) */
     g = hw_gain(S->fb) >> 4;
     {                                           /* GATE: the key held (1) or let go (0), gliding (up ~3 ms, down ~45 ms) */
-        int32_t held = v->stage == ST_REL || v->stage == ST_FADE ? 0 : 32767;
+        int32_t held = (v->stage == ST_REL && !vc_xf[v - vc]) || v->stage == ST_FADE ? 0 : 32767;   /* (1.5.3:
+                                                 * crossing over to a new sound, held on as it fades) */
         S->gt += held > S->gt ? (held - S->gt) >> 2 : (held - S->gt) >> 6;
         g = (int32_t)((int64_t)g * (32767 - gate * (32767 - S->gt) / 127) >> 15);
     }

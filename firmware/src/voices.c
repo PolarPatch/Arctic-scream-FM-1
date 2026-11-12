@@ -93,6 +93,8 @@ static track_t trk[NT] = {TRK_DEF, TRK_DEF, TRK_DEF, TRK_DEF};   /* VA: SAW, DET
                                                  * start); FX 100 %; FM: its patch, BELL's (fm_builtin at
                                                  * power-on) */
 static voice_t vc[NV];
+static int32_t vc_xf[NV];                       /* (1.5.3) a voice crossing over to its track's new source (restart_track):
+                                                 * its release a straight line, this much a control step (Q24); 0 not */
 static uint32_t vblock;                         /* audio: + 1 every control block (fm.c: once a block a track) */
 
 /* the screen's numbers (the engines' text functions use them too) */
@@ -188,6 +190,16 @@ static void voice_fade(uint32_t v)              /* audio: out in ~10 ms (the fad
     vc[v].want_on = 0;
     if (vc[v].stage != ST_OFF) vc[v].stage = ST_FADE;
 }
+#define XF_STEP 8117                            /* (full to silent in ~1.5 s: 2^24 / (1.5 s / 32 frames)) */
+#define XF_SLOW 2029                            /* (.. in ~6 s) */
+static void voice_cross(uint32_t v, int32_t atk)   /* audio: out with the source it began with, no note after: over the
+                                                 * new sound's ATTACK (atk, its step), ~1.5 s at least, ~6 s at most */
+{
+    vc[v].want_on = 0;
+    int32_t n = (1 << 24) / (atk > XF_STEP ? XF_STEP : atk < XF_SLOW ? XF_SLOW : atk);   /* (control steps) */
+    if (vc[v].stage != ST_OFF) vc[v].stage = ST_REL, vc_xf[v] = vc[v].env / n > 0 ? vc[v].env / n : 1;   /* (from where
+                                                 * it is: as long, whatever its level) */
+}
 static int voice_idle(uint32_t v) { return vc[v].stage == ST_OFF && vc[v].req == vc[v].seen; }
 static int32_t voice_level(uint32_t v) { return vc[v].env; }
 
@@ -233,6 +245,7 @@ static int32_t env_tick(voice_t *v)
     int32_t e = v->env;
     if (v->req != v->seen) {                    /* the main loop's request */
         v->seen = v->req;
+        vc_xf[v - vc] = 0;
         if (!v->want_on) {
             if (v->stage == ST_ATK || v->stage == ST_SUS)
                 v->stage = ST_REL;
@@ -260,6 +273,11 @@ static int32_t env_tick(voice_t *v)
         break;
     }
     case ST_REL:
+        if (vc_xf[v - vc]) {                    /* (1.5.3: crossing over) */
+            e -= vc_xf[v - vc];
+            if (e < REL_END) e = 0, v->stage = ST_OFF, vc_xf[v - vc] = 0;
+            break;
+        }
         e -= mulq16(e, c->rel);
         if (e < REL_END) {
             e = 0;

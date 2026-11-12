@@ -840,11 +840,25 @@ static int note_find_root(uint32_t t, uint32_t note)   /* (V2) a key's or MIDI n
         if (lat_trk[i] == t && lat_src[i] == SRC_KEY && lat_root[i] == note) return (int)i;
     return -1;
 }
-static void restart_track(uint32_t t)           /* audio: a new source: the track's notes go over (a fade, a new attack) */
+static void restart_track(uint32_t t)           /* audio: a new source: the track's notes go over (1.5.3: crossing over,
+                                                 * the new one's attack on a free voice while the old fades out over
+                                                 * ~1.5 s with its own source; no voice free: a fade, a new attack) */
 {
-    uint32_t i;
+    uint32_t i, f, o;
+    env_c_t c;
+    env_coef(&c, trk[t].env);                   /* (the new sound's ATTACK: the old one fades as long) */
     for (i = 0; i < nlat; i++)
-        if (lat_trk[i] == t) voice_start(lat_voice[i], t, lat_note[i]);
+        if (lat_trk[i] == t) {
+            o = lat_voice[i];
+            for (f = 0; f < NV && (f == o || !voice_idle(f)); f++)
+                ;
+            if (f < NV && vc[o].stage != ST_OFF && vc[o].eng != (uint32_t)trk[t].eng) {
+                voice_cross(o, c.atk);
+                voice_start(f, t, lat_note[i]);
+                lat_voice[i] = (uint8_t)f;
+            } else
+                voice_start(o, t, lat_note[i]);
+        }
     while (trk[t].eng == ENG_PHYS && phys_count() > PHYS_MAX) {   /* (now PHYS, past PHYS_MAX: the oldest PHYS notes go) */
         for (i = 0; i < nlat && trk[lat_trk[i]].eng != ENG_PHYS; i++)
             ;
@@ -1581,6 +1595,40 @@ static void sv_do(void)                         /* OCT+ on a SAVE page: its ACTI
 }
 /* PRESETS (not on SEQ's pages): the track's next / last sound in its CATEGORY (the factory's first, then the user's);
  * past the end, the next CATEGORY's */
+/* (1.5.3) PRESETS on a sounding track, its source the same: the four knobs glide to the new sound's over PGL_MS, so a
+ * drone turns into the next one instead of jumping (a new source: its notes cross over, restart_track). A knob turned
+ * meanwhile is the hand's from then on */
+#define PGL_MS 1500u
+static int32_t pgl_from[NT][NPARAM], pgl_to[NT][NPARAM], pgl_set[NT][NPARAM];
+static uint32_t pgl_t0[NT], pgl_on;               /* bit t * NPARAM + k: that knob gliding */
+static void pgl_tick(uint32_t now)
+{
+    uint32_t t, k, u, b;
+    for (t = 0; t < NT && pgl_on; t++)
+        for (k = 0; k < NPARAM; k++) {
+            volatile int32_t *p = &trk[t].p[clamp(trk[t].eng, 0, NENG - 1)][k];
+            b = 1u << (t * NPARAM + k), u = now - pgl_t0[t];
+            if (!(pgl_on & b)) continue;
+            if (*p != pgl_set[t][k]) { pgl_on &= ~b; continue; }
+            if (u >= PGL_MS) *p = pgl_to[t][k], pgl_on &= ~b;
+            else *p = pgl_set[t][k] = pgl_from[t][k] + (pgl_to[t][k] - pgl_from[t][k]) * (int32_t)u / (int32_t)PGL_MS;
+        }
+}
+static void pgl_load(const uint8_t *r, uint32_t t)   /* a sound into track t, PRESETS' way */
+{
+    int32_t e0 = trk[t].eng, was[NPARAM];
+    uint32_t k, v, on = 0;
+    for (k = 0; k < NPARAM; k++) was[k] = trk[t].p[clamp(e0, 0, NENG - 1)][k];
+    pgl_on &= ~(((1u << NPARAM) - 1u) << (t * NPARAM));
+    snd_apply(r, t);
+    for (v = 0; v < NV; v++) on |= vc[v].trk == t && vc[v].stage != ST_OFF;
+    if (trk[t].eng != e0 || !on) return;
+    for (k = 0; k < NPARAM; k++)
+        if (trk[t].p[e0][k] != was[k])
+            pgl_from[t][k] = pgl_set[t][k] = was[k], pgl_to[t][k] = trk[t].p[e0][k], trk[t].p[e0][k] = was[k],
+            pgl_on |= 1u << (t * NPARAM + k);
+    pgl_t0[t] = fm1_ms;
+}
 static void presets_turn(int32_t d)
 {
     uint32_t c = (uint32_t)brw_cat[sel] % NCAT, tries;
@@ -1601,7 +1649,7 @@ static void presets_turn(int32_t d)
     }
     if (!(r = cat_item(c, (uint32_t)pos))) { hd_say("NO SOUNDS"); return; }
     undo_take(UK_SND | sel, -1);                /* (one undo for a whole browse) */
-    snd_apply(r, sel);
+    pgl_load(r, sel);
     brw_cat[sel] = (int32_t)c, brw_pos[sel] = pos, trk_nm[sel][0] = 0;
     snd_rec_name(r, m);
     hd_say(m);
@@ -2553,6 +2601,7 @@ static void app_main(void)
         fm1_led_key(BTN_REC, rec || song_rec);
 
         jk_tick(fm1_ms, t_touch - t_hand < 0x80000000u ? t_touch : t_hand);   /* (1.5.3) JIEHKKI, RUOHCAT */
+        pgl_tick(fm1_ms);                       /* (1.5.3) PRESETS' glide */
         if (jk_sleep) jk_sleep = 0, scr_dark = 1, scr_aur = 0, lcd_light(0);   /* (its piece over: dark till a touch) */
         if (scr_woke) {                         /* SCREEN OFF: a touch woke it; no touch so long: dark (the panel keeps
                                                  * its picture; nothing drawn meanwhile); GUOVSSAHAS: the aurora */
