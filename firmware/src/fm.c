@@ -1,20 +1,20 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * GR!MM changes: Copyright (C) 2026 GR!MM */
-/* GR!MM's FM engine: Felucca's FM6 (hugelton/Felucca firmware/src/eng_fm6.c), whose synthesis is msfa, Dexed's
+/* Arctic Scream's FM engine: Felucca's FM6 (hugelton/Felucca firmware/src/eng_fm6.c), whose synthesis is msfa, Dexed's
  * 6-operator FM core, ported to integer C (fm6_core.c, Apache-2.0: LICENSES/Apache-2.0-msfa.txt). Taken from
  * eng_fm6.c: the patch through the macros (fm6_sync: MLVL, MEG, DTUN), a note's start (fm6_note_on) and a block
  * (fm6_render: the note's log frequency, the operators, the ~7 Hz DC blocker, the amplitude ramp). Not taken: the
- * patch formats and SysEx, the factory slots F1..F8 (GR!MM has its own patches: tools/gen_fm_patches.py), the voice
+ * patch formats and SysEx, the factory slots F1..F8 (Arctic Scream has its own patches: tools/gen_fm_patches.py), the voice
  * bank in flash, the editor, user presets, ALG / FB / MRAT / VMOD, unison.
- * GR!MM's: each track its own patch (track_t's fm_alg, fm_fb, fmo: FM ALGO and FM OP edit it; PATCH loads a built-in one
+ * Arctic Scream's: each track its own patch (track_t's fm_alg, fm_fb, fmo: FM ALGO and FM OP edit it; PATCH loads a built-in one
  * into it: fm_builtin), laid over the built-in patch for what is not edited (the envelopes' levels and last rates, the
  * scaling, the pitch envelope, the LFO); edits while notes sound: RATIO retunes them, LEVEL and FEEDBACK glide (a
  * level a block, a feedback step a block, its history kept continuous), a new ALGO only for new notes (grimm.c
- * restarts the track's: they fade). Four macros on KNOB 1..4, GR!MM's drone envelope over the patch (the operators stay keyed down while the
- * voice sounds: the patch's own envelopes shape the attack and the timbre, GR!MM's 3 s / 6 s the level), velocity
+ * restarts the track's: they fade). Four macros on KNOB 1..4, Arctic Scream's drone envelope over the patch (the operators stay keyed down while the
+ * voice sounds: the patch's own envelopes shape the attack and the timbre), velocity
  * fixed (100), the engine interface of voices.c.
- *   PATCH   one of GR!MM's patches (FM_PATCH)
+ *   PATCH   one of Arctic Scream's patches (FM_PATCH)
  *   BRIGHT  the output level of every operator that is not a carrier, -36 .. +36 dB (Felucca's MLVL): 64 = as made
  *   DECAY   the modulators' envelope rates (Felucca's MEG): above 64 slower (the brightness lasts), below faster
  *   DETUNE  the carriers spread apart in pitch, up to ~+-36 cents between the outer ones (Felucca's DTUN)
@@ -168,7 +168,7 @@ static void fm_glide(uint32_t vi, uint32_t fb)  /* a block: the levels a step (~
     }
 }
 
-/* CTL frames of voice v, added to mono[] (eng_fm6.c fm6_render, with GR!MM's envelope as the ramp) */
+/* CTL frames of voice v, added to mono[] (eng_fm6.c fm6_render, with Arctic Scream's envelope as the ramp) */
 static void fm_block(voice_t *v, const volatile int32_t *e, int32_t *mono, int32_t amp0, int32_t amp1)
 {
     uint32_t t = v->trk, i;

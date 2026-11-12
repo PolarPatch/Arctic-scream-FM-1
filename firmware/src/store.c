@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM's saves, the SLOOP way, in the six save sectors (platform.c save_flash: none in the sample area):
+/* Arctic Scream's saves, the SLOOP way, in the six save sectors (platform.c save_flash: none in the sample area):
  *   SOUNDS (sector 0, SND_N slots of 64 B): a track's sound: its source, that source's four, ENV, LATCH, CHORD, LFO
  *   (a sound saved before the LFO: DEPTH 0), FM: its own patch (FM ALGO, FM OP; saved before: the PATCH as built);
  *   its CATEGORY
@@ -48,7 +48,7 @@
 #define SLOT_LEN(tn, sq, lk) (4u + NT * ((tn) + (sq) + (lk)))   /* a slot: [0] used, its tracks, sequences, locks */
 #define SONG_PK 20u                             /* the song: its chain (16), MODE, the mutes and solos; (1.4, spare
                                                  * till then: 0) AIR's PING-PONG and SHIMMER */
-#define FX2_PK 8u                               /* (V2, version 8) MASTER's four, DRIVE's four */
+#define FX2_PK 8u                               /* (version 8) MASTER's four, DRIVE's four */
 #define EXT_PK 24u                              /* (1.5.3, version 9) the tracks' Biegga (4 x 4), JIEHKKI's LENGTH,
                                                  * DRIFT, RUOHCAT, SCALE's TUNING, the RUOHCAT page's SAMPLE, SHARE,
                                                  * VARY, 1 spare */
@@ -64,8 +64,8 @@
 #define SLOT_ALL (SLOT_PK + FM_ALL)             /* a slot in RAM: SLOT_PK, its FM patches after (the stream's tail) */
 #define WORK_PK WORK_LEN(TRK_PK, SONG_PK, SEQ_PK, LOCK_PK, FM_ALL, FX2_PK, EXT_PK)
 #define OBJ_HDR 12u                             /* magic, the save count, type, version, length */
-#define OBJ_MAGIC 0x4B504441u                   /* "ADPK" (Arctic Scream p0larpatch's own: its tracks are longer than GR!MM's,
-                                                 * so neither reads the other's saves; GR!MM's was "GRMK") */
+#define OBJ_MAGIC 0x4B504441u                   /* "ADPK" (Arctic Scream p0larpatch's own: its tracks are longer,
+                                                 * so neither reads the other's saves) */
 #define OBJ_VER 9u
 #define SLS_VER 6u                              /* the slots' stream (its layout as version 6's) */
 #define NOBJV 8u
@@ -76,11 +76,11 @@ static const uint16_t OBJ_VERS[NOBJV][8] = {{9, TRK_PK, 20, 260, 288, FM_ALL, FX
                                             {2, 44, 0, 196, 0, 0, 0, 0}};   /* the versions loaded, newest first: a
                                                  * track's, the song's, a sequence's, the locks', the FM patches', MASTER
                                                  * and DRIVE's, 1.5.3's EXT size (9: 1.5.3, Biegga, JIEHKKI, TUNING;
-                                                 * 8: 1.3, GR!MM V2's MASTER and DRIVE; 7, Arctic
+                                                 * 8: 1.3, the MASTER and DRIVE; 7, Arctic
                                                  * Scream 1.0 .. 1.2's: before MASTER and DRIVE; 6: before
                                                  * the FM patches; 5: before chord steps and locks; 4: before the song;
                                                  * 3: before the LFO; 2: before ARP) */
-#define SLS_MAGIC 0x534C4441u                   /* "ADLS": a sector of the slots' stream (GR!MM's: "GRLS") */
+#define SLS_MAGIC 0x534C4441u                   /* "ADLS": a sector of the slots' stream (Arctic Scream's: "GRLS") */
 #define SLS_P (4096u - OBJ_HDR - 4u)            /* the stream's bytes a sector */
 #define SLS_N 3u                                /* its sectors: 3, 4, 5 */
 enum { OBJ_WORK, OBJ_SLOTS };
@@ -91,7 +91,7 @@ _Static_assert(NENG <= PK_ENG + 2u, "a save keeps every source's settings (the e
 _Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4u * (SLOT_ALL + BG_SLOT) <= SLS_N * SLS_P &&
                SAVE_NSECT >= 3u + SLS_N, "the save sectors");
 
-/* the factory sounds: GR!MM's own (first drafts; Arctic Scream p0larpatch's names), records as the user's (no CRC: in the image, read-only), first in
+/* the factory sounds: Arctic Scream p0larpatch's, records as the user's (no CRC: in the image, read-only), first in
  * each CATEGORY's list; their names beside them. Bytes: CATEGORY, its number, the source, its four, ENV (ATTACK, DECAY,
  * SUSTAIN, RELEASE), LATCH, CHORD (0x80 chord mode on, VOICING << 4 | CHORD TYPE), LFO (RATE, DEPTH, DESTINATION, SHAPE).
  * Sources: 0 VA (WAVE 0 SAW, 1 SQUARE, 2 SUPERSAW), 1 FM (PATCH 0 BELL, 1 ORGAN, 2 SOFT PAD, 3 REED), 3 VOICE, 4 WHEEL,
@@ -356,17 +356,17 @@ static int snd_save(uint32_t i, uint32_t t, uint32_t cat)   /* track t's sound i
     return snd_put(i, r);
 }
 static int snd_clear(uint32_t i) { return snd_put(i, 0); }
-static uint8_t snd_latch_off;                   /* (V2) SYSTEM 3's LATCH ALWAYS OFF: a sound loaded sets the track's
+static uint8_t snd_latch_off;                   /* SYSTEM 3's LATCH ALWAYS OFF: a sound loaded sets the track's
                                                  * LATCH OFF (grimm.c's sys_sync) */
 static void snd_apply(const uint8_t *r, uint32_t t)   /* a sound record into track t (a new source: its notes go over) */
 {
     uint32_t k, e = r[3] < NENG ? r[3] : 0u, la;
-    for (k = 0; k < 4u; k++) {                  /* (GR!MM rc9: within the knobs' ranges: a sound the editor wrote, a
+    for (k = 0; k < 4u; k++) {                  /* (within the knobs' ranges: a sound the editor wrote, a
                                                  * broken one, can't put a value past them, nor a filter out of control) */
         trk[t].p[e][k] = clamp(r[4 + k], 0, ENGINES[e]->max[k]);
         trk[t].env[k] = clamp(r[8 + k], 0, 127);
     }
-    la = snd_latch_off ? 0u : r[12] & 1u;       /* (V2: SYSTEM 3's ALWAYS OFF: LATCH OFF, whatever the sound's; the
+    la = snd_latch_off ? 0u : r[12] & 1u;       /* (SYSTEM 3's ALWAYS OFF: LATCH OFF, whatever the sound's; the
                                                  * byte's rest: DRONE's) */
     if (trk[t].latch && !la) nq_put(NQ_RELEASE, t, 0);   /* (LATCH ON -> OFF: its latched notes released) */
     trk[t].latch = (int32_t)la;
@@ -434,7 +434,7 @@ static uint8_t *pk_track(uint8_t *q, uint32_t t)
     q[43] = ch_pack(t);
     q[44] = (uint8_t)((trk[t].arp ? 0x80u : 0u) | (uint32_t)clamp(trk[t].arp_mode, 0, NARPMODE - 1));   /* ARP */
     q[45] = (uint8_t)((uint32_t)clamp(trk[t].arp_rate, 0, NARPRATE - 1) | (uint32_t)clamp(trk[t].ftype, 0, NFTYPE - 1) << 4 |
-                      (uint32_t)clamp(trk[t].fpos, 0, 1) << 6);   /* (GR!MM V2's MIXER 2 TYPE, POS over ARP's RATE: its
+                      (uint32_t)clamp(trk[t].fpos, 0, 1) << 6);   /* (the MIXER 2 TYPE, POS over ARP's RATE: its
                                                  * byte 32 is DRONE's here; saved before: 0, LP PRE) */
     q[46] = (uint8_t)((uint32_t)clamp(trk[t].arp_oct, 1, 4) |
                                                                                  (uint32_t)clamp(trk[t].dr_rise, 0, DR_NRISE - 1) << 4);
@@ -474,7 +474,7 @@ static const uint8_t *uk_track(const uint8_t *q0, uint32_t t, int isr, uint32_t 
     }
     for (k = 0; k < 4u; k++) trk[t].hw_x[k] = 0;   /* (1.4: HOWL's LOOP out of the top bits, then those cleared) */
     for (k = 0; k < 28u; k++) trk[t].hw_x[k / 7u] |= (int32_t)(q[1 + k] >> 7) << (k % 7u), q[1 + k] &= 127u;
-    for (e = 0; e < PK_ENG; e++)                /* (GR!MM rc9: every value loaded within its knob's range: a broken save
+    for (e = 0; e < PK_ENG; e++)                /* (every value loaded within its knob's range: a broken save
                                                  * can't put one past it) */
         for (k = 0; k < 4u; k++) trk[t].p[e][k] = clamp(q[1 + e * 4u + k], 0, ENGINES[e]->max[k]);
     for (k = 0; k < 4u; k++) trk[t].p[ENG_HOWL][k] = clamp(q[52 + k], 0, ENGINES[ENG_HOWL]->max[k]);
@@ -574,7 +574,7 @@ static void pk_work(uint8_t *q)
     q[17] = (uint8_t)((trk_mute & 15u) | (trk_solo & 15u) << 4);   /* the mutes and solos, */
     q[18] = (uint8_t)clamp(dl_pp, 0, 127), q[19] = (uint8_t)clamp(rv_shim, 0, 127);   /* (1.4) AIR */
     for (t = 0; t < NT; t++) pk_fm(q + SONG_PK + t * FM_PK, t);   /* the FM patches */
-    q += SONG_PK + FM_ALL;                      /* (V2) MASTER, DRIVE */
+    q += SONG_PK + FM_ALL;                      /* MASTER, DRIVE */
     q[0] = (uint8_t)clamp(mf_cut, 0, 127), q[1] = (uint8_t)clamp(mf_res, 0, 127);
     q[2] = (uint8_t)clamp(mf_type, 0, NFTYPE - 1), q[3] = (uint8_t)clamp(mf_pos, 0, NMPOS - 1);
     q[4] = (uint8_t)clamp(dr_amt, 0, 127), q[5] = (uint8_t)clamp(dr_type, 0, NDTYPE - 1);
@@ -597,7 +597,7 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
     int globals = (f & UW_GLOBALS) != 0;
     for (t = 0; t < NT; t++) q = uk_track(q, t, 0, tn);
     if (globals) {
-        for (k = 0; k < 16u; k++) *PK_FX[k] = clamp(q[k], 0, 127);   /* (GR!MM rc9: within the knobs' range) */
+        for (k = 0; k < 16u; k++) *PK_FX[k] = clamp(q[k], 0, 127);   /* (within the knobs' range) */
         seq_bpm = clamp(q[16] | q[17] << 8, 20, 300);
         slot_cur = q[18] & 3u;
         sel = q[19] & 3u;
@@ -607,7 +607,7 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
     for (t = 0; t < NT; t++) q = uk_seq(q, t, sq);
     for (t = 0; t < NT; t++) q = uk_lock(q, t, lk);
     for (t = 0; t < NT; t++) uk_fm(fm ? q + sg + t * FM_PK : 0, t);   /* (saved before them: the PATCH as built) */
-    if (globals) {                              /* (V2) MASTER, DRIVE; saved before them: MASTER open, DRIVE off */
+    if (globals) {                              /* MASTER, DRIVE; saved before them: MASTER open, DRIVE off */
         const uint8_t *x = q + sg + fm;
         mf_cut = fx ? clamp(x[0], 0, 127) : 127, mf_res = fx ? clamp(x[1], 0, 127) : 0;
         mf_type = fx ? clamp(x[2], 0, NFTYPE - 1) : FT_LP, mf_pos = fx ? clamp(x[3], 0, NMPOS - 1) : MP_END;
@@ -908,8 +908,8 @@ static void project_new(void)                   /* NEW: the four tracks' power-o
         trk[t].lfo_rate = T0.lfo_rate, trk[t].lfo_depth = T0.lfo_depth, trk[t].lfo_dest = T0.lfo_dest;
         trk[t].lfo_shape = T0.lfo_shape;
         trk[t].dr_borga = T0.dr_borga, trk[t].dr_storm = T0.dr_storm, trk[t].dr_rise = T0.dr_rise;
-        trk[t].level = T0.level, trk[t].dly = T0.dly, trk[t].rev = T0.rev, trk[t].grn = T0.grn, trk[t].pan = T0.pan;   /* (GR!MM
-                                                 * rc9: the mix too, as at power-on: a track left at VOLUME 0, its filter
+        trk[t].level = T0.level, trk[t].dly = T0.dly, trk[t].rev = T0.rev, trk[t].grn = T0.grn, trk[t].pan = T0.pan;   /* (Arctic Scream
+                                                 * the mix too, as at power-on: a track left at VOLUME 0, its filter
                                                  * closed, its FX 0 came out of NEW silent) */
         trk[t].cut = T0.cut, trk[t].res = T0.res, trk[t].fx = T0.fx, trk[t].ftype = T0.ftype, trk[t].fpos = T0.fpos;
         trk[t].warp = trk[t].morph = 0;
@@ -920,7 +920,7 @@ static void project_new(void)                   /* NEW: the four tracks' power-o
             nq_put(NQ_RESTART, t, 0);
         }
     }
-    trk_mute = trk_solo = 0;                    /* (GR!MM rc9: no track left muted or soloed) */
+    trk_mute = trk_solo = 0;                    /* (no track left muted or soloed) */
     seq_clear();
 }
 

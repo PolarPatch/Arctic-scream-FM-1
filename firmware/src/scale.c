@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM's SEL: the scale the keys snap to (global: ROOT, SCALE) and a track's one-key chord (CHORD TYPE, VOICING).
+/* Arctic Scream's SEL: the scale the keys snap to (global: ROOT, SCALE) and a track's one-key chord (CHORD TYPE, VOICING).
  *   sc_snap:     a note to the nearest one of the scale (a tie: the lower); SCALE OFF: as it is
  *   chord_notes: the notes a chord on a note is (its CHORD TYPE, then its VOICING). SCALE: the triad of the scale on the
  *                note (the scale's 1st, 3rd and 5th from it: in key); SCALE OFF: MIN

@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM's DELAY: a tape echo. Written for GR!MM in integers; the design follows X0X's TAPE delay (fx_delay in
+/* Arctic Scream's DELAY: a tape echo. Written in integers; the design follows X0X's TAPE delay (fx_delay in
  * firmware/src/dsp/fxbus.c of charlesvestal/fm1-x0x, GPL-3.0, itself a port of 9W9's er99_dly_tick, GPL-3.0): wow
  * (0.5 Hz) and flutter (6.1 Hz) on the read position, a darker loop with a tanh saturation that holds it, a 30 Hz DC
  * block inside it, feedback up to past unity. X0X's code is float, which the FM-1 cannot run: none of it is here.
- * The wow and the saturation are in wear.c (the TAPE effect has them too). The integer pieces are Felucca's, as GR!MM
+ * The wow and the saturation are in wear.c (the TAPE effect has them too). The integer pieces are Felucca's, as Arctic Scream
  * has them (softclip, soft_knee, sh_tz, the one-pole low-pass that keeps
  * its steps' remainders so a tail ends in exact silence).
  *
@@ -96,7 +96,7 @@ static void tape_render(const int32_t *in, int32_t *out, int32_t *rev, uint32_t 
     m1 = wear_wow(dl.p1, dl.p2, dl.p3, a);      /* (wear.c) */
     tc = 28300 - wear * 148;                    /* the loop's low-pass, Q15: ~7 kHz .. ~1.2 kHz */
     g = 4096 + wear * 97;                       /* the saturation's drive, Q12: 1x .. 4x (1.3: was 1.8x) */
-    ig = (int32_t)(134217728u / (uint32_t)g) >> 1;   /* .. and the level made up after it, Q15 (GR!MM V2: the line at
+    ig = (int32_t)(134217728u / (uint32_t)g) >> 1;   /* .. and the level made up after it, Q15 (the line at
                                                  * half: driven twice as hard, half back: saturating where it did) */
     g *= 2;
     fb = fbk <= 100 ? fbk * 284 : 28400 + (fbk - 100) * 769;   /* FEEDBACK, Q15: 0 .. ~0.87 at 100, then on to 1.5 (Arctic
@@ -141,7 +141,7 @@ static void tape_render(const int32_t *in, int32_t *out, int32_t *rev, uint32_t 
         int32_t wg = mix * 258;
         for (i = 0; i < DL_NC; i++) {
             int32_t wl = dl.l[i], wr = dl.r[i], *o = out + 4u * i, a = 2 * mulq15((ml + wl) >> 1, wg),
-                    b = 2 * mulq15((mr + wr) >> 1, wg), c = 2 * mulq15(wl, wg), d = 2 * mulq15(wr, wg);   /* (V2: x 2) */
+                    b = 2 * mulq15((mr + wr) >> 1, wg), c = 2 * mulq15(wl, wg), d = 2 * mulq15(wr, wg);   /* (x 2) */
             o[0] += a, o[1] += b, o[2] += c, o[3] += d;
             rev[2u * i] += (a + b) >> 1;        /* (the echoes, both sides, into SPACE) */
             rev[2u * i + 1u] += (c + d) >> 1;

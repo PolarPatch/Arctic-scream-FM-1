@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM's sequencer: a sequence a track (T1..T4), all four played together on one tempo, each with its own STEPS,
+/* Arctic Scream's sequencer: a sequence a track (T1..T4), all four played together on one tempo, each with its own STEPS,
  * DIVISION, SWING and PLAY MODE.
  *   a step: OFF (NOTE 0) or a note, with CHANCE (0..100 %: it plays or not, each time), RATCHET (1..4 hits within the
  *   step) and LENGTH (in steps: longer than one, the note ties over the next ones)
@@ -58,7 +58,7 @@ static volatile uint32_t ck_mode;               /* (clock.c) */
 static void ck_out(uint32_t st, uint32_t rem);  /* (clock.c: CLOCK INT+OUT, a message out at its time: STOP's) */
 static int slot_used(uint32_t s);
 static void arp_tick(uint32_t t, int locked);   /* (arp.c: the arps on the sequencer's clock while it plays) */
-static volatile uint32_t gen_on;                /* (V2) main loop: bit t: track t GENERATEs (gen.c): its pattern plays on
+static volatile uint32_t gen_on;                /* main loop: bit t: track t GENERATEs (gen.c): its pattern plays on
                                                  * unheard */
 static void gen_tick(uint32_t t);               /* (gen.c: a tick of track t, from arp_tick) */
 
@@ -163,9 +163,9 @@ static void seq_track_tick(uint32_t t)          /* audio: a tick of track t */
         const seq_step_t *s = &S->pat[clamp(S->cur, 0, SEQ_NPAT - 1)].st[S->pos];
         uint32_t j;
         for (j = 0; j < 4u; j++) lk_v[t][j] = s->lv[j];
-        lk_m[t] = s->note && !(gen_on >> t & 1u) ? s->lmask : 0u;   /* (V2: GENERATE: none) */
+        lk_m[t] = s->note && !(gen_on >> t & 1u) ? s->lmask : 0u;   /* (GENERATE: none) */
     }
-    if (S->t == sw && !(gen_on >> t & 1u))      /* (V2: GENERATE on: the step not played, its place kept) */
+    if (S->t == sw && !(gen_on >> t & 1u))      /* (GENERATE on: the step not played, its place kept) */
         seq_fire(t);
     if (++S->t >= stl) {
         S->t = 0;

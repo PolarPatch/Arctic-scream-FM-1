@@ -60,7 +60,7 @@ static struct {
 } cdc = {{0x00, 0xC2, 0x01, 0x00, 0, 0, 8}};   /* 115200 8N1 */
 #endif
 
-#include "uac_ring.h"                          /* (GR!MM rc9) the USB audio ring: its state, the render's
+#include "uac_ring.h"                          /* the USB audio ring: its state, the render's
                                                  * side, the packets (no registers: tests/uac_ring_test.c) */
 #if FELUCCA_UAC
 static uint32_t ep4tx[UA_MAXF] __attribute__((aligned(4)));
@@ -694,7 +694,7 @@ static void midi_in_event(uint32_t pkt)
     }
     if (cin == 0xFu && (st == 0xF8u || st == 0xFAu || st == 0xFBu || st == 0xFCu)) {   /* clock, transport */
 #ifdef MIDI_RT_IN
-        MIDI_RT_IN(st);                                 /* (GR!MM: the app's realtime ring, timed) */
+        MIDI_RT_IN(st);                                 /* (Arctic Scream: the app's realtime ring, timed) */
         return;
 #endif
         if (mi_w - mi_r < MQ) {
@@ -830,7 +830,7 @@ static void ep1_tx(void)
         return;
 #ifdef MIDI_RT_SOON
     if (MIDI_RT_SOON())
-        return;                                         /* (GR!MM: a clock message due: the endpoint kept free for it) */
+        return;                                         /* (Arctic Scream: a clock message due: the endpoint kept free for it) */
 #endif
 #else
     if (mo_w == mo_r)

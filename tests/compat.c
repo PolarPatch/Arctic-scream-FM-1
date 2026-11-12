@@ -1,12 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* Saves across versions (host mode, tests/run_host.sh): a project as an older GR!MM saved it loads as it did there.
+/* Saves across versions (host mode, tests/run_host.sh): a project as an older Arctic Scream saved it loads as it did there.
  * Environment, at the end of a host run (tests/host.c):
  *   GRIMM_FILL=1          a varied project into RAM (every step's values over their ranges, chord steps, locks, the
  *                         patterns' settings), into slots A..C, and saved (autosave), with two user sounds
  *   GRIMM_SAVE_OUT=file   the save sectors (6 x 4 KiB) into file
  *   GRIMM_STATE_OUT=file  what was loaded, as text: each step's values, the packed project, the slots, the settings
- *                         (all but their version, which a newer GR!MM raises; then the bytes it adds) and the sounds
+ *                         (all but their version, which a newer Arctic Scream raises; then the bytes it adds) and the sounds
  *                         (hex)
  * and at the start, GRIMM_SAVE_IN=file: the save sectors from file (tests/host.c main).
  * tests/data/a1.2-saves.bin was made by Arctic Scream p0larpatch 1.2 (its saves as 1.2 makes them, after the v1.2 tag's

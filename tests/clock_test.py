@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 GR!MM
-"""GR!MM V2's MIDI in host mode (tests/run_host.sh): the clock in from USB and the TRS jack at 60, 120 and 240 BPM for
+"""the MIDI in host mode (tests/run_host.sh): the clock in from USB and the TRS jack at 60, 120 and 240 BPM for
 5 minutes each (the tempo shown, no drift: 4 ticks a pulse, exactly), START / STOP / CONTINUE, the clock lost (the
 FM-1's own tempo, playing on), the other source's clock and the tempo knobs ignored, the clock out (CLOCK INT+OUT:
 evenly spaced, START and STOP), INT ignoring it all, and MIDI CHANNEL's CH n > SEL. Each a script for build/host/grimm

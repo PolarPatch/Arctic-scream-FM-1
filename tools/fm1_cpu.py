@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 GR!MM
-"""Where the FM-1's audio time goes (GR!MM V2): the editor's command 25 (CPU; GR!MM V2's 24), read over USB about every second.
+"""Where the FM-1's audio time goes: the editor's command 25 (CPU; the 24), read over USB about every second.
 
   py tools\\fm1_cpu.py              every ~1 s until Ctrl+C
   py tools\\fm1_cpu.py --once       one reading
@@ -18,7 +18,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from fm1_sample_upload import Link  # noqa: E402  (the FM-1's MIDI ports, GR!MM's identity checked)
+from fm1_sample_upload import Link  # noqa: E402  (the FM-1's MIDI ports)
 
 CPU = 25
 NAMES = ["VOICES", "MIX", "GRAIN", "DELAY", "SPACE", "TAPE", "PERFORM", "MASTER", "DRIVE", "SCAN"]
@@ -47,7 +47,7 @@ def reading(link):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Where the FM-1's audio time goes (GR!MM V2).",
+    ap = argparse.ArgumentParser(description="Where the FM-1's audio time goes.",
                                  formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
     ap.add_argument("--once", action="store_true", help="one reading, then stop")
     a = ap.parse_args()
@@ -71,4 +71,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         pass
     except TimeoutError as e:
-        sys.exit(f"{e}: is GR!MM running, and no other app using the FM-1's MIDI port?")
+        sys.exit(f"{e}: is Arctic Scream running, and no other app using the FM-1's MIDI port?")

@@ -1,13 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * GR!MM changes: Copyright (C) 2026 GR!MM */
-/* GR!MM's PHASE source: Felucca's PHASE engine (hugelton/Felucca firmware/src/eng_phase.c), phase distortion in the
+/* Arctic Scream's PHASE source: Felucca's PHASE engine (hugelton/Felucca firmware/src/eng_phase.c), phase distortion in the
  * manner of Casio's CZ. Its waveforms are a C port of the oscillator of CrispyZebra (Leo Kuroshita, GPL-3.0,
  * github.com/hugelton/CrispyZebra), the author's own phase-distortion core: a -cos table read through a bent phase
  * whose bend is DCW. WAVE2 alternates with WAVE every other cycle; a second line DETUNE cents up is mixed in. Taken
  * over: pd_cos, pd_setup, pd_wave, the render loop. Not taken: ENV -> DCW (no envelope of its own yet), the ring
  * modulation (LINE: MIX), SUB.
- * GR!MM's: the four knobs, the level (as VA's), the engine interface.
+ * Arctic Scream's: the four knobs, the level (as VA's), the engine interface.
  *   WAVE    SAW, SQR, PLS, DSIN, SPLS, RSAW, RTRI, RTRP (the last three: CZ's resonance waves)
  *   WAVE2   -, or a wave every other cycle
  *   DCW     the bend: a sine at 0 .. the wave at the top

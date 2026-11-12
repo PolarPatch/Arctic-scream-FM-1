@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 GR!MM
-"""Test GR!MM's editor mailbox on the FM-1 (docs/EDITOR_PROTOCOL.md): read INFO, back up all user sounds, slots A-D,
-the settings and (GR!MM V2) the four sample slots to a file, write it all back, read it again and check that it matches.
+"""Test Arctic Scream's editor mailbox on the FM-1 (docs/EDITOR_PROTOCOL.md): read INFO, back up all user sounds, slots A-D,
+the settings and the four sample slots to a file, write it all back, read it again and check that it matches.
 
   py tools\\fm1_editor_test.py                     the whole test (backup, write back, compare)
   py tools\\fm1_editor_test.py --backup FILE       only a backup into FILE
@@ -14,7 +14,7 @@ the settings and (GR!MM V2) the four sample slots to a file, write it all back, 
 Writing needs the FM-1 stopped and silent (no note, no release, no DELAY or SPACE tail). The backup file is JSON:
 {"format": "grimm-backup", "version": 1, "proto", "fmt", "firmware", "objects": [{"id", "len", "crc", "data"
 (base64)}], "samples": [4 x null (empty) or {"slot", "name", "len", "crc", "data" (base64: the slot's header,
-data)}]}. "samples" is GR!MM V2's: a backup without it (made with or of GR!MM 1.0) restores and leaves the sample slots as
+data)}]}. "samples" came later: a backup without it (from an older version) restores and leaves the sample slots as
 they are; with it, a restore makes the four slots as in the file (an empty one emptied; one already so: not written
 again). Needs mido and python-rtmidi (py -m pip install mido python-rtmidi), as tools\\fm1_install.py.
 """
@@ -28,13 +28,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fm1_sample_upload import (BUSY, BUSY_TEXT, CMD_BEGIN, CMD_END, CMD_ERASE, CMD_WRITE, DATA_OFF, HDR,  # noqa: E402
-                               HDR_LEN, MAGIC, MAX_DATA, Link, pack7, printable)   # (the FM-1's MIDI ports, GR!MM's
+                               HDR_LEN, MAGIC, MAX_DATA, Link, pack7, printable)   # (the FM-1's MIDI ports, Arctic Scream's
                                                                                    # identity checked)
 
 INFO, GET, PUT, TRACK = 20, 21, 22, 23
 BEGIN, DATA, COMMIT, ABORT = 0, 1, 2, 3
-O_SET, O_SLOT, O_SND, O_FACT, O_SMP = 0, 1, 16, 80, 5   # (O_SMP: GR!MM V2, the sample slots 5..8, GET only)
-SET_V1, SET_V2 = 168, 169                       # the settings of GR!MM 1.0 (version 1), of V2's version 2: a V2 takes them
+O_SET, O_SLOT, O_SND, O_FACT, O_SMP = 0, 1, 16, 80, 5   # (O_SMP: the sample slots 5..8, GET only)
+SET_V1, SET_V2 = 168, 169                       # the settings of versions 1 and 2: a newer one takes them
 SMP_RC = {1: "bad arguments", 2: "flash erase failed", 3: "flash write failed", 4: "out of order", 5: "header or CRC",
           7: "no flash"}
 missed = 0                                      # GET replies that did not come (or not for the offset asked): asked
@@ -68,7 +68,7 @@ def info(link):
         except TimeoutError:
             pass
     else:
-        raise TimeoutError("no answer from GR!MM to INFO (a firmware before step 26a?)")
+        raise TimeoutError("no answer from Arctic Scream to INFO (a firmware before step 26a?)")
     if k:                                       # (asked again: the first one may only have been slow, and the FM-1,
         time.sleep(0.3)                         # one request at a time, still answering the second; a request now
         for _ in link.i.iter_pending():         # would be dropped. Its answer let come, and gone)
@@ -138,7 +138,7 @@ def put(link, o, data, fmt, what):
 
 def samples(link, inf):
     """the sample slots as the flash holds them: each its bytes (header, data) or None (empty); None for them all: a
-    GR!MM before V2 (it cannot read them back)"""
+    an older version (it cannot read them back)"""
     out = []
     for k in range(inf["sample_slots"]):
         print(f"\r  reading sample {k + 1}   ", end="", flush=True)
@@ -155,7 +155,7 @@ def backup(link, inf):
         objs.append(dict(id=o, len=size, crc=zlib.crc32(d), data=base64.b64encode(d).decode()))
     smp = samples(link, inf)
     print("\r  read: settings, slots A-D, " + f"{inf['sounds']} sounds" +
-          (", the sample slots" if smp is not None else " (not the samples: this GR!MM cannot read them back)") +
+          (", the sample slots" if smp is not None else " (not the samples: this Arctic Scream cannot read them back)") +
           f"; replies missed and asked again: {missed}" + "".join(f"\n    ({m})" for m in missed_at))
     b = dict(format="grimm-backup", version=1, proto=inf["proto"], fmt=inf["fmt"], firmware=inf["firmware"],
              date=time.strftime("%Y-%m-%d %H:%M:%S"), objects=objs)
@@ -174,13 +174,13 @@ def sample_ok(d):                               # a slot's bytes: its header goo
 def load(path, inf):
     b = json.loads(Path(path).read_text())
     if b.get("format") != "grimm-backup" or b.get("version") != 1:
-        sys.exit(f"{path}: not a GR!MM backup")
+        sys.exit(f"{path}: not an Arctic Scream backup")
     if b.get("fmt") != inf["fmt"]:
         sys.exit(f"{path}: object format {b.get('fmt')}, the FM-1's is {inf['fmt']}")
     sizes = {o: s for o, s, _ in objects(inf)}
     for ob in b["objects"]:
         d = base64.b64decode(ob["data"])
-        old = ob["id"] == O_SET and len(d) in (SET_V1, SET_V2) and len(d) < sizes[O_SET]   # (an older GR!MM's
+        old = ob["id"] == O_SET and len(d) in (SET_V1, SET_V2) and len(d) < sizes[O_SET]   # (an older Arctic Scream's
         if ob["id"] not in sizes or (len(d) != sizes[ob["id"]] and not old) or zlib.crc32(d) != ob["crc"]:   # settings)
             sys.exit(f"{path}: object {ob['id']} is damaged or not this firmware's")
     smp = b.get("samples")
@@ -269,7 +269,7 @@ def track(link, op, t, rec=None):
 def live(link, inf):
     """TRACK: the four tracks read; the selected one's ENV ATTACK set live and back; another track selected and back"""
     if inf["proto"] < 2:
-        sys.exit("the FM-1's GR!MM has no TRACK yet (editor protocol 1): install step 26b2 or later")
+        sys.exit("the FM-1's firmware has no TRACK yet (editor protocol 1): install step 26b2 or later")
     recs = [track(link, 0, t)[1] for t in range(4)]
     sel = track(link, 0, 0)[0]
     for t, r in enumerate(recs):
@@ -323,7 +323,7 @@ def record(link, inf, path):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Test GR!MM's editor mailbox on the FM-1 (USB-MIDI SysEx).",
+    ap = argparse.ArgumentParser(description="Test Arctic Scream's editor mailbox on the FM-1 (USB-MIDI SysEx).",
                                  formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
     ap.add_argument("--backup", type=Path, metavar="FILE", help="only back up into FILE")
     ap.add_argument("--restore", type=Path, metavar="FILE", help="write a backup back")
@@ -333,7 +333,7 @@ def main():
     a = ap.parse_args()
     link = Link()
     inf = info(link)
-    print(f"GR!MM {inf['firmware']}: editor protocol {inf['proto']}, format {inf['fmt']}; {inf['sounds']} sound slots, "
+    print(f"Arctic Scream {inf['firmware']}: editor protocol {inf['proto']}, format {inf['fmt']}; {inf['sounds']} sound slots, "
           f"{inf['factory']} factory sounds; a slot {inf['slot_size']} B, the settings {inf['set_size']} B; samples: "
           f"{inf['samples_used']} of {inf['sample_slots']} slots in use")
     if a.restore:
@@ -371,4 +371,4 @@ if __name__ == "__main__":
     try:
         main()
     except TimeoutError as e:
-        sys.exit(f"{e}: is GR!MM running, and no other app using the FM-1's MIDI port?")
+        sys.exit(f"{e}: is Arctic Scream running, and no other app using the FM-1's MIDI port?")

@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* GR!MM: an FM-1 firmware, built on Dinghy (zvenson). Step 26a2: four tracks (sources:
+/* Arctic Scream: an FM-1 firmware, built on Dinghy (zvenson). Step 26a2: four tracks (sources:
  * VA, FM, SAMPLE over uploaded samples, VOICE, WHEEL, PHYS, PHASE), effects under FX (TAPE over the whole mix,
  * GRAIN, DELAY, SPACE), the mixer under HOME.
  * GR!MM changes Copyright (C) 2026 GR!MM; Dinghy by zvenson; the platform by Felucca / SLOOP; the DSP
  * (dsp.c), the VA engine (analog.c), the FM engine (fm.c, around msfa: fm6_core.c, Apache-2.0), the GRAIN effect's grain
  * (grain.c) and the envelope (voices.c) are Felucca's, the reverb (hall.c) Felucca's HALL; the delay (tape.c), its wear
- * (wear.c), the TAPE effect (tapefx.c) and the SAMPLE source (sampler.c) are GR!MM's, the delay's design after X0X's
+ * (wear.c), the TAPE effect (tapefx.c) and the SAMPLE source (sampler.c) are Arctic Scream's, the delay's design after X0X's
  * TAPE (see LICENSING.md).
  *
  * Dinghy: the smallest FM-1 firmware to build your own on. This is the file to change. Everything below it
@@ -40,7 +40,7 @@
  *              the track's chord mode on / off, as SEL is let go (no page change; a knob turned meanwhile: not): a key (a
  *              MIDI note, a note step) plays its chord (scale.c); a step recorded in chord mode keeps its chord (a chord
  *              step, in the accent); SEQ's pages, SEL held: the knobs lock the selected step's sound (the source's four;
- *              a mark in the grid), + OCT-: its locks cleared; (V2) SEL held + OCT+, any page: the track's LATCH
+ *              a mark in the grid), + OCT-: its locks cleared; SEL held + OCT+, any page: the track's LATCH
  *              on / off
  *   GLO        SONG (the chain: up to 16 steps, each a slot A..D and its REPEATS, or END; SECTION, PATTERN, REPEATS,
  *              MODE OFF / SONG / SONG LOOP; REC on it: song record, the slots switched to as they are played) (song.c);
@@ -57,7 +57,7 @@
  *              page, then a CC: linked, 32 at most; CLEAR ALL + OCT+; OCT- cancels; SEQ MIDI OUT: the steps' and the
  *              arps' notes out on their tracks' channels too; SAMPLES: RESTORE + OCT+ writes the four factory
  *              samples over the slots, OCT- keeps them; none built in: CLEAR, the slots emptied), HOME again:
- *              SYSTEM 3 (GR!MM V2: LATCH: FROM SOUND, a sound loaded brings its own LATCH, as before; ALWAYS OFF, a
+ *              SYSTEM 3 (LATCH: FROM SOUND, a sound loaded brings its own LATCH, as before; ALWAYS OFF, a
  *              sound loaded sets the track's LATCH OFF; at the load only: EDIT's LATCH, SEL + OCT+ as ever;
  *              Arctic Scream p0larpatch: USB LEVEL, -12 .. +24 dB in 6 dB steps, the computer's recording over USB,
  *              a limiter after it); the FM-1's settings, not the project's
@@ -70,7 +70,7 @@
  *              2.5 s, at most every 20 s, only if changed, never while playing; while a voice sounds (a release, a
  *              latched note: SAVES WHEN SILENT) it waits, at most 30 s at rest (1.4.1: a drone never falls silent,
  *              and a power-off lost the work); a slot saved or erased, a SOUNDS SAVE / CLEAR, at once (playing: at
- *              the stop), the flash's ~50 ms gap in the sound asked for; at power-on it comes back as left. (GR!MM
+ *              the stop), the flash's ~50 ms gap in the sound asked for; at power-on it comes back as left. (Arctic Scream
  *              rc11) A computer recording the USB audio: the hands at rest a minute first (a save stops the key scan,
  *              the LEDs and the stream for ~50 ms). A watchdog restart says WATCHDOG RESET at boot, a supply that
  *              sagged LOW VOLTAGE RESET (a fault: platform.c's red crash screen, its PC)
@@ -80,7 +80,7 @@
  *   SEQ        GRID (the track's 64 steps; KNOB: the selected step's NOTE (all down: OFF), CHANCE, RATCHET,
  *              LENGTH) -> PATTERN SETTINGS (STEPS 1..64, DIVISION 1/4 .. 1/32 and triplets, SWING, PLAY MODE); the
  *              sequencer: seq.c; held + white keys F3 .. F4: CLEAR, RANDOM, SHIFT LEFT, SHIFT RIGHT, COPY, PASTE, DOUBLE,
- *              MUTATE (the selected track's pattern; undoable; no page change; the eight keys lit); (V2) REC held
+ *              MUTATE (the selected track's pattern; undoable; no page change; the eight keys lit); REC held
  *              ~1 s: the selected track's pattern cleared as CLEAR does, REC as before the press
  *   FX         TAPE -> GRAIN -> DELAY -> SPACE:
  *              TAPE:  WOW, SATURATION, TONE, HISS, over the whole mix (all 0: bypassed)
@@ -159,12 +159,12 @@ static volatile uint32_t cpu_now, cpu_peak;     /* audio: ticks a block, the las
 static uint32_t ck_e, ck_j;                     /* audio: this block's time (rt_now), its control block (clock.c) */
 static volatile uint32_t cpu_reset;             /* main loop: + 1 sets PEAK back to 0 */
 enum { CS_VOICES, CS_MIX, CS_GRAIN, CS_DELAY, CS_SPACE, CS_TAPE, CS_PERFORM, CS_MASTER, CS_DRIVE, CS_SCAN, CS_N };
-static volatile uint32_t cpu_stage[CS_N];       /* audio: NOW split (GR!MM V2, the editor's 24 CPU): each stage's ticks
+static volatile uint32_t cpu_stage[CS_N];       /* audio: NOW split (the editor's 24 CPU): each stage's ticks
                                                  * a block over NOW's blocks, the key scan's (SCAN: the timer ISR inside
                                                  * the audio ISR) taken out of them and counted on its own */
 static uint32_t cpu_over;                       /* audio: blocks in a row over the budget (the overload guard) */
 static int32_t tbuf[NT][VB], dbus[VB], rbus[VB], gbus[VB];   /* the tracks (mono); the DLY, REV and GRAIN buses */
-#include "master.c"                             /* GR!MM V2: MASTER (a filter on the whole sound), DRIVE (and a limiter) */
+#include "master.c"                             /* MASTER (a filter on the whole sound), DRIVE (and a limiter) */
 static volatile uint32_t trk_mute, trk_solo;    /* main loop: GLO held + white keys 1..4, 5..8 (bit t: track t) */
 enum { PF_REV, PF_ECHO, PF_TAPE, PF_BACK, PF_FDOWN, PF_FUP, PF_STUT, NPF };   /* the FX layer's tricks: G3 .. F4 */
 static volatile uint32_t pf_held;               /* main loop: bit PF_: its key held (FX held + it; perform.c) */
@@ -235,7 +235,7 @@ static void mix_add(int32_t *o, uint32_t st, const int32_t *x, int32_t g0, int32
  * LEVEL, PAN and the sends. dsp.c's SVF (as VA's) at a quarter of the track's scale (a chord's sum: up to ~2^20), the
  * cutoff gliding to where it is turned (~6 ms) with its coefficients every CTL frames, RESONANCE up to a Q of ~2.5, a
  * soft knee after it: no zipper, nothing running away. Open (CUTOFF at the top, the LFO not moving it): bypassed.
- * GR!MM V2: MIXER 2's TYPE: LP (as V1.0, the same code), HP (open, bypassed: CUTOFF at the bottom), BP (never open), the
+ * MIXER 2's TYPE: LP (as V1.0, the same code), HP (open, bypassed: CUTOFF at the bottom), BP (never open), the
  * same SVF's outputs (dsp.c tsvf_any); POS: PRE (as V1.0: the sends hear it filtered) or POST (mix_tracks: the sends
  * hear the track before it, only its dry sound filtered) */
 #define JK_NLEN 7                               /* (1.5.3, jiehkki.c: JIEHKKI's LENGTHs; its knobs (store.c saves them); */
@@ -281,7 +281,7 @@ static void trk_filter(uint32_t t, int32_t *x, uint32_t n)
             tsvf_coef(&c, cs, r);
             for (j = i; j < i + CTL && j < n; j++) x[j] = soft_knee(tsvf_lp(&c, x[j] >> 2, &ic1, &ic2), 100000) << 2;
         }
-    } else {                                    /* (V2: HP, BP) */
+    } else {                                    /* (HP, BP) */
         int32_t k = 8192 - r * 7600 / 127;      /* (tsvf_coef's damping) */
         for (i = 0; i < n; i += CTL) {
             cs += (tgt - cs) >> 3;
@@ -323,7 +323,7 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
         g[4] = mulq15(lv, fx_send(t, lfo_move(t, LD_GRAIN, clamp(trk[t].grn, 0, 127), 127)));
         int32_t px0 = tf_px[t], pw = trk[t].fpos ? TF_PX1 : 0;
         int32_t px1 = !(used >> t & 1u) ? pw : px0 < pw ? (px0 + 32 < pw ? px0 + 32 : pw) : (px0 - 32 > pw ? px0 - 32 : pw);
-        tf_px[t] = px1;                         /* (V2: POS; silent: at once) */
+        tf_px[t] = px1;                         /* (POS; silent: at once) */
         if ((used >> t & 1u) && (px0 | px1) && !tf_open(t)) {   /* (POST, or crossing over: the sends' share
                                                  * before the filter, the rest after it) */
             int32_t *bus[3] = {dbus, rbus, gbus};
@@ -358,7 +358,7 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
     }
 }
 
-/* (V2) the output: 6 dB of headroom after every effect (the mix at half: six loud voices, four tracks fit), MASTER
+/* the output: 6 dB of headroom after every effect (the mix at half: six loud voices, four tracks fit), MASTER
  * (1.5.3: the knob's turn to the power 1.5: half way ~9 dB under the top, 3/4 ~4 dB; V2's was the knob squared and
  * halved up to 3/4, half way 18 dB under; at the top, as ever, the level before V2), then a limiter: a
  * peak past OUT_LIM (just under full scale) at once, let go over ~90 ms: nothing reaches the clip.
@@ -449,7 +449,7 @@ static void app_audio(int32_t *out, uint32_t n)
     mix_tracks(out, used, n);
     ru_render(out, rbus, n);                    /* (1.5.3) RUOHCAT: the ice around the drone (jiehkki.c) */
     CS_MARK(CS_MIX);
-    master_filter(out, n, MP_PRE);              /* (V2) MASTER, PRE FX: the tracks' dry mix */
+    master_filter(out, n, MP_PRE);              /* MASTER, PRE FX: the tracks' dry mix */
     CS_MARK(CS_MASTER);
     for (i = 0, hw_bloom_on = 0; i < NT; i++)   /* (1.4) HOWL's BLOOM: the dry mix kept, so what the effects add is known */
         if (trk[i].eng == ENG_HOWL && trk[i].hw_x[HX_BLOOM] > 0) hw_bloom_on = 1;
@@ -463,18 +463,18 @@ static void app_audio(int32_t *out, uint32_t n)
     CS_MARK(CS_SPACE);
     if (hw_bloom_on && n <= HW_RN)              /* (.. and now only what they added: the next render's BLOOM) */
         for (i = 0; i < n; i++) hw_ret[i] = ((out[2u * i] + out[2u * i + 1u]) >> 1) - hw_ret[i];
-    master_filter(out, n, MP_POST);             /* (V2) MASTER, POST REVERB */
+    master_filter(out, n, MP_POST);             /* MASTER, POST REVERB */
     CS_MARK(CS_MASTER);
-    drive_render(out, n);                       /* (V2) DRIVE and its limiter, */
+    drive_render(out, n);                       /* DRIVE and its limiter, */
     CS_MARK(CS_DRIVE);
     tapefx_render(out, n);                      /* TAPE: all of it, */
     CS_MARK(CS_TAPE);
     perform_render(out, n);                     /* then the FX layer's tricks, the last stage before MASTER */
     CS_MARK(CS_PERFORM);
-    master_filter(out, n, MP_END);              /* (V2) MASTER, END: the very last */
+    master_filter(out, n, MP_END);              /* MASTER, END: the very last */
     CS_MARK(CS_MASTER);
     jk_out(out, n);                             /* (1.5.3) JIEHKKI: the piece's rise and fall (jiehkki.c) */
-    out_stage(out, n);                          /* (V2) the headroom, the MASTER knob, the limiter */
+    out_stage(out, n);                          /* the headroom, the MASTER knob, the limiter */
     CS_MARK(CS_MASTER);
 #undef CS_MARK
     for (i = 0; i < 2u * n; i += 32u) {         /* (the output's peaks, left and right, roughly: HOME's eye) */
@@ -520,7 +520,7 @@ static uint8_t lat_note[NV], lat_root[NV], lat_id[NV], lat_trk[NV], lat_voice[NV
 static volatile uint32_t nlat;
 static uint32_t sel;                            /* main loop: the selected track (ALGORITHM) */
 static uint16_t key_held[27];                   /* main loop, LATCH OFF: the track (<< 8, + 0x8000) a key holds */
-static uint8_t midi_held[128];                  /* .. the tracks a MIDI note holds (bit t); (V2) bit 4 + t: on t it
+static uint8_t midi_held[128];                  /* .. the tracks a MIDI note holds (bit t); bit 4 + t: on t it
                                                  * came again before its off (a DAW's loop): its next off is the earlier
                                                  * one's, passed over */
 static uint16_t echo_on[128];                   /* main loop: the notes on out there over USB-MIDI (bit: the channel),
@@ -608,7 +608,7 @@ static uint32_t drop_at(uint32_t i)             /* note i out of the list (its t
     return v;
 }
 static uint32_t drop_oldest(void) { return drop_at(0); }   /* the oldest note out of the list: its voice */
-/* PHYS at most PHYS_MAX voices at once (V2.0: six of them, with every effect, came to ~90 % of the FM-1's audio time):
+/* PHYS at most PHYS_MAX voices at once (six of them, with every effect, came to ~90 % of the FM-1's audio time):
  * a new PHYS note past it takes a PHYS release's voice (the quietest), or, all of them notes on (held or latched), the
  * oldest PHYS note's (it fades, as the 7th note's does) */
 #define PHYS_MAX 4u
@@ -620,7 +620,7 @@ static uint32_t phys_count(void)                /* PHYS voices sounding: its not
         if (vc[v].stage == ST_REL && vc[v].eng == ENG_PHYS && !voice_latched(v)) n++;
     return n;
 }
-/* (V2) a voice for a new note of track t: a track never takes another track's voice (1.0: the quietest release of any
+/* a voice for a new note of track t: a track never takes another track's voice (1.0: the quietest release of any
  * track, all six on: the oldest note of any, a latched drone too). Its own release of this note, else an idle voice,
  * else its own quietest release; else none: the note not played. A track with no voice at all takes one from the track
  * holding the most (its quietest release, else its oldest note), so none is shut out. PHYS past PHYS_MAX: its own PHYS
@@ -665,7 +665,7 @@ static int pick_voice(uint32_t t, uint32_t note, uint32_t *v)
         if (u != t && trk_voices(u, phys) > most) most = trk_voices(u, phys), from = u;
     return from < NT && take_from(from, phys, 0, v);
 }
-/* (V2) GENERATE on two tracks or more (heard ones): each generating track has a share of the voices the others leave
+/* GENERATE on two tracks or more (heard ones): each generating track has a share of the voices the others leave
  * (the tracks not generating: their notes and releases, as ever), the first ones the odd ones over; a generated note
  * takes its own release of the note, else (the track under its share) an idle voice, else its track's own quietest
  * voice let go (the oldest note it replaces): never another track's (none: not played); a generated chord, its share's
@@ -716,7 +716,7 @@ static void note_on(uint32_t t, uint32_t id, uint32_t note, uint32_t src, int ec
                                                  * voices start over on it */
 {
     uint8_t ns[CH_MAX], own[CH_MAX];
-    uint32_t gs = src == SRC_GEN ? gen_share(t) : 0u;   /* (V2: GENERATE sharing the voices) */
+    uint32_t gs = src == SRC_GEN ? gen_share(t) : 0u;   /* (GENERATE sharing the voices) */
     uint32_t v, i, n, no = 0, on = 0;
     int j;
     if (note > 127u || t >= NT || (trk_quiet >> t & 1u)) return;   /* (a silent track: none) */
@@ -729,7 +729,7 @@ static void note_on(uint32_t t, uint32_t id, uint32_t note, uint32_t src, int ec
     ns[0] = (uint8_t)note, n = 1;
     if (ch < 0 && trk[t].chord) n = chord_notes(t, note, ns);
     else if (ch > 0) n = chord_notes_tv(ch & 15, ch >> 4 & 7, note, ns);
-    if (src == SRC_GEN && gen_hi) {             /* (V2: GENERATE's chord: its notes past the range folded in by octaves
+    if (src == SRC_GEN && gen_hi) {             /* (GENERATE's chord: its notes past the range folded in by octaves
                                                  * (in the SCALE still), the same twice once) */
         uint32_t k, m = 0;
         for (i = 0; i < n; i++) {
@@ -742,11 +742,11 @@ static void note_on(uint32_t t, uint32_t id, uint32_t note, uint32_t src, int ec
         }
         n = m;
     }
-    if (gs && n > gs) n = gs;                   /* (V2: GENERATE sharing: its chord within its share) */
+    if (gs && n > gs) n = gs;                   /* (GENERATE sharing: its chord within its share) */
     for (i = 0; i < n; i++) {
         if (i < no)                             /* its own voice again */
             v = own[i];
-        else if (!(gs ? gen_pick(t, ns[i], &v) : pick_voice(t, ns[i], &v))) {   /* (V2: no voice of its own for it: not
+        else if (!(gs ? gen_pick(t, ns[i], &v) : pick_voice(t, ns[i], &v))) {   /* (no voice of its own for it: not
                                                  * played) */
             gen_short += src == SRC_GEN;
             continue;
@@ -764,7 +764,7 @@ static void note_on(uint32_t t, uint32_t id, uint32_t note, uint32_t src, int ec
         nlat = nlat + 1u, on++;
     }
     for (; i < no; i++) voice_release(own[i]);  /* (a smaller chord now: the rest let go) */
-    if (echo && on) ec_put(0x90, t, note);      /* (V2: none played, none sent: no note-off would follow it) */
+    if (echo && on) ec_put(0x90, t, note);      /* (none played, none sent: no note-off would follow it) */
 }
 static uint32_t tracks_latched(void)            /* bit t: track t has notes on */
 {
@@ -780,18 +780,18 @@ static int voices_silent(void)                  /* no voice sounds: no note on (
         if (!voice_idle(v)) return 0;
     return 1;
 }
-#define QUIET_TAIL_MS 10000u                    /* (GR!MM rc9) an effect still sounding this long after the last voice: as
+#define QUIET_TAIL_MS 10000u                    /* an effect still sounding this long after the last voice: as
                                                  * quiet */
 static int quiet(void)                          /* nothing sounds, not even a release or an effect's tail (main loop) */
 {
-    static uint32_t loud_t;                     /* (rc9) when a voice last sounded */
+    static uint32_t loud_t;                     /* when a voice last sounded */
     if (!voices_silent()) {
         loud_t = fm1_ms;
         return 0;
     }
     if (tape_idle() && hall_idle() && grain_idle()) return 1;   /* (TAPE's hiss is not a sound that waits: it stops a
                                                  * moment) */
-    return fm1_ms - loud_t >= QUIET_TAIL_MS;    /* (rc9: a tail that never ends, DELAY's FEEDBACK past unity, SPACE's INF,
+    return fm1_ms - loud_t >= QUIET_TAIL_MS;    /* (a tail that never ends, DELAY's FEEDBACK past unity, SPACE's INF,
                                                  * a GRAIN freeze: 10 s after the last voice the saves, uploads and the
                                                  * editor's writes go on; the flash's ~50 ms stops it a moment. Before,
                                                  * they waited for ever) */
@@ -799,7 +799,7 @@ static int quiet(void)                          /* nothing sounds, not even a re
 /* audio: the overload guard. Blocks that run over their time (6 voices of the heaviest sources, chords, all the
  * effects) leave the main loop no time: the screen stops, then the watchdog restarts the FM-1. Eight blocks in a row
  * over their time (~46 ms behind, not a block near it: the key scan's interrupt counts in a block's time, the FX
- * layer's glowing keys too, and a near one is no harm): a voice fades out in ~10 ms; then ~4 blocks' wait. (GR!MM rc9)
+ * layer's glowing keys too, and a near one is no harm): a voice fades out in ~10 ms; then ~4 blocks' wait.
  * Which: a release first (the quietest), then the oldest note the sequencer, an arp or GENERATE played, the hands' (a
  * latched drone) last; each counted (shed_n: the header says so, the main loop) */
 static volatile uint32_t shed_n;                /* audio: voices the guard let go */
@@ -833,14 +833,14 @@ static void release_keys(uint32_t t)            /* audio: ARP on: the track's ke
     for (i = nlat; i-- > 0;)                    /* (a chord: all its notes go at once) */
         if (i < nlat && lat_trk[i] == t && lat_src[i] == SRC_KEY) note_off(t, lat_id[i], SRC_KEY, 1);
 }
-static void release_all(uint32_t t)             /* audio: (V2) LATCH ON -> OFF: every note of the track released, the
+static void release_all(uint32_t t)             /* audio: LATCH ON -> OFF: every note of the track released, the
                                                  * keys', MIDI's, the sequencer's: none can stay on */
 {
     uint32_t i;
     for (i = nlat; i-- > 0;)
         if (i < nlat && lat_trk[i] == t) note_off(t, lat_id[i], lat_src[i], lat_src[i] == SRC_KEY && lat_id[i] < 27u);
 }
-static int note_find_root(uint32_t t, uint32_t note)   /* (V2) a key's or MIDI note's (SRC_KEY) place in the list,
+static int note_find_root(uint32_t t, uint32_t note)   /* a key's or MIDI note's (SRC_KEY) place in the list,
                                                  * played as note (before its chord), whichever it came from; -1 */
 {
     uint32_t i;
@@ -876,11 +876,11 @@ static void restart_track(uint32_t t)           /* audio: a new source: the trac
 }
 
 #include "arp.c"                                /* the arpeggiator (its notes: note_on, note_off, SRC_ARP) */
-#include "clock.c"                              /* GR!MM V2: the MIDI clock in and out (SYSTEM 2: CLOCK) */
+#include "clock.c"                              /* the MIDI clock in and out (SYSTEM 2: CLOCK) */
 
 /* audio: a key's (a MIDI note's) ask, on its track: ARP on, into or out of the arp's list; else its own notes */
 static void key_ask(uint32_t c, uint32_t t, uint32_t id, uint32_t note, int echo)
-{                                               /* (V2: TOGGLE, LATCH ON: the note latched as this one, a key's or
+{                                               /* (TOGGLE, LATCH ON: the note latched as this one, a key's or
                                                  * MIDI's, whichever latched it, let go; else on. Its echo off if a
                                                  * key's: that one's echo went out) */
     int32_t h;
@@ -975,15 +975,15 @@ static void brw_forget(void)                    /* the tracks' sounds another's 
 static uint32_t playing, save_held, glo_held;   /* the sequencer runs (PLAY); SAVE, GLO held (their layers on the keys) */
 static uint32_t ck_seen;                        /* main loop: the MIDI clock's START / STOP seen (clock.c ck_trans) */
 static uint32_t rec_on;                         /* REC (app_main's rec, for the stress test's checks) */
-static uint32_t rec_hold, rec_t, rec_was;       /* (V2) REC held: since when, REC before that press */
-#define REC_CLEAR_MS 1000u                      /* (V2) REC held this long: the selected track's pattern cleared */
+static uint32_t rec_hold, rec_t, rec_was;       /* REC held: since when, REC before that press */
+#define REC_CLEAR_MS 1000u                      /* REC held this long: the selected track's pattern cleared */
 static uint32_t sel_held;                       /* SEL held (SEQ's pages: the knobs lock the selected step, ui.c) */
 /* SYSTEM, SYSTEM 2: the FM-1's own settings, not the project's: kept in the settings sector (platform.c) with the
  * octave, loaded at power-on, never touched by a project or slot load, NEW or undo; saved 2 s after a change, when
  * silent and stopped (an erase stops the sound ~50 ms) */
 #define NLINK 32u                               /* MIDI LEARN: links at most */
 #define MCH_ALL 13                              /* MIDI CHANNEL: 0 "1-4" (T1 on channel 1) .. 12 "13-16", 13 ALL > SEL, */
-#define MCH_MAX (MCH_ALL + 16)                  /* 14 .. 29 "CH 1 > SEL" .. "CH 16 > SEL" (V2: that channel alone, to the
+#define MCH_MAX (MCH_ALL + 16)                  /* 14 .. 29 "CH 1 > SEL" .. "CH 16 > SEL" (that channel alone, to the
                                                  * selected track; the others ignored) */
 enum { LEARN_OFF, LEARN_ON, LEARN_CLEAR };
 static struct {
@@ -993,8 +993,8 @@ static struct {
                                                  * track (a track's page), x (SOUND: the source; GRID: the step; SONG:
                                                  * the section) */
     uint8_t ver;                                /* SET_VER (steps 20..24 saved without it: their links moved, sys_load) */
-    uint8_t clk;                                /* (V2, SET_VER 2) CLOCK: CK_INT .. CK_TRS; V1.0's settings: INT */
-    uint8_t latch;                              /* (V2, SET_VER 3) SYSTEM 3's LATCH: 0 FROM SOUND (before: so), 1
+    uint8_t clk;                                /* (SET_VER 2) CLOCK: CK_INT .. CK_TRS; V1.0's settings: INT */
+    uint8_t latch;                              /* (SET_VER 3) SYSTEM 3's LATCH: 0 FROM SOUND (before: so), 1
                                                  * ALWAYS OFF */
     uint8_t usb;                                /* (Arctic Scream p0larpatch, SET_VER 4) SYSTEM 3's USB LEVEL: 0 .. 6,
                                                  * -12 .. +24 dB; USB_L0 (0 dB) before */
@@ -1017,7 +1017,7 @@ static char *link_name(char *s, const uint8_t *L);
 static char hd_msg[24];                         /* (ui.c: in the header's place until hd_until) */
 static int32_t bat_lvl = -1;                    /* the battery's level (batt_poll; ui.c's header) */
 static uint32_t hd_until, as_err;               /* (as_err: an autosave failed, it is tried again) */
-#define SAVE_REST_REC_MS 60000u                 /* (GR!MM rc11) the hands at rest this long before an autosave, or the
+#define SAVE_REST_REC_MS 60000u                 /* the hands at rest this long before an autosave, or the
                                                  * settings' save, while a computer reads the USB audio (a flash step stops
                                                  * the key scan, the LEDs and the stream ~50 ms: the lights flickered, the
                                                  * recording had a hole); else 2.5 s, 2 s */
@@ -1029,7 +1029,7 @@ static uint32_t as_force;                       /* (1.4.1) a save asked for (a s
 #define AS_LOUD_MS 30000u                       /* (1.4.1) the hands at rest this long, a voice still sounding (a latched
                                                  * drone): the autosave goes anyway, once (before, it waited for ever and a
                                                  * power-off lost the work) */
-static uint32_t sv_said;                        /* (V2) when that wait began: the header says so SV_SAY_MS, then gives
+static uint32_t sv_said;                        /* when that wait began: the header says so SV_SAY_MS, then gives
                                                  * the page back (a drone: never silent); a new wait says it again */
 #define SV_SAY_MS 2000u
 static int32_t sv_pend = -1;                    /* SOUNDS: a SAVE or CLEAR waiting for the sequencer to stop (its ACTION) */
@@ -1043,7 +1043,7 @@ static int32_t ch_last = -1;                    /* SEL's picture: the note last 
 
 /* ---- the screen: plain text, a row per value; only what changed is drawn */
 #define KEY0 41u                                /* key 0 = F2 (Arctic Scream p0larpatch: an octave down, for drones) */
-#include "gen.c"                                /* GR!MM V2: GENERATE (FX held + the black keys) */
+#include "gen.c"                                /* GENERATE (FX held + the black keys) */
 #include "jiehkki.c"                            /* (1.5.3) JIEHKKI: a piece played on its own, LENGTH long; RUOHCAT */
 #define OCT_BOTH (1u << BTN_OCT_DOWN | 1u << BTN_OCT_UP)
 #define HOLD_MS 600u                            /* a button held this long: its hold function (HOME: SYSTEM) */
@@ -1112,7 +1112,7 @@ static const page_t PAGES[NPAGE] = {
     {"HOME", BTN_HOME, 1, 1, 1, {"VOLUME", "CUTOFF", "WARP", "MORPH"}},   /* (the track's: its LEVEL, its filter,
                                                  * WARP and MORPH (chaos.c); its sound's name in the header) */
     {"MIXER 1", BTN_HOME, 1, 1, 1, {"LEVEL", "DLY SEND", "REV SEND", "GRAIN SEND"}},
-    {"MIXER 2", BTN_HOME, 1, 1, 1, {"PAN", "TYPE", "POS", "RESONANCE"}},   /* (V2: the track filter's TYPE and POS;
+    {"MIXER 2", BTN_HOME, 1, 1, 1, {"PAN", "TYPE", "POS", "RESONANCE"}},   /* (the track filter's TYPE and POS;
                                                  * its RESONANCE, HOME's before 1.3) */
     {"SYSTEM", BTN_HOME, 1, 0, 0, {"COLOUR", "MIDI CHANNEL", "TUNE", "SCREEN OFF"}},   /* (HOME held; HOME again: */
     {"SYSTEM 2", BTN_HOME, 1, 0, 0, {"MIDI LEARN", "SEQ MIDI OUT", "SAMPLES", "CLOCK"}},       /* SYSTEM 2, SYSTEM 3, and
@@ -1134,9 +1134,9 @@ static const page_t PAGES[NPAGE] = {
     {"DRONE", BTN_LFO, 1, 1, 1, {"BORGA", "STOARBMA", "GOHCCAT", "LATCH"}},   /* (Arctic Scream p0larpatch: LFO's
                                                  * second; the walks, the tension, its time (drone.c); LATCH as
                                                  * SOURCE's) */
-    {"MASTER", BTN_FX, 1, 0, 1, {"CUTOFF", "RESONANCE", "TYPE", "POSITION"}},   /* (GR!MM V2: FX's 5th and 6th, master.c) */
+    {"MASTER", BTN_FX, 1, 0, 1, {"CUTOFF", "RESONANCE", "TYPE", "POSITION"}},   /* (FX's 5th and 6th, master.c) */
     {"DRIVE", BTN_FX, 1, 0, 1, {"AMOUNT", "TYPE", "TONE", "MIX"}},
-    {"SYSTEM 3", BTN_HOME, 1, 0, 0, {"LATCH", "USB", "MOD", ""}},   /* (V2: a NEW project's tracks' LATCH) */
+    {"SYSTEM 3", BTN_HOME, 1, 0, 0, {"LATCH", "USB", "MOD", ""}},   /* (a NEW project's tracks' LATCH) */
     {"LOOP", BTN_EDIT, 1, 1, 1, {"GATE", "BLOOM", "LOWCUT", "EXCITE"}},   /* (1.4: a HOWL track's, after SOUND: its
                                                  * loop's GATE, BLOOM, LOWCUT and EXCITE, howl.c) */
     {"AIR", BTN_FX, 1, 0, 1, {"PING", "SHIMMR", "", ""}},
@@ -1307,7 +1307,7 @@ static char *tone_text(char *s, int32_t v)      /* TAPE's TONE: its low-pass cor
     if (hz < 10000u) return put_s(put_x10(s, (hz + 50u) / 100u), "K");
     return put_s(put_u(s, (hz + 500u) / 1000u), "K");
 }
-static char *tempo_text(char *s, const char *pre)   /* the tempo: pre "120"; a MIDI clock's (V2): "EXT 120.4", "EXT"
+static char *tempo_text(char *s, const char *pre)   /* the tempo: pre "120"; a MIDI clock's: "EXT 120.4", "EXT"
                                                  * (not measured yet: its first beat) */
 {
     if (!ck_ext) return put_u(put_s(s, pre), (uint32_t)clamp(seq_bpm, 20, 300));
@@ -1457,7 +1457,7 @@ static void hd_say(const char *m)               /* the header says m a moment (c
     hd_until = fm1_ms + 1500u;
 }
 
-/* (V2) GENERATE's keys, FX held: the black keys from F#2 (Arctic Scream's keys; BK's): T1 .. T4's tapped (let go, no
+/* GENERATE's keys, FX held: the black keys from F#2 (Arctic Scream's keys; BK's): T1 .. T4's tapped (let go, no
  * other key pressed meanwhile): on, off; D#3 MODE, F#3 OCTAVE down, G#3 up, A#3 RANGE: for the tracks' keys held, none
  * held: all four (the same for all: the first one's next) */
 static const uint8_t BK[8] = {1, 3, 5, 8, 10, 13, 15, 17};
@@ -2245,7 +2245,7 @@ static void midi_in(void)
         if (set.mch > MCH_ALL && c != (uint32_t)(set.mch - MCH_ALL - 1)) continue;   /* (CH n > SEL: another
                                              * channel's, nothing; its CCs too) */
         if (ty == 0xB0u) {
-            if (d1 == 120u || d1 == 123u)   /* (V2) ALL SOUND OFF, ALL NOTES OFF (a DAW's stop): the notes MIDI
+            if (d1 == 120u || d1 == 123u)   /* ALL SOUND OFF, ALL NOTES OFF (a DAW's stop): the notes MIDI
                                              * holds on that channel's track (ALL > SEL, CH n > SEL: all four) let
                                              * go; a latched note stays */
                 for (n = 0; n < 128u; n++)
@@ -2269,12 +2269,12 @@ static void midi_in(void)
         else continue;                      /* (not one of the tracks' channels) */
         n = sc_snap(d1);                    /* (a SCALE: its nearest note) */
         if (on && t == sel) ch_last = (int32_t)n;
-        if (off && (midi_held[d1] >> (4u + t) & 1u)) {   /* (V2) the off of a note that came again before it (a DAW's
+        if (off && (midi_held[d1] >> (4u + t) & 1u)) {   /* the off of a note that came again before it (a DAW's
                                              * loop: the earlier one's off, late): passed over, the note goes on */
             midi_held[d1] &= (uint8_t)~(0x10u << t);
             continue;
         }
-        again = on && !trk[t].latch && (midi_held[d1] >> t & 1u);   /* (V2: a note-on again before its off) */
+        again = on && !trk[t].latch && (midi_held[d1] >> t & 1u);   /* (a note-on again before its off) */
         if (again && trk[t].arp) {          /* (the arp has it: kept as it is, no new start) */
             midi_held[d1] |= (uint8_t)(0x10u << t);
             continue;
@@ -2315,7 +2315,7 @@ static void app_main(void)
     seq_init();
     store_boot();                               /* the working project and the slots, as the FM-1 was left */
 #ifdef DINGHY_HOST
-    if (store_fresh && getenv("GRIMM_PLAIN")) store_fresh = 0;   /* (host tests: GR!MM's plain VA tracks, not ICE WRAITH) */
+    if (store_fresh && getenv("GRIMM_PLAIN")) store_fresh = 0;   /* (host tests: Arctic Scream's plain VA tracks, not ICE WRAITH) */
 #endif
     if (store_fresh) snd_default();             /* (nothing saved: ICE WRAITH) */
     pj_slot = slot_cur;
@@ -2349,11 +2349,11 @@ static void app_main(void)
     }
 #if !defined DINGHY_HOST && !defined GRIMM_WEB
     if (hl_boot.kind == 1u) {                   /* the watchdog restarted it (the main loop stood 8 s; a fault shows
-                                                 * the red crash screen instead): said for ~15 s (GR!MM rc11: not when only
+                                                 * the red crash screen instead): said for ~15 s (not when only
                                                  * the chip's flag is left from an earlier one: platform.c hl_boot) */
         put_s(hd_msg, "WATCHDOG RESET");
         hd_until = 15000u;
-    } else if (hl_boot.kind == 2u) {            /* (rc11) the supply sagged below what the chip runs on (VDDIO, VCM, 1.2 V
+    } else if (hl_boot.kind == 2u) {            /* the supply sagged below what the chip runs on (VDDIO, VCM, 1.2 V
                                                  * low): it restarted itself, not a power-on */
         put_s(hd_msg, "LOW VOLTAGE RESET");
         hd_until = 15000u;
@@ -2406,7 +2406,7 @@ static void app_main(void)
             st->lmask = 0;
             b_used |= 1u << BTN_SEL;
             hd_say("LOCKS CLEARED");
-        } else if ((b & (1u << BTN_OCT_UP)) && (b_down >> BTN_SEL & 1u)) {   /* SEL held + OCT+ (V2): the selected
+        } else if ((b & (1u << BTN_OCT_UP)) && (b_down >> BTN_SEL & 1u)) {   /* SEL held + OCT+: the selected
                                                  * track's LATCH on, off (off: its latched notes released) */
             set_latch(!trk[sel].latch);
             b_used |= 1u << BTN_SEL;
@@ -2454,7 +2454,7 @@ static void app_main(void)
                 } else
                     page = next_page(k);
             }
-        ck_slot = (uint32_t)slot_cur & 3u;      /* (V2: a MIDI clock's START plays the slot in use) */
+        ck_slot = (uint32_t)slot_cur & 3u;      /* (a MIDI clock's START plays the slot in use) */
         if (ck_trans != ck_seen) ck_seen = ck_trans, playing = seq_on;   /* (its START / STOP: PLAY follows) */
         if (song_end) song_end = 0, playing = 0;   /* (a SONG played out: stopped) */
         if (b & (1u << BTN_PLAY)) {             /* PLAY/STOP: all four tracks' sequences (a song: song.c) */
@@ -2472,7 +2472,7 @@ static void app_main(void)
                     song_rec = 1;
                     if (playing) nq_note(NQ_SONG, 0, (uint32_t)slot_cur & 3u, 1);
                 }
-            } else {                            /* REC: stopped, step record; playing, live record (V2: held, see
+            } else {                            /* REC: stopped, step record; playing, live record (held, see
                                                  * below) */
                 rec_hold = 1, rec_t = fm1_ms, rec_was = rec;
                 rec ^= 1u;
@@ -2480,7 +2480,7 @@ static void app_main(void)
             }
         }
         if (rel >> BTN_REC & 1u) rec_hold = 0;
-        if (rec_hold && fm1_ms - rec_t >= REC_CLEAR_MS) {   /* (V2) REC held ~1 s: the selected track's pattern
+        if (rec_hold && fm1_ms - rec_t >= REC_CLEAR_MS) {   /* REC held ~1 s: the selected track's pattern
                                                  * cleared (undoable), REC as before the press */
             rec_hold = 0, rec = rec_was;
             seq_tool(0u, base);
@@ -2526,7 +2526,7 @@ static void app_main(void)
                 pf_keys &= ~(1u << k);
                 if (w < 8u) pf_held &= ~(1u << (w - 1u));
             }
-            if ((up >> k & 1u) && gen_bk(k) >= 0 && gen_bk(k) < 4 && (gen_kd >> gen_bk(k) & 1u)) {   /* (V2) a
+            if ((up >> k & 1u) && gen_bk(k) >= 0 && gen_bk(k) < 4 && (gen_kd >> gen_bk(k) & 1u)) {   /* a
                                                  * track's GENERATE key let go: on, off (unless another key came) */
                 uint32_t w = (uint32_t)gen_bk(k);
                 if (!(gen_ku >> w & 1u)) {
@@ -2542,7 +2542,7 @@ static void app_main(void)
                 key_held[k] = 0;
             }
             if (!(down >> k & 1u)) continue;
-            gen_ku |= gen_kd;                   /* (V2: a key pressed while a track's GENERATE key is held: that one
+            gen_ku |= gen_kd;                   /* (a key pressed while a track's GENERATE key is held: that one
                                                  * not switched when let go) */
             if (glo_held) {                     /* GLO held: white keys 1..4 mute T1..T4, 5..8 solo them (on, off) */
                 uint32_t w;
@@ -2600,7 +2600,7 @@ static void app_main(void)
                     continue;
                 }
             }
-            if ((b_down >> BTN_FX & 1u) && gen_bk(k) >= 0) {   /* (V2) FX held + GENERATE's keys (gen_key) */
+            if ((b_down >> BTN_FX & 1u) && gen_bk(k) >= 0) {   /* FX held + GENERATE's keys (gen_key) */
                 int32_t w = gen_bk(k);
                 if (w < 4) gen_kd |= (uint8_t)(1u << w), gen_ku &= (uint8_t)~(1u << w);
                 else gen_key((uint32_t)w);
@@ -2773,12 +2773,12 @@ static void app_main(void)
             sv_wait = w;
         }
         if (set_dirty && quiet() && !playing && fm1_ms - set_t > (usb_recording() ? SAVE_REST_REC_MS : 2000u)) {   /* 2 s
-                                                 * after the change, when silent (rc11: a computer recording from the USB
+                                                 * after the change, when silent (a computer recording from the USB
                                                  * audio: a minute, SAVE_REST_REC_MS) */
             settings_save(&set, sizeof set);
             set_dirty = 0;
         }
-        {                                       /* (GR!MM rc9) the overload guard let a voice go: said */
+        {                                       /* the overload guard let a voice go: said */
             static uint32_t shed_seen;
             if (shed_n != shed_seen) shed_seen = shed_n, hd_say("CPU FULL: NOTE DROPPED");
         }

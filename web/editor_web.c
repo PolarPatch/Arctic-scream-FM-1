@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM in the browser, for the editor page (web/editor.html): what it shows, from the firmware's own tables
+/* Arctic Scream in the browser, for the editor page (web/editor.html): what it shows, from the firmware's own tables
  * (web_meta: the sources and their knobs, the categories, the chords, the LFO's names, the FM patches as built and the
  * algorithms' wiring, the factory sounds; as JSON), a value in words (web_knob_text, web_env_text, web_lfo_text),
  * and web_panic, which lets every note go (the sounds reach the tracks as on the FM-1: editor.c's TRACK).

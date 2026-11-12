@@ -3,7 +3,7 @@
 // After Felucca's browser page, web/emu/index.html of hugelton/Felucca (Copyright (C) 2026 Leo Kuroshita
 // (@kurogedelic), Hügelton Instruments), which follows X0X's (charlesvestal/fm1-x0x), both GPL-3.0: the panel's
 // layout, the computer keyboard's map, the screen and lights from the worklet, Web MIDI in.
-// The page of GR!MM in the browser: the FM-1's panel, its input to the worklet (worklet.js), the screen and the
+// The page of Arctic Scream in the browser: the FM-1's panel, its input to the worklet (worklet.js), the screen and the
 // lights back, the settings kept in this browser.
 
 // ids as platform.c names them: buttons BTN_* (bit = id), encoders ENC_*, keys bit k = key k (0 = F2 .. 26 = G4)

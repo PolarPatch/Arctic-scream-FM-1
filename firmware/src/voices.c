@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments (env_tick, amp_at)
  * GR!MM: Copyright (C) 2026 GR!MM */
-/* GR!MM's tracks and voices.
+/* Arctic Scream's tracks and voices.
  *   NT tracks, each with a source (an engine: VA, FM, SAMPLE, VOICE, WHEEL, PHYS, PHASE), every
  *   engine's four parameters, LEVEL, PAN and the
  *   sends DLY, REV and GRN
@@ -69,7 +69,7 @@ typedef struct {
                                                  * DECAY 0..99 (fm.c; a built-in PATCH's: fm_builtin) */
     volatile int32_t dr_borga, dr_storm, dr_rise;   /* DRONE: BORGA 0..100 %, STOARBMA 0..100 %, GOHCCAT 0 OFF .. 6
                                                  * (32 bars) (drone.c) */
-    volatile int32_t ftype, fpos;               /* (V2) MIXER 2: the track filter's TYPE (FT_: LP, HP, BP), POS (0 PRE:
+    volatile int32_t ftype, fpos;               /* MIXER 2: the track filter's TYPE (FT_: LP, HP, BP), POS (0 PRE:
                                                  * the sends hear it filtered; 1 POST: only the dry sound filtered) */
     volatile int32_t warp, morph;               /* HOME: WARP, MORPH 0..127 (chaos.c) */
     volatile int32_t hw_x[4];                   /* (Arctic Scream 1.4) Holvut's LOOP page: GATE, BLOOM, LOW CUT, EXCITE
@@ -164,10 +164,10 @@ static int16_t vx_pool[NV][VX_POOL] __attribute__((section(".pool")));
 static const engine_t *const ENGINES[NENG] = {&VA_ENGINE, &FM_ENGINE, &SAMPLE_ENGINE, &FORMANT_ENGINE, &WHEEL_ENGINE,
                                               &PHYS_ENGINE, &PHASE_ENGINE, &HOWL_ENGINE, &BIEGGA_ENGINE};   /* (by ENG_) */
 
-/* (V2) GENERATE's notes (gen.c): a voice's volume (0: full; else x / 256) and attack (0: the track's ATTACK; else
+/* GENERATE's notes (gen.c): a voice's volume (0: full; else x / 256) and attack (0: the track's ATTACK; else
  * GEN_ATK's k - 1), asked with the note (gen_vel, gen_atk: the next note_on's), taken as it begins */
 static uint8_t vc_vel[NV], vc_atk[NV], vc_wvel[NV], vc_watk[NV], gen_vel, gen_atk;
-static uint8_t gen_lo, gen_hi;                  /* (V2) the next note_on's range, GENERATE's (0 0: none): its chord's
+static uint8_t gen_lo, gen_hi;                  /* the next note_on's range, GENERATE's (0 0: none): its chord's
                                                  * notes past it folded in by octaves (grimm.c note_on) */
 static const int32_t GEN_ATK[8] = {2434783, 608696, 202899, 81159, 40580, 20290, 10145, 4870};   /* ATTACK steps
                                                  * (Q24 a control step): 5, 20, 60, 150, 300, 600, 1200, 2500 ms */
@@ -176,7 +176,7 @@ static const int32_t GEN_ATK[8] = {2434783, 608696, 202899, 81159, 40580, 20290,
  * sounding goes on up from where it is) */
 static void voice_start(uint32_t v, uint32_t t, uint32_t note)
 {
-    vc_wvel[v] = gen_vel, vc_watk[v] = gen_atk; /* (V2: GENERATE's; 0 0: the voice as ever) */
+    vc_wvel[v] = gen_vel, vc_watk[v] = gen_atk; /* (GENERATE's; 0 0: the voice as ever) */
     vc[v].want_note = (uint8_t)note;
     vc[v].want_trk = (uint8_t)t;
     vc[v].want_on = 1;
@@ -231,7 +231,7 @@ static void voice_begin(voice_t *v)             /* a note from silence */
     v->env = 0;
     vc_atp[v - vc] = 0;
     v->stage = ST_ATK;
-    vc_vel[v - vc] = vc_wvel[v - vc], vc_atk[v - vc] = vc_watk[v - vc];   /* (V2: GENERATE's volume, attack) */
+    vc_vel[v - vc] = vc_wvel[v - vc], vc_atk[v - vc] = vc_watk[v - vc];   /* (GENERATE's volume, attack) */
 }
 
 /* the tracks' ENV as steps, from the knobs, once a render: ATTACK a linear step (Q24 a control step), DECAY and RELEASE
@@ -255,7 +255,7 @@ static void env_coef(env_c_t *c, const volatile int32_t *e)
     c->sus = clamp(e[2], 0, 127) * 132104;     /* (2^24 / 127) */
 }
 
-/* one control step of the envelope (voice.c env_tick: ATK linear, REL exponential; GR!MM: the track's ENV, DECAY towards
+/* one control step of the envelope (voice.c env_tick: ATK linear, REL exponential; Arctic Scream: the track's ENV, DECAY towards
  * SUSTAIN (it follows SUSTAIN when it moves), the fade) */
 static int32_t env_tick(voice_t *v)
 {
@@ -323,7 +323,7 @@ static int32_t env_tick(voice_t *v)
         break;
     }
     v->env = e;
-    return vc_vel[v - vc] ? ((e >> 9) * vc_vel[v - vc]) >> 8 : e >> 9;   /* Q15 (V2: GENERATE's volume) */
+    return vc_vel[v - vc] ? ((e >> 9) * vc_vel[v - vc]) >> 8 : e >> 9;   /* Q15 (GENERATE's volume) */
 }
 
 /* the audio ISR: n frames (a multiple of CTL, at most VB) of every sounding voice into tb[its track] (mono); returns

@@ -35,7 +35,7 @@ def check(name, ok, info=""):
     fails += not ok
 
 
-def run(name, ev, end, env=None, plain=True):     # (plain: GR!MM's VA tracks; else the factory's, ICE WRAITH)
+def run(name, ev, end, env=None, plain=True):     # (plain: Arctic Scream's VA tracks; else the factory's, ICE WRAITH)
     s = OUT / f"{name}.txt"
     s.write_text("".join(f"{t} {l}\n" for t, l in sorted(ev, key=lambda e: e[0])) + f"{end} end\n")
     e = dict(os.environ, GRIMM_PLAIN="1") if plain else dict(os.environ)

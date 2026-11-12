@@ -3,7 +3,7 @@
 # Copyright (C) 2026 GR!MM
 # After Felucca's tools/fm1_sample_upload.py (hugelton/Felucca, Copyright (C) 2026 Leo Kuroshita (@kurogedelic),
 # Hügelton Instruments, GPL-3.0): its protocol and its sample helpers (tools/sampleio.py, Felucca's, unchanged).
-"""Load a WAV into one of GR!MM's four sample slots on the FM-1 (the SAMPLE source plays them), over USB-MIDI.
+"""Load a WAV into one of Arctic Scream's four sample slots on the FM-1 (the SAMPLE source plays them), over USB-MIDI.
 
   py tools\\fm1_sample_upload.py SLOT file.wav [--name NAME] [--root NOTE]    SLOT 1..4
   py tools\\fm1_sample_upload.py --list                                        what each slot holds
@@ -11,7 +11,7 @@
   py tools\\fm1_sample_upload.py SLOT file.wav --dry-run OUT.bin               no FM-1: the slot's bytes into OUT.bin
 
 Any WAV (PCM 8/16/24/32 bit or float, any rate, mono or stereo) becomes mono, 22050 Hz, normalised, IMA ADPCM, as
-GR!MM stores it (firmware/src/samples.c). A slot holds 6.64 s: a longer file is cut there (with a 20 ms fade). The
+Arctic Scream stores it (firmware/src/samples.c). A slot holds 6.64 s: a longer file is cut there (with a 20 ms fade). The
 name is the file's (8 characters, A-Z 0-9 and a few signs) unless --name; the root note (the key that plays it at its
 own pitch) is C4 = 60, or a note in the file name ("drone_A2.wav"), or --root.
 
@@ -29,7 +29,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import sampleio as sio  # noqa: E402  (Felucca's: read_any_wav, resample, to_int16, ima_encode, user_slot, note_from_name)
 
-HDR = [0x7D, 0x41, 0x53]                        # F0 7D 41 53 ... F7: Arctic Scream's (GR!MM's 7D 47 52, Felucca's 7D 46 4C)
+HDR = [0x7D, 0x41, 0x53]                        # F0 7D 41 53 ... F7: Arctic Scream's
 SLOTS, RATE = 4, 22050
 SLOT_SIZE, DATA_OFF, HDR_LEN = 72 * 1024, 512, 480
 MAX_DATA = SLOT_SIZE - DATA_OFF                 # 73216 bytes of ADPCM
@@ -69,7 +69,7 @@ def slot_name(s):
 
 
 def build(path, name, root, look=True):
-    """a WAV -> (header, ADPCM data, seconds, cut?) as a GR!MM slot holds it (look: sampleio.ima_encode's)"""
+    """a WAV -> (header, ADPCM data, seconds, cut?) as an Arctic Scream slot holds it (look: sampleio.ima_encode's)"""
     sr, x = sio.read_any_wav(path)
     x = sio.resample(x, sr, RATE)
     if not x or sio.peak(x) <= 1e-6:
@@ -81,14 +81,14 @@ def build(path, name, root, look=True):
         for i in range(f):
             x[MAX_N - f + i] *= (f - i) / f
     s = sio.to_int16(x)
-    hdr, data = sio.user_slot(name, [(s, root, 0, 127)], look)   # Felucca's slot header (one zone), then GR!MM's magic
+    hdr, data = sio.user_slot(name, [(s, root, 0, 127)], look)   # Felucca's slot header (one zone), then Arctic Scream's magic
     hdr = struct.pack("<I", MAGIC) + hdr[4:]
     assert len(hdr) == HDR_LEN and len(data) <= MAX_DATA
     return hdr, data, len(s) / RATE, cut
 
 
 class Link:
-    """the FM-1's MIDI ports, once its identity says GR!MM"""
+    """the FM-1's MIDI ports, once its identity says Arctic Scream"""
 
     def __init__(self):
         try:
@@ -115,7 +115,7 @@ class Link:
         self.i = mido.open_input(name)
         self.o = mido.open_output(out)
         time.sleep(0.3)
-        print(f"FM-1: {ident} (GR!MM) on {name}")
+        print(f"FM-1: {ident} (Arctic Scream) on {name}")
 
     def req(self, cmd, args, timeout=3.0):
         for _ in self.i.iter_pending():
@@ -127,7 +127,7 @@ class Link:
                 if m.type == "sysex" and list(m.data[:4]) == HDR + [cmd]:
                     return list(m.data[4:])
             time.sleep(0.002)
-        raise TimeoutError(f"no answer from GR!MM (cmd {cmd})")
+        raise TimeoutError(f"no answer from Arctic Scream (cmd {cmd})")
 
     def info(self):
         for _ in range(3):                      # (the first message after opening a port can be lost)
@@ -137,7 +137,7 @@ class Link:
             except TimeoutError:
                 pass
         else:
-            raise TimeoutError("no answer from GR!MM to INFO")
+            raise TimeoutError("no answer from Arctic Scream to INFO")
         try:
             n, i, out = r[0], 1, []
             for _ in range(n):
@@ -170,7 +170,7 @@ def check(r, what):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Load a WAV into a GR!MM sample slot on the FM-1 (USB-MIDI).",
+    ap = argparse.ArgumentParser(description="Load a WAV into an Arctic Scream sample slot on the FM-1 (USB-MIDI).",
                                  formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
     ap.add_argument("slot", nargs="?", type=int, help="1..4")
     ap.add_argument("wav", nargs="?", type=Path)
@@ -234,4 +234,4 @@ if __name__ == "__main__":
     try:
         main()
     except TimeoutError as e:
-        sys.exit(f"{e}: is GR!MM running, and no other app using the FM-1's MIDI port?")
+        sys.exit(f"{e}: is Arctic Scream running, and no other app using the FM-1's MIDI port?")

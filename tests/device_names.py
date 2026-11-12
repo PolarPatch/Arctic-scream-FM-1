@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 GR!MM
 """The stress test's device check (tests/stress.sh): on the FM-1 grimm.c, platform.c, usb.c and the rest are one file,
-and C quietly makes two file-scope variables of the same name and type one variable (GR!MM's key-echo ring and usb.c's
+and C quietly makes two file-scope variables of the same name and type one variable (Arctic Scream's key-echo ring and usb.c's
 MIDI-out ring once shared mo_w / mo_r: the main loop chased itself, the watchdog restarted the FM-1). Host mode has no
 usb.c, so only the device build shows it: the toolchain's preprocessor makes the device's file, gcc lists every name
 declared twice (-Wredundant-decls), and a variable among them fails (a function's prototype, an extern: fine).

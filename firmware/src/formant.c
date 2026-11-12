@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * GR!MM changes: Copyright (C) 2026 GR!MM */
-/* GR!MM's VOICE source: Felucca's VOICE engine (hugelton/Felucca firmware/src/eng_formant.c), a formant oscillator,
+/* Arctic Scream's VOICE source: Felucca's VOICE engine (hugelton/Felucca firmware/src/eng_formant.c), a formant oscillator,
  * sung vowels. After D. H. Klatt, "Software for a cascade/parallel formant synthesizer", JASA 67 (1980): a glottal
  * source (derivative of a Rosenberg (1971) pulse, no DC) into four two-pole resonators in cascade, F1 -> F2 -> F3 ->
  * F4. Felucca's design follows klattsch by Tony Gies (MIT, design reference only, no code copied); formant data from
  * Klatt (1980) and Hillenbrand et al. (1995). Taken over: the source, BUZZ, BREATH, the resonators, SHIFT and the
  * fixed key tracking, the presence shelf and the level, sine_i and noise32 (Felucca's dsp.c). Not taken (Felucca's
  * defaults: off): VOWL2 and TALK, RAND, the modulation; Q at its default (64).
- * GR!MM's: the four knobs, F1's bandwidth following F0 with a 32-bit division (Felucca: a 64-bit one), the state
+ * Arctic Scream's: the four knobs, F1's bandwidth following F0 with a 32-bit division (Felucca: a 64-bit one), the state
  * in vx_s.
  *   VOWEL   A -> E -> I -> O -> U, gliding between them
  *   SHIFT   all formants -12 .. +12 semitones (a smaller or a larger throat)

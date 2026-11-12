@@ -119,7 +119,7 @@ static int32_t batt_raw(void) { return -1; }
 static int usb_powered(void) { return 0; }
 #endif
 
-/* GR!MM: the sample area (platform.c's, 288 KiB), here RAM, erased as a new FM-1's: at boot the firmware writes its four
+/* Arctic Scream: the sample area (platform.c's, 288 KiB), here RAM, erased as a new FM-1's: at boot the firmware writes its four
  * factory samples in (samples.c), as on the device; no USB, so no SysEx (no uploads) */
 #define SAMPLE_AREA_LEN 0x48000u
 static uint8_t fake_flash[SAMPLE_AREA_LEN];
@@ -139,7 +139,7 @@ static int sample_flash_write(uint32_t off, const void *p, uint32_t n)   /* NOR:
     for (i = 0; i < n; i++) fake_flash[off + i] &= s[i];
     return 0;
 }
-/* GR!MM: the save sectors (store.c), here RAM, erased at the start: nothing saved */
+/* Arctic Scream: the save sectors (store.c), here RAM, erased at the start: nothing saved */
 #define SAVE_NSECT 6u
 static uint8_t fake_save[SAVE_NSECT][4096];
 static const uint8_t *save_flash(uint32_t i)
@@ -156,7 +156,7 @@ static int save_flash_erase(uint32_t i)
     printf("%6u ms  flash sector %u erased (a save)\n", fm1_ms, i);   /* (tests/rc11_test.py: when) */
     return 0;
 }
-static uint32_t usb_drops(void) { return 0u; }   /* (GR!MM rc9: no USB audio here) */
+static uint32_t usb_drops(void) { return 0u; }   /* (no USB audio here) */
 static uint32_t stk_main(void) { return 0u; }   /* (1.5.2: the stacks are measured on the FM-1 only) */
 static uint32_t stk_irq(void) { return 0u; }
 #define STK_MAIN_SZ 0u
@@ -226,7 +226,7 @@ static int po_wire_send(const uint8_t *p, uint32_t n)
 }
 
 static void app_audio(int32_t *out, uint32_t n);
-static int32_t host_master = 4092;              /* (GR!MM V2) the MASTER knob as the app reads it (fm1_master, Q12): all
+static int32_t host_master = 4092;              /* the MASTER knob as the app reads it (fm1_master, Q12): all
                                                  * the way up, as the USB audio always was here; GRIMM_MASTER: the knob
                                                  * 0 .. 1023 (squared, as platform.c) */
 static int32_t fm1_master(void) { return host_master; }
@@ -236,7 +236,7 @@ static void app_main(void);
  * file (the second argument) replaces it, a line each: "T keys MASK" (hex or decimal), "T btn ID" (a tap: let go the
  * next millisecond), "T down ID" / "T up ID" (held, let go), "T midi ST D1 D2" (USB), "T trs ST D1 D2" (the TRS jack),
  * "T enc ID STEPS" (ENC_ id, + = clockwise), "T sysex HEX HEX .." (a frame after F0, as the editor sends it: without F0
- * and F7), "T end"; GR!MM V2: "T clock usb|trs BPMx10 MS" (MIDI clock pulses from T for MS ms, each at its exact time;
+ * and F7), "T end"; "T clock usb|trs BPMx10 MS" (MIDI clock pulses from T for MS ms, each at its exact time;
  * BPMx10 0: none from T), "T probe" (the clock's and the sequencer's state out: tests/probe.c) */
 typedef struct { uint32_t t, keys; int btn; uint8_t st, d1, d2; int enc, steps, kind, src; uint32_t a, b;
                  const uint8_t *sx; uint32_t sxn; } host_ev_t;
@@ -421,7 +421,7 @@ static void host_matrix(void)
 }
 #endif
 
-/* GR!MM V2: the MIDI clock. Time is the script's (24 a us, platform.c rt_now): pulses at their exact time (HK_CLOCK);
+/* the MIDI clock. Time is the script's (24 a us, platform.c rt_now): pulses at their exact time (HK_CLOCK);
  * what the FM-1 sends (CLOCK INT+OUT) taken when due and counted, START and STOP shown */
 static uint64_t host_frames;                    /* frames rendered: an audio block's time is its first frame's, as on the
                                                  * FM-1 (its ISR comes on the DMA), not the millisecond it is made in */
@@ -566,7 +566,7 @@ int main(int argc, char **argv)
         host_master = (k * k) >> 8;
     }
     if (getenv("GRIMM_AUDIO_HZ")) host_hz = (uint32_t)atoi(getenv("GRIMM_AUDIO_HZ"));
-    if (getenv("GRIMM_SETTINGS_IN")) {          /* (tests/clock_test.py: the settings an older GR!MM saved, as stored) */
+    if (getenv("GRIMM_SETTINGS_IN")) {          /* (tests/clock_test.py: the settings an older Arctic Scream saved, as stored) */
         FILE *f = fopen(getenv("GRIMM_SETTINGS_IN"), "rb");
         size_t n = f ? fread(host_store + 4, 1, 256, f) : 0;
         if (!f || !n) { perror("GRIMM_SETTINGS_IN"); exit(1); }
@@ -574,7 +574,7 @@ int main(int argc, char **argv)
         host_store[0] = 1, host_store[1] = (uint8_t)n, host_store[2] = (uint8_t)(n >> 8);
     }
     if (getenv("GRIMM_USB_REC")) sscanf(getenv("GRIMM_USB_REC"), "%u,%u", &host_rec_from, &host_rec_to);
-    if (getenv("GRIMM_SAVE_IN")) {              /* (tests/compat.c: the save sectors an older GR!MM wrote) */
+    if (getenv("GRIMM_SAVE_IN")) {              /* (tests/compat.c: the save sectors an older Arctic Scream wrote) */
         FILE *f = fopen(getenv("GRIMM_SAVE_IN"), "rb");
         (void)save_flash(0);
         if (!f || fread(fake_save, 1, sizeof fake_save, f) != sizeof fake_save) { perror("GRIMM_SAVE_IN"); exit(1); }

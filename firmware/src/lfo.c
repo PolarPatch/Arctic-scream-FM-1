@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM's LFO: one a track (the LFO page: RATE, DEPTH, DESTINATION, SHAPE; the track's, saved with the project, the
+/* Arctic Scream's LFO: one a track (the LFO page: RATE, DEPTH, DESTINATION, SHAPE; the track's, saved with the project, the
  * slots and the sounds).
  *   RATE: free-running (never restarted by a note), ~60 s a cycle (0) to ~20 Hz (127), exponential
  *   DEPTH: 0..100 %; 0: off (its phase runs on, nothing else is done)

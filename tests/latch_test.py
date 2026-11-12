@@ -127,7 +127,7 @@ p = run("midilatch", ev, 1700, ENV[0])
 check("LATCH ON: a MIDI note latches; ALL NOTES OFF leaves it; the note again lets it go",
       p[900]["notes"] == ["1:64"] and p[1200]["notes"] == ["1:64"] and not p[1600]["notes"],
       {t: p[t]["notes"] for t in sorted(p)})
-# (V2) whichever latched a note, its key or the MIDI note again lets it go; LATCH OFF lets go of all the track's notes
+# whichever latched a note, its key or the MIDI note again lets it go; LATCH OFF lets go of all the track's notes
 # (Arctic Scream: the MIDI notes an octave down, as its keys play them)
 # (a DAW's notes on channel 1: T1; its STOP's note-offs ignored, as LATCH ON does)
 ev = SEL_OCT(300) + [(600, "midi 0x90 48 100"), (650, "midi 0x80 48 0"), (700, "midi 0x90 52 100"),
@@ -152,7 +152,7 @@ check("LATCH OFF: the track's notes let go, MIDI's, the keys', the sequencer's (
       not [x for x in p[1700]["notes"] if x in ("1:48", "1:55")] and not p[2600]["notes"],
       {t: p[t]["notes"] for t in sorted(p)})
 # (1.4) the keys' lights follow OCT- / OCT+: a key's latched note lit on the key that plays it now (an octave down: 12
-# keys up; off the keys: none), and that key lets it go; the arp's keys the same (a YouTube comment on GR!MM's video)
+# keys up; off the keys: none), and that key lets it go; the arp's keys the same (a YouTube comment on Arctic Scream's video)
 ev = SEL_OCT(300) + tap(500, C4) + [(700, "probe"), (800, "btn 1"), (1000, "probe"), (1100, "btn 0"), (1200, "btn 0"),
                                     (1400, "probe")] + tap(1500, C4 << 12) + [(1800, "probe")]
 p = run("octlit", ev, 1900, ENV[0])

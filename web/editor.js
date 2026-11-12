@@ -439,7 +439,7 @@ $("b-clear").onclick = () => {
 };
 $("b-export").onclick = () => exportSound(pickRec(), pick.fact ? meta.factory[pick.i].name : null);
 $("b-import").onclick = () => $("f-import").click();
-async function readSoundFile(f) {                            // (GR!MM's sound files read too: the same records)
+async function readSoundFile(f) {                            //
   const j = JSON.parse(await f.text()), r = Uint8Array.from(j.rec || []);
   if (!/^(grimm|arctic)-sound$/.test(j.format) || r.length !== 64 || !recordOk(r)) throw new Error("NOT A SOUND FILE");
   return r;
@@ -1264,7 +1264,7 @@ $("f-restore").onchange = async (e) => {
     for (const o of objs) if (o.id >= OBJ.SND && o.id < OBJ.SND + 64) { user[o.id - OBJ.SND] = o.data; dirty[o.id - OBJ.SND] = false; }
     drawSlots();
     let sd = "";
-    if (smp) {                                               // GR!MM V2: the sample slots as in the file, each checked
+    if (smp) {                                               // the sample slots as in the file, each checked
       const done = await restoreSamples(conn.client, smp, (k, i, n) => { progress(i, n); say(`WRITING SAMPLE ${k + 1}…`); });
       smpInfo = await conn.client.smpInfo();
       drawSamples();
@@ -1314,7 +1314,7 @@ $("f-proj").onchange = async (e) => {
   });
 };
 
-// ------------------------------------------------------------------ settings (GR!MM V2): MIDI CHANNEL, CLOCK, LATCH
+// ------------------------------------------------------------------ settings: MIDI CHANNEL, CLOCK, LATCH
 function drawSettings() {
   const m = $("set-mch"), c = $("set-clk"), l = $("set-latch"), v2 = !setBytes || setBytes.length > SET_V1;
   m.textContent = c.textContent = l.textContent = "";

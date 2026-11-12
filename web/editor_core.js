@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 GR!MM
-// GR!MM's editor without its page: the editor protocol (docs/EDITOR_PROTOCOL.md) over a transport (Web MIDI to the
+// Arctic Scream's editor without its page: the editor protocol (docs/EDITOR_PROTOCOL.md) over a transport (Web MIDI to the
 // FM-1, or the "virtual FM-1": grimm.wasm, the firmware's own code, stepped a millisecond at a time), the tracks' sounds
 // live (TRACK, sent as SLOOP's editor sends its SETs: one at a time, the latest kept), the sound records,
 // the backup file, and a WAV made a sample slot (a port of Felucca's tools/sampleio.py, GPL-3.0, and of
 // tools/fm1_sample_upload.py: the same bytes). web/editor.js (the page) and web/test_web.mjs use it.
 
-export const HEAD = [0x7d, 0x41, 0x53];   // "AS": Arctic Scream's (GR!MM's 7D 47 52)
+export const HEAD = [0x7d, 0x41, 0x53];   // "AS": Arctic Scream's
 export const CMD = { SMP_BEGIN: 11, SMP_WRITE: 12, SMP_END: 13, SMP_ERASE: 14, SMP_INFO: 15, SMP_FACTORY: 16, INFO: 20, GET: 21, PUT: 22,
                      TRACK: 23, SEQ: 24, FX: 26 };
 export const PROTOS = [1, 2, 3];                           // the editor protocols this page knows (2: TRACK, 3: SEQ)
-export const OBJ = { SET: 0, SLOT: 1, SMP: 5, SND: 16, FACT: 80 };   // (SMP: GR!MM V2, the sample slots 5..8, GET only)
+export const OBJ = { SET: 0, SLOT: 1, SMP: 5, SND: 16, FACT: 80 };   // (SMP: the sample slots 5..8, GET only)
 const BEGIN = 0, DATA = 1, COMMIT = 2, ABORT = 3;
 export const RC = {
   1: "the FM-1 did not accept the request (arguments)",
@@ -142,8 +142,8 @@ export class Client {
     }
     return out;
   }
-  async smpRead(slot, n = 0) {                             // GR!MM V2: a sample slot as the flash holds it (header, data;
-    let h;                                                   // n: its first n bytes), null: empty (or a GR!MM before V2)
+  async smpRead(slot, n = 0) {                             // a sample slot as the flash holds it (header, data;
+    let h;                                                   // n: its first n bytes), null: empty (or a an older version)
     try { h = await this.get(OBJ.SMP + slot, n || SAMPLE.DATA_OFF); } catch (e) { if (e.rc === 1) return null; throw e; }
     if (n) return h;
     const len = new DataView(h.buffer).getUint32(16, true), out = new Uint8Array(SAMPLE.DATA_OFF + len);
@@ -170,7 +170,7 @@ export class Client {
     let i = 1;
     for (let k = 0; k < r[0]; k++) {
       const st = r[i], j = r.indexOf(0, i + 1);
-      if (j < 0 || j + 7 > r.length) { out.push({ state: -1, name: "", n: 0, cap: 0 }); continue; }   // (cut short: GR!MM
+      if (j < 0 || j + 7 > r.length) { out.push({ state: -1, name: "", n: 0, cap: 0 }); continue; }   // (cut short: Arctic Scream
                                                              // before 26b2 with four long names)
       out.push({ state: st, name: String.fromCharCode(...r.slice(i + 1, j)), n: r[j + 1] | r[j + 2] << 7 | r[j + 3] << 14,
                  cap: r[j + 4] | r[j + 5] << 7 | r[j + 6] << 14, root: null });
@@ -206,7 +206,7 @@ export class Client {
     }
     return this.smpInfo();
   }
-  async fx() {                                             // GR!MM V2: the project's effects (28 values: FX_LIST's; 1.4: 30,
+  async fx() {                                             // the project's effects (28 values: FX_LIST's; 1.4: 30,
     const r = await this.req(CMD.FX, [0], 1500);           // AIR's PING-PONG and SHIMMER after them)
     if (r[1]) throw new EditorError(RC[r[1]] || `rc ${r[1]}`, r[1]);
     return r.slice(2, 32);
@@ -249,7 +249,7 @@ export class MidiTransport {                                 // Web MIDI (needs 
   }
   close() { this.input.onmidimessage = null; }
 }
-// the FM-1's ports: an output and an input that answer INFO as GR!MM. Its USB name is "Arctic Scream" (before 1.0's
+// the FM-1's ports: an output and an input that answer INFO as Arctic Scream. Its USB name is "Arctic Scream" (before its
 // rename: "Felucca", the platform's): ports named so, or FM-1, are tried first. An answer is an INFO reply, never our own INFO back (a loop port, as Bitwig's
 // "to Rack" ports, sends every frame back unchanged: step 26b's page took that for the FM-1)
 export async function findFM1(access, log = null) {
@@ -310,7 +310,7 @@ export class VirtualFM1 {
     v.step(100);
     return v;
   }
-  warmUp() { while (this.ex.web_now_ms() < 4000) this.step(50); }   // (as after power-on: GR!MM writes only once silent,
+  warmUp() { while (this.ex.web_now_ms() < 4000) this.step(50); }   // (as after power-on: Arctic Scream writes only once silent,
                                                              // ~3.5 s in)
   step(ms) {                                                 // the device's milliseconds (its sound thrown away)
     for (let i = 0; i < ms; i++) {
@@ -503,7 +503,7 @@ export function backupObjects(info) {
 }
 const b64 = (b) => { let s = ""; b.forEach((x) => { s += String.fromCharCode(x); }); return btoa(s); };
 const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
-export async function makeBackup(client, info, progress) {   // (GR!MM V2: the sample slots too, "samples"; a GR!MM
+export async function makeBackup(client, info, progress) {   // (the sample slots too, "samples"; an Arctic Scream
   const list = backupObjects(info), objects = [], smp = [], n = list.length + info.sampleSlots;   // before: none)
   for (let i = 0; i < list.length; i++) {
     const [id, size, what] = list[i], d = await client.get(id, size);
@@ -522,7 +522,7 @@ export async function makeBackup(client, info, progress) {   // (GR!MM V2: the s
   }
   return b;
 }
-// ------------------------------------------------------------------ FX (GR!MM V2, docs/EDITOR_PROTOCOL.md 25 FX): the six
+// ------------------------------------------------------------------ FX (docs/EDITOR_PROTOCOL.md 25 FX): the six
 // pages' four knobs each (a list's names, else 0..127), then T1..T4's filter (TYPE + 4 x POS)
 export const FX_PAGES = [
   ["TAPE", ["WOW", "SATURATION", "TONE", "HISS"]], ["GRAIN", ["SIZE", "DENSITY", "SCATTER", "MIX"]],
@@ -533,7 +533,7 @@ export const FX_PAGES = [
 export const FX_AIR = ["PING-PONG", "SHIMMER"];             // (1.4) values 28, 29: after the tracks' filters
 export const FT_NAMES = ["LP", "HP", "BP"];
 
-// ------------------------------------------------------------------ the settings (docs/EDITOR_PROTOCOL.md): GR!MM V2's two
+// ------------------------------------------------------------------ the settings (docs/EDITOR_PROTOCOL.md): the two
 // on the SETTINGS section; the rest (the octave, TUNE, COLOUR, SCREEN OFF, SEQ MIDI OUT, MIDI LEARN's links) as read
 export const SET_V1 = 168;                                   // V1.0's settings (version 1, no CLOCK)
 export const SET_V2 = 169;                                   // V2's version 2 (CLOCK, no LATCH)
@@ -563,7 +563,7 @@ export function checkBackup(b, info) {                       // -> [{id, data, w
   return b.objects.map((o) => {
     const d = unb64(o.data), s = sizes.get(o.id);
     const oldset = o.id === OBJ.SET && (d.length === SET_V1 || d.length === SET_V2 || d.length === SET_V3 || d.length === SET_V4) && s && s[0] > d.length;   // (an
-                                                             // older GR!MM's settings: 1.0's, V2's version 2: taken)
+                                                             // older Arctic Scream's settings: 1.0's, V2's version 2: taken)
     if (!s || (d.length !== s[0] && !oldset) || crc32(d) !== o.crc) throw new EditorError(`object ${o.id} is damaged or not this firmware's`, 90);
     return { id: o.id, data: d, what: s[1] };
   });
@@ -597,7 +597,7 @@ const sampleOk = (d) => {                                    // a slot's bytes: 
   return n === d.length - SAMPLE.DATA_OFF && n <= SAMPLE.MAX_DATA && v.getUint32(0, true) === SAMPLE.MAGIC &&
     v.getUint32(20, true) === crc32(d.subarray(SAMPLE.DATA_OFF));
 };
-export function checkSamples(b, info) {                      // GR!MM V2: the backup's sample slots -> [bytes or null] x 4,
+export function checkSamples(b, info) {                      // the backup's sample slots -> [bytes or null] x 4,
   if (!b.samples) return null;                               // null: none in it (a 1.0's: the slots left as they are)
   if (!Array.isArray(b.samples) || b.samples.length !== info.sampleSlots) throw new EditorError("the backup's samples are damaged", 90);
   return b.samples.map((s, k) => {
@@ -627,7 +627,7 @@ export async function restoreSamples(client, smp, progress) {   // the slots as 
   return done;
 }
 
-// ------------------------------------------------------------------ a WAV -> a GR!MM sample slot
+// ------------------------------------------------------------------ a WAV -> an Arctic Scream sample slot
 // tools/sampleio.py read_any_wav, resample, to_int16, ima_encode, user_slot, note_from_name, and the cut and name of
 // tools/fm1_sample_upload.py, with the order of their float operations kept: the same bytes
 export const SAMPLE = { RATE: 22050, DATA_OFF: 512, HDR_LEN: 480, MAX_DATA: 72 * 1024 - 512, MAGIC: 0x504d5347 };
@@ -720,7 +720,7 @@ function imaCode(pred, idx, x) {                             // the standard cho
   if (diff >= step >> 2) code |= 1;
   return code;
 }
-// GR!MM V2: each code the one whose sample and the next two decode closest (sampleio.py ima_encode, look: the same
+// each code the one whose sample and the next two decode closest (sampleio.py ima_encode, look: the same
 // codes): the standard choice follows a steep edge too slowly, a crackle. The decoder is the same (samples.c ima_nib)
 export function imaEncode(s) {
   let pred = 0, idx = 0;

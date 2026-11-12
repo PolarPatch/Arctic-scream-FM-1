@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * GR!MM changes: Copyright (C) 2026 GR!MM */
-/* GR!MM's GRAIN effect: Felucca's GRAIN ("Felucca's own design": hugelton/Felucca firmware/src/eng_grain.c) over a
- * buffer of what the tracks send it, instead of a sample. Taken from eng_grain.c (as GR!MM's GRAIN engine had it, step 6):
+/* Arctic Scream's GRAIN effect: Felucca's GRAIN ("Felucca's own design": hugelton/Felucca firmware/src/eng_grain.c) over a
+ * buffer of what the tracks send it, instead of a sample. Taken from eng_grain.c (as Arctic Scream's GRAIN engine had it, step 6):
  * the grain (a Hann window over its length), its length from SIZE and its interval from DENSITY (gr_len, gr_iv), the
  * random spread of its start and the jitter of the interval from SCATTER, the level by overlap (1 / sqrt n), the
- * window table. GR!MM's: the ring the GRAIN bus is recorded into, FREEZE, a pan for each grain, the return into the
+ * window table. Arctic Scream's: the ring the GRAIN bus is recorded into, FREEZE, a pan for each grain, the return into the
  * mix and into SPACE.
  *   at half the rate (22.05 kHz, as DELAY and SPACE): the GRAIN bus (every other sample, 1 2 1) -> the ring (1 s) ->
  *   up to GE_NG grains read from it, each at its own place behind the newest sample and its own pan -> back to

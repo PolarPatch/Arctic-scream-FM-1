@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * GR!MM changes: Copyright (C) 2026 GR!MM */
-/* GR!MM's VA engine: Felucca's ANALOG engine (hugelton/Felucca firmware/src/eng_analog.c analog_osc and
+/* Arctic Scream's VA engine: Felucca's ANALOG engine (hugelton/Felucca firmware/src/eng_analog.c analog_osc and
  * analog_note_on), taken over without Felucca's framework: the loop of WAVE SAW and SQR (two band-limited
  * oscillators, OSC 2 DTN cents above OSC 1, MIX at 64), the cutoff with key tracking (KTR at Felucca's default, 64),
  * the low-pass and the soft knee after it. NOISE and DRIVE stay out (Felucca's defaults: off). Its DSP: dsp.c.
- * GR!MM's own: WAVE SUPERSAW (seven saws spread by DETUNE, after Adam Szabo's analysis of the JP-8000's).
+ * Arctic Scream's own: WAVE SUPERSAW (seven saws spread by DETUNE, after Adam Szabo's analysis of the JP-8000's).
  * An engine of voices.c: va_begin, va_block (CTL frames of a voice, its track's four parameters p: WAVE, DETUNE,
  * CUTOFF, RESONANCE), va_text. */
 
@@ -30,7 +30,7 @@ static void va_begin(voice_t *v)                /* a note from silence (Felucca 
     v->ph[1] = v->ph[0] + 0x40000000u;          /* SAW / SQR: OSC 2 a quarter cycle on, as Felucca */
 }
 
-/* CTL frames of voice v, added to mono[] (eng_analog.c analog_osc's loop for SAW / SQR, GR!MM's SUPERSAW) */
+/* CTL frames of voice v, added to mono[] (eng_analog.c analog_osc's loop for SAW / SQR) */
 static void va_block(voice_t *v, const volatile int32_t *p, int32_t *mono, int32_t amp0, int32_t amp1)
 {
     int32_t wave = p[0], det = p[1], p16 = VP16(v), i;

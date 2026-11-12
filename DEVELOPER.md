@@ -1,14 +1,13 @@
 # Arctic Scream p0larpatch: developer notes
 
-What has been done to turn GR!MM into Arctic Scream p0larpatch, where it lives in the code, and how to build, test
-and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.md); for the editor's protocol see
+What Arctic Scream p0larpatch is made of, where it lives in the code, and how to build, test and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.md); for the editor's protocol see
 [docs/EDITOR_PROTOCOL.md](docs/EDITOR_PROTOCOL.md).
 
 ## Where it comes from
 
-- A GPL-3.0 fork of [GR!MM](https://github.com/GRiMMBIENT/grimm) 1.0 (git remote `upstream`; its tag is kept
-  locally as `grimm-v1.0`). GR!MM is built on Felucca (the platform), Dinghy, SLOOP, X0X, msfa, DaisySP, Rings and
-  CrispyZebra; all their credits stay in [LICENSING.md](LICENSING.md).
+- A GPL-3.0 fork of [GR!MM](https://github.com/GRiMMBIENT/grimm) (git remote `upstream`; its own tags are kept locally,
+  apart from ours, and never pushed). It is built on Felucca (the platform), Dinghy, SLOOP, X0X, msfa, DaisySP, Rings
+  and CrispyZebra; all their credits stay in [LICENSING.md](LICENSING.md).
 - Holvut (the HOWL source in the code) follows the design of Synthux's [Audrey II](https://github.com/Synthux-Academy/Audrey-II) and Audrey Touch
   (MIT). It is written from scratch, in integers, and no code is copied.
 - The DRONE page follows the idea of [Jangada](https://github.com/zednaked/jangada)'s DRONE page (zednaked, GPL-3.0:
@@ -33,13 +32,13 @@ and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.m
 
 ### Identity
 
-| | Arctic Scream | GR!MM |
-|---|---|---|
-| Firmware ID | `FM-1_977` (`platform.c` `FELUCCA_ID`, `tools/build.py` `PRODUCT`) | `FM-1_966` |
-| SysEx head | `7D 41 53` ("AS") | `7D 47 52` |
-| Package | `build/arctic-scream.fwsc`, release `arctic-scream-X.Y.fwsc` | |
-| USB names | "Arctic Scream" by "PolarPatch" (`usb.c` STR1/STR2) | |
-| Saves | magic "ADPK", own tracks (56 B, `store.c`) | not read by Arctic Scream |
+| | Arctic Scream |
+|---|---|
+| Firmware ID | `FM-1_977` (`platform.c` `FELUCCA_ID`, `tools/build.py` `PRODUCT`) |
+| SysEx head | `7D 41 53` ("AS") |
+| Package | `build/arctic-scream.fwsc`, release `arctic-scream-X.Y.fwsc` |
+| USB names | "Arctic Scream" by "PolarPatch" (`usb.c` STR1/STR2) |
+| Saves | magic "ADPK", own tracks (56 B, `store.c`); another firmware's are not read |
 
 - `FM-1_977` is not in the Firmware Hub's catalogue (`https://thefirmwarehub.com/catalog.json`).
 - The 9NN form lets the installers resume an interrupted update.
@@ -96,7 +95,7 @@ and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.m
   - GRAIN ring 1.0 s instead of 1.25 (`GE_LEN`).
   - PERFORM history 0.6 s instead of 0.75 (`PF_LEN`).
 - **Samples:**
-  - No factory samples are built in: `SMP_FACT_N 0`. GR!MM's four took ~290 KB of flash.
+  - No factory samples are built in: `SMP_FACT_N 0` (four would take ~290 KB of flash).
   - Power-on leaves the slots alone. SYSTEM 2's SAMPLES and the editor's button are CLEAR and empty all four.
   - To build in our own samples later: put the WAVs in `assets/samples/`, list them in `SAMPLES` in
     `tools/gen_samples.py`, and run it.
@@ -109,7 +108,7 @@ and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.m
 - **HOME:**
   - glowing waveforms per track;
   - the slabs show the selected track's VOLUME (MUTE when muted), CUTOFF, RES and FX.
-- **The aurora pages** (`ui.c`, after GR!MM's pictures were replaced): every knob a ribbon of northern lights, moving
+- **The aurora pages** (`ui.c`): every knob a ribbon of northern lights, moving
   a frame every `UI_ANIM_MS` (`ui_anim_page`, `hw_ph`; the region y 44–147 redrawn):
   - TAPE: four ribbons, one a knob (WOW wobbles, SATURATION squares off, TONE ripples, HISS frays); bypassed: still and dim.
   - GRAIN: a dim buffer ribbon and grains of light torn off it (DENSITY, SIZE, SCATTER, MIX); FREEZE stops them.
@@ -121,7 +120,7 @@ and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.m
   - MIXER 1: each track four standing ribbons (LEVEL, DLY, REV, GRAIN); MIXER 2: each track a ribbon across the stereo
     field, its crest at PAN.
 - **Holvut EDIT:**
-  - Always four aurora ribbons instead of GR!MM's cells: FEEDBACK sets their height, BODY their length, DAMP their
+  - Always four aurora ribbons: FEEDBACK sets their height, BODY their length, DAMP their
     light, DRIVE their shape.
   - Animated on `PG_SOUND` (`hw_ph`).
 
@@ -150,29 +149,29 @@ and release it. For building from scratch see [docs/BUILDING.md](docs/BUILDING.m
     - per step: NOTE, CHANCE, RATCHET and LENGTH;
     - PLAY and STOP with a playhead;
     - MIDI files in and out (`seqToMidi`, `midiToSeq`).
-  - Sound files are exported as `.arcticsound`. GR!MM's `.grimmsound` files are still read.
+  - Sound files are exported as `.arcticsound`. Older `.grimmsound` files are still read.
 - **Firmware support for the editor:**
   - `firmware/src/editor.c` speaks protocol 3, adding command **24 SEQ**: READ, SET, TEMPO and PLAY.
   - `web/editor_web.c` exports `web_seq_state` for the playhead when the page itself plays.
   - `web/worklet.js` keeps only the newest SEQ SET per track while one is waiting.
 
-- **GR!MM V2.0 in 1.3** (cherry-picked onto the branch with `-x`, so `git log` names each upstream commit; local tags
-  `grimm-v1.0`, `grimm-v2.0` are GR!MM's own, kept apart from ours so a `v*` push never starts our release):
+- **Taken from upstream in 1.3** (cherry-picked onto the branch with `-x`, so `git log` names each upstream commit;
+  the upstream's own tags stay local, apart from ours, so a `v*` push never starts our release):
   - Taken: the RAM savings (steps as bytes, TAPE's curve in 16 bits), the CPU meter's split (`tools/fm1_cpu.py`), MIDI
     CHANNEL's CH n > SEL, TRS MIDI IN (`midi_uart.c`), the MIDI clock (`clock.c`), the track filter's TYPE and POS,
     MASTER and DRIVE (`master.c`), SYSTEM 3's LATCH, SEL + OCT+, REC held, the editor's settings and sample backups,
-    the voice rule and PHYS at most four, GENERATE (`gen.c`), the gain staging, and from rc9–rc12: the USB audio ring
+    the voice rule and PHYS at most four, GENERATE (`gen.c`), the gain staging, the USB audio ring
     (`uac_ring.h`), the saves under endless tails, no flash step while a computer records, the reset reasons, values
     loaded within range, the overload guard's order.
   - Not taken: the choirs, MIXER 1's six tiles and TAPE per track, PHASE's LINE 2, GLIDE, VELOCITY, the new boot and
-    HOME pictures, the 24-bit output path (`PB`) and the rest of 4a25a02.
+    HOME pictures, the 24-bit output path (`PB`).
   - Ours, where they met: the editor's commands CPU and FX are **25** and **26** (24 is SEQ); the sample objects are
     **5–8** (our 38 factory sounds end at 117); the track filter's TYPE and POS sit in bits 4–6 of a track's byte 45 (ARP's
-    RATE, 0..8; GR!MM's byte 32 is DRONE's BORGA here), no size change; MASTER and DRIVE in the working project, version
+    RATE, 0..8; byte 32 is DRONE's BORGA here), no size change; MASTER and DRIVE in the working project, version
     **8** (ours; 7 is 1.0–1.2); the page enum keeps DRONE at 25, then MASTER 26, DRIVE 27, SYSTEM 3 28 (MIDI LEARN's
     links); DRIVE's gain is `drv_gain` (DRONE has a `dr_gain`); DRIVE's level table is made for our quieter mix
     (`tools/gen_drive_levels.py`, RMS 1000–4000).
-  - GR!MM's tests run with `GRIMM_PLAIN=1` (host mode: the plain VA tracks GR!MM starts with, not ICE WRAITH) and our
+  - The inherited tests run with `GRIMM_PLAIN=1` (host mode: plain VA tracks, not ICE WRAITH) and our
     keys an octave down; `tests/compat.c`'s saves are Arctic Scream 1.2's (`tests/data/a1.2-*`).
 
 ### The screen reader (1.5)
@@ -207,7 +206,7 @@ build/host/grimm OUT script.txt FPS      # script mode: "3100 keys 0x80", "3500 
 source ~/emsdk/emsdk_env.sh; bash web/build_web.sh
 node web/test_web.mjs                     # must say "test_web: all ok"
 
-# tests/run_host.sh also runs GR!MM's tests: clock, fx, quick, latch, gen, level, the USB ring, rc11, and (1.5) the
+# tests/run_host.sh also runs the tests: clock, fx, quick, latch, gen, level, the USB ring, the reset reasons, and (1.5) the
 # screen reader's (all "passed")
 
 # the screen reader's words (1.5): fm1-reader next to this repo (../fm1-reader); must say "0 errors"
@@ -239,7 +238,7 @@ python3 tools/fm1_install.py --info                     # what it runs now (read
 python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
 ```
 
-- It installs from V15 (`FM-1_015`), from GR!MM or from any other firmware.
+- It installs from V15 (`FM-1_015`), or from any other firmware.
 - If an install is cut off, the FM-1 comes back in update mode. Run the same command again to finish the write.
 
 ## Release and publish
@@ -274,8 +273,8 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
 | Unique identity `FM-1_977` | done |
 | Update loader included | done |
 | Installed from V15 | passed |
-| Installed from another firmware (GR!MM) | passed, with the release file |
-| Leaving it: GR!MM installed over Arctic Scream | passed |
+| Installed from another firmware | passed, with the release file |
+| Leaving it: another firmware installed over Arctic Scream | passed |
 | Answers the identity request with `FM-1_977` over USB | passed |
 | Interrupted update | passed: cut at 28 %, the FM-1 came back as `ota-FM-1_900`, the write finished |
 | README says it does not read other firmwares' projects | done |
@@ -374,7 +373,7 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
   - **ENV held: SWELL**, every drone voice swells together; and **COMPARE**, the scene as saved.
   - Its engine builds alone (`engine/`), with tests that compare render hashes between the simulator and the engine,
     and a bench that counts instructions against the FM-1's budget.
-- **The key lights after OCT-/OCT+ (fixed in 1.4).** A YouTube comment on GR!MM's video said the key lights do not
+- **The key lights after OCT-/OCT+ (fixed in 1.4).** A YouTube comment said the key lights do not
   follow octave changes; this firmware had the same bug. A key's latched note (and an ARP key) was lit on the key it
   was played on, whatever the octave. Each note now keeps the octave it was played in (`lat_oct`, the arp's `oct`),
   and its light moves with OCT-/OCT+ (off the keys: none lit). The same comment asked for a sign when all six voices

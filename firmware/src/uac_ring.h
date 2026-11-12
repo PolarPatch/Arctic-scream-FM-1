@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * GR!MM changes: Copyright (C) 2026 GR!MM */
-/* The USB audio input's ring (usb.c's, GR!MM rc9: here, no registers, so tests/uac_ring_test.c runs it on a computer):
+/* The USB audio input's ring (usb.c's, here, no registers, so tests/uac_ring_test.c runs it on a computer):
  * the render's side (uac_ring_start, uac_tap, uac_tap48: the audio ISR) and the packets' (uac_packet: TIMER5). Needs
  * FELUCCA_UAC, FELUCCA_UAC_48K, HALF_FRAMES, RING_PUBLISH and uac_fir.h's path */
 #pragma once
@@ -10,9 +10,9 @@
  * the endpoint is asynchronous, so each 1 ms packet carries what the ring holds, 44 or 45 frames
  * (the 44.1 pattern) and one more or one fewer while the ring's fill drifts out of its band.
  * The render writes HALF_FRAMES frames a half buffer; the fill is kept in UA_LO..UA_HI at the low point of
- * that saw tooth. (GR!MM rc9: read where the render ends, its frames about to go in, uac_ring_low: the
+ * that saw tooth. (read where the render ends, its frames about to go in, uac_ring_low: the
  * true low point. Felucca read it where the render started, the low point for its light 128-frame renders;
- * GR!MM's 256-frame renders of 1.8 ms and more (CPU NOW past ~31 %) took a packet and more meanwhile, and
+ * Arctic Scream's 256-frame renders of 1.8 ms and more (CPU NOW past ~31 %) took a packet and more meanwhile, and
  * the ring ran dry within them.) A packet (46) must still be in hand at the low point: the ISR's start can
  * be late. */
 #define UA_N 512u                /* ring, frames (16-bit L | R << 16); a power of two */
@@ -46,7 +46,7 @@ static struct {
     uint8_t wait;                /* polls the queued packet has waited */
     uint8_t e0_rx;               /* SET_CUR sampling frequency: data stage pending */
     volatile uint32_t fill_min;  /* ring fill where the last render ended (rc9; before: started): its low point */
-    uint8_t prime, low;          /* (rc9) prime the ring where this render ends; read its fill there */
+    uint8_t prime, low;          /* prime the ring where this render ends; read its fill there */
     uint32_t acc;                /* 44.1 frames per ms: 0.1 frame steps */
     uint32_t last;               /* the last frame sent, repeated on an underrun */
     uint32_t starts, pkts, frames;               /* frames in packets sent from the ring */
@@ -70,7 +70,7 @@ static struct {
 #endif
 
 #if FELUCCA_UAC
-/* (GR!MM rc9) the render's side. The fill is read where the render ENDS, its first block going in (uac_tap): the
+/* the render's side. The fill is read where the render ENDS, its first block going in (uac_tap): the
  * ring's true low point. Read where it started (as before), a render of R ms took 48 x R frames more meanwhile, unseen:
  * past ~1.8 ms (CPU NOW ~31 %) the ring ran dry in it and the packets repeated a frame (a dropout in the recording; the
  * speaker fine). The band (UA_LO .. UA_HI) now holds the low point itself: any render length up to the block's. The
@@ -181,7 +181,7 @@ static __attribute__((noinline)) void uac_tap(const int32_t *out, uint32_t n)   
     uint32_t w, i;
     if (!uac.feed)
         return;
-    uac_ring_low();                                     /* (rc9: the render's end: the fill's low point; priming) */
+    uac_ring_low();                                     /* (the render's end: the fill's low point; priming) */
     w = ua_w;
 #if FELUCCA_UAC_48K
     if (uac.ring48) {

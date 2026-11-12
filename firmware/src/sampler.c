@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM's SAMPLE source: a sample slot (samples.c) played as a loop, as a tape loop plays. GR!MM's own:
+/* Arctic Scream's SAMPLE source: a sample slot (samples.c) played as a loop, as a tape loop plays. Its own:
  *   varispeed: the key sets the speed, as on tape (the slot's root key plays it as recorded, an octave down at half the
  *   speed and an octave lower); no time-stretching;
  *   the loop: from START, LENGTH long (50 ms .. to the sample's end), forward or (REVERSE) backward. Two heads: before

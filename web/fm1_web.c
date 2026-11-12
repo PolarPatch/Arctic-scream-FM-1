@@ -4,7 +4,7 @@
  * the lights and the saved bytes read back through exports) follows Felucca's browser build, web/emu/felucca_web.c
  * of hugelton/Felucca (Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments, GPL-3.0), which
  * follows X0X's, web/emu/x0x_web.c of charlesvestal/fm1-x0x (GPL-3.0). */
-/* GR!MM in a browser: a fake FM-1, as tests/host.c is one for a computer. platform.c includes this file instead of
+/* Arctic Scream in a browser: a fake FM-1, as tests/host.c is one for a computer. platform.c includes this file instead of
  * the hardware when GRIMM_WEB is set; the app (firmware/src/grimm.c) runs unchanged on it.
  *
  *   web/build_web.sh   ->  web/dist/{index.html, panel.js, worklet.js, grimm.wasm}
@@ -109,7 +109,7 @@ static int settings_save(const void *p, uint32_t n)
     return 0;
 }
 
-/* ---- MIDI: in from Web MIDI (web_midi), out nowhere; no MIDI clock here (GR!MM V2: platform.c's ring stays empty) */
+/* ---- MIDI: in from Web MIDI (web_midi), out nowhere; no MIDI clock here (platform.c's ring stays empty) */
 static uint32_t rt_now(void) { return 0; }
 static uint8_t mq[64][3];
 static uint32_t mq_w, mq_r;
@@ -124,7 +124,7 @@ static void midi_send(uint32_t st, uint32_t d1, uint32_t d2) { (void)st; (void)d
 static uint32_t midi_room(void) { return 64u; }
 static int32_t batt_raw(void) { return -1; }   /* (no battery in a browser: no icon) */
 static int usb_powered(void) { return 0; }
-static uint32_t usb_drops(void) { return 0u; }   /* (GR!MM rc9: no USB audio here) */
+static uint32_t usb_drops(void) { return 0u; }   /* (no USB audio here) */
 static uint32_t stk_main(void) { return 0u; }   /* (1.5.2: the stacks are measured on the FM-1 only) */
 static uint32_t stk_irq(void) { return 0u; }
 #define STK_MAIN_SZ 0u
@@ -133,7 +133,7 @@ static int usb_recording(void) { return 0; }
 static int usb_feeding(void) { return 0; }
 static void usb_feed(const int32_t *x, uint32_t n) { (void)x; (void)n; }
 
-/* GR!MM: the sample area (platform.c's, 288 KiB), here RAM, erased as a new FM-1's: at boot the firmware writes its four
+/* Arctic Scream: the sample area (platform.c's, 288 KiB), here RAM, erased as a new FM-1's: at boot the firmware writes its four
  * factory samples in (samples.c), as on the device. (1.5.3, Arctic Scream's web extension) The browser's slots are
  * longer than the FM-1's: 1 MiB each, ~95 s (the FM-1: 72 KiB, 6.6 s); INFO says so, and the pages cut to it */
 #define SMP_SLOT_SIZE (1024u * 1024u)
@@ -155,7 +155,7 @@ static int sample_flash_write(uint32_t off, const void *p, uint32_t n)   /* NOR:
     for (i = 0; i < n; i++) fake_flash[off + i] &= s[i];
     return 0;
 }
-/* GR!MM: the save sectors (store.c), here RAM, erased at the start: nothing saved */
+/* Arctic Scream: the save sectors (store.c), here RAM, erased at the start: nothing saved */
 #define SAVE_NSECT 6u
 static uint8_t fake_save[SAVE_NSECT][4096];
 static const uint8_t *save_flash(uint32_t i)
@@ -227,7 +227,7 @@ static void platform_poll(void)                 /* one call = one millisecond */
         memset(blk, 0, sizeof blk);
         app_audio(blk, HALF_FRAMES);
         for (i = 0; i < 2u * HALF_FRAMES; i++) {
-            int32_t v = blk[i];                 /* (GR!MM V2: MASTER applied by the app, fm1_master) */
+            int32_t v = blk[i];                 /* (MASTER applied by the app, fm1_master) */
             v = v > 32767 ? 32767 : v < -32767 ? -32767 : v;
             ring[(ring_w * 2u + i) % (RING * 2u)] = (float)v / 65536.0f;   /* << 7 into 24 bits: -6 dBFS, as the I2S */
         }
@@ -280,7 +280,7 @@ EXPORT void web_buttons(uint32_t mask)
     fm1_in.buttons = mask;
 }
 EXPORT void web_enc(uint32_t e, int32_t n) { if (e < 7u) web_enc_steps[e] += n; }
-static int32_t fm1_master(void) { return web_master_q12; }   /* (GR!MM V2: the app's output stage asks) */
+static int32_t fm1_master(void) { return web_master_q12; }   /* (the app's output stage asks) */
 EXPORT void web_master(uint32_t v) { web_knob = (int32_t)(v > 1023u ? 1023u : v); }
 EXPORT void web_midi(uint32_t st, uint32_t d1, uint32_t d2)
 {

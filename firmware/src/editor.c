@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM's editor mailbox: a web editor (or tools/fm1_editor_test.py) reads and writes the FM-1's sounds, slots A..D
+/* Arctic Scream's editor mailbox: a web editor (or tools/fm1_editor_test.py) reads and writes the FM-1's sounds, slots A..D
  * and settings over USB SysEx, on the sample upload's head (F0 7D 41 53 <cmd> .. F7, pack7: samples.c), commands
  * 20..22 beside the samples' 11..15. The format: docs/EDITOR_PROTOCOL.md. Its approach is SLOOP's editor backup
  * (isod89/sloop-fm1, web/EDITOR_PROTOCOL.md, cmds 34..36, GPL-3.0): objects by id, read by offset and count, written
- * as BEGIN (length, CRC-32) -> DATA (in order) -> COMMIT; GR!MM's own code, its own ids and a format version.
+ * as BEGIN (length, CRC-32) -> DATA (in order) -> COMMIT; Arctic Scream's own code, its own ids and a format version.
  *   20 INFO                    -> the protocol, the format, the firmware's version, the sizes, the sample slots used
  *   21 GET  obj, off, count    -> obj, rc, off, count, pack7 bytes (count 1..256)
  *   22 PUT  op 0 BEGIN obj, fmt, len, crc / 1 DATA obj, off, pack7 (<= 256 B, in order) / 2 COMMIT obj / 3 ABORT obj
@@ -18,16 +18,16 @@
  *                                 (READ: then pack7 track t's sequence; Arctic Scream p0larpatch, protocol 3)
  *   25 CPU                     -> the budget, NOW, PEAK, then NOW split by stage (grimm.c cpu_stage), u35 fm1_ticks
  *                                 (1.5.2) then the stacks' deepest and sizes, bytes (platform.c stk_used)
- *                              each (GR!MM V2's command 24, here 25: a diagnostic, tools/fm1_cpu.py; no protocol number
+ *                              each (the command 24, here 25: a diagnostic, tools/fm1_cpu.py; no protocol number
  *                              of its own)
  *   26 FX   op 0 READ          -> op, rc, the project's effects as their pages' knobs (TAPE, GRAIN, DELAY, SPACE, MASTER,
  *                                 DRIVE: four each, 24), the tracks' filter TYPE | POS << 2 (4), (1.4) AIR's PING-PONG
  *                                 and SHIMMER (2: 30 in all; an older FM-1 sends 28)
  *           op 1 SET i, v      -> op, rc: value i (0..29, as READ's) to v, live (the project's: the autosave keeps it)
- *                              (GR!MM V2's command 25, here 26; no protocol number of its own either)
+ *                              (the command 25, here 26; no protocol number of its own either)
  * TRACK is live (protocol 2): a track's sound as it plays, read or set at once, as PRESETS loads one (snd_apply), never
  * saved; at any time, also while playing (the editor page's sliders, SLOOP's live SET). The page sends one at a time.
- * Objects: 0 the settings; 1..4 slots A..D; (V2) 5..8 the sample slots 1..4 as the flash holds them, a ready one's
+ * Objects: 0 the settings; 1..4 slots A..D; 5..8 the sample slots 1..4 as the flash holds them, a ready one's
  * header, data and all (GET only: a backup's; a restore writes them as an upload, 11..13); 16..79 the user's sounds
  * 1..64; 80.. the factory sounds (GET only; up to 127: an object is one 7-bit byte).
  * A PUT's bytes gather in store.c's sector image (st_img: free between saves; a reply is made in its last KiB); it
@@ -59,7 +59,7 @@ static uint32_t ed_size(uint32_t o)             /* object o's size (0: none) */
     if (o >= EO_SLOT && o < EO_SLOT + 4u) return SLOT_ALL;
     if ((o >= EO_SND && o < EO_SND + SND_N) || (o >= EO_FACT && o < EO_FACT + SND_NFACT)) return SND_SIZE;
     if (o >= EO_SMP && o < EO_SMP + SMP_SLOTS && smp[o - EO_SMP].ready) return SMP_DATA_OFF + smp[o - EO_SMP].len;
-    return 0;                                   /* (V2: a sample slot: its header, data; not ready: none) */
+    return 0;                                   /* (a sample slot: its header, data; not ready: none) */
 }
 static const uint8_t *ed_bytes(uint32_t o)      /* object o as it is now (0: no flash) */
 {

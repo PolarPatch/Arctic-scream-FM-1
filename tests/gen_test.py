@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 GR!MM
-"""GR!MM V2's GENERATE in host mode (tests/host.c, its "probe": gen, ph, srcs):
+"""the GENERATE in host mode (tests/host.c, its "probe": gen, ph, srcs):
   - every note it plays is in the SCALE (C NATURAL MINOR), in each MODE, chord mode off and on
   - a track's pattern: playing; GENERATE on: its steps unheard (none of its sequenced notes on), the pattern itself
     unchanged; off: the pattern plays again, unchanged
@@ -202,7 +202,7 @@ for on in (0, 1):
     most = [max(sum(1 for s, tr, n in p["srcs"] if s == SRC_GEN and tr == t) for p in pr.values()) for t in (1, 2, 3, 4)]
     check(f"4 tracks STORM, chord mode {'on' if on else 'off'}: all four generating, every track heard ({heard})",
           last["gen"] == 15 and last["mode"] == [2, 2, 2, 2] and min(heard) > 20, f"gen {last['gen']} {last['mode']}")
-    # (Arctic Scream's sounds ring longer than GR!MM's: a track's release tails can fill its share, so a chord note
+    # (the sounds ring long: a track's release tails can fill its share, so a chord note
     # within it may find no voice of its own and is left out, as the rule says; never another track's voice taken)
     check(f"4 tracks STORM, chord mode {'on' if on else 'off'}: no generated note took another track's voice "
           f"({last['gv'][1]} chord notes left out, no voice of their own)", last["gv"][0] == 0, f"took: {last['gv']}")

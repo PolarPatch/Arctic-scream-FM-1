@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 zvenson (Dinghy: the wiring). The platform it wires up: Copyright (C) 2026 Leo Kuroshita
  * (@kurogedelic), Hügelton Instruments (Felucca), with the changes of SLOOP (isod89). GR!MM changes: Copyright (C)
- * 2026 GR!MM */
+ * 2026 Arctic Scream */
 /* Dinghy's platform: everything an FM-1 firmware needs before it can be fun, taken unchanged from
  * SLOOP / Felucca / sloopDX and wired up here. You should not need to touch this file.
  *
@@ -26,9 +26,9 @@ enum { BTN_OCT_DOWN = 0, BTN_OCT_UP = 1, BTN_FX = 2, BTN_SEL = 3, BTN_ENV = 4, B
 enum { ENC_SELECT = 0, ENC_ALGORITHM = 1, ENC_KNOB1 = 2, ENC_KNOB2 = 3, ENC_KNOB3 = 4, ENC_KNOB4 = 5, ENC_PRESETS = 6 };
 #define KEY_LED(k) (14u + (k))
 #include <stdint.h>
-static volatile uint32_t isr_in_audio;          /* the timer ISR's fm1_ticks inside the audio ISR, summed (GR!MM V2:
+static volatile uint32_t isr_in_audio;          /* the timer ISR's fm1_ticks inside the audio ISR, summed (
                                                  * the CPU meter's SCAN; on a computer 0) */
-/* GR!MM V2: MIDI realtime, the clock and START / CONTINUE / STOP. In from USB (usb.c) and the TRS jack (midi_uart.c),
+/* MIDI realtime, the clock and START / CONTINUE / STOP. In from USB (usb.c) and the TRS jack (midi_uart.c),
  * each with its time (rt_now: 24 a us) and its source: the timer ISR writes, the audio ISR reads (grimm.c clk_ctl, a
  * control block at a time, at the messages' time). Out (USB): the audio ISR's clock (CLOCK INT+OUT), each with the
  * time its sound plays; the timer ISR sends it then (rt_flush; on a computer: logged) */
@@ -78,7 +78,7 @@ static void rt_out(uint32_t st, uint32_t due)   /* audio ISR: a realtime byte ou
 #define APP_NAME "DINGHY"
 #endif
 #ifndef FELUCCA_ID
-#define FELUCCA_ID "FM-1_977"                   /* package identity: Arctic Scream 1.x (tools/build.py; GR!MM's is 966) */
+#define FELUCCA_ID "FM-1_977"                   /* package identity: Arctic Scream 1.x (tools/build.py) */
 #endif
 #ifndef APP_VER
 #define APP_VER "0.0"
@@ -86,7 +86,7 @@ static void rt_out(uint32_t st, uint32_t due)   /* audio ISR: a realtime byte ou
 
 bootguard_t bootguard __attribute__((section(".noinit")));
 static volatile uint32_t fm1_ms;                /* milliseconds since power-on (TIMER5) */
-/* GR!MM rc11: health. What the timer ISR, the flash and the watchdog saw (TIMER4 ticks, 24 a us), for the editor's CPU
+/* health. What the timer ISR, the flash and the watchdog saw (TIMER4 ticks, 24 a us), for the editor's CPU
  * command (tools/fm1_cpu.py): the longest gap between two timer ticks (10 kHz: 100 us; the key scan and the LEDs stand
  * still meanwhile), how many were past 0.2 ms, 1 ms, 10 ms, the longest tick; the battery divider's range. And, kept in
  * .noinit over a reset (a power-on starts it empty): how often it started, and the resets nobody asked for: RAM kept,
@@ -109,7 +109,7 @@ hl_boot_t hl_boot __attribute__((section(".noinit")));   /* (not static: the com
 #define FELUCCA_OTA 1
 #define FELUCCA_CDC 0
 #define FELUCCA_UAC 1
-#define FELUCCA_UART 1                          /* GR!MM V2: TRS MIDI IN (midi_uart.c) */
+#define FELUCCA_UART 1                          /* TRS MIDI IN (midi_uart.c) */
 #define MIDI_RT_IN(st) rt_in(st, RT_USB)        /* (usb.c: the clock and START / CONTINUE / STOP, timed) */
 #define MIDI_RT_SOON() (ro_r != ro_w && (int32_t)(ro_t[ro_r % RTQ] - fm1_ticks()) < 28800)   /* (usb.c: a clock message
                                                  * out due within 1.2 ms: EP1 left free for it, rt_flush) */
@@ -145,14 +145,14 @@ static void rt_flush(void)
     usb.tx_pkts++;
 }
 
-/* ---- flash: read anywhere; erase / program only the update's staging area, the settings sector and (GR!MM) the
+/* ---- flash: read anywhere; erase / program only the update's staging area, the settings sector and (Arctic Scream) the
  * sample area: 0x97000..0xDF000, in what Felucca and its family keep their data in (0x97000..0xFBFFF: theirs, not
  * ours; a firmware finds its own magic missing and starts fresh), below the update's staging area (0xE0000). An
  * update writes the flash up to 0x93000 only: the samples stay. XIP reads it as plain data (fl_plain_window_init) */
 #define SETTINGS_AT 0x000FC000u                 /* one 4 KiB sector of Felucca's globals area */
-#define SAMPLE_AREA 0x00097000u                 /* GR!MM: the sample slots (samples.c) */
+#define SAMPLE_AREA 0x00097000u                 /* Arctic Scream: the sample slots (samples.c) */
 #define SAMPLE_AREA_LEN 0x00048000u             /* 288 KiB: up to 0xDF000 */
-/* GR!MM's saves (store.c): six sectors where Felucca keeps data an app writes (its storage.c flash map: its preset banks'
+/* Arctic Scream's saves (store.c): six sectors where Felucca keeps data an app writes (its storage.c flash map: its preset banks'
  * last sector, its autosave pair and voice bank above the update's staging, its globals beside the settings), none in the
  * sample area */
 #define SAVE_NSECT 6u
@@ -219,7 +219,7 @@ static void ota_commit(const uint8_t *parm)
     bootguard_clear(&bootguard);
     usb_detach();
     fm1_delay_ms(30);
-    hl_boot.clean = 1;                          /* (rc11: our own restart: not an unexpected reset) */
+    hl_boot.clean = 1;                          /* (our own restart: not an unexpected reset) */
     fm1_enter_update(parm);
 }
 #include "recovery.c"
@@ -262,7 +262,7 @@ static int settings_save(const void *p, uint32_t n)   /* p in RAM, n <= 256 */
     return fl_write(SETTINGS_AT, (const uint8_t *)h, sizeof h);   /* the header last: a cut save stays invalid */
 }
 
-/* ---- GR!MM: the sample area (samples.c) and SysEx for the app. An erase or a write stops everything (the
+/* ---- Arctic Scream: the sample area (samples.c) and SysEx for the app. An erase or a write stops everything (the
  * interrupts are off, ~50 ms an erase): only while nothing sounds */
 static const uint8_t *sample_flash(void) { return flash_ok ? fm1_xip_ptr(SAMPLE_AREA) : 0; }   /* 0: no flash */
 static int sample_flash_erase(uint32_t off)     /* the 4 KiB sector at off (in the area) */
@@ -279,7 +279,7 @@ static int sample_flash_write(uint32_t off, const void *p, uint32_t n)   /* p in
         return -8;
     return fl_write(SAMPLE_AREA + off, (const uint8_t *)p, n);
 }
-/* GR!MM's saves (store.c): sector i of SAVE_SECT, read through XIP; an erase (~50 ms) or a write stops the audio a moment */
+/* Arctic Scream's saves (store.c): sector i of SAVE_SECT, read through XIP; an erase (~50 ms) or a write stops the audio a moment */
 static const uint8_t *save_flash(uint32_t i) { return flash_ok && i < SAVE_NSECT ? fm1_xip_ptr(SAVE_SECT[i]) : 0; }
 static int save_flash_erase(uint32_t i)
 {
@@ -297,7 +297,7 @@ static int save_flash_write(uint32_t i, uint32_t off, const void *p, uint32_t n)
  * frames (00 59 ..) are the platform's as before. A frame of the app's left for a second goes: the updater's next
  * one gets through whatever the app does */
 static uint32_t sx_app_t0;                      /* when the frame waiting for the app was first seen (0: none seen);
-                                                 * (V2) 0 again as each is taken: requests back to back (a backup's
+                                                 * 0 again as each is taken: requests back to back (a backup's
                                                  * ~1000 GETs) each get their own second, not the first one's */
 static int sysex_get(const uint8_t **p, uint32_t *n) { return ota_frame_get(p, n) && *n && (*p)[0] == 0x7Du; }
 static void sysex_done(void) { ota_frame_done(), sx_app_t0 = 0; }
@@ -330,10 +330,10 @@ static void midi_send(uint32_t st, uint32_t d1, uint32_t d2)   /* from the main 
 }
 static int32_t batt_raw(void) { return fm1_adc_read(FM1_ADC_BATT); }   /* the battery divider (PB1, ADC ch3): raw
                                                  * 0..1023 (-1: no reading) */
-static uint32_t usb_drops(void) { return uac.underruns + uac.overruns; }   /* (rc9) the USB recording's dropouts so far:
+static uint32_t usb_drops(void) { return uac.underruns + uac.overruns; }   /* the USB recording's dropouts so far:
                                                  * a frame repeated (ring dry), a block dropped (full) */
 #define HL_N 25u
-static void hl_read(uint32_t *v)                /* (rc11) the CPU command's health values, in this order */
+static void hl_read(uint32_t *v)                /* the CPU command's health values, in this order */
 {
     v[0] = uac.underruns, v[1] = uac.overruns, v[2] = uac.missed, v[3] = uac.stalls;   /* USB audio: ring dry, ring full,
                                                  * no packet ready, the host stopped reading */
@@ -353,7 +353,7 @@ static void hl_clear(void)                      /* the peaks and counts since no
     hl.gap = hl.late = hl.stall = hl.lost = hl.dur = hl.bat_hi = 0, hl.bat_lo = 1023u;
     fm1_wdt_gap = fl_irq_max = fl_irq_slow = 0;
 }
-static int usb_recording(void) { return usb.config && !usb.suspended && uac.alt && uac.flowing; }   /* (rc11) a computer
+static int usb_recording(void) { return usb.config && !usb.suspended && uac.alt && uac.flowing; }   /* a computer
                                                  * reads the USB audio now (a DAW with the FM-1 as its input, recording
                                                  * or not): the stream goes on all the time */
 static int usb_feeding(void) { return uac.feed; }   /* (Arctic Scream p0larpatch) this render feeds the USB audio ring:
@@ -368,7 +368,7 @@ static uint32_t midi_room(void)                 /* messages midi_send can still 
 }
 
 /* ---- the timer: 10 kHz key scan, milliseconds, USB at 2 kHz. It outranks the audio ISR; nested in a
- * render it only scans, counts and feeds the USB audio stream (as sloopDX main.c); GR!MM V2: and the MIDI clock's own
+ * render it only scans, counts and feeds the USB audio stream (as sloopDX main.c); and the MIDI clock's own
  * out (rt_flush), the TRS jack (2 kHz) and, for CLOCK USB, USB's MIDI in (2 kHz): a pulse's time within 0.5 ms */
 static volatile uint8_t in_audio;
 void fm1_timer5_irq(void)
@@ -377,7 +377,7 @@ void fm1_timer5_irq(void)
     uint32_t t0 = fm1_ticks(), usb_due = sub % 5u == 0u, d;
     fm1_timer5_ack();
     fm1_input_tick();
-    if (last) {                                 /* (rc11: the gap since the tick before) */
+    if (last) {                                 /* (the gap since the tick before) */
         d = t0 - last;
         if (d > hl.gap) hl.gap = d;
         hl.late += d > 200u * FM1_TICKS_PER_US;
@@ -419,7 +419,7 @@ void fm1_timer5_irq(void)
 }
 extern void isr_timer5(void);
 
-/* ---- the sound: ALNK0 I2S, two halves; the app renders (V2: and scales by the MASTER knob, fm1_master: its output
+/* ---- the sound: ALNK0 I2S, two halves; the app renders (and scales by the MASTER knob, fm1_master: its output
  * stage), Q15 -> 24 bit (1.5.3: a -3 dBFS ceiling, 3 dB louder than Felucca's -6: x 181 / 2^7) */
 static int32_t abuf[2u * HALF_WORDS] __attribute__((aligned(4)));
 static volatile int32_t master_q12 = 2048;
@@ -440,7 +440,7 @@ void fm1_alnk0_irq(void)                       /* via isr_alnk0 (hal/fm1_isr.S) 
             o[i] = 0;
         uac_render_start();
         app_audio(o, HALF_FRAMES);
-        for (i = 0; i < HALF_WORDS; i++)        /* (V2: MASTER applied by the app) */
+        for (i = 0; i < HALF_WORDS; i++)        /* (MASTER applied by the app) */
             o[i] = o[i] > 32767 ? 32767 : o[i] < -32767 ? -32767 : o[i];
         for (i = 0; i < HALF_WORDS; i++)
             o[i] *= 181;
@@ -457,7 +457,7 @@ static void platform_poll(void)
     int32_t a;
     fm1_wdt_feed();
     usb_retry(fm1_ms);
-    {                                           /* (rc11: the battery divider ~100 times a second: a supply that sags) */
+    {                                           /* (the battery divider ~100 times a second: a supply that sags) */
         static uint32_t bt;
         if (fm1_ms - bt >= 10u) {
             bt = fm1_ms;
@@ -556,7 +556,7 @@ void fm1_cstart(void)
     fm1_time_init();
     fm1_reset_reason();
     p3 = fm1_boot.p3_rst;
-    {                                           /* (rc11) how it started: RAM kept and no restart of ours before it: the
+    {                                           /* how it started: RAM kept and no restart of ours before it: the
                                                  * watchdog (P33 bit 2), else a supply that sagged (bits 1, 3, 5) */
         uint32_t fresh = hl_boot.magic != HL_MAGIC, bad;
         if (fresh)
@@ -585,7 +585,7 @@ void fm1_cstart(void)
         recovery_main();                        /* OCT- at power-on: the USB rescue */
     flash_ok = fl_id_known(FL_FAR(fl_jedec_ram)());   /* either FM-1 chip (fm1_flash_id.h), else RAM only */
     if (flash_ok)
-        fl_plain_window_init();                 /* GR!MM: the flash above 0x93000 (the samples) reads plain through XIP */
+        fl_plain_window_init();                 /* Arctic Scream: the flash above 0x93000 (the samples) reads plain through XIP */
     ota_boot_cleanup();
     lcd_init();
     lcd_fill(0, 0, 240, 240, C_BLACK);
@@ -593,7 +593,7 @@ void fm1_cstart(void)
     fm1_adc_init();
     fm1_audio_init(abuf, HALF_WORDS, isr_alnk0, 3);   /* (abuf is zero: .bss) */
     usb_start();
-    uart_midi_init();                           /* (GR!MM V2: the TRS jack; before TIMER5: port H's RMW) */
+    uart_midi_init();                           /* (the TRS jack; before TIMER5: port H's RMW) */
     fm1_timer5_start(isr_timer5, 4);
     fm1_guard_lock_top();
     fm1_irq_enable_all();

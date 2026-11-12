@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * GR!MM changes: Copyright (C) 2026 GR!MM */
-/* Felucca's fixed-point DSP building blocks (hugelton/Felucca firmware/src/dsp.c), unchanged, as GR!MM's engines
+/* Felucca's fixed-point DSP building blocks (hugelton/Felucca firmware/src/dsp.c), unchanged, as Arctic Scream's engines
  * (analog.c) and effects (hall.c, tape.c) use them: mulq15, mulq16, clamp, blep, osc_saw, osc_pulse, softclip, the
  * trapezoidal state-variable filter (tsvf_coef_k, tsvf_coef, tsvf_lp), soft_knee, cents_inc. Their tables come from
  * tools/gen_tables.py (firmware/gen/analog_tables.h). */
@@ -93,7 +93,7 @@ static inline int32_t tsvf_lp(const tsvf_t *c, int32_t in, int32_t *ic1, int32_t
     return v2;
 }
 
-/* GR!MM V2: the same SVF with its other outputs, from the same state: k its damping (tsvf_coef_k's, Q12); the high-pass
+/* the same SVF with its other outputs, from the same state: k its damping (tsvf_coef_k's, Q12); the high-pass
  * in - k v1 - v2 (as perform.c's pf_hp), the band-pass k v1 (its peak at 1) */
 enum { FT_LP, FT_HP, FT_BP, NFTYPE };           /* (the track's filter TYPE, MASTER's) */
 static const char *const FT_NAME[NFTYPE] = {"LP", "HP", "BP"};

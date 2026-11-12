@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM V2's GENERATE: a track plays random notes of the SCALE (its chord in chord mode, as a key's) on the tempo, the
+/* the GENERATE: a track plays random notes of the SCALE (its chord in chord mode, as a key's) on the tempo, the
  * sequencer's clock or a MIDI clock (arp.c's arp_tick, a tick of each track: gen_tick), with rests, lengths, a volume
  * and an attack of their own each note (voices.c: gen_vel, gen_atk), within its own range (gen_lo, gen_hi: its chord's
  * notes past it folded in by octaves, grimm.c note_on). FX held + the black keys (grimm.c): F#2 G#2 A#2 C#3 tapped
@@ -10,7 +10,7 @@
  *          eighths, mostly on the beat, steadier; STORM: dense sixteenths, short, the volume swinging wildly
  *   OCTAVE its notes from C3 + 12 x it (-3 .. +3: C0 .. C6), the keyboard's OCT not at all
  *   RANGE  1, 2 or 3 octaves up from there
- * (V2) A SAMPLE track's notes: lengths from the MODE's shortest up to the whole loop (its LENGTH; gen_smp). Two tracks
+ * A SAMPLE track's notes: lengths from the MODE's shortest up to the whole loop (its LENGTH; gen_smp). Two tracks
  * generating or more: each its share of the voices, a new note replacing its own track's oldest (grimm.c gen_share).
  * While a track generates its pattern plays on unheard (its steps, ratchets and locks not played: seq.c), so it comes
  * back in time when it stops; GENERATE never writes into it. Its notes take the track's voices as a key's do (the
@@ -55,7 +55,7 @@ static uint32_t gen_high(uint32_t t)            /* .. its highest */
     uint32_t h = gen_low(t) + 12u * (uint32_t)clamp(gen_rg[t], 1, 3) - 1u;
     return h > 127u ? 127u : h;
 }
-static uint32_t gen_smp(uint32_t t)            /* (V2) a SAMPLE track: its loop (LENGTH, as the screen has it, at the
+static uint32_t gen_smp(uint32_t t)            /* a SAMPLE track: its loop (LENGTH, as the screen has it, at the
                                                  * root) in ticks at the tempo now (96 a beat); another source, an empty
                                                  * slot: 0 */
 {
@@ -110,7 +110,7 @@ static void gen_tick(uint32_t t)                /* audio: a tick of track t */
     note_on(t, GEN_ID, nt, SRC_GEN, 0, -1);     /* (chord mode: its chord, as a key's, folded into the range) */
     gen_vel = gen_atk = gen_lo = gen_hi = 0;
     gen[t].note = (uint8_t)nt;
-    if ((i = gen_smp(t)) > GM[m].grid * GM[m].len_hi / 4u)   /* (V2: SAMPLE: from the MODE's shortest up to the
+    if ((i = gen_smp(t)) > GM[m].grid * GM[m].len_hi / 4u)   /* (SAMPLE: from the MODE's shortest up to the
                                                  * whole loop) */
         gen[t].left = (uint16_t)(GM[m].grid * GM[m].len_lo / 4u + gen_rnd(i - GM[m].grid * GM[m].len_lo / 4u + 1u));
     else

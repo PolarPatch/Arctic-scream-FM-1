@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM's song mode (GLO: the SONG page; seq.c includes this file): a chain of up to SONG_N steps, each a slot (A..D)
+/* Arctic Scream's song mode (GLO: the SONG page; seq.c includes this file): a chain of up to SONG_N steps, each a slot (A..D)
  * played REPEATS passes, or END (the chain stops there). A pass: one run of the slot's longest pattern (its STEPS times
  * its DIVISION's ticks), every track from its first step again at each pass, so all of them stay in time.
  *   MODE OFF: PLAY plays the slot in use (as before); SONG: PLAY runs the chain from its first step once, then stops;

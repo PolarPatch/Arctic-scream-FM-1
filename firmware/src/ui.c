@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM's screens, after the concept designs (docs/ui-concept, the .dc.html files, drawn there at 2x: here every size and place
+/* Arctic Scream's screens, after the concept designs (docs/ui-concept, the .dc.html files, drawn there at 2x: here every size and place
  * halved). Plain pixels, five greys and one accent, the pixfont (Press Start 2P at its 8 px grid, SIL OFL 1.1:
  * firmware/gen/grimm_pixfont.h, tools/gen_pixfont.py) at 8 px and, for values and big numbers, 16 px.
  *   the frame, every page: the header (the top 24 px: an accent block with the button, a dark bar with the page and the
@@ -365,7 +365,7 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         put_s(S->val, k == 2u ? (v ? SMP_FACT_N ? "RESTORE" : "CLEAR" : "KEEP") : k ? (v ? "ON" : "OFF") :
               v == LEARN_CLEAR ? "CLEAR" : LEARN_NAME[clamp(v, 0, 2)]);
         return;
-    case PG_SYS3:                               /* (V2) LATCH: FROM SOUND, ALWAYS OFF; USB LEVEL: -12DB .. +24DB;
+    case PG_SYS3:                               /* LATCH: FROM SOUND, ALWAYS OFF; USB LEVEL: -12DB .. +24DB;
                                                  * (1.5.2) MOD OUT: OFF, ON */
         if (k == 1u) { usb_db(S->val, v, ""); return; }
         if (k == 2u) { put_s(S->val, v ? "ON" : "OFF"); return; }
@@ -449,7 +449,7 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         if (k == 0u) fm_ratio_text(S->val, (uint32_t)clamp(fm_op, 0, 5));
         else ui_3(S->val, (uint32_t)clamp(v, 0, 99));
         return;
-    case PG_HOME:                               /* the selected track's, as the knobs (Arctic Scream p0larpatch; GR!MM's
+    case PG_HOME:                               /* the selected track's, as the knobs (Arctic Scream p0larpatch;
                                                  * showed the four tracks' LEVELs here): VOLUME (MUTE), CUTOFF ("OPEN",
                                                  * "2.4K", "450"), WARP, MORPH */
         if (k == 0u && (trk_quiet >> sel & 1u)) { put_s(S->val, "MUTE"); S->dim = 1; return; }
@@ -463,14 +463,14 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         }
         ui_3(S->val, ui_pc(v));
         return;
-    case PG_MIX2:                               /* PAN; (V2) the track filter's TYPE, POS; RESONANCE */
+    case PG_MIX2:                               /* PAN; the track filter's TYPE, POS; RESONANCE */
         if (k == 3u) ui_3(S->val, ui_pc(v));
         else if (k == 1u) put_s(S->val, FT_NAME[clamp(v, 0, NFTYPE - 1)]);
         else if (k == 2u) put_s(S->val, v ? "POST" : "PRE");
         else if (v == 64) put_s(S->val, "C");
         else put_u(put_s(S->val, v < 64 ? "L" : "R"), (uint32_t)(v < 64 ? 64 - v : v - 64));
         return;
-    case PG_MASTER:                             /* (V2) CUTOFF ("2.4K", "OPEN"), RESONANCE, TYPE, POSITION */
+    case PG_MASTER:                             /* CUTOFF ("2.4K", "OPEN"), RESONANCE, TYPE, POSITION */
         if (k == 0u) { hz_text(S->val, v, mf_type); return; }
         if (k == 2u) { put_s(S->val, FT_NAME[clamp(v, 0, NFTYPE - 1)]); return; }
         if (k == 3u) { put_s(S->val, MP_SHORT[clamp(v, 0, NMPOS - 1)]); return; }
@@ -478,7 +478,7 @@ static void ui_slab_make(uint32_t k, slab_t *S)
     case PG_TAPE:                               /* TONE: its low-pass corner ("OPEN", "2.4K", "400") */
         if (k == 2u) { tone_text(S->val, v); return; }
         break;
-    case PG_DRIVE:                              /* (V2) AMOUNT ("OFF": 0), TYPE, TONE ("OPEN"), MIX */
+    case PG_DRIVE:                              /* AMOUNT ("OFF": 0), TYPE, TONE ("OPEN"), MIX */
         if (k == 0u && !v) { put_s(S->val, "OFF"); return; }
         if (k == 1u) { put_s(S->val, DT_NAME[clamp(v, 0, NDTYPE - 1)]); return; }
         if (k == 2u && v >= 127) { put_s(S->val, "OPEN"); return; }
@@ -1948,7 +1948,7 @@ static void pic_song(void)                      /* Song: five of the chain's ste
     }
 }
 
-static uint32_t gen_fl;                         /* (V2) GENERATE's tiles flashing (bit t: a note played ~0.12 s ago) */
+static uint32_t gen_fl;                         /* GENERATE's tiles flashing (bit t: a note played ~0.12 s ago) */
 static uint32_t gen_flash(void)                 /* main loop: the tiles' flashes now (from gen_hit, the audio's) */
 {
     static uint8_t seen[NT];
@@ -1962,7 +1962,7 @@ static uint32_t gen_flash(void)                 /* main loop: the tiles' flashes
 }
 /* FxLayer: the eight tricks (FX held + the white keys), each a small ribbon of light doing what it does (FREEZE
  * still, REV THROW a hanging curtain, ECHO THROW echoes running off, TAPE STOP slowing and sinking, REVERSE running
- * back, FILTER DOWN / UP closing and opening, STUTTER chopped); on: lit, in the accent's frame. (V2) GENERATE's four
+ * back, FILTER DOWN / UP closing and opening, STUTTER chopped); on: lit, in the accent's frame. GENERATE's four
  * tracks under them, a ribbon each in the track's colour moving as its MODE plays (DRIFT slow and wide, PULSE in
  * steps, STORM torn), flaring as it plays a note; off: a dim still line */
 static void pf_ribbon(int32_t i, int32_t x0, int32_t cy, int on)
@@ -2001,7 +2001,7 @@ static void pic_perform(void)
         ui_text(x + 3, y + 12, NM[i], 1, on ? UI_W : UI_L);
         pf_ribbon(i, x + 3, y + 27, on);
     }
-    for (i = 0; i < (int32_t)NT; i++) {         /* (V2) GENERATE: a tile a track (its black key's) */
+    for (i = 0; i < (int32_t)NT; i++) {         /* GENERATE: a tile a track (its black key's) */
         int32_t x = 12 + i * 55, y = 112, y2[12], fl = (int32_t)(gen_fl >> i & 1u), md = gen_md[i] % NGM;
         int on = (int)(gen_on >> i & 1u);
         uint16_t c = wv_col((uint32_t)i);
@@ -2099,13 +2099,13 @@ static void sys2_cpu(void)                      /* SYSTEM 2's last row: CPU NOW,
     ui_text(PX0 + 6, 148, l, 1, UI_L);
     ui_text(PX0 + 210 - 8 * ui_len(r), 148, r, 1, UI_W);
 }
-static uint32_t sys2_drops(void)                /* (GR!MM rc9) the USB recording's dropouts since PEAK was set to 0 */
+static uint32_t sys2_drops(void)                /* the USB recording's dropouts since PEAK was set to 0 */
 {
     static uint32_t base, seen;
     if (seen != cpu_reset) seen = cpu_reset, base = usb_drops();
     return usb_drops() - base;
 }
-static void sys2_usb(void)                      /* (rc9) the row over CPU's: USB REC DROPS (the computer recording the
+static void sys2_usb(void)                      /* the row over CPU's: USB REC DROPS (the computer recording the
                                                  * FM-1 over USB: frames repeated or dropped; OCT- + OCT+: to 0 too) */
 {
     char r[12];
@@ -2145,7 +2145,7 @@ static void sys3_row(int32_t y, const char *l, const char *v)
     ui_text(PX0 + 6, y + 4, l, 1, UI_L);
     ui_text(PX0 + 210 - 8 * ui_len(v), y + 4, v, 1, UI_W);
 }
-static void pic_sys3(void)                      /* (V2) SYSTEM 3: LATCH, what it does; the combo for the track's;
+static void pic_sys3(void)                      /* SYSTEM 3: LATCH, what it does; the combo for the track's;
                                                  * (Arctic Scream p0larpatch) USB LEVEL, the computer's recording */
 {
     char v[12];
@@ -2227,7 +2227,7 @@ static uint32_t ui_pic_key(void)
     UI_H(trk[sel].latch), UI_H(trk[sel].chord), UI_H(trk[sel].ch_type), UI_H(trk[sel].ch_voice), UI_H(sc_root), UI_H(sc_scale), UI_H(sc_tun);
     if (PAGES[page].btn == BTN_SEL) UI_H(ch_last), UI_H(ui_oct);
     UI_H(trk_quiet);
-    if (page == PG_PERFORM) {                   /* (V2: GENERATE's tiles too) */
+    if (page == PG_PERFORM) {                   /* (GENERATE's tiles too) */
         UI_H(pf_held), UI_H(ge_freeze), UI_H(gen_on), UI_H(gen_flash());
         for (t = 0; t < NT; t++) UI_H(gen_md[t]), UI_H(gen_oc[t]), UI_H(gen_rg[t]);
     }
@@ -2431,10 +2431,10 @@ static void ui_update(int32_t oct)
         ui_region(PX0 + (int32_t)dot_shown * 4, PY0, 8, 120, UI_K, ui_pic_draw);
     }
     if (page == PG_SYS2) {                      /* SYSTEM 2's CPU row (every ~0.5 s) */
-        st = pct10(cpu_now) << 16 ^ pct10(cpu_peak) ^ sys2_drops() * 2654435761u;   /* (GR!MM rc9: and USB's drops) */
+        st = pct10(cpu_now) << 16 ^ pct10(cpu_peak) ^ sys2_drops() * 2654435761u;   /* (and USB's drops) */
         if (st != stat_key) {
             stat_key = st;
-            ui_region(PX0, 127, 216, 32, UI_K, ui_pic_draw);   /* (rc9: USB's row too) */
+            ui_region(PX0, 127, 216, 32, UI_K, ui_pic_draw);   /* (USB's row too) */
         }
     }
     for (k = 0; k < 4u; k++) {
