@@ -385,8 +385,9 @@ Each track has its own **64-step** pattern; all four play together on one tempo 
 *(The white keys are counted from the left, from F2.)*
 
 **DICE** (new in 2.0): hold **SEQ** and press one of the next eight white keys, **G3 to G4**, for a new part on the selected
-track in a mood, the stillest first. The notes stay in the track's SCALE; STEPS and DIVISION are kept. Undo it with
-EDIT + OCT−.
+track in a mood, the stillest first. The notes stay in the track's SCALE and STEPS is kept. The still moods slow the pattern down (DIVISION 1/4,
+ECHO 1/8) so a drone's long ATTACK has time to bloom; PULSE, ARP and MACHINE keep the track's DIVISION and want a sound
+with a short ATTACK. Undo it with EDIT + OCT−.
 
 | G3 | A3 | B3 | C4 | D4 | E4 | F4 | G4 |
 |---|---|---|---|---|---|---|---|

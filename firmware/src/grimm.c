@@ -2105,7 +2105,8 @@ static void seq_tool(uint32_t w, uint32_t base)
 }
 
 /* (2.0) DICE: SEQ held + the second octave's white keys (G3 .. G4): a new part for the selected track in one of eight
- * moods, the stillest first, in its SCALE around the keys' octave; STEPS, DIVISION and the rest as they are. One undo.
+ * moods, the stillest first, in its SCALE around the keys' octave; the still ones slow (DIVISION 1/4, ECHO 1/8: a drone's
+ * ATTACK has time to bloom), the quick ones at the track's own; STEPS and the rest as they are. One undo.
  * The idea after KRIECHSTROM's DICE (Grigorii Bezborodov, xforsa.github.io/kriechstrom, GPL-3.0), written anew for
  * drones; none of its code */
 static const char *const DICE_NAME[8] = {"HUSH", "STILL", "SWELL", "DRIFT", "ECHO", "PULSE", "ARP", "MACHINE"};
@@ -2141,7 +2142,7 @@ static void dice(uint32_t w, uint32_t base)
     case 4: {                                   /* ECHO: a figure of three, fading as it comes back */
         int32_t f[3] = {tl_note((uint32_t)c), tl_note((uint32_t)c), tl_note((uint32_t)c + 7u)}, rep = n / 4 > 0 ? n / 4 : 1;
         for (i = 0; i < n; i++)
-            if (i % rep < 3 && i % rep < n) DSTEP(i, f[i % rep], 100 - (i / rep) * 22 > 20 ? 100 - (i / rep) * 22 : 20, 1, 1);
+            if (i % rep < 3) DSTEP(i, f[i % rep], 100 - (i / rep) * 22 > 20 ? 100 - (i / rep) * 22 : 20, 1, 2);
         break;
     }
     case 5:                                     /* PULSE: every other step, the root and its fifth */
@@ -2159,6 +2160,7 @@ static void dice(uint32_t w, uint32_t base)
         break;
     }
 #undef DSTEP
+    if ((w & 7u) < 5u) seq[sel].div = (w & 7u) == 4u ? 2 : 0;   /* (1/4; ECHO 1/8: SEQ_DIV_T) */
     put_s(put_s(m, "DICE "), DICE_NAME[w & 7u]);
     hd_say(m);
 }
