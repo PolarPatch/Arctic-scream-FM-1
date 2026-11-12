@@ -88,7 +88,7 @@ $("hero-go").addEventListener("click", () => {
   window.fm1.start().catch(() => {});
 });
 
-// ------------------------------------------------------------------ (1.5.3) the samples: the web's own, longer slots
+// ------------------------------------------------------------------ (2.0) the samples: the web's own, longer slots
 // A WAV dropped on a slot goes into the firmware here as tools/fm1_sample_upload.py sends it (editor_core.js's Client
 // over panel.js's request): cut to the slot's length as INFO gives it (the browser's ~95 s; the FM-1's 6.6 s). The
 // firmware writes a slot only while nothing sounds: ALL NOTES OFF first, then asked again until the tails are gone

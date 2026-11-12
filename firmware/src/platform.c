@@ -420,7 +420,7 @@ void fm1_timer5_irq(void)
 extern void isr_timer5(void);
 
 /* ---- the sound: ALNK0 I2S, two halves; the app renders (and scales by the MASTER knob, fm1_master: its output
- * stage), Q15 -> 24 bit (1.5.3: a -3 dBFS ceiling, 3 dB louder than Felucca's -6: x 181 / 2^7) */
+ * stage), Q15 -> 24 bit (2.0: a -3 dBFS ceiling, 3 dB louder than Felucca's -6: x 181 / 2^7) */
 static int32_t abuf[2u * HALF_WORDS] __attribute__((aligned(4)));
 static volatile int32_t master_q12 = 2048;
 static int32_t fm1_master(void) { return master_q12; }   /* the MASTER knob, Q12, squared (0 .. 4092) */

@@ -21,7 +21,7 @@
 #define UI_M0 RGB(0x45, 0x60, 0x6e)             /* mid */
 #define UI_L0 RGB(0x7f, 0xa8, 0xb8)             /* light */
 #define UI_W RGB(0xea, 0xf6, 0xfa)              /* white */
-static uint32_t ui_force;                       /* (1.5.3: everything drawn again: back from GUOVSSAHAS) */
+static uint32_t ui_force;                       /* (2.0: everything drawn again: back from GUOVSSAHAS) */
 static uint16_t ui_d = UI_D0, ui_m = UI_M0, ui_l = UI_L0;   /* dark, mid, light as the page is drawn: tinted on ENV,
                                                  * LFO, EDIT and SEQ (ui_tint) */
 #define UI_D ui_d
@@ -356,7 +356,7 @@ static void ui_slab_make(uint32_t k, slab_t *S)
             else mch_text(S->val, v);
         }
         else if (k == 2u) S->fill = (uint8_t)((clamp(v, -50, 50) + 50) * 8 / 100), tune_text(S->val, v);
-        else if (v == NSCR - 1) S->fill = 8, put_s(S->val, "GUOVS");   /* (1.5.3: the northern lights) */
+        else if (v == NSCR - 1) S->fill = 8, put_s(S->val, "GUOVS");   /* (2.0: the northern lights) */
         else if (v) S->fill = (uint8_t)(2 * v), put_s(put_u(S->val, SCR_S[clamp(v, 0, NSCR - 1)] / 60u), "M");
         else S->fill = 8, put_s(S->val, "NVR");
         return;
@@ -395,12 +395,12 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         else if (k == 2u) ui_label(S->val, lfo_dest_name(v));
         else put_s(S->val, LFO_SHAPE_SHORT[clamp(v, 0, NLFOSHAPE - 1)]);
         return;
-    case PG_JIEHKKI:                            /* (1.5.3) LENGTH, DRIFT %, RUOHCAT %, START */
+    case PG_JIEHKKI:                            /* (2.0) LENGTH, DRIFT %, RUOHCAT %, START */
         if (k == 0u) put_s(S->val, JK_LEN_NAME[clamp(v, 0, JK_NLEN - 1)]);
         else if (k < 3u) ui_3(S->val, (uint32_t)clamp(v, 0, 100));
         else put_s(S->val, v ? "ON" : "OFF");
         return;
-    case PG_RUOHCAT:                            /* (1.5.3) AMOUNT %, SAMPLE ("S1", "ALL"), SHARE %, VARY % */
+    case PG_RUOHCAT:                            /* (2.0) AMOUNT %, SAMPLE ("S1", "ALL"), SHARE %, VARY % */
         if (k == 1u) put_s(S->val, RU_SMP_SHORT[clamp(v, 0, RU_NSMP - 1)]);
         else ui_3(S->val, (uint32_t)clamp(v, 0, 100));
         return;
@@ -1210,7 +1210,7 @@ static void pic_drone(void)
     ui_rect(80 + st * (w - 2) / 100, 126, 2, 16, UI_W);
 }
 
-/* (1.5.3) Jiehkki: the piece as a glacier, its height the sound's (rising out of silence, its own notes; dying out
+/* (2.0) Jiehkki: the piece as a glacier, its height the sound's (rising out of silence, its own notes; dying out
  * over its last fifth), the part played lit, where it is now marked; under it the four tracks, each its presence as
  * it is now and its own note; a crack of RUOHCAT flashes on the ice. ENDLESS: an even ridge, moving */
 static void pic_jiehkki(void)
@@ -1257,7 +1257,7 @@ static void pic_jiehkki(void)
     }
 }
 
-/* (1.5.3) RUOHCAT's page: the four sample slots as strips of ice, each as long as its sample, the ones SAMPLE plays
+/* (2.0) RUOHCAT's page: the four sample slots as strips of ice, each as long as its sample, the ones SAMPLE plays
  * lit, a sample playing a white line moving along it; RUOHCAT's crack flashing as on JIEHKKI */
 static void pic_ruohcat(void)
 {
@@ -1286,7 +1286,7 @@ static void pic_ruohcat(void)
     if (now - hit_t < 300u) ui_rect(PX0, 141, 214, 2, ru_last == RU_SMP ? UI_W : BW_SKY);   /* (RUOHCAT: a sound begun) */
 }
 
-/* (1.5.3) EditBiegga: the wind as streaks blowing across, torn into gusts (GUST: how far they swing and how fast),
+/* (2.0) EditBiegga: the wind as streaks blowing across, torn into gusts (GUST: how far they swing and how fast),
  * their colour TONE's (dark .. bright); HOWL's whistle a thin line singing through them, tighter as it narrows; SNOW's
  * grains drifting down and across; moving (a frame every UI_ANIM_MS) */
 static void pic_biegga(void)
@@ -1326,7 +1326,7 @@ static void pic_source(void)                    /* the nine sources, the track's
     int32_t i, e = (int32_t)sel_eng();
     ui_caption("SOURCE", 0);
     for (i = 0; i < (int32_t)NENG; i++) {
-        int32_t y = 43 + i * 12;                /* (1.5.3: nine of them, 12 px apart) */
+        int32_t y = 43 + i * 12;                /* (2.0: nine of them, 12 px apart) */
         if (i == e) ui_rect(PX0, y - 2, 108, 11, UI_D);
         ui_text(PX0 + 4, y, i == e ? ">" : " ", 1, ui_acc);
         ui_text(PX0 + 16, y, ENGINES[i]->name, 1, i == e ? ui_acc : UI_M);
@@ -1773,7 +1773,7 @@ static void pic_sel(void)                       /* Scale: the 27 keys as rays of
         if (ns[i] >= base && ns[i] < base + 27u) lit |= 1u << (ns[i] - base);
     e = put_s(put_s(l, SC_NOTE[clamp(sc_root, 0, 11)]), " ");
     e = put_s(e, (sc_tun > 0 ? SC_SHORT : SC_NAME)[clamp(sc_scale, 0, NSCALE - 1)]);
-    if (sc_tun > 0) put_s(put_s(e, " "), TN_NAME[clamp(sc_tun, 0, NTUNING - 1)]);   /* (1.5.3: "C MINOR JUST") */
+    if (sc_tun > 0) put_s(put_s(e, " "), TN_NAME[clamp(sc_tun, 0, NTUNING - 1)]);   /* (2.0: "C MINOR JUST") */
     ui_note(put_s(ui_note(rg, base), "-"), base + 26u);   /* (the keys' range: "F2-G4") */
     ui_caption(l, rg);
     for (i = 0; i < 55; i++) y[i] = 50 + hw_wave(((uint32_t)i * 3u + hw_ph * 2u) & 255u) * 3 / 64;
@@ -2249,9 +2249,9 @@ static uint32_t ui_pic_key(void)
         UI_H(smp[k].state), UI_H(smp[k].ready), UI_H(smp[k].n);
     }
     if (page == PG_TAPE) UI_H(tf_wow), UI_H(tf_sat), UI_H(tf_tone), UI_H(tf_hiss);
-    if (page == PG_RUOHCAT)                     /* (1.5.3: the slots, what plays) */
+    if (page == PG_RUOHCAT)                     /* (2.0: the slots, what plays) */
         for (k = 0; k < SMP_SLOTS; k++) UI_H(smp[k].ready), UI_H(smp[k].n), UI_H(smp[k].name[0]);
-    if (page == PG_JIEHKKI)                     /* (1.5.3: its caption, the time a second; playing or not, its notes) */
+    if (page == PG_JIEHKKI)                     /* (2.0: its caption, the time a second; playing or not, its notes) */
         UI_H(jk.run), UI_H(jk.ended), UI_H(jk_left(fm1_ms) / 1000u), UI_H(jk.run ? (fm1_ms - jk.t0) / 1000u : 0u),
             UI_H(tracks_latched()), UI_H(playing);
     if (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3) {   /* the settings, the links */
@@ -2448,7 +2448,7 @@ static void ui_update(int32_t oct)
     }
 }
 
-/* ---- (1.5.3) GUOVSSAHAS (North Sami: the northern lights, sanit.oahpa.no), SCREEN OFF's last: after two minutes
+/* ---- (2.0) GUOVSSAHAS (North Sami: the northern lights, sanit.oahpa.no), SCREEN OFF's last: after two minutes
  * untouched the whole screen is pixelfx's Aurora (https://github.com/patch-gg/pixelfx, weather/aurora: MIT License,
  * Copyright (c) 2026 Patch; its banded light after Sprite Fusion's holy light, its noise after Sprite Fusion's fog,
  * https://www.spritefusion.com/pixel-art-vfx, MIT License, Copyright (c) 2026 Hugo Duprez), written anew in fixed

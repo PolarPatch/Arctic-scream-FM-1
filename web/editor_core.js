@@ -776,7 +776,7 @@ export function sampleName(s) {
 }
 export const noteName = (n) => ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][n % 12] + (Math.floor(n / 12) - 1);
 export function makeSlot(buf, name, root, maxN = SAMPLE.MAX_N) {   // -> {hdr (480 B), data, secs, cut}; maxN: the
-  let { sr, x } = readAnyWav(buf);                           // slot's capacity (INFO's: the FM-1 6.64 s; 1.5.3, the
+  let { sr, x } = readAnyWav(buf);                           // slot's capacity (INFO's: the FM-1 6.64 s; 2.0, the
   x = resample(x, sr, SAMPLE.RATE);                          // browser's ~95 s)
   if (!x.length || peak(x) <= 1e-6) throw new Error("no audio in it (silent or empty)");
   const cut = x.length > maxN;

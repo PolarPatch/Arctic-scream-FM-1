@@ -18,7 +18,7 @@ class Grimm extends AudioWorkletProcessor {
     this.sentWrites = 0;
     this.lastFrame = -1;
     this.sx = [];                                            // the editor's SysEx frames (TRACK), one a quantum
-    this.asks = [];                                          // (1.5.3) frames whose replies go back to the page
+    this.asks = [];                                          // (2.0) frames whose replies go back to the page
     this.asked = false;                                      // .. one of them in the firmware now
     this.port.onmessage = (e) => this.onMessage(e.data);
   }
@@ -53,7 +53,7 @@ class Grimm extends AudioWorkletProcessor {
     else if (m.type === "enc") ex.web_enc(m.enc, m.n | 0);
     else if (m.type === "master") ex.web_master(m.value | 0);
     else if (m.type === "midi") ex.web_midi(m.data[0], m.data[1], m.data[2]);
-    else if (m.type === "request") {                        // (1.5.3) a frame whose reply the page waits for (SAMPLES:
+    else if (m.type === "request") {                        // (2.0) a frame whose reply the page waits for (SAMPLES:
       this.asks.push(m.data);                               // one at a time, panel.js request; sent once the queue is clear;
       this.asked = false;                                   // the one before answered, or given up on)
     }

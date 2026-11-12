@@ -8,7 +8,7 @@ mkdir -p build/host
 python3 tools/gen_words.py firmware/words.tsv web/words firmware/gen/ann_words.h >/dev/null   # (1.5: the reader's words)
 MACHO=                                          # (macOS: Mach-O has no ".pool" section; the pool is plain .bss there)
 [ "$(uname -s)" = Darwin ] && MACHO="-Dsection(x)=used"
-cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DAPP_VER="\"${APP_VER:-1.5.3}\"" ${MACHO:+"$MACHO"} -Ifirmware/src -Ifirmware/gen -o build/host/grimm firmware/src/grimm.c
+cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DAPP_VER="\"${APP_VER:-2.0}\"" ${MACHO:+"$MACHO"} -Ifirmware/src -Ifirmware/gen -o build/host/grimm firmware/src/grimm.c
 GRIMM_MASTER=1022 build/host/grimm build/host/grimm   # (MASTER as web/test_web.mjs turns it: 1022, Q12 4080)
 python3 - <<'PY'
 from pathlib import Path
@@ -31,7 +31,7 @@ fi
 # the update loader's screen (tests/ldr_screen_test.c): UPDATE MODE, WRITING and its bar, DONE, FAILED
 cc -O2 -Wall -Ifirmware/gen -o build/host/ldr_screen_test tests/ldr_screen_test.c
 build/host/ldr_screen_test
-# (1.5.3) the update path (tests/update_test.c): ota.c's step and the loader's against a served package, an older
+# (2.0) the update path (tests/update_test.c): ota.c's step and the loader's against a served package, an older
 # build's flash first (the app cut short, packed by tools/fm1pkg_make.py); needs build/ from tools/build.py and the SDK
 if [ -f build/arctic-scream.fwsc ] && [ -f build/grimm.bin ] && [ -d "${AC79_SDK:-$HOME/fw-AC79_AIoT_SDK}" ]; then
     head -c 60000 build/grimm.bin > build/host/old_app.bin
@@ -56,9 +56,9 @@ python3 tests/clock_test.py build/host/grimm
 python3 tests/fx_test.py build/host/grimm
 # the quick wins (tests/quick_test.py)
 python3 tests/quick_test.py build/host/grimm
-# Arctic Scream 1.5.3: MONO, COLOUR's black and white (tests/mono_test.py)
+# Arctic Scream 2.0: MONO, COLOUR's black and white (tests/mono_test.py)
 python3 tests/mono_test.py build/host/grimm
-# Arctic Scream 1.5.3: the drone machine: JIEHKKI, RUOHCAT, TUNING, Biegga, GUOVSSAHAS (tests/drone_test.py)
+# Arctic Scream 2.0: the drone machine: JIEHKKI, RUOHCAT, TUNING, Biegga, GUOVSSAHAS (tests/drone_test.py)
 python3 tests/drone_test.py build/host/grimm
 # LATCH: every factory sound, SYSTEM 3 both ways, EDIT, SEL + OCT+, slots, the project, PHYS (tests/latch_test.py)
 python3 tests/latch_test.py build/host/grimm

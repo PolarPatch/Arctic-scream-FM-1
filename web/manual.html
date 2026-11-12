@@ -10,7 +10,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Arctic Scream Manual</title>
 <link rel="icon" href="polarpatch-logo.png">
-<meta name="description" content="The visual manual of Arctic Scream p0larpatch 1.5.3, drone firmware for the M-VAVE FM-1: every page as the screen shows it, and what each knob and button does.">
+<meta name="description" content="The visual manual of Arctic Scream p0larpatch 2.0, drone firmware for the M-VAVE FM-1: every page as the screen shows it, and what each knob and button does.">
 <style>
 @font-face { font-family: "Press Start 2P"; src: url("PressStart2P-Regular.ttf") format("truetype"); font-display: block; }
 /* BlueWatch's colours, as the demo page and the cheat sheet */
@@ -104,7 +104,7 @@ footer p { margin: 4px 0; }
 
 /* print: A4, dark, a chapter a page, the page's number at the foot */
 @page { size: A4; margin: 13mm 12mm 15mm; background: #060410;
-        @bottom-center { content: "ARCTIC SCREAM 1.5.3 · VISUAL MANUAL · " counter(page); color: #45606e;
+        @bottom-center { content: "ARCTIC SCREAM 2.0 · VISUAL MANUAL · " counter(page); color: #45606e;
                          font: 7pt system-ui, sans-serif; letter-spacing: .08em; } }
 @page :first { @bottom-center { content: none; } }
 @media print {
@@ -141,7 +141,7 @@ footer p { margin: 4px 0; }
     <div class="shots" aria-hidden="true"><img src="screens/holvut.png" alt=""><img src="screens/drone.png" alt=""><img src="screens/voice.png" alt=""><img src="screens/space.png" alt=""></div>
     <div class="shots" aria-hidden="true"><img src="screens/env.png" alt=""><img src="screens/scale.png" alt=""><img src="screens/master.png" alt=""><img src="screens/perform.png" alt=""></div>
   </div>
-  <div class="sub">VISUAL MANUAL · 1.5.3<br>FOR THE M-VAVE FM-1</div>
+  <div class="sub">VISUAL MANUAL · 2.0<br>FOR THE M-VAVE FM-1</div>
   <p class="small">Dark ambient drones and feedback screams from the arctic tundra. Unofficial firmware by PolarPatch, free and open source (GPL-3.0); not made or endorsed by M-VAVE. Install at your own risk.</p>
 </section>
 
@@ -171,7 +171,7 @@ C("00", "How to read this manual", "var(--ice)",
     <li><b>A + B</b>: hold A, then press B.</li>
     <li><b>Keys from F2:</b> everything sits an octave down, for drones. <b>White keys 1–8</b> are counted from the left (F2, G2, A2, B2, C3, D3, E3, F3); the black keys from <b>F#2</b>.</li>
     <li><b>T1–T4:</b> the four tracks. Turn ALGORITHM to pick one; most pages show the selected track.</li>
-    <li>${NEW} marks what is new since 1.5, up to 1.5.3.</li></ul>`),
+    <li>${NEW} marks what is new since 1.5, up to 2.0.</li></ul>`),
   P("Arctic Scream p0larpatch", "by PolarPatch", "", [], [], `<div class="about"><img src="polarpatch-logo.png" alt="PolarPatch">
     <div><p>A drone firmware for the M-VAVE FM-1: four tracks, nine sources, long dark effects, a 64-step sequencer, chords, an arpeggiator and song mode, with its own feedback voice, Holvut, that wakes on its own and screams, and JIEHKKI, a whole piece it plays by itself.</p>
     <p>Free and open source (GPL-3.0). Try it in your browser first: the demo, the editor and the cheat sheet are at <a href="https://polarpatch.github.io/Arctic-scream-FM-1/">polarpatch.github.io/Arctic-scream-FM-1</a>.</p></div></div>`)]),

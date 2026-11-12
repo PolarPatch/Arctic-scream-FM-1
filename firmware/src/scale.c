@@ -29,7 +29,7 @@ static const uint8_t CH_IV[NCHORD][5] = {       /* its notes' count, then their 
     {3, 0, 3, 6}, {4, 0, 4, 7, 14}, {3, 0, 2, 3}};
 static const char *const VC_NAME[NVOICING] = {"CLOSE", "OPEN", "SPREAD", "+OCT", "DROP"};
 static volatile int32_t sc_root, sc_scale;      /* SCALE: ROOT (C .. B), SCALE (0: OFF) */
-/* (Arctic Scream 1.5.3, PolarPatch) SCALE's SUOKNA (KNOB 3; North Sami Šuokŋa, a tone, its sound: sanit.oahpa.no), the
+/* (Arctic Scream 2.0, PolarPatch) SCALE's SUOKNA (KNOB 3; North Sami Šuokŋa, a tone, its sound: sanit.oahpa.no), the
  * tuning: the notes from ROOT up as pure intervals, a drone's
  * fifths and thirds still, not beating as equal temperament's do. A note's cents off equal temperament in tune_f units
  * (x 2.366: 0.42 cents each), by its place over ROOT; every source's pitch (voices.c vc_fine). EQUAL: as ever.

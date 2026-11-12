@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 PolarPatch
-"""Arctic Scream 1.5.3's drone machine in host mode (tests/host.c, "T probe": tests/probe.c's jkprobe line):
+"""Arctic Scream 2.0's drone machine in host mode (tests/host.c, "T probe": tests/probe.c's jkprobe line):
   - JIEHKKI (LFO x 3): START with nothing on plays its own notes, a track each (T1 at once, the others coming in), rising out of
     silence and heard from its first seconds; LENGTH 5 MIN
     dies out on time: silent, its notes let go, the screen dark; a key wakes it, and it sounds again; turned OFF early:
@@ -207,10 +207,10 @@ check("RUOHCAT page: SLOT 1, SHARE 100 %: the sample heard", rms(a, 8, 27) > 100
       spec[0] > 8 * spec[2], (rms(a, 8, 27), spec))
 check("RUOHCAT page: never clipping", peak(a) < 32000, peak(a))
 
-# (1.5.3) PRESETS on a latched drone: ICE WRAITH (Holvut) on C3, then POLAR NIGHT (VA): the two cross over (the old one
+# (2.0) PRESETS on a latched drone: ICE WRAITH (Holvut) on C3, then POLAR NIGHT (VA): the two cross over (the old one
 # fading as the new one's ATTACK rises); then POLAR STILL (Holvut again): its knobs glide. Never a hole, never a jump
 for what, step, most in (("another source: the notes cross over", 1, 6), ("the same source: the knobs glide", -2, 8)):   # (Holvut
-    # itself: its loop settles anew as BODY arrives, ~0.5 s: before 1.5.3 a hole to -16 dB and 9.5 dB steps)
+    # itself: its loop settles anew as BODY arrives, ~0.5 s: before 2.0 a hole to -16 dB and 9.5 dB steps)
     out, a, jk, notes = run(f"xf{step}", [(6200, "keys 128"), (6400, "keys 0"), (16000, f"enc 6 {step}")], 20000, plain=False)
     seq = [rms(a, 15.5 + i * 0.1, 15.6 + i * 0.1) for i in range(25)]   # (the 2 s it crosses over in; after it,
     jump = max(abs(20 * math.log10((seq[i + 1] + 1) / (seq[i] + 1))) for i in range(24))   # POLAR NIGHT's own swell)

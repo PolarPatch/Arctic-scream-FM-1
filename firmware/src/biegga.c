@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 PolarPatch */
-/* Arctic Scream 1.5.3's Biegga source (North Sami: wind, sanit.oahpa.no; the same word in Lule Sami): wind over the
+/* Arctic Scream 2.0's Biegga source (North Sami: wind, sanit.oahpa.no; the same word in Lule Sami): wind over the
  * tundra, written for this firmware. A voice is noise, shaped:
  *
  *   noise -> two band-passes at the note and its octave (the howl: the wind singing in a gap) -> + the noise through a

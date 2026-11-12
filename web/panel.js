@@ -26,14 +26,14 @@ let started = null;
 window.fm1 = {
   start: () => started || (started = switchOn()),
   sysex: (data) => send({ type: "sysex", data }),
-  request,                                                 // (1.5.3) a frame, its reply: an editor_core.js Client's transport
+  request,                                                 // (2.0) a frame, its reply: an editor_core.js Client's transport
   panic: () => send({ type: "panic" }),
   tap(mask, ms = 120) {                                    // keys pressed a moment, as a hand would (LATCH: they stay)
     send({ type: "keys", mask: keyMask | mask });
     return new Promise((res) => setTimeout(() => { send({ type: "keys", mask: keyMask }); res(); }, ms));
   },
 };
-// (1.5.3) a request whose reply comes back (the SAMPLES box, web/site.js): as editor_core.js's transports, one at a
+// (2.0) a request whose reply comes back (the SAMPLES box, web/site.js): as editor_core.js's transports, one at a
 // time; the reply without its head and command, as theirs
 let asking = null;
 function request(frame, timeout = 3000) {

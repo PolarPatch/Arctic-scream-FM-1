@@ -121,7 +121,7 @@ a { color: inherit; }
                     background: var(--part); color: var(--label); border: 1px solid var(--edge); }
 .side .row button:hover { color: var(--fg); border-color: var(--dim); }
 .side .hint { margin: 0; padding: 0 12px 12px; color: var(--muted); font-size: 12px; }
-/* (1.5.3) the samples: a slot a row, its number, what is in it, a drop target */
+/* (2.0) the samples: a slot a row, its number, what is in it, a drop target */
 .smp-head { display: flex; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
 .smp-head small { font: 600 10px var(--mono); letter-spacing: .2em; color: var(--muted); }
 .smp-head span { font: 600 10px var(--mono); letter-spacing: .08em; color: var(--dim); text-align: right; }
@@ -291,7 +291,7 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
 <main>
 <section class="hero">
   <div class="wrap">
-    <div class="kicker">DRONE FIRMWARE FOR THE M-VAVE FM-1 · v1.5.3</div>
+    <div class="kicker">DRONE FIRMWARE FOR THE M-VAVE FM-1 · v2.0</div>
     <div class="head">
       <h1 aria-label="Arctic Scream"><span class="gl" data-t="ARCTIC">ARCTIC</span><span class="gl" data-t="SCREAM">SCREAM</span></h1>
       <p>Dark ambient drones and feedback screams from the arctic tundra. Slow, cold drones that hum for minutes, and a
@@ -390,7 +390,7 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
           <dt>KNOB 1–4</dt><dd>The four values at the bottom of the screen, on every page.</dd>
           <dt><kbd>←</kbd> <kbd>→</kbd> ALGORITHM</dt><dd>Picks the track, T1–T4. Every page shows that track.</dd>
           <dt><kbd>↑</kbd> <kbd>↓</kbd> SELECT</dt><dd>HOME: the tempo. The sequencer: the cursor.</dd>
-          <dt>PRESETS</dt><dd>The next sound, by category: 48 factory sounds with arctic names.</dd>
+          <dt>PRESETS</dt><dd>The next sound, by category: 38 factory sounds with arctic names.</dd>
           <dt>MASTER</dt><dd>The volume.</dd>
           <dt><kbd>[</kbd> <kbd>]</kbd> OCT− OCT+</dt><dd>Octave down and up. In SAVE's pages: back, and do it.</dd>
         </dl>
@@ -503,7 +503,7 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
         <p>Press once to start a note, again to stop it. For drones that hum for minutes.</p>
       </article>
     </div>
-    <p style="margin:28px 0 12px">Press LFO a third time for <b>JIEHKKI</b> (<i lang="se">glacier</i>), new in 1.5.3: the
+    <p style="margin:28px 0 12px">Press LFO a third time for <b>JIEHKKI</b> (<i lang="se">glacier</i>), new in 2.0: the
       FM-1 plays a whole piece by itself, as slowly as a glacier, then dies out, stops and goes dark until you touch it.</p>
     <div class="cards">
       <article class="card" style="--c: var(--ice)">
@@ -590,12 +590,12 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
     <div class="sec-head">
       <div class="num" aria-hidden="true">06</div>
       <h2><span class="gl" data-t="STATUS">STATUS</span></h2>
-      <p>Version 1.5.3. Free and open source, GPL-3.0. Unofficial firmware, not made or endorsed by M-VAVE:
+      <p>Version 2.0. Free and open source, GPL-3.0. Unofficial firmware, not made or endorsed by M-VAVE:
         install at your own risk.</p>
     </div>
     <div class="status">
       <article class="card" style="--c: var(--ice)"><h3>INSTALL</h3>
-        <p>Download <code>arctic-scream-1.5.3.fwsc</code> from the <a href="https://github.com/PolarPatch/Arctic-scream-FM-1/releases">releases</a>, connect the FM-1 over USB, then:</p>
+        <p>Download <code>arctic-scream-2.0.fwsc</code> from the <a href="https://github.com/PolarPatch/Arctic-scream-FM-1/releases">releases</a>, connect the FM-1 over USB, then:</p>
         <pre>pip install mido python-rtmidi
 python3 tools/fm1_install.py arctic-scream-1.1.fwsc</pre>
         <p style="margin-top: 10px">Stuck? The Rescue page on the <a href="https://thefirmwarehub.com/">FM-1 Firmware Hub</a> brings it back.</p></article>

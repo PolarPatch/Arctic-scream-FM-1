@@ -134,7 +134,7 @@ static int usb_feeding(void) { return 0; }
 static void usb_feed(const int32_t *x, uint32_t n) { (void)x; (void)n; }
 
 /* Arctic Scream: the sample area (platform.c's, 288 KiB), here RAM, erased as a new FM-1's: at boot the firmware writes its four
- * factory samples in (samples.c), as on the device. (1.5.3, Arctic Scream's web extension) The browser's slots are
+ * factory samples in (samples.c), as on the device. (2.0, Arctic Scream's web extension) The browser's slots are
  * longer than the FM-1's: 1 MiB each, ~95 s (the FM-1: 72 KiB, 6.6 s); INFO says so, and the pages cut to it */
 #define SMP_SLOT_SIZE (1024u * 1024u)
 #define SAMPLE_AREA_LEN (4u * SMP_SLOT_SIZE)

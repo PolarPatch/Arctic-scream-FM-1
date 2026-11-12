@@ -121,7 +121,7 @@
  * What platform.c offers: docs/API.md. The chip's rules: docs/RULES.md. */
 #define APP_NAME "ARCTIC SCREAM p0larpatch"     /* the app, the rescue and the crash screen say this */
 static void app_idle(void);
-#define LCD_IDLE app_idle                       /* (1.5.3) lcd.c: while the screen's DMA runs, MIDI in (after Dinghy) */
+#define LCD_IDLE app_idle                       /* (2.0) lcd.c: while the screen's DMA runs, MIDI in (after Dinghy) */
 #include "platform.c"
 #define ANN_NAME "Arctic Scream " APP_VER       /* (1.5) the screen reader (reader.c): its HELLO answer, */
 #define ANN_MAX 160u                            /* its longest SAY (platform.c's SysEx queue, 64 packets, holds it) */
@@ -238,7 +238,7 @@ static void mix_add(int32_t *o, uint32_t st, const int32_t *x, int32_t g0, int32
  * MIXER 2's TYPE: LP (as V1.0, the same code), HP (open, bypassed: CUTOFF at the bottom), BP (never open), the
  * same SVF's outputs (dsp.c tsvf_any); POS: PRE (as V1.0: the sends hear it filtered) or POST (mix_tracks: the sends
  * hear the track before it, only its dry sound filtered) */
-#define JK_NLEN 7                               /* (1.5.3, jiehkki.c: JIEHKKI's LENGTHs; its knobs (store.c saves them); */
+#define JK_NLEN 7                               /* (2.0, jiehkki.c: JIEHKKI's LENGTHs; its knobs (store.c saves them); */
 static volatile int32_t jk_len, jk_drift, jk_ruo, jk_go;
 #define RU_NSMP 6                               /* (.. the RUOHCAT page's SAMPLE: OFF, SLOT 1 .. 4, ALL; its knobs;) */
 static volatile int32_t ru_smp, ru_share, ru_vary;
@@ -311,7 +311,7 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
     uint32_t t, k;
     for (t = 0; t < NT; t++) {
         int32_t *x = tbuf[t];
-        int32_t jg = jk_trk(t);                 /* (1.5.3: JIEHKKI's presence, jiehkki.c) */
+        int32_t jg = jk_trk(t);                 /* (2.0: JIEHKKI's presence, jiehkki.c) */
         int32_t lv = (trk_quiet >> t & 1u) ? 0 : mulq15(lfo_move(t, LD_VOLUME, clamp(trk[t].level, 0, 127), 127) * 258, jg);   /* (a
                                                  * silent track: all its gains down, ramped) */
         int32_t pan = lfo_move(t, LD_PAN, clamp(trk[t].pan, 0, 127), 127), g[5];
@@ -359,7 +359,7 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
 }
 
 /* the output: 6 dB of headroom after every effect (the mix at half: six loud voices, four tracks fit), MASTER
- * (1.5.3: the knob's turn to the power 1.5: half way ~9 dB under the top, 3/4 ~4 dB; V2's was the knob squared and
+ * (2.0: the knob's turn to the power 1.5: half way ~9 dB under the top, 3/4 ~4 dB; V2's was the knob squared and
  * halved up to 3/4, half way 18 dB under; at the top, as ever, the level before V2), then a limiter: a
  * peak past OUT_LIM (just under full scale) at once, let go over ~90 ms: nothing reaches the clip.
  * (Arctic Scream p0larpatch) A computer recording over USB gets the mix as at MASTER's top, through a limiter of its
@@ -447,7 +447,7 @@ static void app_audio(int32_t *out, uint32_t n)
     for (i = 0; i < n; i++)
         dbus[i] = rbus[i] = gbus[i] = 0;
     mix_tracks(out, used, n);
-    ru_render(out, rbus, n);                    /* (1.5.3) RUOHCAT: the ice around the drone (jiehkki.c) */
+    ru_render(out, rbus, n);                    /* (2.0) RUOHCAT: the ice around the drone (jiehkki.c) */
     CS_MARK(CS_MIX);
     master_filter(out, n, MP_PRE);              /* MASTER, PRE FX: the tracks' dry mix */
     CS_MARK(CS_MASTER);
@@ -473,7 +473,7 @@ static void app_audio(int32_t *out, uint32_t n)
     CS_MARK(CS_PERFORM);
     master_filter(out, n, MP_END);              /* MASTER, END: the very last */
     CS_MARK(CS_MASTER);
-    jk_out(out, n);                             /* (1.5.3) JIEHKKI: the piece's rise and fall (jiehkki.c) */
+    jk_out(out, n);                             /* (2.0) JIEHKKI: the piece's rise and fall (jiehkki.c) */
     out_stage(out, n);                          /* the headroom, the MASTER knob, the limiter */
     CS_MARK(CS_MASTER);
 #undef CS_MARK
@@ -848,7 +848,7 @@ static int note_find_root(uint32_t t, uint32_t note)   /* a key's or MIDI note's
         if (lat_trk[i] == t && lat_src[i] == SRC_KEY && lat_root[i] == note) return (int)i;
     return -1;
 }
-static void restart_track(uint32_t t)           /* audio: a new source: the track's notes go over (1.5.3: crossing over,
+static void restart_track(uint32_t t)           /* audio: a new source: the track's notes go over (2.0: crossing over,
                                                  * the new one's attack on a free voice while the old fades out over
                                                  * ~1.5 s with its own source; no voice free: a fade, a new attack) */
 {
@@ -1010,9 +1010,9 @@ static uint32_t learn_st;                       /* MIDI LEARN: 0 none; 1 TURN A 
 static uint8_t learn_to[4];                     /* (the page, the knob, the track, x) */
 static uint32_t scr_dark, scr_woke, t_hand;     /* SCREEN OFF: dark; a touch woke it (this pass); the hands' last touch */
 #define NSCR 6
-static const uint16_t SCR_S[NSCR] = {0, 60, 300, 900, 1800, 120};   /* SCREEN OFF: NEVER, 1, 5, 15, 30 min (s); (1.5.3)
+static const uint16_t SCR_S[NSCR] = {0, 60, 300, 900, 1800, 120};   /* SCREEN OFF: NEVER, 1, 5, 15, 30 min (s); (2.0)
                                                  * GUOVSSAHAS: the northern lights after 2 min (ui.c ui_aurora) */
-static uint32_t scr_aur;                        /* (1.5.3) the screen "dark" as GUOVSSAHAS: lit, the aurora on it */
+static uint32_t scr_aur;                        /* (2.0) the screen "dark" as GUOVSSAHAS: lit, the aurora on it */
 static char *link_name(char *s, const uint8_t *L);
 static char hd_msg[24];                         /* (ui.c: in the header's place until hd_until) */
 static int32_t bat_lvl = -1;                    /* the battery's level (batt_poll; ui.c's header) */
@@ -1044,7 +1044,7 @@ static int32_t ch_last = -1;                    /* SEL's picture: the note last 
 /* ---- the screen: plain text, a row per value; only what changed is drawn */
 #define KEY0 41u                                /* key 0 = F2 (Arctic Scream p0larpatch: an octave down, for drones) */
 #include "gen.c"                                /* GENERATE (FX held + the black keys) */
-#include "jiehkki.c"                            /* (1.5.3) JIEHKKI: a piece played on its own, LENGTH long; RUOHCAT */
+#include "jiehkki.c"                            /* (2.0) JIEHKKI: a piece played on its own, LENGTH long; RUOHCAT */
 #define OCT_BOTH (1u << BTN_OCT_DOWN | 1u << BTN_OCT_UP)
 #define HOLD_MS 600u                            /* a button held this long: its hold function (HOME: SYSTEM) */
 
@@ -1105,7 +1105,7 @@ static const page_t PAGES[NPAGE] = {
     {"SOURCE", BTN_EDIT, 1, 1, 1, {"SOURCE", "LATCH", "", ""}},
     {"ENV", BTN_ENV, 1, 1, 1, {"ATTACK", "DECAY", "SUSTAIN", "RELEASE"}},
     {"LFO", BTN_LFO, 1, 1, 1, {"RATE", "DEPTH", "DESTINATION", "SHAPE"}},
-    {"SCALE", BTN_SEL, 1, 0, 1, {"ROOT", "SCALE", "SUOKNA", ""}},   /* (1.5.3: the tuning, scale.c; North Sami
+    {"SCALE", BTN_SEL, 1, 0, 1, {"ROOT", "SCALE", "SUOKNA", ""}},   /* (2.0: the tuning, scale.c; North Sami
                                                  * Šuokŋa: a tone, its sound) */
     {"CHORD", BTN_SEL, 1, 0, 1, {"CHORD TYPE", "VOICING", "", ""}},
     {"SONG", BTN_GLO, 1, 0, 1, {"SECTION", "PATTERN", "REPEATS", "MODE"}},
@@ -1140,9 +1140,9 @@ static const page_t PAGES[NPAGE] = {
     {"LOOP", BTN_EDIT, 1, 1, 1, {"GATE", "BLOOM", "LOWCUT", "EXCITE"}},   /* (1.4: a HOWL track's, after SOUND: its
                                                  * loop's GATE, BLOOM, LOWCUT and EXCITE, howl.c) */
     {"AIR", BTN_FX, 1, 0, 1, {"PING", "SHIMMR", "", ""}},
-    {"JIEHKKI", BTN_LFO, 1, 0, 1, {"LENGTH", "DRIFT", "RUOHCAT", "START"}},   /* (1.5.3: LFO's third, after DRONE: a
+    {"JIEHKKI", BTN_LFO, 1, 0, 1, {"LENGTH", "DRIFT", "RUOHCAT", "START"}},   /* (2.0: LFO's third, after DRONE: a
                                                  * piece on its own, jiehkki.c; North Sami: a glacier, to creak) */
-    {"RUOHCAT", BTN_LFO, 1, 0, 1, {"AMOUNT", "SAMPLE", "SHARE", "VARY"}},   /* (1.5.3: LFO's fourth: RUOHCAT with
+    {"RUOHCAT", BTN_LFO, 1, 0, 1, {"AMOUNT", "SAMPLE", "SHARE", "VARY"}},   /* (2.0: LFO's fourth: RUOHCAT with
                                                  * your samples among its sounds, jiehkki.c) */   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
                                                  * (tape.c), SPACE's SHIMMER (hall.c)) */
 };
@@ -1386,12 +1386,12 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
     case PG_TAPE: if (k == 2u) tone_text(s, v); else put_pc(s, v); return;   /* (TONE: its corner, as CUTOFF) */
     case PG_LOOP: hx_text(s, k, v, sel); return;
     case PG_AIR: if (v <= 0) put_s(s, "OFF"); else put_pc(s, v); return;
-    case PG_JIEHKKI:                            /* (1.5.3) LENGTH, DRIFT, RUOHCAT, START */
+    case PG_JIEHKKI:                            /* (2.0) LENGTH, DRIFT, RUOHCAT, START */
         if (k == 0u) put_s(s, JK_LEN_NAME[clamp(v, 0, JK_NLEN - 1)]);
         else if (k < 3u) put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
         else put_s(s, v ? "ON" : "OFF");
         return;
-    case PG_RUOHCAT:                            /* (1.5.3) AMOUNT, SAMPLE, SHARE, VARY */
+    case PG_RUOHCAT:                            /* (2.0) AMOUNT, SAMPLE, SHARE, VARY */
         if (k == 1u) put_s(s, RU_SMP_NAME[clamp(v, 0, RU_NSMP - 1)]);
         else put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
         return;
@@ -1603,7 +1603,7 @@ static void sv_do(void)                         /* OCT+ on a SAVE page: its ACTI
 }
 /* PRESETS (not on SEQ's pages): the track's next / last sound in its CATEGORY (the factory's first, then the user's);
  * past the end, the next CATEGORY's */
-/* (1.5.3) PRESETS on a sounding track, its source the same: the four knobs glide to the new sound's over PGL_MS, so a
+/* (2.0) PRESETS on a sounding track, its source the same: the four knobs glide to the new sound's over PGL_MS, so a
  * drone turns into the next one instead of jumping (a new source: its notes cross over, restart_track). A knob turned
  * meanwhile is the hand's from then on */
 #define PGL_MS 1500u
@@ -2227,7 +2227,7 @@ static void batt_poll(void)
 #include "../../tests/compat.c"                   /* (host mode: saves across versions, tests/run_host.sh) */
 #include "../../tests/probe.c"                    /* (host mode: "T probe", the MIDI clock's test) */
 #endif
-/* MIDI in (1.5.3: a function of its own, so it also runs while the screen's DMA goes out: app_idle, LCD_IDLE in lcd.c,
+/* MIDI in (2.0: a function of its own, so it also runs while the screen's DMA goes out: app_idle, LCD_IDLE in lcd.c,
  * after Dinghy's; idle_ok only around ui_update, never inside itself) */
 static uint32_t idle_ok, midi_touch;
 static void midi_in(void)
@@ -2722,8 +2722,8 @@ static void app_main(void)
         fm1_led_key(BTN_PLAY, playing);
         fm1_led_key(BTN_REC, rec || song_rec);
 
-        jk_tick(fm1_ms, t_touch - t_hand < 0x80000000u ? t_touch : t_hand);   /* (1.5.3) JIEHKKI, RUOHCAT */
-        pgl_tick(fm1_ms);                       /* (1.5.3) PRESETS' glide */
+        jk_tick(fm1_ms, t_touch - t_hand < 0x80000000u ? t_touch : t_hand);   /* (2.0) JIEHKKI, RUOHCAT */
+        pgl_tick(fm1_ms);                       /* (2.0) PRESETS' glide */
         if (jk_sleep) jk_sleep = 0, scr_dark = 1, scr_aur = 0, lcd_light(0);   /* (its piece over: dark till a touch) */
         if (scr_woke) {                         /* SCREEN OFF: a touch woke it; no touch so long: dark (the panel keeps
                                                  * its picture; nothing drawn meanwhile); GUOVSSAHAS: the aurora */
@@ -2737,7 +2737,7 @@ static void app_main(void)
         }
         batt_poll();
         if (!scr_dark || scr_aur) {
-            idle_ok = 1;                        /* (1.5.3) MIDI in while the screen's DMA runs (app_idle) */
+            idle_ok = 1;                        /* (2.0) MIDI in while the screen's DMA runs (app_idle) */
             if (scr_aur) ui_aurora(fm1_ms);
             else ui_update(set.oct);
             idle_ok = 0;

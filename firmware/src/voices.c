@@ -29,7 +29,7 @@
 #define REL_END (1 << 15)                       /* Q24: a release ends here, 54 dB down (a voice's last ~16 LSB, -66 dBFS;
                                                  * Felucca's 1 << 12 rendered the last ~2.7 s of a 6 s release unheard) */
 enum { ST_OFF, ST_ATK, ST_SUS, ST_REL, ST_FADE };
-enum { ENG_VA, ENG_FM, ENG_SAMPLE, ENG_VOICE, ENG_WHEEL, ENG_PHYS, ENG_PHASE, ENG_HOWL, ENG_BIEGGA, NENG };   /* (1.5.3: Biegga) */
+enum { ENG_VA, ENG_FM, ENG_SAMPLE, ENG_VOICE, ENG_WHEEL, ENG_PHYS, ENG_PHASE, ENG_HOWL, ENG_BIEGGA, NENG };   /* (2.0: Biegga) */
 
 typedef struct {
     volatile uint32_t req;                      /* main loop: + 1 after want_* */
@@ -83,7 +83,7 @@ static track_t trk[NT] = {TRK_DEF, TRK_DEF, TRK_DEF, TRK_DEF};   /* VA: SAW, DET
                                                  * the whole sample, forward; VOICE: A, SHIFT 0, BUZZ 64, BREATH 10
                                                  * (Felucca's); WHEEL: 3BAR, PERC OFF, CLICK 40, DRIVE 0 (Felucca's);
                                                  * PHYS: MODAL, STRUCTURE 64, DAMP 80, bowed at 50 %; PHASE: SAW,
-                                                 * DCW 60, one line (Felucca's); HOWL: FEEDBACK 96 (awake), BODY 64, DAMP 50, DRIVE 40; (1.5.3) BIEGGA:
+                                                 * DCW 60, one line (Felucca's); HOWL: FEEDBACK 96 (awake), BODY 64, DAMP 50, DRIVE 40; (2.0) BIEGGA:
                                                  * GUST, HOWL, TONE half way, SNOW 16; LEVEL 100,
                                                  * DLY 0, REV 100, GRN 0, PAN the middle; LATCH OFF; ENV: ATTACK
                                                  * ~0.2 s, DECAY 1 s, SUSTAIN 40 %, RELEASE ~5 s; chord mode OFF (SCALE, CLOSE); ARP OFF (UP,
@@ -93,7 +93,7 @@ static track_t trk[NT] = {TRK_DEF, TRK_DEF, TRK_DEF, TRK_DEF};   /* VA: SAW, DET
                                                  * start); FX 100 %; FM: its patch, BELL's (fm_builtin at
                                                  * power-on) */
 static voice_t vc[NV];
-static int32_t vc_xf[NV], vc_xq[NV], vc_xe[NV];   /* (1.5.3) a voice crossing over to its track's new source
+static int32_t vc_xf[NV], vc_xq[NV], vc_xe[NV];   /* (2.0) a voice crossing over to its track's new source
                                                  * (restart_track): how far along a control step (Q24; 0 not crossing),
                                                  * how far now, its level when it began (its level: that x 1 - the cube
                                                  * of how far, the new sound's attack's mirror: the two hold the sum) */
@@ -160,7 +160,7 @@ static int16_t vx_pool[NV][VX_POOL] __attribute__((section(".pool")));
 #include "phys.c"
 #include "phase.c"
 #include "howl.c"                               /* (Arctic Scream p0larpatch: the feedback loop, after Audrey II) */
-#include "biegga.c"                             /* (1.5.3: the wind) */
+#include "biegga.c"                             /* (2.0: the wind) */
 static const engine_t *const ENGINES[NENG] = {&VA_ENGINE, &FM_ENGINE, &SAMPLE_ENGINE, &FORMANT_ENGINE, &WHEEL_ENGINE,
                                               &PHYS_ENGINE, &PHASE_ENGINE, &HOWL_ENGINE, &BIEGGA_ENGINE};   /* (by ENG_) */
 
@@ -203,7 +203,7 @@ static void voice_cross(uint32_t v, int32_t atk)   /* audio: out with the source
         vc_xe[v] = vc[v].env;
 }
 static int voice_idle(uint32_t v) { return vc[v].stage == ST_OFF && vc[v].req == vc[v].seen; }
-/* (1.5.3) the attack's curve: its level the cube of how far along it is (vc_atp, Q24), so a note flows in, a drone
+/* (2.0) the attack's curve: its level the cube of how far along it is (vc_atp, Q24), so a note flows in, a drone
  * swelling up out of nothing (half way: -18 dB; a straight line, before: -6 dB, there almost at once) */
 static int32_t vc_atp[NV];
 static int32_t atk_cube(int32_t p)              /* Q24 -> Q24 */
@@ -279,7 +279,7 @@ static int32_t env_tick(voice_t *v)
         }
     }
     switch (v->stage) {
-    case ST_ATK: {                              /* (1.5.3: along it in a straight line, its level the cube) */
+    case ST_ATK: {                              /* (2.0: along it in a straight line, its level the cube) */
         int32_t p = vc_atp[v - vc] + (vc_atk[v - vc] ? GEN_ATK[(vc_atk[v - vc] - 1u) & 7u] : c->atk);   /* (V2:
                                                  * GENERATE's attack, or the track's) */
         if (p >= (1 << 24)) {
@@ -295,7 +295,7 @@ static int32_t env_tick(voice_t *v)
         break;
     }
     case ST_REL:
-        if (vc_xf[v - vc]) {                    /* (1.5.3: crossing over) */
+        if (vc_xf[v - vc]) {                    /* (2.0: crossing over) */
             int32_t q = vc_xq[v - vc] += vc_xf[v - vc];
             if (q >= (1 << 24)) e = 0, v->stage = ST_OFF, vc_xf[v - vc] = 0;
             else e = (vc_xe[v - vc] >> 12) * (((1 << 24) - atk_cube(q)) >> 12);
@@ -360,7 +360,7 @@ static uint32_t voices_render(int32_t (*tb)[VB], uint32_t n)
                     tb[t][i] = 0;
             }
             vc_fine = dr_fine[k] + ch_fine[k] + tn_fine(v->note);   /* (DRONE: its detune and breath, drone.c; WARP's,
-                                                 * chaos.c; 1.5.3 SCALE's TUNING, scale.c) */
+                                                 * chaos.c; 2.0 SCALE's TUNING, scale.c) */
             if (dr_gain[k] < 32767 || dr_gain_was[k] < 32767) amp0 = mulq15(amp0, dr_gain_was[k]), amp1 = mulq15(amp1, dr_gain[k]);
             dr_gain_was[k] = dr_gain[k];
             vc_at = b;

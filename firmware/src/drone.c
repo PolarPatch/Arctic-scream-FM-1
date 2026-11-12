@@ -47,7 +47,7 @@ static const dr_map_t DR_MAP[NENG][NPARAM] = {
     {{DR_NONE, 0, 0}, {DR_NONE, 0, 0}, {2, 20, 0}, {1, 20, 30}},            /* PHYS: MODEL, STRUCTURE, DAMP, BOW */
     {{DR_NONE, 0, 0}, {DR_NONE, 0, 0}, {2, 25, 40}, {1, 20, 25}},           /* PHASE: WAVE, WAVE2, DCW, DETUNE */
     {{2, 5, 12}, {1, 20, 0}, {0, 15, -30}, {DR_NONE, 0, 40}},               /* Holvut: FEEDBACK, BODY, DAMP, DRIVE */
-    {{1, 20, 30}, {2, 20, 25}, {0, 20, 30}, {DR_NONE, 0, 20}},              /* (1.5.3) Biegga: GUST, HOWL, TONE, SNOW */
+    {{1, 20, 30}, {2, 20, 25}, {0, 20, 30}, {DR_NONE, 0, 20}},              /* (2.0) Biegga: GUST, HOWL, TONE, SNOW */
 };
 
 typedef struct {

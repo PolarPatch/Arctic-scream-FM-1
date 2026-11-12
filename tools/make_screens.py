@@ -158,7 +158,7 @@ SHOTS = {
     "wheel": lambda: src(S(), 3).turn(K1, 6).hold("C3", "G3").w(1500),
     "phys": lambda: src(S(), 2).hold("C3", "G3").w(1500),
     "phase": lambda: src(S(), 1).hold("C3", "G3").w(1500),
-    # (1.5.3) the drone machine
+    # (2.0) the drone machine
     "biegga": lambda: src(S(), -1).hold("C3", "G3").w(2500),
     "jiehkki": lambda: S().tap(LFO, LFO, LFO).turn(K3, 40).turn(K4, 1).w(40000),
     "ruohcat": lambda: sample(sample(S(), 0, "JOIK", 330, 3.0, 3500), 2, "ELV", 220, 1.5, 5000)
@@ -171,7 +171,7 @@ SHOTS = {
 
 def build():
     os.makedirs(os.path.dirname(HOST), exist_ok=True)
-    subprocess.run(["cc", "-O2", "-w", "-DDINGHY_HOST", "-DAPP_VER=\"1.5.3\"", "-Dsection(x)=used",
+    subprocess.run(["cc", "-O2", "-w", "-DDINGHY_HOST", "-DAPP_VER=\"2.0\"", "-Dsection(x)=used",
                     "-Ifirmware/src", "-Ifirmware/gen", "-o", HOST, "firmware/src/grimm.c"], cwd=ROOT, check=True)
 
 

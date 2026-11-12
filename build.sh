@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
 # GR!MM changes: Copyright (C) 2026 GR!MM
-# Build GR!MM (see README.md).
+# Build Arctic Scream (see README.md).
 #   ./build.sh [--release X.Y]
 #   JIELI_TOOLCHAIN  JieLi Linux toolchain (default: ~/.jieli/toolchain)
 #   AC79_SDK         JieLi AC79 SDK checkout (default: ~/fw-AC79_AIoT_SDK)

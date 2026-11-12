@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 PolarPatch
-"""Arctic Scream 1.5.3's MONO (SYSTEM: COLOUR's fifth) in host mode: turned to, the screen black and white alone; the
+"""Arctic Scream 2.0's MONO (SYSTEM: COLOUR's fifth) in host mode: turned to, the screen black and white alone; the
 setting saved; the settings saved with it, the boot screen and HOME black and white from the start; back to ICE,
 the colours again.
     python3 tests/mono_test.py build/host/grimm"""

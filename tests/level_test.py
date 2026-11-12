@@ -6,7 +6,7 @@
     reaches full scale (the limiter, just under it) with MASTER all the way up, at 3/4 or low
   - four tracks together (four mixes, chord mode off and on, DLY sends up): the same
   - SPACE's and DELAY's lines never past their soft knee, SPACE's pre-delay never clipped (the buses 6 dB lower in)
-  - MASTER (1.5.3): the knob's turn to the power 1.5, half way ~9 dB under the top; at the top as loud as before (a note)
+  - MASTER (2.0): the knob's turn to the power 1.5, half way ~9 dB under the top; at the top as loud as before (a note)
     python3 tests/level_test.py build/host/grimm"""
 import array
 import os
@@ -106,7 +106,7 @@ for m in MASTERS:
                   f"under full scale" + (", the lines under their knee" if m == 768 else ""),
                   p <= LIM and (m != 768 or pr[14000]["lv"] == pr[8000]["lv"]), f"lv {pr[8000]['lv']} -> {pr[14000]['lv']}")
 
-# MASTER's curve (1.5.3): a single quiet note (no limiting): the knob's turn to the power 1.5 (half way ~9 dB under the
+# MASTER's curve (2.0): a single quiet note (no limiting): the knob's turn to the power 1.5 (half way ~9 dB under the
 # top, 3/4 ~4 dB), at the top as before V2
 import math
 

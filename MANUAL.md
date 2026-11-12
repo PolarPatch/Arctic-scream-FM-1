@@ -2,7 +2,7 @@
 
 # Arctic Scream p0larpatch: the manual
 
-**Version 1.5.3, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
+**Version 2.0, for the M-VAVE FM-1.** Every picture here is the FM-1's own screen, taken from the firmware itself
 (`tools/make_screens.py`).
 
 > **Try it as you read:** the [demo](https://polarpatch.github.io/Arctic-scream-FM-1/) runs the same code in your
@@ -36,7 +36,7 @@ Every track starts with **ICE WRAITH**, a Holvut sound that holds its notes: pre
 | **PRESETS** | Loads the next or previous sound into the track. On the sequencer pages: the tempo. |
 | **SELECT** | On HOME: the tempo. On the sequencer: the cursor. |
 | **KNOB 1–4** | The four values along the bottom of the screen, on every page. |
-| **MASTER** | Volume. Since 1.5.3 it is louder through its range (half way about 9 dB under the top, where it was 18) and the output is 3 dB stronger. |
+| **MASTER** | Volume. Since 2.0 it is louder through its range (half way about 9 dB under the top, where it was 18) and the output is 3 dB stronger. |
 | **OCT− / OCT+** | Octave down and up. In save menus: back and confirm. |
 | **Keys** | Play the track. The first white key is **F2**: everything sits an octave down, for drones. |
 
@@ -109,7 +109,7 @@ across the stereo field.
 | **WHEEL** | DRAWBARS | PERC | CLICK | DRIVE | A tonewheel organ |
 | **PHYS** | MODEL | STRUCTURE | DAMP | BOW | Bowed and struck strings, bars, plates, membranes |
 | **PHASE** | WAVE | WAVE2 | DCW | DETUNE | Phase distortion |
-| **Biegga** | GUST | HOWL | TONE | SNOW | The wind: noise singing at the note (new in 1.5.3) |
+| **Biegga** | GUST | HOWL | TONE | SNOW | The wind: noise singing at the note (new in 2.0) |
 
 ### Holvut, the feedback voice
 
@@ -154,7 +154,7 @@ sound as before 1.4. They are saved with the sound and the project.
 
 <br clear="right">
 
-### Biegga, the wind (new in 1.5.3)
+### Biegga, the wind (new in 2.0)
 
 <img src="docs/manual/screens/biegga.png" alt="Biegga's SOUND page: the wind's streaks, its whistle and the snow" width="300" align="right">
 
@@ -223,7 +223,7 @@ North Sami names.
 
 <br clear="right">
 
-### JIEHKKI: a piece that plays itself (new in 1.5.3)
+### JIEHKKI: a piece that plays itself (new in 2.0)
 
 <img src="docs/manual/screens/jiehkki.png" alt="JIEHKKI: a 15 minute piece playing its own notes, 14:20 left" width="360" align="right">
 
@@ -258,7 +258,7 @@ whole piece by itself, moving as slowly as a glacier, and then dies out.
 
 <br clear="right">
 
-### RUOHČAT with your own samples (new in 1.5.3)
+### RUOHČAT with your own samples (new in 2.0)
 
 <img src="docs/manual/screens/ruohcat.png" alt="RUOHCAT: the four sample slots as strips of ice, a sample playing" width="300" align="right">
 
@@ -296,7 +296,7 @@ drone, water, wind. Load WAVs into the four sample slots with the [editor](#14--
 |---|---|---|---|
 | ATTACK (~1 ms – 10 s) | DECAY (~10 ms – 10 s) | SUSTAIN (40 % to start) | RELEASE (~10 ms – 20 s) |
 
-Since 1.5.3 the attack swells instead of ramping: a note stays faint for most of a long ATTACK and blooms at the end
+Since 2.0 the attack swells instead of ramping: a note stays faint for most of a long ATTACK and blooms at the end
 (half way through it is 18 dB down, where it used to be 6), so a key flows in like a drone.
 
 **LFO** (per track): slow movement. It never restarts with a note, so drones keep breathing.
@@ -327,7 +327,7 @@ Since 1.5.3 the attack swells instead of ramping: a note stays faint for most of
 
 - **SCALE**, shared by all tracks: OFF and fourteen scales, the last of them **HORROR**: close semitones, every note
   wrong in the right way. With a scale set, keys, MIDI and recordings snap to it.
-- **ŠUOKŊA** (new in 1.5.3; North Sami for a tone and its sound, `SUOKNA` on the screen): how the notes are tuned
+- **ŠUOKŊA** (new in 2.0; North Sami for a tone and its sound, `SUOKNA` on the screen): how the notes are tuned
   from ROOT up, for every source. `EQUAL` as ever. `JUST`: pure thirds and fifths, so a held chord stands still instead
   of beating. `PYTHAG`: pure fifths, bright and open. `HARMONIC`: the notes of the harmonic series over ROOT, with the
   7th, 11th and 13th harmonics far from the keys' notes: old, strange colours for a drone. Set ROOT to your drone's
@@ -560,12 +560,12 @@ FM-1, not the project.
 | SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES | CLOCK (INT, I+OUT, USB, TRS) |
 | SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB) | MOD OUT (OFF, ON) | |
 
-- **COLOUR:** pick the one that matches your FM-1. **MONO** (new in 1.5.3) turns the whole screen black and white, the
+- **COLOUR:** pick the one that matches your FM-1. **MONO** (new in 2.0) turns the whole screen black and white, the
   greys as a fine pattern of dots, as on an old one-bit screen. The header stays clean so the sound's name reads.
 - **MIDI CHANNEL:** `1-4` puts T1–T4 on channels 1–4 (or higher, up to `13-16`); `ALL > SEL` sends everything to the
   selected track; `CH 1 > SEL` … `CH 16 > SEL` sends only that channel to the selected track and ignores the others.
 - **SCREEN OFF:** the screen goes dark after the chosen time; the music goes on. The first touch only wakes it.
-  **GUOVSSAHAS** (new in 1.5.3; North Sami for the northern lights): after two minutes untouched the screen becomes a
+  **GUOVSSAHAS** (new in 2.0; North Sami for the northern lights): after two minutes untouched the screen becomes a
   night sky where three curtains of aurora fold and ripple, their hems burning green, rays shimmering up into violet,
   the whole sky slowly breathing (after pixelfx's Aurora, by Patch). The first touch brings the page back.
 - **MIDI LEARN:** set LEARN, turn a knob on the FM-1, then move one on your controller. Up to 32 links.
@@ -629,7 +629,7 @@ Since 1.3.1 it shows up on macOS 10.14 to 15 too.
 
 38 sounds with arctic names. Turn **PRESETS** to step through them by category, then your own.
 
-Turning PRESETS while a drone is sounding blends the two sounds (new in 1.5.3). If the new sound uses another source, the
+Turning PRESETS while a drone is sounding blends the two sounds (new in 2.0). If the new sound uses another source, the
 old notes fade out while the new ones rise with their own ATTACK, over 1.5–6 s. If the source is the same, its four
 knobs glide to the new values over 1.5 s. Turning a knob during the glide stops it for that knob. With all six voices
 busy, the change is quick as before.

@@ -1200,7 +1200,7 @@ function drawSamples() {
     drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("hot"); take(e.dataTransfer.files[0]); };
     up.onclick = () => job(`UPLOAD SLOT ${k + 1}`, async () => {
       if (!buf) throw new EditorError("CHOOSE A WAV FIRST", 0);
-      const cap = s.cap > 0 ? s.cap : SAMPLE.MAX_N;             // (1.5.3: as long as this FM-1's slot: the virtual one's ~95 s)
+      const cap = s.cap > 0 ? s.cap : SAMPLE.MAX_N;             // (2.0: as long as this FM-1's slot: the virtual one's ~95 s)
       const sl = makeSlot(buf, sampleName(nm.value), Math.max(0, Math.min(127, +root.value | 0)), cap);
       say(`UPLOADING ${(sl.data.length / 1024).toFixed(0)} KB…`);
       smpInfo = await conn.client.smpUpload(k, sl.hdr, sl.data, progress);

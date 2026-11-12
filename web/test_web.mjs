@@ -242,7 +242,7 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   const after = await cl.smpUpload(2, sl.hdr, sl.data);
   check(after[2].state === 1 && after[2].name === "TESTWAV" && after[2].n === zn && after[2].root === 57,
         `editor: a WAV uploaded into slot 3 and checked by the fake FM-1 (${after[2].name}, ${zn} samples, root ${after[2].root})`);
-  {                                                          // (1.5.3) the browser's slots: ~95 s each, INFO says so
+  {                                                          // (2.0) the browser's slots: ~95 s each, INFO says so
     const n = 20 * 22050, lw = new Uint8Array(44 + n * 2), lv = new DataView(lw.buffer);   // (20 s at 22050 Hz, mono)
     const st = (o, t) => [...t].forEach((c, i) => lw[o + i] = c.charCodeAt(0));
     st(0, "RIFF"), lv.setUint32(4, 36 + n * 2, true), st(8, "WAVEfmt "), lv.setUint32(16, 16, true), lv.setUint16(20, 1, true);

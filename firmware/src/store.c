@@ -49,10 +49,10 @@
 #define SONG_PK 20u                             /* the song: its chain (16), MODE, the mutes and solos; (1.4, spare
                                                  * till then: 0) AIR's PING-PONG and SHIMMER */
 #define FX2_PK 8u                               /* (version 8) MASTER's four, DRIVE's four */
-#define EXT_PK 24u                              /* (1.5.3, version 9) the tracks' Biegga (4 x 4), JIEHKKI's LENGTH,
+#define EXT_PK 24u                              /* (2.0, version 9) the tracks' Biegga (4 x 4), JIEHKKI's LENGTH,
                                                  * DRIFT, RUOHCAT, SCALE's TUNING, the RUOHCAT page's SAMPLE, SHARE,
                                                  * VARY, 1 spare */
-#define BG_SLOT (1u + NT * 4u)                  /* (1.5.3) a slot's Biegga: BG_MARK, then the tracks' four each, in the
+#define BG_SLOT (1u + NT * 4u)                  /* (2.0) a slot's Biegga: BG_MARK, then the tracks' four each, in the
                                                  * slots' stream's tail (after the FM patches: zeros before it) */
 #define BG_MARK 0xB9u
 #define WORK_LEN(tn, sg, sq, lk, fm, fx, ex) (NT * ((tn) + (sq) + (lk)) + 16u + 4u + (sg) + (fm) + (fx) + (ex))   /* the working
@@ -75,7 +75,7 @@ static const uint16_t OBJ_VERS[NOBJV][8] = {{9, TRK_PK, 20, 260, 288, FM_ALL, FX
                                             {4, 52, 0, 196, 0, 0, 0, 0}, {3, 48, 0, 196, 0, 0, 0, 0},
                                             {2, 44, 0, 196, 0, 0, 0, 0}};   /* the versions loaded, newest first: a
                                                  * track's, the song's, a sequence's, the locks', the FM patches', MASTER
-                                                 * and DRIVE's, 1.5.3's EXT size (9: 1.5.3, Biegga, JIEHKKI, TUNING;
+                                                 * and DRIVE's, 2.0's EXT size (9: 2.0, Biegga, JIEHKKI, TUNING;
                                                  * 8: 1.3, the MASTER and DRIVE; 7, Arctic
                                                  * Scream 1.0 .. 1.2's: before MASTER and DRIVE; 6: before
                                                  * the FM patches; 5: before chord steps and locks; 4: before the song;
@@ -95,7 +95,7 @@ _Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4
  * each CATEGORY's list; their names beside them. Bytes: CATEGORY, its number, the source, its four, ENV (ATTACK, DECAY,
  * SUSTAIN, RELEASE), LATCH, CHORD (0x80 chord mode on, VOICING << 4 | CHORD TYPE), LFO (RATE, DEPTH, DESTINATION, SHAPE).
  * Sources: 0 VA (WAVE 0 SAW, 1 SQUARE, 2 SUPERSAW), 1 FM (PATCH 0 BELL, 1 ORGAN, 2 SOFT PAD, 3 REED), 3 VOICE, 4 WHEEL,
- * 5 PHYS (MODEL 0 MODAL, 1 STRING, 2 MEMBRANE, 3 SYMPATH), 6 PHASE, 7 HOWL, 8 BIEGGA (1.5.3; North Sami: the wind). LFO DESTINATION 0 PITCH, 1 VOLUME, 3 .. 6 KNOB 1 .. 4;
+ * 5 PHYS (MODEL 0 MODAL, 1 STRING, 2 MEMBRANE, 3 SYMPATH), 6 PHASE, 7 HOWL, 8 BIEGGA (2.0; North Sami: the wind). LFO DESTINATION 0 PITCH, 1 VOLUME, 3 .. 6 KNOB 1 .. 4;
  * SHAPE 0 SINE, 1 TRIANGLE, 5 RANDOM, 6 DRIFT */
 #define FSND(c, n, e, k0, k1, k2, k3, a, d, s, r, la, ch, lr, ld, lt, ls)                                              \
     FSNDD(c, n, e, k0, k1, k2, k3, a, d, s, r, la, ch, lr, ld, lt, ls, 0, 0, 0)
@@ -119,7 +119,7 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSND(CAT_DRONE, 5, ENG_VOICE, 96, 6, 100, 90, 90, 90, 115, 100, 1, 0x05, 115, 30, 1, 5), /* SOLAR WIND */
     FSND(CAT_DRONE, 6, ENG_FM, 1, 50, 64, 12, 95, 90, 120, 100, 1, 0x05, 40, 0, 0, 0),      /* UNDER THE ICE */
     /* BELLS & METAL */
-    /* (1.5.3: FROST CHIME and STARLIGHT gone, room for RIDDU and POLAR STILL) */
+    /* (2.0: FROST CHIME and STARLIGHT gone, room for RIDDU and POLAR STILL) */
     FSND(CAT_BELL, 1, ENG_FM, 0, 64, 90, 10, 0, 120, 0, 110, 0, 0x00, 40, 0, 0, 0),         /* ICE BELL */
     FSND(CAT_BELL, 2, ENG_PHYS, 0, 110, 115, 0, 0, 90, 127, 110, 0, 0x00, 40, 0, 0, 0),     /* ICEBERG GONG */
     FSND(CAT_BELL, 3, ENG_FM, 0, 85, 30, 20, 80, 100, 70, 95, 0, 0x00, 40, 0, 0, 0),        /* CRYSTAL HARP */
@@ -136,11 +136,11 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSND(CAT_OTHER, 3, ENG_FM, 3, 85, 64, 15, 75, 90, 115, 85, 0, 0x00, 40, 0, 0, 0),       /* FOG HORN */
     FSND(CAT_OTHER, 4, ENG_PHYS, 1, 50, 115, 60, 85, 95, 70, 95, 1, 0x00, 95, 1, 0, 0),     /* SVALBARD CELLO */
     FSND(CAT_OTHER, 5, ENG_VA, 2, 40, 75, 5, 90, 90, 115, 95, 0, 0x00, 70, 1, 0, 0),        /* NORTH STRINGS */
-    /* KEYS (1.5.3: SIGNAL FLARE alone; ICE ORGAN, BASE CAMP, the other keys, leads and plucks gone: a drone machine) */
+    /* KEYS (2.0: SIGNAL FLARE alone; ICE ORGAN, BASE CAMP, the other keys, leads and plucks gone: a drone machine) */
     FSND(CAT_KEYS, 1, ENG_VA, 1, 6, 55, 10, 40, 90, 110, 75, 0, 0x00, 40, 0, 0, 0),         /* SIGNAL FLARE */
     /* TEXTURES */
     FSND(CAT_TEXTURE, 1, ENG_VOICE, 96, 12, 0, 127, 100, 90, 120, 105, 1, 0x00, 30, 90, 4, 0), /* WIND OVER ICE */
-    /* (1.5.3) Biegga, the wind: LATCH ON, a gentle wind, gusting a little, its TONE drifting on the LFO, a breeze
+    /* (2.0) Biegga, the wind: LATCH ON, a gentle wind, gusting a little, its TONE drifting on the LFO, a breeze
      * rising over 4 bars; RIDDU (North Sami: a gale), the storm: hard gusts, the howl and the snow up, HOWL drifting */
     FSNDD(CAT_TEXTURE, 2, ENG_BIEGGA, 60, 60, 50, 20, 100, 90, 127, 105, 1, 0x00, 20, 15, 5, 6, 35, 8, 3),   /* BIEGGA */
     FSNDD(CAT_TEXTURE, 3, ENG_BIEGGA, 120, 95, 85, 60, 90, 90, 127, 100, 1, 0x00, 30, 30, 4, 6, 60, 40, 3),  /* RIDDU */
@@ -151,7 +151,7 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSNDD(CAT_DRONE, 9, ENG_HOWL, 112, 40, 35, 60, 60, 90, 120, 100, 1, 0x00, 20, 20, 5, 0, 50, 0, 4), /* FROZEN SCREAM */
     FSNDD(CAT_DRONE, 10, ENG_HOWL, 88, 106, 95, 20, 110, 90, 127, 115, 1, 0x00, 25, 40, 9, 6, 75, 0, 4), /* WHITEOUT */
     FSNDD(CAT_DRONE, 11, ENG_HOWL, 104, 8, 30, 105, 40, 90, 110, 90, 1, 0x00, 60, 30, 4, 4, 55, 0, 4),  /* DEAD SIGNAL */
-    /* (1.5.3) POLAR STILL: WHITEOUT's calm sister: the loop awake and steady, hardly drifting (the LFO slow and
+    /* (2.0) POLAR STILL: WHITEOUT's calm sister: the loop awake and steady, hardly drifting (the LFO slow and
      * shallow, BORGA low), slow in and slower out; for a long JIEHKKI piece where little happens */
     FSNDD(CAT_DRONE, 14, ENG_HOWL, 92, 100, 95, 20, 115, 90, 127, 120, 1, 0x00, 10, 12, 9, 6, 25, 0, 5),  /* POLAR STILL */
     /* III: three Holvut voices in a CLUSTER chord (SPREAD), their semitone rubbing, dark (DAMP), BODY drifting on the LFO,
@@ -579,7 +579,7 @@ static void pk_work(uint8_t *q)
     q[2] = (uint8_t)clamp(mf_type, 0, NFTYPE - 1), q[3] = (uint8_t)clamp(mf_pos, 0, NMPOS - 1);
     q[4] = (uint8_t)clamp(dr_amt, 0, 127), q[5] = (uint8_t)clamp(dr_type, 0, NDTYPE - 1);
     q[6] = (uint8_t)clamp(dr_tone, 0, 127), q[7] = (uint8_t)clamp(dr_mix, 0, 127);
-    q += FX2_PK;                                /* (1.5.3) EXT: Biegga, JIEHKKI, TUNING */
+    q += FX2_PK;                                /* (2.0) EXT: Biegga, JIEHKKI, TUNING */
     for (k = 0; k < EXT_PK; k++) q[k] = 0;
     for (t = 0; t < NT; t++)
         for (k = 0; k < 4u; k++) q[t * 4u + k] = (uint8_t)clamp(trk[t].p[ENG_BIEGGA][k], 0, 127);
@@ -614,7 +614,7 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
         dr_amt = fx ? clamp(x[4], 0, 127) : 0, dr_type = fx ? clamp(x[5], 0, NDTYPE - 1) : DT_SOFT;
         dr_tone = fx ? clamp(x[6], 0, 127) : 127, dr_mix = fx ? clamp(x[7], 0, 127) : 127;
     }
-    {                                           /* (1.5.3) EXT; saved before it: Biegga as at power-on, JIEHKKI's
+    {                                           /* (2.0) EXT; saved before it: Biegga as at power-on, JIEHKKI's
                                                  * 15 MIN, 40 %, RUOHCAT off, TUNING EQUAL */
         static const track_t T0 = TRK_DEF;
         const uint8_t *x = q + sg + fm + fx;
@@ -637,7 +637,7 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
         dl_pp = clamp(q[18], 0, 127), rv_shim = clamp(q[19], 0, 127);   /* (1.4 AIR; saved before it: 0, off) */
     }
 }
-static uint8_t slot_bg[4][BG_SLOT];             /* (1.5.3) a slot's Biegga ([0] BG_MARK: saved with it; else the
+static uint8_t slot_bg[4][BG_SLOT];             /* (2.0) a slot's Biegga ([0] BG_MARK: saved with it; else the
                                                  * tracks' as they are, kept on a recall) */
 static void pk_slot_bg(uint32_t s)
 {
@@ -665,7 +665,7 @@ static void uk_slot(const uint8_t *q, int isr)
     for (t = 0; t < NT; t++) q = uk_seq(q, t, SEQ_PK);
     for (t = 0; t < NT; t++) q = uk_lock(q, t, LOCK_PK);
     for (t = 0; t < NT; t++) uk_fm(q + t * FM_PK, t);
-    if (q0 >= slots[0] && q0 < slots[0] + 4u * SLOT_ALL && slot_bg[(q0 - slots[0]) / SLOT_ALL][0] == BG_MARK) {   /* (1.5.3: its Biegga) */
+    if (q0 >= slots[0] && q0 < slots[0] + 4u * SLOT_ALL && slot_bg[(q0 - slots[0]) / SLOT_ALL][0] == BG_MARK) {   /* (2.0: its Biegga) */
         const uint8_t *b = slot_bg[(q0 - slots[0]) / SLOT_ALL] + 1;
         uint32_t k;
         for (t = 0; t < NT; t++)
@@ -730,7 +730,7 @@ static uint8_t *sls_byte(uint32_t b)            /* the slot byte at stream byte 
     b -= 4u * SLOT_PK;
     if (b < 4u * FM_ALL) return &slots[b / FM_ALL][SLOT_PK + b % FM_ALL];
     b -= 4u * FM_ALL;
-    return b < 4u * BG_SLOT ? &slot_bg[b / BG_SLOT][b % BG_SLOT] : 0;   /* (1.5.3: the slots' Biegga) */
+    return b < 4u * BG_SLOT ? &slot_bg[b / BG_SLOT][b % BG_SLOT] : 0;   /* (2.0: the slots' Biegga) */
 }
 static uint32_t sls_bg(uint32_t k) { return (4u * (SLOT_PK + FM_ALL) + k * BG_SLOT) / SLS_P; }   /* (.. its sector) */
 static uint32_t sls_fm(uint32_t k) { return (4u * SLOT_PK + k * FM_ALL) / SLS_P; }   /* slot k's FM patches' sector */
@@ -857,7 +857,7 @@ static void store_boot(void)                    /* power-on: the newest good cop
             uint32_t sb = 4u * SLOT_PK + k * FM_ALL + b;
             slots[k][SLOT_PK + b] = good >> sls_fm(k) & 1u ? save_flash(3u + sb / SLS_P)[OBJ_HDR + sb % SLS_P] : 0u;
         }
-        for (b = 0; b < BG_SLOT; b++) {          /* (1.5.3) its Biegga (saved before it: zeros, none) */
+        for (b = 0; b < BG_SLOT; b++) {          /* (2.0) its Biegga (saved before it: zeros, none) */
             uint32_t sb = 4u * (SLOT_PK + FM_ALL) + k * BG_SLOT + b;
             slot_bg[k][b] = good >> sls_bg(k) & 1u ? save_flash(3u + sb / SLS_P)[OBJ_HDR + sb % SLS_P] : 0u;
         }

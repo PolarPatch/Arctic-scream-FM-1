@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 PolarPatch */
-/* The update path on this computer (1.5.3): the app's step (firmware/src/ota.c) and the update loader's
+/* The update path on this computer (2.0): the app's step (firmware/src/ota.c) and the update loader's
  * (firmware/loader/ldr_core.c) against a host in this file that serves a real package as tools/fm1_install.py does
  * (cmd 0x30 reads on the package's logical image, "success" at 0xE0000000 and 0xF0000000), on a flash of 1 MiB that
  * starts as another package's flash.bin, as if that firmware were installed. After Dinghy's update tests (zvenson/dinghy

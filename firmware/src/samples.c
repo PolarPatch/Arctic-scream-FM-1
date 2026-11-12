@@ -34,7 +34,7 @@
 #include "grimm_samples.h"
 
 #define SMP_SLOTS 4u
-#ifndef SMP_SLOT_SIZE                           /* (1.5.3: the browser's own, web/fm1_web.c: 1 MiB, ~95 s) */
+#ifndef SMP_SLOT_SIZE                           /* (2.0: the browser's own, web/fm1_web.c: 1 MiB, ~95 s) */
 #define SMP_SLOT_SIZE (72u * 1024u)             /* 72 KiB (so written: the build takes 0x12000 for a register address) */
 #endif
 #define SMP_DATA_OFF 512u

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 PolarPatch */
-/* Arctic Scream 1.5.3's JIEHKKI page (LFO, tapped a third time; North Sami: a glacier, sanit.oahpa.no): a piece the
+/* Arctic Scream 2.0's JIEHKKI page (LFO, tapped a third time; North Sami: a glacier, sanit.oahpa.no): a piece the
  * FM-1 plays on its own for as long as LENGTH says, moving as slowly as a glacier, then dying out.
  *   LENGTH     5, 10, 15, 25, 30, 60 MIN, ENDLESS: the piece's time
  *   DRIFT      0 .. 100 %: how much moves while it plays: the tracks' notes (its own; twice as often in its
