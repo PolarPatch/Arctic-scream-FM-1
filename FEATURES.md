@@ -270,8 +270,8 @@ HOME draws each track's wave as it plays. The header shows the track, its sound 
 - **MONO** (COLOUR's fifth, 1.5.3): the whole screen black and white, its greys as a 4×4 Bayer pattern of dots fixed to
   the screen; the header clean. The idea after Inigo Hernandez's MONO2K, written anew.
 - **GUOVSSAHAS** (SCREEN OFF's last, 1.5.3; North Sami: the northern lights): after 2 minutes untouched, a night sky
-  over the tundra, two aurora curtains waving across it, green at the edge, teal and violet above, brightening with
-  the sound. The first touch brings the page back.
+  with three aurora curtains folding over the stars, hems burning green, rays shimmering up into violet, the sky
+  breathing in a 12 s loop (pixelfx's Aurora, by Patch, MIT, written anew in fixed point). The first touch brings the page back.
 - **Boot**: ARCTIC SCREAM out of the dark in a glitch storm, settling into the banner's torn rows, with p0larpatch and the four tracks' lines (about 5.6 s).
 - **HOME**: each track's wave glowing as it plays, under a starry sky.
 - **Moving northern lights** (new in 1.1), a ribbon per knob:

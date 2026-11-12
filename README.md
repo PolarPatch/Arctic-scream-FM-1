@@ -36,7 +36,7 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **RUOHČAT** (to creak), on the same page: the ice around the drone, cracks, drips and a deep boom now and then, from one a minute to a storm.
   - **ŠUOKŊA** (a tone and its sound; SEL, KNOB 3): pure tunings for drones. JUST, PYTHAG and HARMONIC, so a held chord stands still instead of beating, or takes on the strange colours of the harmonic series.
   - **Biegga** (wind), a ninth sound source: noise that sings at the note like wind in a gap, with GUST, HOWL, TONE and SNOW, and a factory sound of its own, BIEGGA.
-  - **GUOVSSAHAS** (the northern lights): a new SCREEN OFF choice. After two minutes untouched the screen turns into a night sky with the aurora waving across it, brighter as the sound grows.
+  - **GUOVSSAHAS** (the northern lights): a new SCREEN OFF choice. After two minutes untouched the screen turns into a night sky with three aurora curtains folding over the stars (after pixelfx's Aurora, by Patch).
   - **COLOUR MONO**: the whole screen in black and white, its greys as fine dots, as on an old one-bit screen.
   - MIDI notes and the clock come in while the screen is drawing, and the update process has tests of its own.
 - **New in 1.5.2:**

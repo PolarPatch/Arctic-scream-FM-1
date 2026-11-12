@@ -543,8 +543,8 @@ FM-1, not the project.
   selected track; `CH 1 > SEL` … `CH 16 > SEL` sends only that channel to the selected track and ignores the others.
 - **SCREEN OFF:** the screen goes dark after the chosen time; the music goes on. The first touch only wakes it.
   **GUOVSSAHAS** (new in 1.5.3; North Sami for the northern lights): after two minutes untouched the screen becomes a
-  night sky over the tundra with the aurora waving across it, brighter as the sound grows. The first touch brings the
-  page back.
+  night sky where three curtains of aurora fold and ripple, their hems burning green, rays shimmering up into violet,
+  the whole sky slowly breathing (after pixelfx's Aurora, by Patch). The first touch brings the page back.
 - **MIDI LEARN:** set LEARN, turn a knob on the FM-1, then move one on your controller. Up to 32 links.
 - **SEQ MIDI OUT:** sends the sequencer's and the arpeggiator's notes out over USB.
 - **SAMPLES:** CLEAR and **OCT+** empties all four sample slots (stop and let the sound die out first).

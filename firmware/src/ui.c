@@ -2449,65 +2449,252 @@ static void ui_update(int32_t oct)
 }
 
 /* ---- (1.5.3) GUOVSSAHAS (North Sami: the northern lights, sanit.oahpa.no), SCREEN OFF's last: after two minutes
- * untouched the whole screen is a night sky over the tundra, two curtains of aurora waving across it, green at their
- * lower edge, teal and violet higher up, their rays drifting; they brighten with the sound (the output's peaks). A
- * frame every UI_AUR_MS, four canvases of 240 x 60 (CV_MAX; main loop; the first touch only wakes the screen, grimm.c). MONO:
- * its dots, as every screen's */
-#define UI_AUR_MS 80u
+ * untouched the whole screen is pixelfx's Aurora (https://github.com/patch-gg/pixelfx, weather/aurora: MIT License,
+ * Copyright (c) 2026 Patch; its banded light after Sprite Fusion's holy light, its noise after Sprite Fusion's fog,
+ * https://www.spritefusion.com/pixel-art-vfx, MIT License, Copyright (c) 2026 Hugo Duprez), written anew in fixed
+ * point: three curtains of light folding over a starfield, their hems burning green, rays shimmering up into violet,
+ * the whole sky breathing; a 12 s loop. The FM-1 sees 240 x 240 of it (x -120 .. 120 of its 320, its sky going on above
+ * its 180); what can be worked out once is in tools/gen_aurora.py's tables.
+ *
+ * A frame: the curtains walked once, each half pixel along them a ray of light (its column, hem, height, brightness:
+ * AU_DEP); then the screen in strips of AU_R rows, each strip's light summed from the rays that reach it (I, and its
+ * height up the rays: HV), blurred (a box of 11 x 11: the sums across in a ring of 11 rows, their sums down run along
+ * the screen) and shaded row by row: the night sky, the stars, the curtains' bands of colour, the strands of the
+ * brightest rays, then the light over it all. All of it in cv_px (CV_MAX), the strip's canvas first. Main loop; the
+ * first touch only wakes the screen (grimm.c). MONO: its dots, as every screen's */
+#include "aurora_tables.h"
+#define UI_AUR_MS 33u                           /* (a frame at most every 33 ms: pixelfx's 30 a second) */
+#define AU_R 4u                                 /* a strip's rows */
+#define AU_NR 64u                               /* strands at most a frame (~50 seen) */
+#define AU_OI (AU_W * AU_R)                     /* cv_px: the canvas, I (AU_R + 5 rows, Q10: the blur looks 5 ahead), */
+#define AU_OHV (AU_OI + AU_W * (AU_R + 5u))     /* HV (AU_R rows, I x its height up the rays), */
+#define AU_OHR (AU_OHV + AU_W * AU_R)           /* the ring of I's sums across (11 rows, / 4), */
+#define AU_ODP (AU_OHR + AU_W * 11u)            /* the rays (AU_DEP, 4 each) */
+#define AU_ND ((CV_MAX - AU_ODP) / 4u)
+_Static_assert(AU_ND >= 1700u, "GUOVSSAHAS: room in cv_px for a frame's rays (~1540 at most)");
+
+static int32_t au_smp(uint32_t row, int32_t u)  /* the noise's row at u (cells, Q8; it wraps): Q12 */
+{
+    const uint8_t *f = AU_FIELD + row * 256u;
+    uint32_t x = (uint32_t)(u >> 8) & 255u;
+    int32_t a = f[x], b = f[(x + 1u) & 255u];
+    return (a * 256 + (b - a) * (u & 255)) >> 4;
+}
+static int32_t au_smooth(int32_t e0, int32_t e1, int32_t s)   /* smoothstep from e0 to e1 (px) at s (Q8): Q12 */
+{
+    int32_t t = clamp((s - e0 * 256) * 16 / (e1 - e0), 0, 4096);
+    return (t * t >> 12) * (12288 - 2 * t) >> 12;
+}
+static uint32_t au_mix(uint32_t a, uint32_t b, int32_t t)   /* 0xRRGGBB a -> b, t of 4096 */
+{
+    uint32_t o = 0, s;
+    for (s = 0; s < 24u; s += 8u) {
+        int32_t x = (int32_t)(a >> s & 255u), y = (int32_t)(b >> s & 255u);
+        o |= (uint32_t)(x + ((y - x) * t >> 12)) << s;
+    }
+    return o;
+}
+static void au_light(uint16_t *l, uint32_t c, int32_t k)   /* light c x k (Q12) onto one pixel's r, g, b */
+{
+    uint32_t i, v;
+    for (i = 0; i < 3u; i++) {
+        v = l[i] + ((c >> (16u - 8u * i) & 255u) * (uint32_t)k >> 12);
+        l[i] = (uint16_t)(v > 255u ? 255u : v);
+    }
+}
+static void au_hsum(const uint16_t *src, uint16_t *dst, uint32_t *cs)   /* a row of I summed across (11, / 4), into */
+{                                                                        /* the sums down */
+    uint32_t acc = 0, x, v;
+    for (x = 0; x < 5u; x++) acc += src[x];
+    for (x = 0; x < AU_W; x++) {
+        if (x + 5u < AU_W) acc += src[x + 5u];
+        if (x >= 6u) acc -= src[x - 6u];
+        v = acc >> 2;
+        dst[x] = (uint16_t)(v > 65535u ? 65535u : v);
+        cs[x] += dst[x];
+    }
+}
+static void au_glow(uint16_t (*l)[3], int32_t y, int32_t gx, int32_t gy, int32_t r, uint32_t c, int32_t k)
+{                                               /* row y of a glow at (gx, gy) (Q8), radius r: (1 - d)^2 x k */
+    int32_t dy = y * 256 + 128 - gy, x, x0, x1;
+    if (k <= 16 || dy >= r * 256 || -dy >= r * 256) return;
+    x0 = (gx - r * 256) >> 8, x1 = (gx + r * 256 + 255) >> 8;
+    if (x0 < 0) x0 = 0;
+    if (x1 > (int32_t)AU_W - 1) x1 = (int32_t)AU_W - 1;
+    for (x = x0; x <= x1; x++) {
+        int32_t dx = x * 256 + 128 - gx, d = (dx * dx + dy * dy) / (r * r), kk;
+        if (d >= 65536) continue;
+        kk = AU_GLOW[d >> 8] * k >> 12;
+        if (kk > 16) au_light(l[x], c, kk);
+    }
+}
+
 static void ui_aurora(uint32_t now)
 {
-    static uint32_t t_last, ph, lvl;
-    static uint16_t ramp[4][16];
-    static const uint16_t HUE[4] = {RGB(0x3f, 0xe8, 0x70), RGB(0x2f, 0xd8, 0xa8), RGB(0x30, 0x9c, 0xe0),
-                                    RGB(0xa0, 0x6a, 0xf0)};   /* (green at the edge, teal, blue, violet high up) */
-    static const uint8_t ST_X[24] = {12, 37, 58, 71, 94, 110, 131, 149, 160, 177, 199, 221, 8, 44, 66, 87, 121, 139,
-                                     168, 188, 207, 230, 101, 25};
-    static const uint8_t ST_Y[24] = {14, 40, 9, 62, 25, 51, 12, 33, 70, 18, 47, 29, 88, 97, 81, 104, 92, 78, 99, 85,
-                                     70, 101, 3, 64};
-    int32_t edge[2][240], br[2][240], ground[240], x, y, s, c;
-    uint32_t i, l = vis_lr[0] > vis_lr[1] ? vis_lr[0] : vis_lr[1];
+    static uint32_t t_last;
+    uint16_t *I = cv_px + AU_OI, *HV = cv_px + AU_OHV, *HR = cv_px + AU_OHR, *DP = cv_px + AU_ODP;
+    uint32_t cs[AU_W], col[AU_W], tq, y0, nd = 0, nr = 0, sp = 0, i;
+    uint16_t lt[AU_W][3];
+    int32_t tw[AU_NSTAR], tms, fast, slow, breath, n;
+    struct { int16_t x, row, n, k; } ry[AU_NR];
     if (now - t_last < UI_AUR_MS) return;
-    t_last = now, ph++;
-    vis_lr[0] = vis_lr[1] = 0;
-    l = l > 20000u ? 16u : l * 16u / 20000u;    /* (the sound: 0 .. 16, its rise at once, its fall slow) */
-    lvl = l > lvl ? l : lvl - (lvl > 0u && !(ph & 3u));
-    for (i = 0; i < 4u; i++)
-        for (s = 0; s < 16; s++) ramp[i][s] = swap16(ui_mix(0, HUE[i], (uint32_t)s, 16u));
-    for (x = 0; x < 240; x++) {
-        uint32_t u = (uint32_t)x;
-        for (c = 0; c < 2; c++) {               /* a curtain: its lower edge, its brightness (its rays) */
-            uint32_t p = ph * (uint32_t)(c ? 2 : 3);
-            edge[c][x] = (c ? 128 : 162) + (hw_wave((u * (c ? 2u : 3u) + p) & 255u) * (c ? 22 : 30) +
-                                            hw_wave((u * 5u - p / 2u + (uint32_t)c * 90u) & 255u) * 12) / 64;
-            br[c][x] = 6 + (hw_wave((u * 4u + p * 2u + (uint32_t)c * 60u) & 255u) + 64) * 5 / 128 +
-                       (hw_wave((u * 37u + ph) & 255u) + hw_wave((u * 91u - ph * 2u) & 255u)) / 48 + (int32_t)lvl / 3;
-            if (c) br[c][x] -= 3;
+    t_last = now;
+    tms = (int32_t)(now % 12000u);
+    tq = (uint32_t)tms * 357914u;               /* (t / 12 s: turns of 2^32) */
+    fast = tms * 44739 >> 12;                   /* (512 t / 12 s: the noise's cells, Q8) */
+    slow = fast >> 1;
+    breath = 3072 + (sine_i(tq + AU_BREATH_PH) >> 5);   /* (0.75 .. 1, Q12) */
+    for (i = 0; i < AU_NSTAR; i++) tw[i] = 2048 + (sine_i(AU_STAR[i].c * tq + ((uint32_t)AU_STAR[i].ph << 16)) >> 4);
+
+    for (n = 0; n < 3; n++) {                   /* the curtains, back to front: their rays */
+        const __typeof__(AU_CURT[0]) *c = &AU_CURT[n];
+        int32_t s, p1 = 0, p2 = 0, lastx = -999 * 256;
+        for (s = c->s0 * 256; s < c->s1 * 256; s += 128) {   /* (along it, half a pixel at a time, Q8) */
+            uint32_t u = (uint32_t)s;
+            int32_t x, hem, env, r1, r2, pa, k, h, xc, xi;
+            x = s + ((c->fold * sine_i(u * (uint32_t)c->kflam + c->c0 * tq + c->ph0)) >> 7) +
+                ((5 * sine_i(u * AU_K64 + c->c2 * tq + c->ph2)) >> 7);   /* (it folds; where it hangs, Q8) */
+            if (x < (AU_X0 - 2) * 256 || x >= (AU_X0 + (int32_t)AU_W + 1) * 256) continue;
+            hem = c->y * 256 + (c->slope * s >> 16) + ((c->amp * sine_i(u * (uint32_t)c->klam + c->c1 * tq + c->ph1)) >> 7) +
+                  ((c->rip * sine_i(u * AU_K23 - 7u * tq - c->ph2)) >> 15);   /* (its hem, rippling, Q8) */
+            env = au_smooth(c->s0, c->s0 + 60, s) * (4096 - au_smooth(c->s1 - 70, c->s1, s)) >> 12;
+            r1 = clamp((au_smp((uint32_t)n, s * 5 - fast + n * 40 * 256) - 1556) * 16 / 5, 0, 4096);   /* (the rays */
+            r2 = clamp((au_smp(3u + (uint32_t)n, s * 43 / 10 + fast * 7 / 10 + n * 90 * 256) - 1434) * 3, 0, 4096);
+            pa = au_smp(6u + (uint32_t)n, s * 7 / 10 + slow + n * 17 * 256);   /* drifting along; a bright patch) */
+            k = (c->k * env >> 12) * breath >> 12;
+            k = k * (819 + r1 * 4 / 5) >> 12;
+            k = k * (1229 + (pa > 1229 ? (pa - 1229) * 7 / 5 : 0)) >> 12;
+            if (k < 41) continue;
+            h = (c->height * 64 * (1843 + r2 * 3 / 4) >> 12) * (3072 + pa / 2) >> 12;   /* (its rays' height, Q6) */
+            xc = x - AU_X0 * 256, xi = xc >> 8;
+            if (p1 > 3072 && p1 >= p2 && p1 >= r1 && (x - lastx > 512 || lastx - x > 512) && k > 1024) {
+                if (nr < AU_NR)                 /* (a ray peaks here: a strand of light) */
+                    ry[nr].x = (int16_t)xi, ry[nr].row = (int16_t)(((hem - 256) >> 8) - AU_Y0),
+                    ry[nr].n = (int16_t)((h * 9 / 10 + 32) >> 6), ry[nr].k = (int16_t)(k * 9 / 10 > 3482 ? 3482 : k * 9 / 10), nr++;
+                lastx = x;
+            }
+            p2 = p1, p1 = r1;
+            if (xi < -1 || xi >= (int32_t)AU_W || nd >= AU_ND) continue;
+            DP[nd * 4u] = (uint16_t)((uint32_t)(xi + 1) | (uint32_t)(xc & 255) << 8);
+            DP[nd * 4u + 1u] = (uint16_t)(int16_t)((hem - AU_Y0 * 256) >> 4);   /* (the hem on the screen, Q4) */
+            DP[nd * 4u + 2u] = (uint16_t)((uint32_t)h | (uint32_t)n << 14);
+            DP[nd * 4u + 3u] = (uint16_t)k;
+            nd++;
         }
-        ground[x] = 222 + hw_wave((u * 2u + 30u) & 255u) / 10 + hw_wave((u * 9u) & 255u) / 40;
     }
-    for (s = 0; s < 4; s++) {                   /* four canvases, 60 rows each */
-        cv_oy = 0;
-        cv_begin(240, 60, 0);
-        for (y = 0; y < 60; y++) {
-            int32_t sy = s * 60 + y;
-            uint16_t *row = cv_px + (uint32_t)y * 240u;
-            for (x = 0; x < 240; x++) {
-                int32_t best = 0, band = 0;
-                if (sy >= ground[x]) { row[x] = sy == ground[x] ? swap16(RGB(0x50, 0x60, 0x70)) : 0; continue; }
-                for (c = 0; c < 2; c++) {
-                    int32_t d = edge[c][x] - sy, v;
-                    if (d < -3) continue;       /* (under its edge: dark at once) */
-                    v = d < 0 ? br[c][x] * (4 + d) / 4 : br[c][x] * 64 / (64 + d * d / 40);   /* (it fades up) */
-                    if (v > best) best = v, band = d < 18 ? 0 : d < 45 ? 1 : d < 80 ? 2 : 3;
+
+    for (y0 = 0; y0 < AU_H; y0 += AU_R) {       /* the screen, a strip at a time */
+        uint32_t ye = y0 + AU_R + 5u > AU_H ? AU_H : y0 + AU_R + 5u, y, x;
+        for (i = 0; i < AU_W * (AU_R + 5u); i++) I[i] = 0;
+        for (i = 0; i < AU_W * AU_R; i++) HV[i] = 0;
+        for (i = 0; i < nd; i++) {              /* the rays that reach it: their light down each column */
+            const uint16_t *d = DP + i * 4u;
+            int32_t xi = (int32_t)(d[0] & 255u) - 1, fr = d[0] >> 8, hq = (int16_t)d[1], h = d[2] & 0x3FFF;
+            int32_t top = (hq * 4 - h) >> 6, bot = (hq >> 4) + 3, hue = AU_CURT[d[2] >> 14].hue, inv, k0, k1, yi;
+            if (top < (int32_t)y0) top = (int32_t)y0;
+            if (bot >= (int32_t)ye) bot = (int32_t)ye - 1;
+            if (top > bot || !h) continue;
+            inv = 65536 * 64 / h;               /* (1 / its height, Q16) */
+            k0 = d[3] * (256 - fr) >> 9, k1 = d[3] * fr >> 9;   /* (half its light, shared by the two columns) */
+            for (yi = top; yi <= bot; yi++) {
+                int32_t df = hq - 8 - yi * 16, v = df * inv >> 4, pr, hv, a, b;   /* (v: 0 at the hem, 1 at the top) */
+                uint16_t *ir = I + (uint32_t)(yi - (int32_t)y0) * AU_W, *hr = HV + (uint32_t)(yi - (int32_t)y0) * AU_W;
+                if (v >= 0) pr = AU_PROF[(v * 200 >> 16) > 200 ? 200 : v * 200 >> 16];
+                else if ((pr = 1843 + df * 41) <= 0) continue;   /* (under the hem: a skirt of glow, 3 px) */
+                hv = clamp((v >> 4) + hue, 0, 4096);
+                a = k0 * pr >> 14, b = k1 * pr >> 14;
+                if (xi >= 0) {
+                    uint32_t q = ir[xi] + (uint32_t)a;
+                    ir[xi] = (uint16_t)(q > 65535u ? 65535u : q);
+                    if (yi < (int32_t)(y0 + AU_R)) q = hr[xi] + ((uint32_t)a * (uint32_t)hv >> 12), hr[xi] = (uint16_t)(q > 65535u ? 65535u : q);
                 }
-                row[x] = best > 0 ? ramp[band][best > 15 ? 15 : best] : 0;
+                if (xi + 1 < (int32_t)AU_W) {
+                    uint32_t q = ir[xi + 1] + (uint32_t)b;
+                    ir[xi + 1] = (uint16_t)(q > 65535u ? 65535u : q);
+                    if (yi < (int32_t)(y0 + AU_R)) q = hr[xi + 1] + ((uint32_t)b * (uint32_t)hv >> 12), hr[xi + 1] = (uint16_t)(q > 65535u ? 65535u : q);
+                }
             }
         }
-        for (i = 0; i < 24u; i++)               /* (the stars, twinkling, where the sky is dark) */
-            if (ST_Y[i] >= (uint32_t)(s * 60) && ST_Y[i] < (uint32_t)(s * 60 + 60)) {
-                uint16_t *q = cv_px + (uint32_t)(ST_Y[i] - s * 60) * 240u + ST_X[i];
-                if (!*q) *q = swap16(((ph + i * 7u) & 15u) < 3u ? RGB(0x60, 0x60, 0x70) : RGB(0xd0, 0xd8, 0xe0));
+        if (!y0) {                              /* (the blur: rows 0 .. 4 summed, the first 5 ahead) */
+            for (x = 0; x < AU_W; x++) cs[x] = 0;
+            for (y = 0; y < 5u; y++) au_hsum(I + y * AU_W, HR + y * AU_W, cs);
+        }
+        cv_oy = 0;
+        cv_begin(AU_W, AU_R, 0);
+        for (y = y0; y < y0 + AU_R; y++) {
+            uint32_t yl = (y & 3u) << 2;
+            uint16_t *o = cv_px + (y - y0) * AU_W;
+            if (y >= 6u)                        /* (the blur's box down: a row out, a row in) */
+                for (x = 0; x < AU_W; x++) cs[x] -= HR[((y - 6u) % 11u) * AU_W + x];
+            if (y + 5u < AU_H) au_hsum(I + (y + 5u - y0) * AU_W, HR + ((y + 5u) % 11u) * AU_W, cs);
+            for (x = 0; x < AU_W; x++) {        /* the night sky, in five dithered steps; its specks */
+                uint32_t st = (y * 80u + (AU_BAY[yl | (x & 3u)] >> 8) * 239u) / 3824u;
+                col[x] = AU_SKY[st > 5u ? 5u : st];
+                lt[x][0] = lt[x][1] = lt[x][2] = 0;
             }
-        cv_blit(0, (uint32_t)(s * 60));
+            while (sp < AU_NSPECK && AU_SPECK[sp].y < y) sp++;
+            for (; sp < AU_NSPECK && AU_SPECK[sp].y == y; sp++) col[AU_SPECK[sp].x] = AU_SPECK[sp].c;
+            for (i = 0; i < AU_NSTAR; i++) {    /* the stars: specks, stars with a glow, a few sparkles */
+                const __typeof__(AU_STAR[0]) *s = &AU_STAR[i];
+                int32_t sx = s->x >> 8, sy = s->y >> 8, dy = (int32_t)y - sy, d, nn;
+                if (s->kind == 0u) {
+                    int32_t a = 1434 + tw[i] / 2;
+                    if (!dy && (uint32_t)sx < AU_W && (a >= 4096 || a > AU_BAY[yl | ((uint32_t)sx & 3u)])) col[sx] = s->col;
+                } else if (s->kind == 1u) {
+                    if (!dy && (uint32_t)sx < AU_W) col[sx] = s->col;
+                    au_glow(lt, (int32_t)y, s->x + 128, s->y + 128, 3, AU_U[5], tw[i] / 4);
+                } else {
+                    nn = 1 + ((tw[i] * 2 + 2048) >> 12);
+                    for (d = 1; d <= nn; d++) { /* (a cross, its tips paler; corners at 3) */
+                        uint32_t cc = d * 5 > nn * 3 ? AU_U[4] : AU_S_SPK;
+                        if (!dy) {
+                            if ((uint32_t)(sx + d) < AU_W) col[sx + d] = cc;
+                            if ((uint32_t)(sx - d) < AU_W) col[sx - d] = cc;
+                        } else if ((dy == d || dy == -d) && (uint32_t)sx < AU_W) col[sx] = cc;
+                    }
+                    if (nn >= 3 && (dy == 1 || dy == -1)) {
+                        if ((uint32_t)(sx + 1) < AU_W) col[sx + 1] = AU_S_SPK;
+                        if ((uint32_t)(sx - 1) < AU_W) col[sx - 1] = AU_S_SPK;
+                    }
+                    if (!dy && (uint32_t)sx < AU_W) col[sx] = 0xFFFFFFu;
+                    au_glow(lt, (int32_t)y, s->x, s->y, 4 + 2 * nn, AU_S_SPK, tw[i] * 1434 >> 12);
+                }
+            }
+            if ((int32_t)y + AU_Y0 <= -12) {    /* the curtains: hue by height, brightness in steps; their light */
+                const uint16_t *ir = I + (y - y0) * AU_W, *hr = HV + (y - y0) * AU_W;
+                for (x = 0; x < AU_W; x++) {
+                    int32_t raw = ir[x], bl = (int32_t)(cs[x] * 1083u >> 15), kl = bl > 15 ? (bl * 12 / 5 > 1638 ? 1638 : bl * 12 / 5) : 0;
+                    uint32_t lc = AU_G[4];
+                    if (raw >= 31) {
+                        int32_t e = 6144 * raw / (1024 + raw * 3 / 2), hv = hr[x], th = e > 1843 ? AU_TH[yl | (x & 3u)] : 0, lv, band;
+                        uint32_t c;
+                        lv = e > 3523 + th ? 6 : e > 2949 + th ? 5 : e > 2294 + th ? 4 : e > 1638 + th ? 3 : e > 983 ? 2 : 1;
+                        if (hv * 20 > raw * 7 && lv > 5) lv = 5;   /* (high up: never white) */
+                        band = hv * 10 < raw * 3 ? 0 : hv * 2 < raw ? 1 : 2;
+                        c = band == 0 ? AU_G[lv] : band == 1 ? AU_GM[lv] : AU_U[lv];
+                        if (lv >= 3) {
+                            int32_t a = clamp((e - 1229) * 22 / 10, 0, 4096);
+                            if (lv < 5) { if (a > 16) col[x] = au_mix(col[x], c, a); }
+                            else if (a >= 4096 || a > AU_BAY[yl | (x & 3u)]) col[x] = c;
+                            lc = hv * 5 < raw * 2 ? AU_G[4] : AU_U[4];
+                        } else lc = band == 0 ? AU_G[4] : band == 2 ? AU_U[4] : AU_GM[4];
+                        kl += e * (lv >= 3 ? 1147 : 2949) >> 12;
+                    }
+                    if (kl > 16) au_light(lt[x], lc, kl);
+                }
+            }
+            for (i = 0; i < nr; i++) {          /* the strands: up from the hem, fading into violet */
+                int32_t j = ry[i].row - (int32_t)y, nn = ry[i].n, xx = ry[i].x, a;
+                if ((uint32_t)xx >= AU_W) continue;
+                if (!j) col[xx] = AU_G[6];
+                else if (j >= 1 && j < nn && (a = ry[i].k * AU_POW13[(nn - j) * 64 / nn] >> 12) > 16)
+                    col[xx] = au_mix(col[xx], j * 100 < nn * 35 ? AU_G[5] : j * 10 < nn * 6 ? AU_STRAND_M : AU_U[5], a);
+            }
+            for (x = 0; x < AU_W; x++) {        /* the colour, the light added */
+                uint32_t r = (col[x] >> 16 & 255u) + lt[x][0], g = (col[x] >> 8 & 255u) + lt[x][1], b = (col[x] & 255u) + lt[x][2];
+                o[x] = swap16(RGB(r > 255u ? 255u : r, g > 255u ? 255u : g, b > 255u ? 255u : b));
+            }
+        }
+        cv_blit(0, y0);
     }
 }
