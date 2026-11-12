@@ -80,7 +80,7 @@ static const uint16_t OBJ_VERS[NOBJV][8] = {{9, TRK_PK, 20, 260, 288, FM_ALL, FX
                                                  * Scream 1.0 .. 1.2's: before MASTER and DRIVE; 6: before
                                                  * the FM patches; 5: before chord steps and locks; 4: before the song;
                                                  * 3: before the LFO; 2: before ARP) */
-#define SLS_MAGIC 0x534C4441u                   /* "ADLS": a sector of the slots' stream (Arctic Scream's: "GRLS") */
+#define SLS_MAGIC 0x534C4441u                   /* "ADLS": a sector of the slots' stream */
 #define SLS_P (4096u - OBJ_HDR - 4u)            /* the stream's bytes a sector */
 #define SLS_N 3u                                /* its sectors: 3, 4, 5 */
 enum { OBJ_WORK, OBJ_SLOTS };
