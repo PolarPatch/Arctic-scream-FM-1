@@ -36,7 +36,7 @@ Every track starts with **ICE WRAITH**, a Holvut sound that holds its notes: pre
 | **PRESETS** | Loads the next or previous sound into the track. On the sequencer pages: the tempo. |
 | **SELECT** | On HOME: the tempo. On the sequencer: the cursor. |
 | **KNOB 1–4** | The four values along the bottom of the screen, on every page. |
-| **MASTER** | Volume. |
+| **MASTER** | Volume. Since 1.5.3 it is louder through its range (half way about 9 dB under the top, where it was 18) and the output is 3 dB stronger. |
 | **OCT− / OCT+** | Octave down and up. In save menus: back and confirm. |
 | **Keys** | Play the track. The first white key is **F2**: everything sits an octave down, for drones. |
 
@@ -295,6 +295,9 @@ drone, water, wind. Load WAVs into the four sample slots with the [editor](#14--
 | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 |---|---|---|---|
 | ATTACK (~1 ms – 10 s) | DECAY (~10 ms – 10 s) | SUSTAIN (40 % to start) | RELEASE (~10 ms – 20 s) |
+
+Since 1.5.3 the attack swells instead of ramping: a note stays faint for most of a long ATTACK and blooms at the end
+(half way through it is 18 dB down, where it used to be 6), so a key flows in like a drone.
 
 **LFO** (per track): slow movement. It never restarts with a note, so drones keep breathing.
 

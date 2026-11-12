@@ -359,7 +359,8 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
 }
 
 /* (V2) the output: 6 dB of headroom after every effect (the mix at half: six loud voices, four tracks fit), MASTER
- * (platform.c's knob, squared; its top quarter up to 6 dB more: at the top, the level before V2), then a limiter: a
+ * (1.5.3: the knob's turn to the power 1.5: half way ~9 dB under the top, 3/4 ~4 dB; V2's was the knob squared and
+ * halved up to 3/4, half way 18 dB under; at the top, as ever, the level before V2), then a limiter: a
  * peak past OUT_LIM (just under full scale) at once, let go over ~90 ms: nothing reaches the clip.
  * (Arctic Scream p0larpatch) A computer recording over USB gets the mix as at MASTER's top, through a limiter of its
  * own: the knob sets the speaker and the headphones, not the recording (at a quarter it was ~30 dB down); SYSTEM 3's
@@ -369,12 +370,19 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
 static const int32_t USB_G[USB_LMAX + 1u] = {1027, 2051, 4092, 8165, 16291, 32505, 64856};
 static volatile uint8_t usb_lvl = USB_L0;       /* set.usb, for the audio (sys_sync) */
 #define OUT_LIM 32440                           /* (-0.09 dBFS) */
-#define OUT_MQ 2304                             /* (MASTER at 3/4: 768^2 / 256) */
 static int32_t out_env;                         /* audio: the limiter's peak (its gain: OUT_LIM / it) */
-static int32_t out_gain(void)                   /* MASTER: Q12, half up to 3/4, then to the old full at the top */
+static uint32_t isqrt32(uint32_t v)             /* floor(sqrt(v)) */
 {
-    int32_t m = clamp(fm1_master(), 0, 4092);
-    return m <= OUT_MQ ? m >> 1 : (m >> 1) + m * (m - OUT_MQ) / (2 * (4092 - OUT_MQ));
+    uint32_t r = 0, b = 1u << 30;
+    while (b > v) b >>= 2;
+    for (; b; b >>= 2)
+        if (v >= r + b) v -= r + b, r = (r >> 1) + b; else r >>= 1;
+    return r;
+}
+static int32_t out_gain(void)                   /* MASTER: Q12, the knob's turn^1.5 (fm1_master: its square) */
+{
+    uint32_t k = isqrt32((uint32_t)clamp(fm1_master(), 0, 4092) << 12);   /* (the turn, Q12) */
+    return (int32_t)(k * isqrt32(k << 12) >> 12);
 }
 static int32_t usb_env;                         /* audio: the USB recording's limiter peak */
 /* (1.4) the side limiter: the FM-1's headphone amplifier, loaded by headphones, crackles when left and right swing far

@@ -212,8 +212,8 @@ check("RUOHCAT page: never clipping", peak(a) < 32000, peak(a))
 for what, step, most in (("another source: the notes cross over", 1, 6), ("the same source: the knobs glide", -2, 8)):   # (Holvut
     # itself: its loop settles anew as BODY arrives, ~0.5 s: before 1.5.3 a hole to -16 dB and 9.5 dB steps)
     out, a, jk, notes = run(f"xf{step}", [(6200, "keys 128"), (6400, "keys 0"), (16000, f"enc 6 {step}")], 20000, plain=False)
-    seq = [rms(a, 15.5 + i * 0.1, 15.6 + i * 0.1) for i in range(30)]
-    jump = max(abs(20 * math.log10((seq[i + 1] + 1) / (seq[i] + 1))) for i in range(29))
+    seq = [rms(a, 15.5 + i * 0.1, 15.6 + i * 0.1) for i in range(25)]   # (the 2 s it crosses over in; after it,
+    jump = max(abs(20 * math.log10((seq[i + 1] + 1) / (seq[i] + 1))) for i in range(24))   # POLAR NIGHT's own swell)
     check(f"PRESETS on a drone, {what}: no hole (under -6 dB of before), no step over {most} dB in 0.1 s",
           min(seq[5:]) > 0.5 * min(seq[:5]) and jump < most, ([round(x) for x in seq], round(jump, 1)))
 

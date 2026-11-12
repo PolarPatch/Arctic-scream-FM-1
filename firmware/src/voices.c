@@ -93,8 +93,10 @@ static track_t trk[NT] = {TRK_DEF, TRK_DEF, TRK_DEF, TRK_DEF};   /* VA: SAW, DET
                                                  * start); FX 100 %; FM: its patch, BELL's (fm_builtin at
                                                  * power-on) */
 static voice_t vc[NV];
-static int32_t vc_xf[NV];                       /* (1.5.3) a voice crossing over to its track's new source (restart_track):
-                                                 * its release a straight line, this much a control step (Q24); 0 not */
+static int32_t vc_xf[NV], vc_xq[NV], vc_xe[NV];   /* (1.5.3) a voice crossing over to its track's new source
+                                                 * (restart_track): how far along a control step (Q24; 0 not crossing),
+                                                 * how far now, its level when it began (its level: that x 1 - the cube
+                                                 * of how far, the new sound's attack's mirror: the two hold the sum) */
 static uint32_t vblock;                         /* audio: + 1 every control block (fm.c: once a block a track) */
 
 /* the screen's numbers (the engines' text functions use them too) */
@@ -196,11 +198,26 @@ static void voice_cross(uint32_t v, int32_t atk)   /* audio: out with the source
                                                  * new sound's ATTACK (atk, its step), ~1.5 s at least, ~6 s at most */
 {
     vc[v].want_on = 0;
-    int32_t n = (1 << 24) / (atk > XF_STEP ? XF_STEP : atk < XF_SLOW ? XF_SLOW : atk);   /* (control steps) */
-    if (vc[v].stage != ST_OFF) vc[v].stage = ST_REL, vc_xf[v] = vc[v].env / n > 0 ? vc[v].env / n : 1;   /* (from where
-                                                 * it is: as long, whatever its level) */
+    if (vc[v].stage != ST_OFF)
+        vc[v].stage = ST_REL, vc_xf[v] = atk > XF_STEP ? XF_STEP : atk < XF_SLOW ? XF_SLOW : atk, vc_xq[v] = 0,
+        vc_xe[v] = vc[v].env;
 }
 static int voice_idle(uint32_t v) { return vc[v].stage == ST_OFF && vc[v].req == vc[v].seen; }
+/* (1.5.3) the attack's curve: its level the cube of how far along it is (vc_atp, Q24), so a note flows in, a drone
+ * swelling up out of nothing (half way: -18 dB; a straight line, before: -6 dB, there almost at once) */
+static int32_t vc_atp[NV];
+static int32_t atk_cube(int32_t p)              /* Q24 -> Q24 */
+{
+    int32_t t = p >> 12;
+    return ((t * t) >> 12) * t;
+}
+static int32_t atk_root(int32_t e)              /* the cube's inverse: from a level, how far along (Q24) */
+{
+    int32_t t = 0, b;
+    for (b = 2048; b; b >>= 1)
+        if (atk_cube((t + b) << 12) <= e) t += b;
+    return t << 12;
+}
 static int32_t voice_level(uint32_t v) { return vc[v].env; }
 
 static void voice_begin(voice_t *v)             /* a note from silence */
@@ -212,6 +229,7 @@ static void voice_begin(voice_t *v)             /* a note from silence */
     v->eng = (uint8_t)(trk[v->trk].eng >= 0 && trk[v->trk].eng < NENG ? trk[v->trk].eng : 0);
     ENGINES[v->eng]->begin(v);
     v->env = 0;
+    vc_atp[v - vc] = 0;
     v->stage = ST_ATK;
     vc_vel[v - vc] = vc_wvel[v - vc], vc_atk[v - vc] = vc_watk[v - vc];   /* (V2: GENERATE's volume, attack) */
 }
@@ -254,19 +272,23 @@ static int32_t env_tick(voice_t *v)
             e = 0;
         } else if (v->want_note == v->note && v->want_trk == v->trk && v->eng == trk[v->trk].eng && v->stage != ST_FADE) {
             v->stage = ST_ATK;                  /* the same note again (same engine): on up from where it is */
+            vc_atp[v - vc] = atk_root(e);
             vc_vel[v - vc] = vc_wvel[v - vc], vc_atk[v - vc] = vc_watk[v - vc];
         } else {
             v->stage = ST_FADE;                 /* another note: out first, then begin */
         }
     }
     switch (v->stage) {
-    case ST_ATK:
-        e += vc_atk[v - vc] ? GEN_ATK[(vc_atk[v - vc] - 1u) & 7u] : c->atk;   /* (V2: GENERATE's attack, or the track's) */
-        if (e >= (1 << 24)) {
-            e = 1 << 24;
+    case ST_ATK: {                              /* (1.5.3: along it in a straight line, its level the cube) */
+        int32_t p = vc_atp[v - vc] + (vc_atk[v - vc] ? GEN_ATK[(vc_atk[v - vc] - 1u) & 7u] : c->atk);   /* (V2:
+                                                 * GENERATE's attack, or the track's) */
+        if (p >= (1 << 24)) {
+            p = 1 << 24;
             v->stage = ST_SUS;
         }
+        vc_atp[v - vc] = p, e = atk_cube(p);
         break;
+    }
     case ST_SUS: {                              /* DECAY to SUSTAIN, and SUSTAIN */
         int32_t d = mulq16(e - c->sus, c->dec);
         e -= d ? d : e > c->sus ? 1 : e < c->sus ? -1 : 0;
@@ -274,8 +296,9 @@ static int32_t env_tick(voice_t *v)
     }
     case ST_REL:
         if (vc_xf[v - vc]) {                    /* (1.5.3: crossing over) */
-            e -= vc_xf[v - vc];
-            if (e < REL_END) e = 0, v->stage = ST_OFF, vc_xf[v - vc] = 0;
+            int32_t q = vc_xq[v - vc] += vc_xf[v - vc];
+            if (q >= (1 << 24)) e = 0, v->stage = ST_OFF, vc_xf[v - vc] = 0;
+            else e = (vc_xe[v - vc] >> 12) * (((1 << 24) - atk_cube(q)) >> 12);
             break;
         }
         e -= mulq16(e, c->rel);
