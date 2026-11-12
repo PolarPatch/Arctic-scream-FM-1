@@ -351,7 +351,10 @@ C("07", "Sequencer: SEQ, PLAY, REC", "var(--violet)",
     ["DIVISION", "How long a step is.", "1/16 etc."],
     ["SWING", "Swing.", "0–100 %"],
     ["PLAY MODE", "Which way it runs.", "FORWARD and more"]),
-    [], `<p class="note"><b>Hold SEQ + a white key</b> (all undoable):</p>` + keys([["F2", "CLEAR"], ["G2", "RANDOM"], ["A2", "SHIFT ←"], ["B2", "SHIFT →"], ["C3", "COPY"], ["D3", "PASTE"], ["E3", "DOUBLE"], ["F3", "MUTATE"]]))]),
+    [], `<p class="note"><b>Hold SEQ + a white key</b> (all undoable):</p>` + keys([["F2", "CLEAR"], ["G2", "RANDOM"], ["A2", "SHIFT ←"], ["B2", "SHIFT →"], ["C3", "COPY"], ["D3", "PASTE"], ["E3", "DOUBLE"], ["F3", "MUTATE"]]) +
+      `<p class="note"><b>DICE</b> (new in 2.0): <b>hold SEQ + G3 … G4</b>, a new part on the track in a mood, stillest first:</p>` +
+      keys([["G3", "HUSH"], ["A3", "STILL"], ["B3", "SWELL"], ["C4", "DRIFT"], ["D4", "ECHO"], ["E4", "PULSE"], ["F4", "ARP"], ["G4", "MACHINE"]]) +
+      `<p class="note"><b>ACCIDENT</b> (new in 2.0): <b>hold EDIT + E4, F4 or G4</b>, two or three of the track's settings moved at random, a little, more or wildly. EDIT + OCT− undoes either. (Ideas from KRIECHSTROM, written anew.)</p>`)]),
 
 C("08", "Sounds, slots and songs: SAVE, GLO", "var(--periwinkle)",
   "A slot (A–D) holds the four tracks' sounds, sequences, locks and mix. Hold SAVE + white keys 1–4 to recall them (at the next bar while playing), 5–8 to save into them (press again within 3 s to overwrite).", [

@@ -2104,6 +2104,97 @@ static void seq_tool(uint32_t w, uint32_t base)
     hd_say(SAY[w]);
 }
 
+/* (2.0) DICE: SEQ held + the second octave's white keys (G3 .. G4): a new part for the selected track in one of eight
+ * moods, the stillest first, in its SCALE around the keys' octave; STEPS, DIVISION and the rest as they are. One undo.
+ * The idea after KRIECHSTROM's DICE (Grigorii Bezborodov, xforsa.github.io/kriechstrom, GPL-3.0), written anew for
+ * drones; none of its code */
+static const char *const DICE_NAME[8] = {"HUSH", "STILL", "SWELL", "DRIFT", "ECHO", "PULSE", "ARP", "MACHINE"};
+static void dice(uint32_t w, uint32_t base)
+{
+    seq_pat_t *P = &seq[sel].pat[clamp(seq[sel].cur, 0, SEQ_NPAT - 1)];
+    int32_t n = seq_steps(&seq[sel]), i, j, k, c = (int32_t)base + 7, lo = c - 12;   /* (the keys' C; an octave down) */
+    static const int8_t TRIAD[4] = {0, 4, 7, 12};
+    char m[24];
+    tl_rng ^= fm1_ms;
+    undo_take(UK_ONE | ++uk_n, -1);
+    for (i = 0; i < (int32_t)SEQ_N; i++) step_off(&P->st[i]);
+#define DSTEP(i_, nt, ch, rt, ln) (P->st[i_].note = (uint8_t)sc_snap((uint32_t)clamp(nt, 1, 127)), P->st[i_].chance = (uint8_t)(ch), \
+                                   P->st[i_].ratchet = (uint8_t)(rt), P->st[i_].len = (uint8_t)clamp(ln, 1, (int32_t)SEQ_N))
+    switch (w & 7u) {
+    case 0:                                     /* HUSH: one or two low notes, long, not always there */
+        DSTEP(0, lo, 70 + (int32_t)tl_rnd(30), 1, n);
+        if (n >= 8 && tl_rnd(2)) DSTEP(n / 2, lo + 7, 50, 1, n / 2);
+        break;
+    case 1:                                     /* STILL: the root held through, its fifth over the second half */
+        DSTEP(0, lo, 100, 1, n);
+        if (n >= 4) DSTEP(n / 2, lo + 7, 100, 1, n - n / 2);
+        break;
+    case 2:                                     /* SWELL: four long notes climbing a chord */
+        for (k = 0; k < 4 && k * n / 4 < n; k++) DSTEP(k * n / 4, lo + TRIAD[k], 100, 1, n / 4 > 0 ? n / 4 : 1);
+        break;
+    case 3:                                     /* DRIFT: a few notes anywhere, long, near the root */
+        for (k = 0, j = 3 + (int32_t)tl_rnd(3); k < j; k++) {
+            i = (int32_t)tl_rnd((uint32_t)n);
+            DSTEP(i, c - 5 + (int32_t)tl_rnd(12), 70 + (int32_t)tl_rnd(31), 1, 2 + (int32_t)tl_rnd((uint32_t)(n / 2 > 1 ? n / 2 : 1)));
+        }
+        break;
+    case 4: {                                   /* ECHO: a figure of three, fading as it comes back */
+        int32_t f[3] = {tl_note((uint32_t)c), tl_note((uint32_t)c), tl_note((uint32_t)c + 7u)}, rep = n / 4 > 0 ? n / 4 : 1;
+        for (i = 0; i < n; i++)
+            if (i % rep < 3 && i % rep < n) DSTEP(i, f[i % rep], 100 - (i / rep) * 22 > 20 ? 100 - (i / rep) * 22 : 20, 1, 1);
+        break;
+    }
+    case 5:                                     /* PULSE: every other step, the root and its fifth */
+        for (i = 0; i < n; i += 2) DSTEP(i, lo + (i % 8 == 4 ? 7 : 0), 90, 1, 1);
+        break;
+    case 6:                                     /* ARP: up and down a chord in the SCALE, a step each */
+        for (i = 0; i < n; i++) {
+            k = i % 6;
+            DSTEP(i, c + TRIAD[k < 4 ? k : 6 - k], 100, 1, 1);
+        }
+        break;
+    default:                                    /* MACHINE: dense, ratchets, never the same */
+        for (i = 0; i < n; i++)
+            if (tl_rnd(100) < 80u) DSTEP(i, tl_note((uint32_t)c), 60 + (int32_t)tl_rnd(41), 1 + (int32_t)tl_rnd(4), 1);
+        break;
+    }
+#undef DSTEP
+    put_s(put_s(m, "DICE "), DICE_NAME[w & 7u]);
+    hd_say(m);
+}
+
+/* (2.0) ACCIDENT: EDIT held + E4, F4 or G4: two or three of the selected track's settings moved at random, a little,
+ * more, or wildly (its source's four knobs, gliding there as PRESETS does; ENV; the LFO's RATE and DEPTH; DRONE's BORGA
+ * and STOARBMA), the header saying how many; EDIT + OCT- undoes it. The idea after KRIECHSTROM's HAPPY ACCIDENT (Grigorii
+ * Bezborodov, GPL-3.0), written anew; none of its code */
+static void accident(uint32_t lvl)
+{
+    static const int32_t SPAN[3] = {12, 25, 45};   /* (of a 0 .. 127 range, either way) */
+    int32_t e = clamp(trk[sel].eng, 0, NENG - 1), cnt = lvl ? 3 : 2, d, i, v, mx;
+    uint32_t used = 0, k;
+    tl_rng ^= fm1_ms;
+    undo_take(UK_ONE | ++uk_n, -1);
+    for (i = 0; i < cnt; i++) {
+        do k = tl_rnd(12); while (used >> k & 1u);
+        used |= 1u << k;
+        d = (int32_t)tl_rnd((uint32_t)(2 * SPAN[lvl % 3u] + 1)) - SPAN[lvl % 3u];
+        if (k < NPARAM) {                       /* (the source's knob: a glide there, ~1.5 s) */
+            mx = ENGINES[e]->max[k];
+            v = clamp(trk[sel].p[e][k] + d * mx / 127 + (d < 0 ? -1 : 1), 0, mx);
+            pgl_from[sel][k] = pgl_set[sel][k] = trk[sel].p[e][k], pgl_to[sel][k] = v;
+            pgl_on |= 1u << (sel * NPARAM + k), pgl_t0[sel] = fm1_ms;
+            continue;
+        }
+        k -= NPARAM;
+        if (k < 4u) trk[sel].env[k] = clamp(trk[sel].env[k] + d, 0, 127);
+        else if (k == 4u) trk[sel].lfo_rate = clamp(trk[sel].lfo_rate + d, 0, 127);
+        else if (k == 5u) trk[sel].lfo_depth = clamp(trk[sel].lfo_depth + d * 100 / 127, 0, 100);
+        else if (k == 6u) trk[sel].dr_borga = clamp(trk[sel].dr_borga + d * 100 / 127, 0, 100);
+        else trk[sel].dr_storm = clamp(trk[sel].dr_storm + d * 100 / 127, 0, 100);
+    }
+    hd_say(cnt == 3 ? "ACCIDENT x3" : "ACCIDENT x2");
+}
+
 /* the battery (HOME's header, beside the tempo): the divider's raw reading once a second, smoothed (~8 s), its level by
  * the stock firmware's thresholds (531, 561, 591 on ADC ch3, as Felucca has them; no calibration to volts) with a
  * little hysteresis: 0..3 (1..4 bars; 0, the lowest: its bar blinks); 4 a USB host powers it (a bolt: there is no
@@ -2215,6 +2306,8 @@ static void app_main(void)
              back_page = PG_HOME, pf_keys = 0, pf_back = PG_HOME, t_touch = 0, as_last = 0, as_next = 0, learn_was = 0,
              fac_was = 0;
     static const uint8_t WK[8] = {0, 2, 4, 6, 7, 9, 11, 12};   /* the white keys from F3: 1..4 recall A..D, 5..8 save them */
+    static const uint8_t WK2[8] = {14, 16, 18, 19, 21, 23, 24, 26};   /* (2.0) the next eight, G3 .. G4: DICE's moods; the
+                                                 * last three, E4 .. G4, ACCIDENT's (EDIT held) */
     int8_t oct_before = 0;                      /* the octave before the last OCT press (undone if it was a reset) */
     ima_init();                                 /* (samples.c: the decoder's tables, before samples_poll checks a slot) */
     seq_init();
@@ -2467,6 +2560,23 @@ static void app_main(void)
                     b_used |= 1u << BTN_SEQ;
                     continue;
                 }
+                for (w = 0; w < 8u && WK2[w] != k; w++)
+                    ;
+                if (w < 8u) {                   /* (2.0) SEQ held + G3 .. G4: DICE */
+                    dice(w, base);
+                    b_used |= 1u << BTN_SEQ;
+                    continue;
+                }
+            }
+            if (b_down >> BTN_EDIT & 1u) {      /* (2.0) EDIT held + E4, F4, G4: ACCIDENT, a little, more, wildly */
+                uint32_t w;
+                for (w = 5; w < 8u && WK2[w] != k; w++)
+                    ;
+                if (w < 8u) {
+                    accident(w - 5u);
+                    b_used |= 1u << BTN_EDIT;
+                    continue;
+                }
             }
             if (save_held) {                    /* SAVE held: white keys 1..4 recall A..D, 5..8 save into them */
                 uint32_t w;
@@ -2581,8 +2691,10 @@ static void app_main(void)
             if (id < 27u) { if (p >= 0 && p < 27) lit |= 1u << p; }
             else if (o >= base && o < base + 27u) lit |= 1u << (o - base);
         }
-        if (b_down >> BTN_SEQ & 1u)             /* (SEQ held: the tools' eight keys lit) */
-            for (k = 0; k < 8u; k++) lit |= 1u << WK[k];
+        if (b_down >> BTN_SEQ & 1u)             /* (SEQ held: the tools' eight keys lit; 2.0: DICE's eight too) */
+            for (k = 0; k < 8u; k++) lit |= 1u << WK[k] | 1u << WK2[k];
+        if (b_down >> BTN_EDIT & 1u)            /* (2.0: EDIT held: ACCIDENT's three) */
+            for (k = 5; k < 8u; k++) lit |= 1u << WK2[k];
         if (glo_held)                           /* (GLO held: keys 1..4 lit for the tracks muted, 5..8 soloed) */
             for (lit = 0, k = 0; k < 4u; k++) lit |= (trk_mute >> k & 1u) << WK[k] | (trk_solo >> k & 1u) << WK[4u + k];
         if (save_held)                          /* (SAVE held: keys 1..4 lit for the slots used) */

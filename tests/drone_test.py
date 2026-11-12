@@ -217,6 +217,27 @@ for what, step, most in (("another source: the notes cross over", 1, 6), ("the s
     check(f"PRESETS on a drone, {what}: no hole (under -6 dB of before), no step over {most} dB in 0.1 s",
           min(seq[5:]) > 0.5 * min(seq[:5]) and jump < most, ([round(x) for x in seq], round(jump, 1)))
 
+# (2.0) DICE: SEQ held + G3 (HUSH) .. G4 (MACHINE): a new part on T1 in that mood; EDIT held + OCT-: undone. ACCIDENT:
+# EDIT held + G4: T1's settings moved (its knobs gliding there); undone the same way
+SEQB, OCTD = 11, 0
+def probes(out):
+    pr = {}
+    for m in re.finditer(r"^probe (\d+) .*? steps (\d+) .*? ph (\S+) .*? keep (\S+)", out, re.M):
+        pr[int(m.group(1))] = (int(m.group(2)), m.group(3).split(",")[0], m.group(4).split(",")[0])
+    return pr
+ev = [(6200, "probe"), (6400, f"down {SEQB}"), (6600, f"keys {1 << 14}"), (6700, "keys 0"), (6900, f"up {SEQB}"), (7000, "probe"),
+      (7200, f"down {SEQB}"), (7400, f"keys {1 << 26}"), (7500, "keys 0"), (7700, f"up {SEQB}"), (7800, "probe"),
+      (8000, f"down {EDIT}"), (8200, f"btn {OCTD}"), (8400, f"up {EDIT}"), (8600, "probe"),
+      (9000, f"down {EDIT}"), (9200, f"keys {1 << 26}"), (9300, "keys 0"), (9500, f"up {EDIT}"), (11500, "probe"),
+      (12000, f"down {EDIT}"), (12200, f"btn {OCTD}"), (12400, f"up {EDIT}"), (12600, "probe")]
+out, a, jk, notes = run("dice", ev, 13000)
+pr = probes(out)
+check("DICE: SEQ + G3, HUSH: one or two quiet notes; SEQ + G4, MACHINE: a dense part", pr[6200][0] == 0 and
+      1 <= pr[7000][0] <= 2 and pr[7800][0] >= 6, {k: v[0] for k, v in pr.items()})
+check("DICE: EDIT + OCT- undoes the last one (HUSH's part back)", pr[8600][1] == pr[7000][1], (pr[7000][1], pr[8600][1]))
+check("ACCIDENT: EDIT + G4 moves T1's settings; EDIT + OCT- puts them back", pr[11500][2] != pr[8600][2] and
+      pr[12600][2] == pr[8600][2], (pr[8600][2], pr[11500][2], pr[12600][2]))
+
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, PRESETS' crossing over ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, PRESETS' crossing over, DICE, ACCIDENT ok")

@@ -384,6 +384,25 @@ Each track has its own **64-step** pattern; all four play together on one tempo 
 
 *(The white keys are counted from the left, from F2.)*
 
+**DICE** (new in 2.0): hold **SEQ** and press one of the next eight white keys, **G3 to G4**, for a new part on the selected
+track in a mood, the stillest first. The notes stay in the track's SCALE; STEPS and DIVISION are kept. Undo it with
+EDIT + OCT−.
+
+| G3 | A3 | B3 | C4 | D4 | E4 | F4 | G4 |
+|---|---|---|---|---|---|---|---|
+| HUSH | STILL | SWELL | DRIFT | ECHO | PULSE | ARP | MACHINE |
+
+HUSH is one or two low notes that do not always sound. STILL holds the root, with its fifth over the second half.
+SWELL climbs a chord in four long notes. DRIFT scatters a few long notes. ECHO repeats a three-note figure that fades.
+PULSE plays the root and fifth on every other step. ARP goes up and down a chord. MACHINE is dense, with ratchets.
+
+**ACCIDENT** (new in 2.0): hold **EDIT** and press **E4**, **F4** or **G4**. Two or three of the selected track's settings
+move at random: a little, more, or wildly. It picks from the source's four knobs (they glide there over 1.5 s), ENV,
+the LFO's RATE and DEPTH, and DRONE's BORGA and STOARBMA. The header says how many moved. Not what you wanted? EDIT +
+OCT− puts them back.
+
+*(DICE and ACCIDENT follow two ideas from Grigorii Bezborodov's KRIECHSTROM firmware, written anew for drones.)*
+
 ---
 
 ## 08 · Slots, sounds and songs: SAVE, GLO

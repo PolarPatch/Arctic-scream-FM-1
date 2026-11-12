@@ -26,6 +26,8 @@ MIXER #	mixer #
 # %	# percent
 S# EMPTY	sample slot # empty
 S# #%	sample slot #, # percent
+# (2.0) ACCIDENT's
+ACCIDENT x#	accident, # settings moved
 # the sources and their knobs
 VA	V A
 FM	F M
