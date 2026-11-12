@@ -130,21 +130,14 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSND(CAT_VOICE, 3, ENG_VOICE, 20, 14, 20, 110, 80, 90, 115, 95, 0, 0x13, 35, 10, 3, 6), /* BLIZZARD BREATH */
     FSND(CAT_VOICE, 4, ENG_VOICE, 64, 10, 45, 30, 90, 95, 65, 100, 0, 0x01, 25, 100, 3, 0), /* NORTHERN CALL */
     FSND(CAT_VOICE, 5, ENG_FM, 2, 70, 64, 40, 85, 90, 115, 95, 0, 0x12, 95, 1, 0, 0),       /* EMPTY HORIZON */
-    /* KEYS (1.5.3: ICE ORGAN, BASE CAMP, SNOW GLOBE and ICE PIANO gone, a drone machine) */
-    FSND(CAT_KEYS, 1, ENG_FM, 0, 45, 10, 5, 0, 75, 0, 50, 0, 0x00, 40, 0, 0, 0),            /* FROST KEYS */
-    FSND(CAT_KEYS, 2, ENG_PHASE, 3, 0, 30, 6, 0, 105, 20, 80, 0, 0x00, 40, 0, 0, 0),        /* POLAR KEYS */
     /* STRINGS & BRASS */
     FSND(CAT_OTHER, 1, ENG_PHYS, 1, 64, 110, 70, 100, 100, 65, 95, 0, 0x00, 40, 0, 0, 0),   /* TUNDRA STRINGS */
     FSND(CAT_OTHER, 2, ENG_VA, 0, 20, 70, 15, 65, 85, 105, 75, 0, 0x00, 100, 1, 0, 0),      /* ICEBREAKER */
     FSND(CAT_OTHER, 3, ENG_FM, 3, 85, 64, 15, 75, 90, 115, 85, 0, 0x00, 40, 0, 0, 0),       /* FOG HORN */
     FSND(CAT_OTHER, 4, ENG_PHYS, 1, 50, 115, 60, 85, 95, 70, 95, 1, 0x00, 95, 1, 0, 0),     /* SVALBARD CELLO */
     FSND(CAT_OTHER, 5, ENG_VA, 2, 40, 75, 5, 90, 90, 115, 95, 0, 0x00, 70, 1, 0, 0),        /* NORTH STRINGS */
-    /* LEADS & PLUCKS */
-    FSND(CAT_KEYS, 3, ENG_PHASE, 6, 0, 90, 0, 30, 90, 110, 80, 0, 0x00, 105, 1, 0, 0),      /* SNOW OWL */
-    FSND(CAT_KEYS, 4, ENG_VA, 1, 6, 55, 10, 40, 90, 110, 75, 0, 0x00, 40, 0, 0, 0),         /* SIGNAL FLARE */
-    FSND(CAT_KEYS, 5, ENG_FM, 0, 40, 10, 0, 0, 55, 0, 30, 0, 0x00, 40, 0, 0, 0),            /* ICICLE PLUCK */
-    FSND(CAT_KEYS, 6, ENG_PHYS, 3, 0, 85, 0, 0, 90, 127, 60, 0, 0x00, 40, 0, 0, 0),         /* FROST LUTE */
-    FSND(CAT_KEYS, 7, ENG_PHASE, 3, 0, 40, 4, 80, 90, 70, 80, 0, 0x00, 100, 1, 0, 0),       /* NORTHERN LIGHT */
+    /* KEYS (1.5.3: SIGNAL FLARE alone; ICE ORGAN, BASE CAMP, the other keys, leads and plucks gone: a drone machine) */
+    FSND(CAT_KEYS, 1, ENG_VA, 1, 6, 55, 10, 40, 90, 110, 75, 0, 0x00, 40, 0, 0, 0),         /* SIGNAL FLARE */
     /* TEXTURES */
     FSND(CAT_TEXTURE, 1, ENG_VOICE, 96, 12, 0, 127, 100, 90, 120, 105, 1, 0x00, 30, 90, 4, 0), /* WIND OVER ICE */
     /* (1.5.3) Biegga, the wind: LATCH ON, a gentle wind, gusting a little, its TONE drifting on the LFO, a breeze
@@ -170,10 +163,8 @@ static const char *const SND_FNAME[] = {
     "POLAR NIGHT", "SNOW VEIL", "GLACIER PAD", "MIDNIGHT SUN", "LICHEN", "SNOWDRIFT", "PERMAFROST", "DEEP FJORD",
     "CRACKING ICE", "ARCTIC HUM", "SOLAR WIND", "UNDER THE ICE", "ICE BELL", "ICEBERG GONG",
     "CRYSTAL HARP", "BOWED ICICLE", "AURORA CHOIR", "TUNDRA VOICES", "BLIZZARD BREATH", "NORTHERN CALL",
-    "EMPTY HORIZON", "FROST KEYS", "POLAR KEYS",
-    "TUNDRA STRINGS", "ICEBREAKER", "FOG HORN", "SVALBARD CELLO", "NORTH STRINGS", "SNOW OWL", "SIGNAL FLARE",
-    "ICICLE PLUCK", "FROST LUTE", "NORTHERN LIGHT", "WIND OVER ICE", "BIEGGA", "RIDDU", "POLAR HOWL", "WENDIGO",
-    "FROZEN SCREAM", "WHITEOUT", "DEAD SIGNAL", "POLAR STILL", "III", "ICE WRAITH",
+    "EMPTY HORIZON", "TUNDRA STRINGS", "ICEBREAKER", "FOG HORN", "SVALBARD CELLO", "NORTH STRINGS", "SIGNAL FLARE",
+    "WIND OVER ICE", "BIEGGA", "RIDDU", "POLAR HOWL", "WENDIGO", "FROZEN SCREAM", "WHITEOUT", "DEAD SIGNAL", "POLAR STILL", "III", "ICE WRAITH",
 };   /* (16 characters at most: the header beside HOME's tempo) */
 #define SND_NFACT (sizeof SND_FACTORY / sizeof SND_FACTORY[0])
 #define SND_DEFAULT (SND_NFACT - 1u)            /* the four tracks' sound at first power-on and at NEW: ICE WRAITH */

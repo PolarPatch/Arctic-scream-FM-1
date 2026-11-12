@@ -79,7 +79,7 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - The track defaults are darker.
   - The knobs on HOME, EDIT and LFO all audibly change the sound from the start.
   - HOME's knobs set the selected track's VOLUME and CUTOFF, and two that twist it: **WARP** (eight layers of motion, from a still sound to a wild one, smoothly) and **MORPH** (one knob through all four of the source's knobs at once, never quite still).
-- **44 factory sounds** with arctic names, such as POLAR NIGHT, PERMAFROST, SVALBARD CELLO, NORTHERN LIGHT and BIEGGA.
+- **38 factory sounds** with arctic names, such as POLAR NIGHT, PERMAFROST, SVALBARD CELLO, POLAR STILL and BIEGGA.
 - **A new look:**
   - an arctic cyberpunk palette from PolarPatch's BlueWatch;
   - waveforms that glow on HOME;

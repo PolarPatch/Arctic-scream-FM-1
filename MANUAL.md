@@ -607,7 +607,7 @@ Since 1.3.1 it shows up on macOS 10.14 to 15 too.
 
 ## 12 · Factory sounds
 
-44 sounds with arctic names. Turn **PRESETS** to step through them by category, then your own.
+38 sounds with arctic names. Turn **PRESETS** to step through them by category, then your own.
 
 Turning PRESETS while a drone is sounding blends the two sounds (new in 1.5.3). If the new sound uses another source, the
 old notes fade out while the new ones rise with their own ATTACK, over 1.5–6 s. If the source is the same, its four
@@ -621,7 +621,7 @@ busy, the change is quick as before.
 | PAD | Polar Night, Snow Veil, Glacier Pad, Midnight Sun, Lichen, Snowdrift |
 | BELL | Ice Bell, Iceberg Gong, Crystal Harp, Bowed Icicle |
 | VOICE | Aurora Choir, Tundra Voices, Blizzard Breath, Northern Call, Empty Horizon |
-| KEYS | Frost Keys, Polar Keys, Snow Owl, Signal Flare, Icicle Pluck, Frost Lute, Northern Light |
+| KEYS | Signal Flare |
 | OTHER | Tundra Strings, Icebreaker, Fog Horn, Svalbard Cello, North Strings |
 | TEXTURE | Wind over Ice, **Biegga** (a gentle wind), **Riddu** (a gale) |
 

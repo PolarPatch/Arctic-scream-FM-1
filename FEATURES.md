@@ -27,7 +27,7 @@ feedback screams: slow, cold sounds that hum for minutes, and a voice that wakes
 - **JIEHKKI**: a whole piece the FM-1 plays by itself for 5 to 60 minutes (or ENDLESS), then dies out; **RUOHČAT**,
   the ice cracking around it.
 - Pure tunings for drones (**ŠUOKŊA**: JUST, PYTHAG, HARMONIC).
-- 44 factory sounds with arctic names, and 64 slots for your own.
+- 38 factory sounds with arctic names, and 64 slots for your own.
 - Effects on seven pages (TAPE, GRAIN, DELAY, SPACE, MASTER, DRIVE, AIR) and eight performance tricks.
 - A 64-step sequencer per track, an arpeggiator, chords, scales and song mode.
 - An arctic cyberpunk screen with moving northern lights, a black and white **MONO** look, and the aurora
@@ -226,8 +226,8 @@ HOME draws each track's wave as it plays. The header shows the track, its sound 
 
 ## Sounds and saving (SAVE)
 
-- **44 factory sounds** with arctic names, in PAD, DRONE, BELL, VOICE, KEYS, OTHER and TEXTURE. Among them
-  POLAR NIGHT, PERMAFROST, GLACIER PAD, SVALBARD CELLO, NORTHERN LIGHT, WIND OVER ICE and BIEGGA (1.5.3, the wind).
+- **38 factory sounds** with arctic names, in PAD, DRONE, BELL, VOICE, KEYS, OTHER and TEXTURE. Among them
+  POLAR NIGHT, PERMAFROST, GLACIER PAD, SVALBARD CELLO, WIND OVER ICE and BIEGGA (1.5.3, the wind).
 - **Seven Holvut presets** at the end of DRONE: POLAR HOWL, WENDIGO, FROZEN SCREAM, WHITEOUT, DEAD SIGNAL, III and
   **ICE WRAITH**, the sound every track starts with. All seven latch and have DRONE on. III is a horrorscape: three
   Holvut voices in a cluster chord, rubbing a semitone apart, dark and slowly waking.
@@ -329,7 +329,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 | --- | --- | --- |
 | 1.0 | 2026-10-25 | The first release: HOWL (now Holvut), six screaming presets, the HORROR scale, runaway echo, keys an octave down, 46 arctic factory sounds, the new look, the web editor with sound tools and sequencer, the demo and cheat sheet |
 | 1.1 | 2026-10-26 | DRONE (BORGA, STOARBMA, GOHCCAT); HOWL renamed Holvut; moving northern lights on ENV, LFO, FX and the mixers; SUSTAIN 40 % by default; DRONE in the editor |
-| 1.5.3 | 2026-11-11 | The drone machine: JIEHKKI (a piece played by itself for LENGTH, then dying out; DRIFT; a sleep timer at DRIFT 0), RUOHČAT (ice cracks, drips, booms; its own page with your samples among them), ŠUOKŊA tunings (JUST, PYTHAG, HARMONIC), Biegga (the wind, a ninth source) and the factory sounds BIEGGA, RIDDU and POLAR STILL (FROST CHIME, STARLIGHT, ICE ORGAN, BASE CAMP, SNOW GLOBE and ICE PIANO gone: 44 factory sounds), GUOVSSAHAS (the aurora as a screen saver), PRESETS on a sounding drone blending into the next (crossfade, or the knobs gliding), ATTACK swelling in (a cube, not a straight line), MASTER louder (its turn^1.5, half way -9 dB; the output +3 dB), COLOUR MONO (black and white, Bayer dots); MIDI in while the screen draws (LCD_IDLE); saves version 9; update tests |
+| 1.5.3 | 2026-11-11 | The drone machine: JIEHKKI (a piece played by itself for LENGTH, then dying out; DRIFT; a sleep timer at DRIFT 0), RUOHČAT (ice cracks, drips, booms; its own page with your samples among them), ŠUOKŊA tunings (JUST, PYTHAG, HARMONIC), Biegga (the wind, a ninth source) and the factory sounds BIEGGA, RIDDU and POLAR STILL (FROST CHIME, STARLIGHT, ICE ORGAN, BASE CAMP, SNOW GLOBE, ICE PIANO and the other keys but SIGNAL FLARE gone: 38 factory sounds), GUOVSSAHAS (the aurora as a screen saver), PRESETS on a sounding drone blending into the next (crossfade, or the knobs gliding), ATTACK swelling in (a cube, not a straight line), MASTER louder (its turn^1.5, half way -9 dB; the output +3 dB), COLOUR MONO (black and white, Bayer dots); MIDI in while the screen draws (LCD_IDLE); saves version 9; update tests |
 | 1.5.2 | 2026-11-10 | The update's own screen (UPDATE MODE, WRITING with a bar, DONE or FAILED); SYSTEM 3's MOD OUT (each track's level and LFO as CC 102, 103); PANEL OUT for apps (buttons, keys, knobs); INFO tells key 0's note and the octave; the browser demo in tune at 48 kHz; DELAY up to 2.6 s and more free memory (RAM 93.4 → 79.0 KB used); the stacks' depth in the CPU command |
 | 1.5.1 | 2026-11-08 | The newer FM-1s' flash chip (UC25HQ80): saves, the USB rescue and updates on it as on the first chip (P25Q80); on a newer unit with 1.5 or older, install through the chip's download mode once |
 | 1.5 | 2026-11-07 | The screen reader: the screen said to fm1-reader (pages, knobs, lists, steps, PLAY, STOP, REC, the header's messages); saves under a latched drone (a slot or a sound saved at once, the autosave after 30 s at rest); the editor keeps a project's effects and tempo in its file; TAPE's TONE shows its corner (OPEN, 10K .. 400) |
