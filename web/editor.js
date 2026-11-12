@@ -13,7 +13,7 @@
 import { Client, MidiTransport, VirtualFM1, LiveSender, findFM1, HEAD, CMD, OBJ, PROTOS, EditorError, emptyRecord, isEmpty,
          recordOk, parseSound, buildRecord, soundTitle, makeBackup, checkBackup, restoreBackup, makeProject, checkProject, projectExtras, makeSlot, noteFromName,
          sampleName, noteName, pack7, hex, SEQ_N, SEQ_DIV, SEQ_MODE, parseSeq, buildSeq, emptyStep, seqToMidi,
-         midiToSeq, SET_V1, SET_V2, MCH_NAMES, CLOCK_NAMES, settingsOf, withSettings, sameSettings, checkSamples, restoreSamples } from "./editor_core.js";
+         midiToSeq, SET_V1, SET_V2, MCH_NAMES, CLOCK_NAMES, settingsOf, withSettings, sameSettings, checkSamples, restoreSamples, SAMPLE } from "./editor_core.js";
 const RISE = ["OFF", "1 BAR", "2 BARS", "4 BARS", "8 BARS", "16 BARS", "32 BARS"];   // DRONE's GOHCCAT
 
 const $ = (id) => document.getElementById(id);
@@ -1200,12 +1200,13 @@ function drawSamples() {
     drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove("hot"); take(e.dataTransfer.files[0]); };
     up.onclick = () => job(`UPLOAD SLOT ${k + 1}`, async () => {
       if (!buf) throw new EditorError("CHOOSE A WAV FIRST", 0);
-      const sl = makeSlot(buf, sampleName(nm.value), Math.max(0, Math.min(127, +root.value | 0)));
+      const cap = s.cap > 0 ? s.cap : SAMPLE.MAX_N;             // (1.5.3: as long as this FM-1's slot: the virtual one's ~95 s)
+      const sl = makeSlot(buf, sampleName(nm.value), Math.max(0, Math.min(127, +root.value | 0)), cap);
       say(`UPLOADING ${(sl.data.length / 1024).toFixed(0)} KB…`);
       smpInfo = await conn.client.smpUpload(k, sl.hdr, sl.data, progress);
       drawSamples();
       if (smpInfo[k].state === 0 || smpInfo[k].state === 2) throw new EditorError("THE FM-1 DID NOT ACCEPT IT: UPLOAD AGAIN", 0);
-      return `SLOT ${k + 1}: ${smpInfo[k].name || sampleName(nm.value)}, ${sl.secs.toFixed(2)} S${sl.cut ? " (CUT TO 6.64 S)" : ""}, CHECKED BY THE FM-1`;
+      return `SLOT ${k + 1}: ${smpInfo[k].name || sampleName(nm.value)}, ${sl.secs.toFixed(2)} S${sl.cut ? ` (CUT TO ${(cap / 22050).toFixed(2)} S)` : ""}, CHECKED BY THE FM-1`;
     });
     er.onclick = () => {
       if (!confirm(`ERASE SAMPLE SLOT ${k + 1} ON THE FM-1?`)) return;

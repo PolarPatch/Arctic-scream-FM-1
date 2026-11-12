@@ -242,6 +242,18 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   const after = await cl.smpUpload(2, sl.hdr, sl.data);
   check(after[2].state === 1 && after[2].name === "TESTWAV" && after[2].n === zn && after[2].root === 57,
         `editor: a WAV uploaded into slot 3 and checked by the fake FM-1 (${after[2].name}, ${zn} samples, root ${after[2].root})`);
+  {                                                          // (1.5.3) the browser's slots: ~95 s each, INFO says so
+    const n = 20 * 22050, lw = new Uint8Array(44 + n * 2), lv = new DataView(lw.buffer);   // (20 s at 22050 Hz, mono)
+    const st = (o, t) => [...t].forEach((c, i) => lw[o + i] = c.charCodeAt(0));
+    st(0, "RIFF"), lv.setUint32(4, 36 + n * 2, true), st(8, "WAVEfmt "), lv.setUint32(16, 16, true), lv.setUint16(20, 1, true);
+    lv.setUint16(22, 1, true), lv.setUint32(24, 22050, true), lv.setUint32(28, 44100, true), lv.setUint16(32, 2, true);
+    lv.setUint16(34, 16, true), st(36, "data"), lv.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) lv.setInt16(44 + i * 2, Math.round(Math.sin(2 * Math.PI * 220 * i / 22050) * 12000), true);
+    const cap = after[3].cap, ls = makeSlot(lw.buffer, "LONGJOIK", 57, cap), a4 = await cl.smpUpload(3, ls.hdr, ls.data);
+    check(cap === 2096128 && !ls.cut && a4[3].state === 1 && a4[3].n === n,
+          `editor: the browser's slot holds ${(cap / 22050).toFixed(1)} s (the FM-1's 6.6): 20 s uploaded whole (${a4[3].n} samples)`);
+    await cl.smpErase(3);
+  }
   mkdirSync("build/web", { recursive: true });
   writeFileSync("build/web/test.wav", wav);
   let py = null;

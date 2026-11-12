@@ -18,6 +18,8 @@ class Grimm extends AudioWorkletProcessor {
     this.sentWrites = 0;
     this.lastFrame = -1;
     this.sx = [];                                            // the editor's SysEx frames (TRACK), one a quantum
+    this.asks = [];                                          // (1.5.3) frames whose replies go back to the page
+    this.asked = false;                                      // .. one of them in the firmware now
     this.port.onmessage = (e) => this.onMessage(e.data);
   }
 
@@ -51,6 +53,10 @@ class Grimm extends AudioWorkletProcessor {
     else if (m.type === "enc") ex.web_enc(m.enc, m.n | 0);
     else if (m.type === "master") ex.web_master(m.value | 0);
     else if (m.type === "midi") ex.web_midi(m.data[0], m.data[1], m.data[2]);
+    else if (m.type === "request") {                        // (1.5.3) a frame whose reply the page waits for (SAMPLES:
+      this.asks.push(m.data);                               // one at a time, panel.js request; sent once the queue is clear;
+      this.asked = false;                                   // the one before answered, or given up on)
+    }
     else if (m.type === "sysex") {                          // the editor: a frame without F0 / F7 (its reply dropped);
       const f = m.data, set = (q) => (q[3] === 23 || q[3] === 24) && q[4] === 1;   // (TRACK's and SEQ's SET)
       const k = set(f) ? this.sx.findIndex((q) => set(q) && q[3] === f[3] && q[5] === f[5]) : -1;
@@ -112,13 +118,19 @@ class Grimm extends AudioWorkletProcessor {
   pull(n) {                                                  // n frames of the FM-1's 44.1 kHz (at most 1024)
     const ex = this.ex;
     ex.web_want_frames(n);
-    if (this.sx.length && !ex.web_sysex_busy()) {
-      const f = this.sx.shift();
+    if (!ex.web_sysex_busy() && (this.sx.length || (this.asks.length && !this.asked))) {
+      const ask = !this.sx.length, f = ask ? this.asks.shift() : this.sx.shift();
       new Uint8Array(ex.memory.buffer, ex.web_sysex_in_buf(), f.length).set(f);
       ex.web_sysex_in(f.length);
+      ex.web_sysex_out_clear();
+      this.asked = ask;
     }
     if (!ex.web_ready()) this.run();
-    ex.web_sysex_out_clear();
+    if (this.asked && ex.web_sysex_out_len()) {             // (its reply, F0 .. F7)
+      this.asked = false;
+      this.port.postMessage({ type: "reply", data: new Uint8Array(ex.memory.buffer, ex.web_sysex_out_buf(), ex.web_sysex_out_len()).slice() });
+    }
+    if (!this.asked) ex.web_sysex_out_clear();
     ex.web_take();
     return [new Float32Array(ex.memory.buffer, ex.web_out_l(), n), new Float32Array(ex.memory.buffer, ex.web_out_r(), n)];
   }

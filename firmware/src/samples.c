@@ -34,7 +34,9 @@
 #include "grimm_samples.h"
 
 #define SMP_SLOTS 4u
+#ifndef SMP_SLOT_SIZE                           /* (1.5.3: the browser's own, web/fm1_web.c: 1 MiB, ~95 s) */
 #define SMP_SLOT_SIZE (72u * 1024u)             /* 72 KiB (so written: the build takes 0x12000 for a register address) */
+#endif
 #define SMP_DATA_OFF 512u
 #define SMP_HDR_LEN 480u
 #define SMP_MAX_DATA (SMP_SLOT_SIZE - SMP_DATA_OFF)   /* 73216 B */
@@ -47,6 +49,7 @@
 #define SMP_SCAN_SEGS 4u                        /* a main loop pass checks and indexes this many segments */
 _Static_assert(SMP_SLOTS * SMP_SLOT_SIZE <= SAMPLE_AREA_LEN, "the sample slots in the platform's sample area");
 _Static_assert(SMP_MAX_N % SMP_SEG == 0u, "whole segments");
+_Static_assert(SMP_MAX_N < (1u << 21) && SMP_SLOT_SIZE <= (1u << 21), "INFO's samples and WRITE's offset: 3 x 7 bits");
 
 static const int16_t IMA_STEP[89] = {           /* IMA ADPCM (Felucca's eng_sample.c) */
     7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66, 73, 80, 88, 97,

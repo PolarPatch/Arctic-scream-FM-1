@@ -121,6 +121,20 @@ a { color: inherit; }
                     background: var(--part); color: var(--label); border: 1px solid var(--edge); }
 .side .row button:hover { color: var(--fg); border-color: var(--dim); }
 .side .hint { margin: 0; padding: 0 12px 12px; color: var(--muted); font-size: 12px; }
+/* (1.5.3) the samples: a slot a row, its number, what is in it, a drop target */
+.smp-head { display: flex; justify-content: space-between; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.smp-head small { font: 600 10px var(--mono); letter-spacing: .2em; color: var(--muted); }
+.smp-head span { font: 600 10px var(--mono); letter-spacing: .08em; color: var(--dim); text-align: right; }
+.slot { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 26px 1fr; gap: 2px 10px; width: 100%;
+        padding: 9px 12px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.slot:hover, .slot.hot { background: #0f1620; }
+.slot:focus-visible { outline: 2px solid var(--fg); outline-offset: -2px; }
+.slot .k { grid-row: span 2; font: 400 15px var(--pix); color: var(--dim); align-self: center; }
+.slot .n { font: 700 12px var(--mono); letter-spacing: .1em; color: var(--fg); }
+.slot .s { font-size: 12px; color: var(--muted); }
+.slot .bar { grid-column: 2; height: 3px; background: #121a24; }
+.slot .bar i { display: block; height: 100%; width: 0; background: var(--ice); }
+.slot.busy { cursor: progress; }
 
 /* BlueWatch's bracket corners, on the instrument's frame */
 .frame { position: relative; width: min(100%, 1016px); margin: 0 auto; padding: 8px; box-sizing: border-box; }
@@ -324,6 +338,13 @@ footer .big { font: 400 clamp(18px, 3vw, 28px) var(--pix); color: var(--dim); ma
       <div class="row"><button type="button" id="d-stop">STOP</button><button type="button" id="d-off">ALL NOTES OFF</button></div>
       <p class="hint">A demo loads its sounds and sequences into the firmware and latches its notes. Then turn the knobs:
         EDIT for the sound, LFO twice for DRONE, FX for the effects.</p>
+    </div>
+    <div class="box" aria-label="Your samples">
+      <div class="smp-head"><small>SAMPLES</small><span id="smp-cap">FOUR SLOTS, LONGER HERE THAN ON THE FM-1</span></div>
+      <div id="smp-slots"></div>
+      <p class="hint">Drop a WAV on a slot (or click it): a joik, water, wind. RUOHČAT plays them among the ice's sounds
+        (LFO four times, SAMPLE), and so does the SAMPLE source. The FM-1 itself holds 6.6 s a slot; here they last until
+        the page closes.</p>
     </div>
   </aside>
 </div>

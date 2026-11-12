@@ -775,15 +775,15 @@ export function sampleName(s) {
   return s || "SAMPLE";
 }
 export const noteName = (n) => ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][n % 12] + (Math.floor(n / 12) - 1);
-export function makeSlot(buf, name, root) {                  // -> {hdr (480 B), data, secs, cut}
-  let { sr, x } = readAnyWav(buf);
-  x = resample(x, sr, SAMPLE.RATE);
+export function makeSlot(buf, name, root, maxN = SAMPLE.MAX_N) {   // -> {hdr (480 B), data, secs, cut}; maxN: the
+  let { sr, x } = readAnyWav(buf);                           // slot's capacity (INFO's: the FM-1 6.64 s; 1.5.3, the
+  x = resample(x, sr, SAMPLE.RATE);                          // browser's ~95 s)
   if (!x.length || peak(x) <= 1e-6) throw new Error("no audio in it (silent or empty)");
-  const cut = x.length > SAMPLE.MAX_N;
+  const cut = x.length > maxN;
   if (cut) {                                                 // what fits, with a 20 ms fade at the cut
-    x = x.slice(0, SAMPLE.MAX_N);
+    x = x.slice(0, maxN);
     const f = Math.trunc(0.02 * SAMPLE.RATE);
-    for (let i = 0; i < f; i++) x[SAMPLE.MAX_N - f + i] *= (f - i) / f;
+    for (let i = 0; i < f; i++) x[maxN - f + i] *= (f - i) / f;
   }
   const s = toInt16(x), data = imaEncode(s), hdr = new Uint8Array(SAMPLE.HDR_LEN), dv = new DataView(hdr.buffer);
   const nm = name.toUpperCase().replace(/[^\x20-\x7e]/g, "").slice(0, 8);

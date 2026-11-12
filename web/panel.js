@@ -26,12 +26,31 @@ let started = null;
 window.fm1 = {
   start: () => started || (started = switchOn()),
   sysex: (data) => send({ type: "sysex", data }),
+  request,                                                 // (1.5.3) a frame, its reply: an editor_core.js Client's transport
   panic: () => send({ type: "panic" }),
   tap(mask, ms = 120) {                                    // keys pressed a moment, as a hand would (LATCH: they stay)
     send({ type: "keys", mask: keyMask | mask });
     return new Promise((res) => setTimeout(() => { send({ type: "keys", mask: keyMask }); res(); }, ms));
   },
 };
+// (1.5.3) a request whose reply comes back (the SAMPLES box, web/site.js): as editor_core.js's transports, one at a
+// time; the reply without its head and command, as theirs
+let asking = null;
+function request(frame, timeout = 3000) {
+  if (!node) return Promise.reject(new Error("the FM-1 is off: START first"));
+  if (asking) return Promise.reject(new Error("one request at a time"));
+  return new Promise((res, rej) => {
+    asking = { cmd: frame[3], res, timer: setTimeout(() => { asking = null; rej(Object.assign(new Error("no answer from the FM-1"), { rc: 97 })); }, timeout) };
+    send({ type: "request", data: frame });
+  });
+}
+function replied(d) {
+  const a = asking;
+  if (!a || d[4] !== a.cmd) return;
+  asking = null;
+  clearTimeout(a.timer);
+  a.res(Array.from(d.subarray(5, d.length - 1)));
+}
 const btnBy = new Map(), keyBy = new Map();                // pointer / computer key -> button id or key
 const buttons = [], keys = [], knobs = [];
 const $ = (id) => document.getElementById(id);
@@ -360,6 +379,7 @@ async function switchOn() {
         const m = e.data;
         if (m.type === "ready") res();
         else if (m.type === "error") rej(new Error(m.message));
+        else if (m.type === "reply") replied(m.data);
         else if (m.type === "frame") {
           if (m.fb) drawScreen(m.fb);
           if (m.leds) drawLights(m.leds);
