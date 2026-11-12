@@ -1,6 +1,6 @@
 # Building Arctic Scream
 
-GR!MM is one C program, `firmware/src/grimm.c` (it includes the other `.c` files), on the FM-1 platform of
+Arctic Scream is one C program, `firmware/src/grimm.c` (it includes the other `.c` files), on the FM-1 platform of
 [Felucca](https://github.com/hugelton/Felucca) as [SLOOP](https://github.com/isod89/sloop-fm1) and
 [Dinghy](https://github.com/zvenson/dinghy) carry it. The same file builds three ways: for the FM-1, for your
 computer (host mode: the screen as images, the sound as a WAV) and for the browser (the demo and the editor).

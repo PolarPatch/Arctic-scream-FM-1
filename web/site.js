@@ -4,6 +4,7 @@
 // (web/demos.json, made by web/gen_demos.mjs) and the sequencer's state beside the panel.
 
 import "./glitch.js";                                    // (the glitching titles)
+import { Client, makeSlot, sampleName, noteFromName, noteName, SAMPLE } from "./editor_core.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -86,3 +87,65 @@ $("hero-go").addEventListener("click", () => {
   $("play").scrollIntoView({ block: "start" });
   window.fm1.start().catch(() => {});
 });
+
+// ------------------------------------------------------------------ (2.0) the samples: the web's own, longer slots
+// A WAV dropped on a slot goes into the firmware here as tools/fm1_sample_upload.py sends it (editor_core.js's Client
+// over panel.js's request): cut to the slot's length as INFO gives it (the browser's ~95 s; the FM-1's 6.6 s). The
+// firmware writes a slot only while nothing sounds: ALL NOTES OFF first, then asked again until the tails are gone
+const client = new Client({ request: (f, timeout) => window.fm1.request(f, timeout) });
+let slots = [], loading = false;
+const slotRows = [];
+for (let k = 0; k < 4; k++) {
+  const b = document.createElement("button"), file = document.createElement("input");
+  b.type = "button", b.className = "slot";
+  b.innerHTML = `<span class="k">${k + 1}</span><span class="n">EMPTY</span><span class="s">DROP A WAV HERE, OR CLICK</span><span class="bar"><i></i></span>`;
+  file.type = "file", file.accept = ".wav,audio/wav", file.hidden = true;
+  b.addEventListener("click", () => { if (!loading) file.click(); });
+  file.addEventListener("change", () => file.files[0] && load(k, file.files[0]));
+  b.addEventListener("dragover", (e) => { e.preventDefault(); b.classList.add("hot"); });
+  b.addEventListener("dragleave", () => b.classList.remove("hot"));
+  b.addEventListener("drop", (e) => { e.preventDefault(); b.classList.remove("hot"); if (e.dataTransfer.files[0] && !loading) load(k, e.dataTransfer.files[0]); });
+  $("smp-slots").append(b, file);
+  slotRows.push(b);
+}
+const say = (k, n, s, part) => {
+  const r = slotRows[k];
+  if (n !== null) r.querySelector(".n").textContent = n;
+  if (s !== null) r.querySelector(".s").textContent = s;
+  r.querySelector(".bar i").style.width = part === undefined ? "0" : `${Math.round(part * 100)}%`;
+};
+function drawSlots() {
+  slots.forEach((x, k) => {
+    if (x.state === 1) say(k, x.name || "(NO NAME)", `${(x.n / SAMPLE.RATE).toFixed(1)} S${x.root !== null ? ` · ROOT ${noteName(x.root)}` : ""}`);
+    else say(k, x.state === 2 ? "BEING CHECKED" : "EMPTY", "DROP A WAV HERE, OR CLICK");
+  });
+  if (slots[0] && slots[0].cap) $("smp-cap").textContent = `FOUR SLOTS OF ${Math.floor(slots[0].cap / SAMPLE.RATE)} S HERE (THE FM-1: 6.6 S)`;
+}
+async function load(k, f) {
+  loading = true;
+  slotRows.forEach((r) => r.classList.add("busy"));
+  try {
+    await window.fm1.start();
+    say(k, f.name.toUpperCase(), "READING");
+    if (!slots.length) slots = await client.smpInfo();
+    const stem = f.name.replace(/\.[^.]*$/, ""), cap = slots[k] && slots[k].cap ? slots[k].cap : SAMPLE.MAX_N;
+    const sl = makeSlot(await f.arrayBuffer(), sampleName(stem), noteFromName(stem, 60), cap);
+    for (let t0 = Date.now(); ; ) {             // (the firmware writes only in silence: notes off, the tails let go)
+      try {
+        say(k, null, `LOADING ${sl.secs.toFixed(1)} S${sl.cut ? " (CUT TO FIT)" : ""}`, 0);
+        slots = await client.smpUpload(k, sl.hdr, sl.data, (i, n) => say(k, null, null, i / n));
+        break;
+      } catch (e) {
+        if (e.rc !== 3 || Date.now() - t0 > 30000) throw e;
+        window.fm1.panic();
+        say(k, null, "WAITING FOR SILENCE (ALL NOTES OFF)");
+        await wait(1000);
+      }
+    }
+    drawSlots();
+  } catch (e) {
+    say(k, "NOT LOADED", String((e && e.message) || e).toUpperCase());
+  }
+  loading = false;
+  slotRows.forEach((r) => r.classList.remove("busy"));
+}

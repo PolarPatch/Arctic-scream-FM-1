@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 GR!MM
-"""GR!MM V2's effects in host mode (tests/run_host.sh): the track filter's TYPE (LP, HP, BP) and POS (PRE, POST: the
+"""the effects in host mode (tests/run_host.sh): the track filter's TYPE (LP, HP, BP) and POS (PRE, POST: the
 sends unfiltered), MASTER (a filter at PRE FX, POST REVERB, END; open: as without it, to the byte), DRIVE (its four
 TYPEs, its limiter; AMOUNT 0: as without it, to the byte), and their saves (a V1.0 project: LP PRE, MASTER open, DRIVE
 off; V2's: as set). A held saw chord on T1 through each; the sound measured: its level (RMS), its highs (the RMS of
@@ -26,7 +26,7 @@ def run(name, ev, end=4200, env=None):
     ev = [(1000, f"keys {CHORD:#x}")] + ev + [(end - 100, "probe")]                 # no event: the host reads keys)
     path = OUT / f"{name}.txt"
     path.write_text("".join(f"{t} {s}\n" for t, s in sorted(ev, key=lambda e: e[0])) + f"{end} end\n")
-    env = dict(env or os.environ, GRIMM_PLAIN="1")   # (Arctic Scream: GR!MM's plain VA tracks, not ICE WRAITH)
+    env = dict(env or os.environ, GRIMM_PLAIN="1")   # (the plain VA tracks, not ICE WRAITH)
     out = subprocess.run([EXE, str(OUT / name), str(path)], capture_output=True, text=True, check=True,
                          env=env).stdout
     w = wave.open(str(OUT / f"{name}.wav"))

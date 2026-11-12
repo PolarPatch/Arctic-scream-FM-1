@@ -42,7 +42,7 @@ static void app_main(void)
 
 Names the platform defines that you can change from the build: `APP_NAME` (the rescue and crash screens,
 default `"DINGHY"`), `APP_VER` (set by `./build.sh --release`), `FELUCCA_ID` (the package identity:
-Arctic Scream's is `FM-1_977`, GR!MM's `FM-1_966`, set in `tools/build.py`).
+Arctic Scream's is `FM-1_977`, set in `tools/build.py`).
 
 ## Time
 
@@ -139,7 +139,7 @@ static void app_audio(int32_t *out, uint32_t n)
   (one writer each). If a render runs late the sound breaks up; see [RULES.md](RULES.md).
 
 Pitch: a 32-bit phase that wraps is an oscillator with no division at run time: `inc = f * 2^32 / 44100`,
-`ph += inc` each frame. GR!MM's `pitch_inc()` (Felucca's, in `firmware/gen/analog_tables.h`) keeps a table for one
+`ph += inc` each frame. `pitch_inc()` (Felucca's, in `firmware/gen/analog_tables.h`) keeps a table for one
 octave and shifts it for the others.
 
 ## MIDI
@@ -150,14 +150,14 @@ USB-MIDI, class compliant, cable 0.
 | --- | --- |
 | `midi_get(&status, &d1, &d2)` | 1 and the next message received, or 0. Call it from the main loop until 0 |
 | `midi_send(status, d1, d2)` | send one message (from the main loop only) |
-| `batt_raw()` | the battery divider (PB1, ADC channel 3), raw 0..1023, or -1. No calibration to volts: GR!MM uses the stock firmware's thresholds (531, 561, 591, as Felucca) |
+| `batt_raw()` | the battery divider (PB1, ADC channel 3), raw 0..1023, or -1. No calibration to volts: it uses the stock firmware's thresholds (531, 561, 591, as Felucca) |
 | `usb_powered()` | 1 while a USB host has the FM-1 configured (it is powered then); there is no charger status line, so a charger alone is not seen |
 | `midi_room()` | messages `midi_send` can still queue now (0: the next would be dropped; no host connected: all of it) |
 
 `status` includes the channel: `0x90` note on channel 1, `0x93` channel 4; a note on with velocity 0 is a
-note off. SysEx is the platform's (the updater), but for GR!MM's: a frame `F0 7D .. F7` (7D, the non-commercial ID) is the
+note off. SysEx is the platform's (the updater), but for Arctic Scream's: a frame `F0 7D .. F7` (7D, the non-commercial ID) is the
 app's: `sysex_get(&p, &n)` gives its 7-bit bytes between F0 and F7, `sysex_done()` lets it go (left a second, the
-platform drops it: the updater always gets through), `sysex_send(p, n)` answers (F0 .. F7). GR!MM's sample upload
+platform drops it: the updater always gets through), `sysex_send(p, n)` answers (F0 .. F7). The sample upload
 uses it (`samples.c`).
 
 ## Settings
@@ -190,14 +190,14 @@ sector (0xFC000). The other firmwares of the family keep their data in 0x97000..
 finds its own magic missing and starts fresh. To store more (samples, patterns), widen `FL_RANGE_OK` in
 platform.c to the range you pick: it is the guard that keeps a bug from erasing anything else.
 
-GR!MM's saves (`store.c`): six 4 KiB sectors where Felucca keeps data an app writes, none in the sample area:
+The saves (`store.c`): six 4 KiB sectors where Felucca keeps data an app writes, none in the sample area:
 0xDF000 (the sounds), 0xE5000 / 0xE6000 (the work, two copies in turn: the newest good one loads), 0xE7000, 0xFD000,
 0xFE000 (the slots A..D, one copy, a stream over the three: saving a slot rewrites the sectors it lives in; a bad
 sector empties only its slots); each sector a header with a count and a CRC-32, read back after writing; `save_flash(i)` reads sector i through
 XIP, `save_flash_erase(i)` and `save_flash_write(i, off, p, n)` change it (in `FL_RANGE_OK`); an erase stops the audio
 ~50 ms.
 
-GR!MM's sample area: 0x97000..0xDF000 (`SAMPLE_AREA`, 288 KiB, in `FL_RANGE_OK`), four slots of 72 KiB (`samples.c`;
+The sample area: 0x97000..0xDF000 (`SAMPLE_AREA`, 288 KiB, in `FL_RANGE_OK`), four slots of 72 KiB (`samples.c`;
 6.64 s each of 22050 Hz IMA ADPCM, 26.6 s in all). An install writes the flash up to 0x93000 only: the samples stay.
 `sample_flash()` is the area through XIP (plain: `fl_plain_window_init` at boot), `sample_flash_erase(off)` and
 `sample_flash_write(off, p, n)` change it; an erase or a write stops the audio (only while nothing sounds).

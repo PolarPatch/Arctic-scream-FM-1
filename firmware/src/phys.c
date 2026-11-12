@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * GR!MM changes: Copyright (C) 2026 GR!MM */
-/* GR!MM's PHYS source: Felucca's PHYS engine (hugelton/Felucca firmware/src/eng_phys.c), physical models. Its DSP is
+/* Arctic Scream's PHYS source: Felucca's PHYS engine (hugelton/Felucca firmware/src/eng_phys.c), physical models. Its DSP is
  * Felucca's fixed-point port of DaisySP (Electrosmith, Emilie Gillet; MIT: phys_dsp.c) and of Rings' sympathetic
  * strings (Emilie Gillet; MIT: phys_symp.c), both as Felucca has them, unchanged. Taken over from eng_phys.c: the four
  * models, their parameters' meanings, the SYMP chords, the output gains and soft knee, the state reset. Not taken:
@@ -22,7 +22,7 @@
 #include "howl.h"                              /* (Arctic Scream p0larpatch: HOWL's state shares the slot) */
 
 enum { PM_MODAL, PM_STRING, PM_MEMB, PM_SYMP, PM_COUNT };
-#define PHYS_BRIT 80                            /* Felucca's defaults for the knobs GR!MM leaves out */
+#define PHYS_BRIT 80                            /* Felucca's defaults for the knobs Arctic Scream leaves out */
 #define PHYS_POS 20
 #define PHYS_ACC 90
 #define PHYS_VEL 100

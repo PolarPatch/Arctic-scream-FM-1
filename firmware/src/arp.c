@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM's arpeggiator: a track's ARP (ARP held: on / off; MODE, RATE, OCTAVES, GATE: the track's, saved with the project
+/* Arctic Scream's arpeggiator: a track's ARP (ARP held: on / off; MODE, RATE, OCTAVES, GATE: the track's, saved with the project
  * and the slots, not with sounds).
  *   ARP on: the track's keys and MIDI notes (after SCALE; chord mode on: each its whole chord) go into its list instead
  *   of sounding; the arp plays them a step at a time in MODE's order (UP, DOWN, UP-DOWN, RANDOM, AS PLAYED; CHORD: all
@@ -123,7 +123,7 @@ static void arp_tick(uint32_t t, int locked)    /* audio: a tick of track t's ar
 {
     arp_t *A = &arp[t];
     uint32_t r, g, due;
-    gen_tick(t);                                /* (V2: GENERATE, on the same clock: gen.c) */
+    gen_tick(t);                                /* (GENERATE, on the same clock: gen.c) */
     if (!A->n) return;
     r = ARP_RATE_T[clamp(trk[t].arp_rate, 0, NARPRATE - 1)];
     g = r * (uint32_t)clamp(trk[t].arp_gate, 10, 100) / 100u;
@@ -145,7 +145,7 @@ static int arp_has(uint32_t t, uint32_t id)
         if (arp[t].id[i] == id) return 1;
     return 0;
 }
-static int32_t arp_root(uint32_t t, uint32_t note)   /* (V2) the origin of the list's notes played as note (a key's
+static int32_t arp_root(uint32_t t, uint32_t note)   /* the origin of the list's notes played as note (a key's
                                                  * or MIDI's), -1 none */
 {
     uint32_t i;

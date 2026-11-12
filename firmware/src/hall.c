@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * GR!MM changes: Copyright (C) 2026 GR!MM */
-/* GR!MM's SPACE: Felucca's HALL reverb (hugelton/Felucca firmware/src/fx.c: rev_hall, hall_ap, hall_end(_lp),
+/* Arctic Scream's SPACE: Felucca's HALL reverb (hugelton/Felucca firmware/src/fx.c: rev_hall, hall_ap, hall_end(_lp),
  * sh_tz, HL_RUNS), taken over without Felucca's buses, made longer and darker. As Felucca's:
  *   at half the rate (22.05 kHz: the same memory holds twice the time, half the work; the tail stops near 10 kHz):
  *   the send, every other sample low-passed 1 2 1 -> a low cut (~110 Hz: no boom in a long tail) -> allpass
@@ -10,7 +10,7 @@
  *   0.74 Hz: the resonances drift instead of ringing); each line's gain from its length (all decay alike); outputs
  *   left 0 3 4 -7, right 1 2 5 6; rounding that lets a quiet tail end in exact silence; back to 44.1 kHz between
  *   samples.
- * GR!MM's: lines of 39 .. 74 ms (Felucca's 21 .. 34) and 4 diffusers (Felucca's 2): bigger; DAMP's low-pass on all
+ * Arctic Scream's: lines of 39 .. 74 ms (Felucca's 21 .. 34) and 4 diffusers (Felucca's 2): bigger; DAMP's low-pass on all
  * 8 lines (Felucca's 4), down to ~650 Hz: darker; RT60 0.4 .. ~32 s (Felucca's 0.5 .. 9 s), and SIZE 127 = INF:
  * the matrix lossless but for 1e-4 a pass, the loop's damping off and the send faded out (a loop that keeps its
  * energy and still takes more can only grow: INF holds what is in it, as a freeze); a soft knee on everything that
@@ -35,9 +35,9 @@
                                                  * 16: the lines at half, as 32 was) */
 #define RV_KD(d) (32767 - (d) * 210)            /* DAMP d's low-pass (Q15): none at 0 .. ~650 Hz at 127 */
 #define RV_IN 5160                              /* the send's level (Q15): 2 x Felucca's, the lines 6 dB hotter: the tail
-                                                 * holds 6 dB longer before its last LSBs round away (V2: half of 1.0's,
+                                                 * holds 6 dB longer before its last LSBs round away (half of 1.0's,
                                                  * 6 dB of headroom: loud chords never reach the lines' soft knee) */
-#define RV_OUT 10                               /* the outputs' gain, / 4 (V2: RV_IN's halving back out) */
+#define RV_OUT 10                               /* the outputs' gain, / 4 (RV_IN's halving back out) */
 #define RV_PRE_MAX 5513u                        /* PRE-DELAY at most 250 ms (22.05 kHz) */
 #define RV_PRE_LEN 5760u                        /* its line: that and a block (and a little) */
 #define RV_LINES (853u + 941u + 1031u + 1123u + 1237u + 1361u + 1493u + 1637u + RV_NL)   /* (+1 each: the mirror) */
@@ -104,7 +104,7 @@ static inline void hall_end_lp(const int16_t *b, int16_t *y, uint32_t n, int32_t
     *le = r;
 }
 /* a drifting line's end over the block: r0 -> r1 (Q8 samples ahead of the write index w, gliding over the block:
- * GR!MM's block is 8 of Felucca's, too long to hold a tap still), between samples (b[len] is b[0]: the mirror), then
+ * Arctic Scream's block is 8 of Felucca's, too long to hold a tap still), between samples (b[len] is b[0]: the mirror), then
  * as hall_end_lp */
 static inline void hall_end_drift(const int16_t *b, uint32_t len, uint32_t w, int32_t r0, int32_t r1, int16_t *y,
                                   int32_t g, int lo, int32_t *lp, int32_t *le, int32_t kd)
@@ -235,7 +235,7 @@ static void hall_render(const int32_t *in, int32_t *out, uint32_t n)
         p0 = y2 + y3 + y5, p1 = y3 + y4 + y6, p2 = y4 + y5 + y7, p3 = y5 + y6 + y1;
         p4 = y6 + y7 + y2, p5 = y7 + y1 + y3, p6 = y1 + y2 + y4;
         y0 += t;
-        /* back into the lines through a soft knee (linear to half scale; GR!MM's: nothing feeding back clips) */
+        /* back into the lines through a soft knee (linear to half scale; Arctic Scream's: nothing feeding back clips) */
         LV_COUNT(lv_rvk, t + x, 16384), LV_COUNT(lv_rvk, 2 * p0 + y1 - y0 + x, 16384);   /* (host: the lines' inputs past
                                                  * the knee, tests/level_test.py) */
         LV_COUNT(lv_rvk, 2 * p1 + y2 - y0 + x, 16384), LV_COUNT(lv_rvk, 2 * p2 + y3 - y0 + x, 16384);

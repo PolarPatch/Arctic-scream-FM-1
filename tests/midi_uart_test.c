@@ -3,7 +3,7 @@
  * GR!MM changes: Copyright (C) 2026 GR!MM */
 /* The TRS jack's MIDI parser (firmware/src/midi_uart.c) on a computer, after SLOOP's tests/midi_uart_test.c (its
  * cases: running status, realtime inside a message, SysEx and system common dropped, the ring read by content: an MPC
- * Sample's pad, byte by byte round the ring, a received FD). GR!MM: the clock and START / STOP go to platform.c's
+ * Sample's pad, byte by byte round the ring, a received FD). Arctic Scream: the clock and START / STOP go to platform.c's
  * realtime ring with the jack as their source. tests/run_host.sh builds and runs it. */
 #include <stdint.h>
 #include <stdio.h>

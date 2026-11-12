@@ -89,7 +89,7 @@ static void fm1_wdt_arm(uint8_t t)
     fm1_p33_write(FM1_P3_WDT_CON, (uint8_t)((t & 0x0Fu) | 0x40u));   /* timeout, reset mode, clear */
     fm1_p33_or(FM1_P3_WDT_CON, 0x10);                        /* enable */
 }
-static uint32_t fm1_wdt_gap;                    /* GR!MM rc11: the longest time between two feeds (TIMER4 ticks): the
+static uint32_t fm1_wdt_gap;                    /* the longest time between two feeds (TIMER4 ticks): the
                                                  * watchdog's margin (it bites at ~8 s); the CPU command reads it */
 static void fm1_wdt_feed(void)
 {

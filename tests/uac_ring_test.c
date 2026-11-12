@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM rc9: the USB audio ring (firmware/src/uac_ring.h, usb.c's) on a computer, in time: a render every 5.805 ms
+/* the USB audio ring (firmware/src/uac_ring.h, usb.c's) on a computer, in time: a render every 5.805 ms
  * (the FM-1's clock +-200 ppm off the computer's) that takes R ms (0.5 .. 5.5: CPU NOW 9 .. 95 %), its frames in where
  * it ends (uac_tap, 8 blocks of 32, as platform.c); a packet a ms (uac_packet, as TIMER5's uac_service). 60 s each;
  * after the start: no underrun (a repeated frame: a dropout in the recording), no overrun (a block dropped); at 44.1
@@ -36,7 +36,7 @@ static int run(int r48, double R_ms, double ppm, int old, uint32_t *under, uint3
             t_end = -1;
         } else if (t_blk <= t_pkt) {            /* a render starts */
             uac_ring_start(1);
-            if (old) uac_ring_low();            /* (rc8: the fill read here) */
+            if (old) uac_ring_low();            /* (the fill read here) */
             t_end = t_blk + R_ms * 1000.0, t_blk += P;
         } else {                                /* a packet */
             uint32_t n = uac_packet(d);
@@ -78,7 +78,7 @@ int main(void)
             }
     printf("  %s  uac ring: renders of 0.5 .. 5.5 ms (CPU NOW 9 .. 95 %%), 44.1 and 48 kHz, the clock +-200 ppm, 60 s each: "
            "no underrun, no overrun, every frame once in order\n", fails ? "FAIL" : "ok  ");
-    printf("  %s  uac ring: read where the render starts (rc8), renders of 2.5 ms and more ran dry (%u of 20 runs)\n",
+    printf("  %s  uac ring: read where the render starts, renders of 2.5 ms and more ran dry (%u of 20 runs)\n",
            old_bad == 20u ? "ok  " : "FAIL", old_bad);
     fails += old_bad != 20u;
     printf("uac ring test: %s\n", fails ? "FAILED" : "passed");

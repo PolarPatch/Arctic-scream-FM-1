@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 GR!MM
-"""GR!MM V2's gain staging in host mode (tests/host.c; GRIMM_MASTER: the MASTER knob, 0 .. 1023):
+"""the gain staging in host mode (tests/host.c; GRIMM_MASTER: the MASTER knob, 0 .. 1023):
   - every factory sound at LEVEL 100 (T1, the default FX): a note, a chord (chord mode on), two chord keys: no sample
     reaches full scale (the limiter, just under it) with MASTER all the way up, at 3/4 or low
   - four tracks together (four mixes, chord mode off and on, DLY sends up): the same
   - SPACE's and DELAY's lines never past their soft knee, SPACE's pre-delay never clipped (the buses 6 dB lower in)
-  - MASTER: up to 3/4 the output 6 dB under what it was before V2; at the top as loud as before (a note)
+  - MASTER (2.0): the knob's turn to the power 1.5, half way ~9 dB under the top; at the top as loud as before (a note)
     python3 tests/level_test.py build/host/grimm"""
 import array
 import os
@@ -45,12 +45,12 @@ def peak(a, t0=0):
     return max(abs(x) for x in a[2 * 44100 * t0 // 1000:])
 
 
-# the factory sounds, by PRESETS (T1, from power-on: 1 .. 44), and whether each loads with chord mode on
+# the factory sounds, by PRESETS (T1, from power-on: 1 .. 38), and whether each loads with chord mode on
 SNDS = []
-for i in range(1, 45):
+for i in range(1, 39):
     pr, _ = run(f"name{i}", [(300, f"enc 6 {i}"), (3000, "probe")], 3100)
     SNDS.append((pr[3000]["snd"], pr[3000]["ch"]))
-check("the 44 factory sounds on PRESETS", len(set(s for s, c in SNDS)) == 44, f"{len(set(SNDS))}")
+check("the 38 factory sounds on PRESETS", len(set(s for s, c in SNDS)) == 38, f"{len(set(SNDS))}")
 
 LEVEL100 = [(3000, "enc 2 27")]                 # (HOME, KNOB 1: VOLUME, 100 -> 127: "100")
 CASES = (("a note", 0x80, 0), ("a chord", 0x80, 1), ("two chord keys", 0x4080, 1))
@@ -69,14 +69,14 @@ for m in MASTERS:
             if p > LIM: over.append(f"{snd} {what} {p}")
             if pr[9000]["lv"] != pr[3500]["lv"]: knee.append(f"{snd} {what} {pr[9000]['lv']}")
     w = max((v, k) for k, v in worst.items() if k[0] == m)
-    check(f"MASTER {m}: the 44 sounds at LEVEL 100, a note, a chord, two chord keys: no sample at full scale "
+    check(f"MASTER {m}: the 38 sounds at LEVEL 100, a note, a chord, two chord keys: no sample at full scale "
           f"(the loudest {w[0]}: {w[1][1]}, {w[1][2]})", not clip and not over, f"{clip[:4]} {over[:4]}")
     if m == 768:
-        check("SPACE's and DELAY's lines never past their soft knee, the pre-delay never clipped (the 44 sounds)",
+        check("SPACE's and DELAY's lines never past their soft knee, the pre-delay never clipped (the 38 sounds)",
               not knee, f"{knee[:4]}")
 
 # four tracks together, LEVEL 100 and DLY sends up, a key each (chord mode off, then on)
-MIXES = {"loudest": (39, 41, 13, 40), "typical": (7, 1, 13, 31), "choirs and cello": (36, 39, 38, 43), "default VA": (0, 0, 0, 0)}
+MIXES = {"loudest": (33, 35, 11, 34), "typical": (7, 1, 11, 25), "choirs and cello": (30, 33, 32, 37), "default VA": (0, 0, 0, 0)}
 for m in MASTERS:
     for nm, idx in MIXES.items():
         for ch in (0, 1):
@@ -106,13 +106,23 @@ for m in MASTERS:
                   f"under full scale" + (", the lines under their knee" if m == 768 else ""),
                   p <= LIM and (m != 768 or pr[14000]["lv"] == pr[8000]["lv"]), f"lv {pr[8000]['lv']} -> {pr[14000]['lv']}")
 
-# MASTER's curve: a single quiet note (no limiting): at 3/4 half the top's (6 dB), at the top as before V2 (x 0.999)
+# MASTER's curve (2.0): a single quiet note (no limiting): the knob's turn to the power 1.5 (half way ~9 dB under the
+# top, 3/4 ~4 dB), at the top as before V2
+import math
+
+
+def gain(k):                                    # (grimm.c out_gain, as the FM-1 counts it)
+    q = math.isqrt(min(4092, k * k >> 8) << 12)
+    return q * math.isqrt(q << 12) >> 12
+
+
 ps = {}
-for m in (1023, 768):
+for m in (1023, 768, 512):
     _, a = run(f"curve{m}", [(300, "enc 6 1"), (4000, "keys 0x80")], 7000, m)
     ps[m] = peak(a, 4500)
-want = ps[1023] * 2304 // 4092 // 2             # (before V2, at 3/4: 768^2 / 256 of 4092; now 6 dB under that)
-check(f"MASTER at 3/4: 6 dB under its level before V2 (peaks {ps[768]}, wanted {want}; the top {ps[1023]})",
-      abs(ps[768] - want) <= want // 50 + 2)
+for m, db in ((768, 3.7), (512, 9.0)):
+    want = ps[1023] * gain(m) // gain(1023)
+    check(f"MASTER at {m}/1023: ~{db} dB under the top (peaks {ps[m]}, wanted {want}; the top {ps[1023]})",
+          abs(ps[m] - want) <= want // 50 + 2)
 print("level test: passed" if not bad else "level test: FAILED")
 sys.exit(1 if bad else 0)

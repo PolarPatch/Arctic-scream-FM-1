@@ -2,7 +2,7 @@
 // Copyright (C) 2026 GR!MM
 // The browser build against host mode: runs web/dist/grimm.wasm as web/worklet.js does (Asyncify), one millisecond at
 // a time, with tests/host.c's script, and compares with what tests/run_host.sh made:
-//   - the sound, sample for sample (GR!MM V2: the app applies MASTER, fm1_master: tests/run_host.sh renders at the
+//   - the sound, sample for sample (the app applies MASTER, fm1_master: tests/run_host.sh renders at the
 //     knob's 1022, as here);
 //   - the screen at 2500, 3500, 6000 and 15500 ms, pixel for pixel (build/host/grimm-*.png), all but the CPU row: it shows the
 //     longest app_audio() as this computer's clock measured it (fm1_ticks), which is not the same twice;
@@ -147,18 +147,18 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   const vf = await VirtualFM1.create(readFileSync("web/dist/grimm.wasm"));
   vf.warmUp();
   const cl = new Client(vf), info = await cl.info(), meta = vf.meta();
-  check(info.proto === 3 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 172 && info.factory === 47,
+  check(info.proto === 3 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 172 && info.factory === 38,
         `editor: INFO (${info.firmware}, protocol ${info.proto}, ${info.sounds} sounds, slots ${info.slotSize} B)`);
   check(info.key0 === 41 && info.octave === 0 && info.keys === 27,
         `editor: INFO's keys (1.5.2: key 0 ${info.key0} at octave ${info.octave}, ${info.keys} keys)`);
-  const iw = parseSound(Uint8Array.from(meta.factory[46].rec), meta);
-  check(meta.factory[46].name === "ICE WRAITH" && iw.latch === 1 && iw.drone.borga === 65 && iw.drone.storm === 0 && iw.drone.rise === 4 &&
+  const iw = parseSound(Uint8Array.from(meta.factory[37].rec), meta);
+  check(meta.factory[37].name === "ICE WRAITH" && iw.latch === 1 && iw.drone.borga === 65 && iw.drone.storm === 0 && iw.drone.rise === 4 &&
         iw.lfo.join() === "35,30,3,6", "editor: ICE WRAITH's DRONE (BORGA 65 %, GOHCCAT 8 bars), its LATCH and LFO as they were");
-  const iii = parseSound(Uint8Array.from(meta.factory[45].rec), meta);
-  check(meta.factory[45].name === "III" && iii.eng === 7 && iii.latch === 1 && iii.chordOn === 1 && iii.chord === 10 &&
+  const iii = parseSound(Uint8Array.from(meta.factory[36].rec), meta);
+  check(meta.factory[36].name === "III" && iii.eng === 7 && iii.latch === 1 && iii.chordOn === 1 && iii.chord === 10 &&
         iii.voicing === 2 && iii.drone.borga === 65 && iii.drone.storm === 35 && iii.drone.rise === 4 &&
         iii.lfo.join() === "14,30,4,6", "editor: III, a Holvut CLUSTER (SPREAD), its DRONE, LATCH and LFO");
-  check(meta.factory.length === 47 && meta.engines.length === 8 && meta.fmAlg.length === 32, "editor: the page's names and tables from the firmware");
+  check(meta.factory.length === 38 && meta.engines.length === 9 && meta.fmAlg.length === 32, "editor: the page's names and tables from the firmware");
   const f2 = await cl.get(OBJ.FACT + 2, 64);
   check(eq([...f2], meta.factory[2].rec) && recordOk(f2), `editor: factory sound 3 (${meta.factory[2].name}) read as the page has it`);
   const b0 = await makeBackup(cl, info);
@@ -214,7 +214,7 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
     check(sameSettings(sl, s4) && settingsOf(s4).latch === 1, "editor: SETTINGS: LATCH (SYSTEM 3) ALWAYS OFF written, read back");
     await cl.put(OBJ.SET, withSettings(s4, { mch: 0, clk: 0, latch: 0 }), info.fmt);
   }
-  {                                                          // GR!MM V2: FX (25): read, set live (MASTER, DRIVE, T2's filter)
+  {                                                          // FX (25): read, set live (MASTER, DRIVE, T2's filter)
     const f0 = await cl.fx();
     await cl.fxSet(16, 60), await cl.fxSet(20, 90), await cl.fxSet(21, 9), await cl.fxSet(25, 2 | 4);
     await cl.fxSet(28, 100), await cl.fxSet(29, 64);
@@ -242,6 +242,18 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   const after = await cl.smpUpload(2, sl.hdr, sl.data);
   check(after[2].state === 1 && after[2].name === "TESTWAV" && after[2].n === zn && after[2].root === 57,
         `editor: a WAV uploaded into slot 3 and checked by the fake FM-1 (${after[2].name}, ${zn} samples, root ${after[2].root})`);
+  {                                                          // (2.0) the browser's slots: ~95 s each, INFO says so
+    const n = 20 * 22050, lw = new Uint8Array(44 + n * 2), lv = new DataView(lw.buffer);   // (20 s at 22050 Hz, mono)
+    const st = (o, t) => [...t].forEach((c, i) => lw[o + i] = c.charCodeAt(0));
+    st(0, "RIFF"), lv.setUint32(4, 36 + n * 2, true), st(8, "WAVEfmt "), lv.setUint32(16, 16, true), lv.setUint16(20, 1, true);
+    lv.setUint16(22, 1, true), lv.setUint32(24, 22050, true), lv.setUint32(28, 44100, true), lv.setUint16(32, 2, true);
+    lv.setUint16(34, 16, true), st(36, "data"), lv.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) lv.setInt16(44 + i * 2, Math.round(Math.sin(2 * Math.PI * 220 * i / 22050) * 12000), true);
+    const cap = after[3].cap, ls = makeSlot(lw.buffer, "LONGJOIK", 57, cap), a4 = await cl.smpUpload(3, ls.hdr, ls.data);
+    check(cap === 2096128 && !ls.cut && a4[3].state === 1 && a4[3].n === n,
+          `editor: the browser's slot holds ${(cap / 22050).toFixed(1)} s (the FM-1's 6.6): 20 s uploaded whole (${a4[3].n} samples)`);
+    await cl.smpErase(3);
+  }
   mkdirSync("build/web", { recursive: true });
   writeFileSync("build/web/test.wav", wav);
   let py = null;
@@ -265,7 +277,7 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
     const nm = String.fromCharCode(...readFileSync("build/web/test2.bin").subarray(8, 16)).replace(/\0+$/, "");
     check(nm === sampleName("Sample-002") && nm === "SAMP-002", `editor: a long sample name cut as the uploader cuts it, its number kept (${nm})`);
   }
-  {                                                          // GR!MM V2: the sample slots in a backup, restored
+  {                                                          // the sample slots in a backup, restored
     for (const [k, nm, root] of [[0, "ICE-A", 45], [1, "ICE-B", 52], [3, "ICE-D", 60]]) {   // (Arctic Scream has no
       const x = makeSlot(wav.buffer, nm, root);              // factory samples: three of the test's own beside slot 3's)
       await cl.smpUpload(k, x.hdr, x.data);
@@ -353,7 +365,7 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
         `editor: the FM-1 found behind a loop port that sends INFO back (26b's "PROTOCOL UNDEFINED"; ${log.length} frames in the log)`);
   const cl = new Client(new MidiTransport(p.input, p.output)), info = await cl.info();
   check(info.proto === rec.proto && info.firmware === rec.firmware && info.sounds === 64 && info.setSize === 168,
-        `editor: INFO as the FM-1 sent it (GR!MM ${info.firmware}, protocol ${info.proto})`);
+        `editor: INFO as the FM-1 sent it (Arctic Scream ${info.firmware}, protocol ${info.proto})`);
   const set = await cl.get(OBJ.SET, 168), s1 = await cl.get(OBJ.SND, 64), f1 = await cl.get(OBJ.FACT, 64);
   const want = (k) => unpack7([...bytes(rec.frames[k].rx)].slice(14, -1));
   check(eq([...set], [...want(1)]) && eq([...s1], [...want(2)]) && recordOk(f1), "editor: the settings, sound 1 and factory sound 1 as the FM-1 sent them");

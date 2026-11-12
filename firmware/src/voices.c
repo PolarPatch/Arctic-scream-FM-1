@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments (env_tick, amp_at)
  * GR!MM: Copyright (C) 2026 GR!MM */
-/* GR!MM's tracks and voices.
+/* Arctic Scream's tracks and voices.
  *   NT tracks, each with a source (an engine: VA, FM, SAMPLE, VOICE, WHEEL, PHYS, PHASE), every
  *   engine's four parameters, LEVEL, PAN and the
  *   sends DLY, REV and GRN
@@ -29,7 +29,7 @@
 #define REL_END (1 << 15)                       /* Q24: a release ends here, 54 dB down (a voice's last ~16 LSB, -66 dBFS;
                                                  * Felucca's 1 << 12 rendered the last ~2.7 s of a 6 s release unheard) */
 enum { ST_OFF, ST_ATK, ST_SUS, ST_REL, ST_FADE };
-enum { ENG_VA, ENG_FM, ENG_SAMPLE, ENG_VOICE, ENG_WHEEL, ENG_PHYS, ENG_PHASE, ENG_HOWL, NENG };
+enum { ENG_VA, ENG_FM, ENG_SAMPLE, ENG_VOICE, ENG_WHEEL, ENG_PHYS, ENG_PHASE, ENG_HOWL, ENG_BIEGGA, NENG };   /* (2.0: Biegga) */
 
 typedef struct {
     volatile uint32_t req;                      /* main loop: + 1 after want_* */
@@ -69,21 +69,22 @@ typedef struct {
                                                  * DECAY 0..99 (fm.c; a built-in PATCH's: fm_builtin) */
     volatile int32_t dr_borga, dr_storm, dr_rise;   /* DRONE: BORGA 0..100 %, STOARBMA 0..100 %, GOHCCAT 0 OFF .. 6
                                                  * (32 bars) (drone.c) */
-    volatile int32_t ftype, fpos;               /* (V2) MIXER 2: the track filter's TYPE (FT_: LP, HP, BP), POS (0 PRE:
+    volatile int32_t ftype, fpos;               /* MIXER 2: the track filter's TYPE (FT_: LP, HP, BP), POS (0 PRE:
                                                  * the sends hear it filtered; 1 POST: only the dry sound filtered) */
     volatile int32_t warp, morph;               /* HOME: WARP, MORPH 0..127 (chaos.c) */
     volatile int32_t hw_x[4];                   /* (Arctic Scream 1.4) Holvut's LOOP page: GATE, BLOOM, LOW CUT, EXCITE
                                                  * 0..127 (howl.c; 0: as before it) */
 } track_t;
 enum { HX_GATE, HX_BLOOM, HX_LCUT, HX_EXCITE };
-#define TRK_DEF {ENG_VA, {{0, 10, 90, 30}, {0, 64, 64, 20}, {0, 0, 127, 0}, {0, 12, 64, 10}, {4, 0, 40, 0}, {0, 64, 80, 64}, {0, 0, 60, 0}, {96, 64, 50, 40}}, 100, 0, 100, 0, 64, 0, \
+#define TRK_DEF {ENG_VA, {{0, 10, 90, 30}, {0, 64, 64, 20}, {0, 0, 127, 0}, {0, 12, 64, 10}, {4, 0, 40, 0}, {0, 64, 80, 64}, {0, 0, 60, 0}, {96, 64, 50, 40}, {64, 64, 64, 16}}, 100, 0, 100, 0, 64, 0, \
                  {60, 85, 51, 105}, 0, 0, 0, 0, 0, 4, 1, 50, 40, 30, 9, 0, 84, 24, 100, 0, 0, {{0}}}
 static track_t trk[NT] = {TRK_DEF, TRK_DEF, TRK_DEF, TRK_DEF};   /* VA: SAW, DETUNE 10, CUTOFF 90, RESONANCE 30
                                                  * (Felucca's ANALOG); FM: BELL as made, DETUNE 20; SAMPLE: slot 1,
                                                  * the whole sample, forward; VOICE: A, SHIFT 0, BUZZ 64, BREATH 10
                                                  * (Felucca's); WHEEL: 3BAR, PERC OFF, CLICK 40, DRIVE 0 (Felucca's);
                                                  * PHYS: MODAL, STRUCTURE 64, DAMP 80, bowed at 50 %; PHASE: SAW,
-                                                 * DCW 60, one line (Felucca's); HOWL: FEEDBACK 96 (awake), BODY 64, DAMP 50, DRIVE 40; LEVEL 100,
+                                                 * DCW 60, one line (Felucca's); HOWL: FEEDBACK 96 (awake), BODY 64, DAMP 50, DRIVE 40; (2.0) BIEGGA:
+                                                 * GUST, HOWL, TONE half way, SNOW 16; LEVEL 100,
                                                  * DLY 0, REV 100, GRN 0, PAN the middle; LATCH OFF; ENV: ATTACK
                                                  * ~0.2 s, DECAY 1 s, SUSTAIN 40 %, RELEASE ~5 s; chord mode OFF (SCALE, CLOSE); ARP OFF (UP,
                                                  * 1/16, 1 octave, GATE 50 %); LFO DEPTH 30 % (slow, TRK CUTOFF,
@@ -92,6 +93,10 @@ static track_t trk[NT] = {TRK_DEF, TRK_DEF, TRK_DEF, TRK_DEF};   /* VA: SAW, DET
                                                  * start); FX 100 %; FM: its patch, BELL's (fm_builtin at
                                                  * power-on) */
 static voice_t vc[NV];
+static int32_t vc_xf[NV], vc_xq[NV], vc_xe[NV];   /* (2.0) a voice crossing over to its track's new source
+                                                 * (restart_track): how far along a control step (Q24; 0 not crossing),
+                                                 * how far now, its level when it began (its level: that x 1 - the cube
+                                                 * of how far, the new sound's attack's mirror: the two hold the sum) */
 static uint32_t vblock;                         /* audio: + 1 every control block (fm.c: once a block a track) */
 
 /* the screen's numbers (the engines' text functions use them too) */
@@ -135,6 +140,7 @@ static int32_t dr_fine[NV], dr_gain[NV] = {32767, 32767, 32767, 32767, 32767, 32
 static int32_t dr_gain_was[NV] = {32767, 32767, 32767, 32767, 32767, 32767};   /* (the last block's: ramped) */
 static int32_t ch_fine[NV];                     /* audio: chaos.c's, a voice's (WARP: its drift, vibrato, flutter, as
                                                  * tune_f) */
+static int32_t tn_fine(uint32_t n);             /* (scale.c: SCALE's TUNING, a note's) */
 static inline uint32_t vinc(int32_t p16)
 {
     uint32_t inc = pitch_inc((uint32_t)clamp(p16, 0, 2047));
@@ -154,13 +160,14 @@ static int16_t vx_pool[NV][VX_POOL] __attribute__((section(".pool")));
 #include "phys.c"
 #include "phase.c"
 #include "howl.c"                               /* (Arctic Scream p0larpatch: the feedback loop, after Audrey II) */
+#include "biegga.c"                             /* (2.0: the wind) */
 static const engine_t *const ENGINES[NENG] = {&VA_ENGINE, &FM_ENGINE, &SAMPLE_ENGINE, &FORMANT_ENGINE, &WHEEL_ENGINE,
-                                              &PHYS_ENGINE, &PHASE_ENGINE, &HOWL_ENGINE};   /* (by ENG_) */
+                                              &PHYS_ENGINE, &PHASE_ENGINE, &HOWL_ENGINE, &BIEGGA_ENGINE};   /* (by ENG_) */
 
-/* (V2) GENERATE's notes (gen.c): a voice's volume (0: full; else x / 256) and attack (0: the track's ATTACK; else
+/* GENERATE's notes (gen.c): a voice's volume (0: full; else x / 256) and attack (0: the track's ATTACK; else
  * GEN_ATK's k - 1), asked with the note (gen_vel, gen_atk: the next note_on's), taken as it begins */
 static uint8_t vc_vel[NV], vc_atk[NV], vc_wvel[NV], vc_watk[NV], gen_vel, gen_atk;
-static uint8_t gen_lo, gen_hi;                  /* (V2) the next note_on's range, GENERATE's (0 0: none): its chord's
+static uint8_t gen_lo, gen_hi;                  /* the next note_on's range, GENERATE's (0 0: none): its chord's
                                                  * notes past it folded in by octaves (grimm.c note_on) */
 static const int32_t GEN_ATK[8] = {2434783, 608696, 202899, 81159, 40580, 20290, 10145, 4870};   /* ATTACK steps
                                                  * (Q24 a control step): 5, 20, 60, 150, 300, 600, 1200, 2500 ms */
@@ -169,7 +176,7 @@ static const int32_t GEN_ATK[8] = {2434783, 608696, 202899, 81159, 40580, 20290,
  * sounding goes on up from where it is) */
 static void voice_start(uint32_t v, uint32_t t, uint32_t note)
 {
-    vc_wvel[v] = gen_vel, vc_watk[v] = gen_atk; /* (V2: GENERATE's; 0 0: the voice as ever) */
+    vc_wvel[v] = gen_vel, vc_watk[v] = gen_atk; /* (GENERATE's; 0 0: the voice as ever) */
     vc[v].want_note = (uint8_t)note;
     vc[v].want_trk = (uint8_t)t;
     vc[v].want_on = 1;
@@ -185,7 +192,32 @@ static void voice_fade(uint32_t v)              /* audio: out in ~10 ms (the fad
     vc[v].want_on = 0;
     if (vc[v].stage != ST_OFF) vc[v].stage = ST_FADE;
 }
+#define XF_STEP 8117                            /* (full to silent in ~1.5 s: 2^24 / (1.5 s / 32 frames)) */
+#define XF_SLOW 2029                            /* (.. in ~6 s) */
+static void voice_cross(uint32_t v, int32_t atk)   /* audio: out with the source it began with, no note after: over the
+                                                 * new sound's ATTACK (atk, its step), ~1.5 s at least, ~6 s at most */
+{
+    vc[v].want_on = 0;
+    if (vc[v].stage != ST_OFF)
+        vc[v].stage = ST_REL, vc_xf[v] = atk > XF_STEP ? XF_STEP : atk < XF_SLOW ? XF_SLOW : atk, vc_xq[v] = 0,
+        vc_xe[v] = vc[v].env;
+}
 static int voice_idle(uint32_t v) { return vc[v].stage == ST_OFF && vc[v].req == vc[v].seen; }
+/* (2.0) the attack's curve: its level the cube of how far along it is (vc_atp, Q24), so a note flows in, a drone
+ * swelling up out of nothing (half way: -18 dB; a straight line, before: -6 dB, there almost at once) */
+static int32_t vc_atp[NV];
+static int32_t atk_cube(int32_t p)              /* Q24 -> Q24 */
+{
+    int32_t t = p >> 12;
+    return ((t * t) >> 12) * t;
+}
+static int32_t atk_root(int32_t e)              /* the cube's inverse: from a level, how far along (Q24) */
+{
+    int32_t t = 0, b;
+    for (b = 2048; b; b >>= 1)
+        if (atk_cube((t + b) << 12) <= e) t += b;
+    return t << 12;
+}
 static int32_t voice_level(uint32_t v) { return vc[v].env; }
 
 static void voice_begin(voice_t *v)             /* a note from silence */
@@ -197,8 +229,9 @@ static void voice_begin(voice_t *v)             /* a note from silence */
     v->eng = (uint8_t)(trk[v->trk].eng >= 0 && trk[v->trk].eng < NENG ? trk[v->trk].eng : 0);
     ENGINES[v->eng]->begin(v);
     v->env = 0;
+    vc_atp[v - vc] = 0;
     v->stage = ST_ATK;
-    vc_vel[v - vc] = vc_wvel[v - vc], vc_atk[v - vc] = vc_watk[v - vc];   /* (V2: GENERATE's volume, attack) */
+    vc_vel[v - vc] = vc_wvel[v - vc], vc_atk[v - vc] = vc_watk[v - vc];   /* (GENERATE's volume, attack) */
 }
 
 /* the tracks' ENV as steps, from the knobs, once a render: ATTACK a linear step (Q24 a control step), DECAY and RELEASE
@@ -222,7 +255,7 @@ static void env_coef(env_c_t *c, const volatile int32_t *e)
     c->sus = clamp(e[2], 0, 127) * 132104;     /* (2^24 / 127) */
 }
 
-/* one control step of the envelope (voice.c env_tick: ATK linear, REL exponential; GR!MM: the track's ENV, DECAY towards
+/* one control step of the envelope (voice.c env_tick: ATK linear, REL exponential; Arctic Scream: the track's ENV, DECAY towards
  * SUSTAIN (it follows SUSTAIN when it moves), the fade) */
 static int32_t env_tick(voice_t *v)
 {
@@ -230,6 +263,7 @@ static int32_t env_tick(voice_t *v)
     int32_t e = v->env;
     if (v->req != v->seen) {                    /* the main loop's request */
         v->seen = v->req;
+        vc_xf[v - vc] = 0;
         if (!v->want_on) {
             if (v->stage == ST_ATK || v->stage == ST_SUS)
                 v->stage = ST_REL;
@@ -238,25 +272,35 @@ static int32_t env_tick(voice_t *v)
             e = 0;
         } else if (v->want_note == v->note && v->want_trk == v->trk && v->eng == trk[v->trk].eng && v->stage != ST_FADE) {
             v->stage = ST_ATK;                  /* the same note again (same engine): on up from where it is */
+            vc_atp[v - vc] = atk_root(e);
             vc_vel[v - vc] = vc_wvel[v - vc], vc_atk[v - vc] = vc_watk[v - vc];
         } else {
             v->stage = ST_FADE;                 /* another note: out first, then begin */
         }
     }
     switch (v->stage) {
-    case ST_ATK:
-        e += vc_atk[v - vc] ? GEN_ATK[(vc_atk[v - vc] - 1u) & 7u] : c->atk;   /* (V2: GENERATE's attack, or the track's) */
-        if (e >= (1 << 24)) {
-            e = 1 << 24;
+    case ST_ATK: {                              /* (2.0: along it in a straight line, its level the cube) */
+        int32_t p = vc_atp[v - vc] + (vc_atk[v - vc] ? GEN_ATK[(vc_atk[v - vc] - 1u) & 7u] : c->atk);   /* (V2:
+                                                 * GENERATE's attack, or the track's) */
+        if (p >= (1 << 24)) {
+            p = 1 << 24;
             v->stage = ST_SUS;
         }
+        vc_atp[v - vc] = p, e = atk_cube(p);
         break;
+    }
     case ST_SUS: {                              /* DECAY to SUSTAIN, and SUSTAIN */
         int32_t d = mulq16(e - c->sus, c->dec);
         e -= d ? d : e > c->sus ? 1 : e < c->sus ? -1 : 0;
         break;
     }
     case ST_REL:
+        if (vc_xf[v - vc]) {                    /* (2.0: crossing over) */
+            int32_t q = vc_xq[v - vc] += vc_xf[v - vc];
+            if (q >= (1 << 24)) e = 0, v->stage = ST_OFF, vc_xf[v - vc] = 0;
+            else e = (vc_xe[v - vc] >> 12) * (((1 << 24) - atk_cube(q)) >> 12);
+            break;
+        }
         e -= mulq16(e, c->rel);
         if (e < REL_END) {
             e = 0;
@@ -279,7 +323,7 @@ static int32_t env_tick(voice_t *v)
         break;
     }
     v->env = e;
-    return vc_vel[v - vc] ? ((e >> 9) * vc_vel[v - vc]) >> 8 : e >> 9;   /* Q15 (V2: GENERATE's volume) */
+    return vc_vel[v - vc] ? ((e >> 9) * vc_vel[v - vc]) >> 8 : e >> 9;   /* Q15 (GENERATE's volume) */
 }
 
 /* the audio ISR: n frames (a multiple of CTL, at most VB) of every sounding voice into tb[its track] (mono); returns
@@ -315,7 +359,8 @@ static uint32_t voices_render(int32_t (*tb)[VB], uint32_t n)
                 for (i = 0; i < n; i++)
                     tb[t][i] = 0;
             }
-            vc_fine = dr_fine[k] + ch_fine[k];  /* (DRONE: its detune and breath, drone.c; WARP's, chaos.c) */
+            vc_fine = dr_fine[k] + ch_fine[k] + tn_fine(v->note);   /* (DRONE: its detune and breath, drone.c; WARP's,
+                                                 * chaos.c; 2.0 SCALE's TUNING, scale.c) */
             if (dr_gain[k] < 32767 || dr_gain_was[k] < 32767) amp0 = mulq15(amp0, dr_gain_was[k]), amp1 = mulq15(amp1, dr_gain[k]);
             dr_gain_was[k] = dr_gain[k];
             vc_at = b;

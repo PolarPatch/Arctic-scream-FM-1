@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 GR!MM
-"""GR!MM V2's quick wins in host mode (tests/run_host.sh): SYSTEM 3's LATCH (FROM SOUND: a sound loaded brings its
+"""the quick wins in host mode (tests/run_host.sh): SYSTEM 3's LATCH (FROM SOUND: a sound loaded brings its
 own, as 1.0; ALWAYS OFF: a sound loaded sets it OFF; saved with the settings; older settings: FROM SOUND), SEL + OCT+
 (the selected track's LATCH on, off: its latched notes released), REC held ~1 s (the selected track's pattern cleared,
 undoable; REC as before; a short press as ever), SAVES WHEN SILENT said ~2 s, then out of the way; MIDI in from a
@@ -25,7 +25,7 @@ bad = 0
 def run(name, ev, end, env=None):
     path = OUT / f"{name}.txt"
     path.write_text("".join(f"{t} {s}\n" for t, s in sorted(ev, key=lambda e: e[0])) + f"{end} end\n")
-    env = dict(env or os.environ, GRIMM_PLAIN="1")   # (Arctic Scream: GR!MM's plain VA tracks, not ICE WRAITH)
+    env = dict(env or os.environ, GRIMM_PLAIN="1")   # (the plain VA tracks, not ICE WRAITH)
     out = subprocess.run([EXE, str(OUT / name), str(path)], capture_output=True, text=True, check=True,
                          env=env).stdout
     pr = {}
@@ -227,7 +227,7 @@ pr, _ = run("midi_plain", [N(1000, 60), F(2000, 60), N(2000, 60), F(3000, 60)] +
 check("no arp, a note let go and played again: as ever", pr[2500]["notes"] == ["1:60"] and pr[3500]["notes"] == [],
       f"{pr[2500]['notes']} {pr[3500]['notes']}")
 
-# (V2) voices: a track never takes another's (1.0: a 7th note took the oldest note of any track, a release of any)
+# voices: a track never takes another's (1.0: a 7th note took the oldest note of any track, a release of any)
 SIX = 0x80 | 0x200 | 0x800 | 0x1000 | 0x4000 | 0x10000          # (C4 D4 E4 F4 G4 A4)
 ev = [(300, "down 3"), (350, "btn 1"), (400, "up 3")] + [(500, "keys 0x10"), (560, "keys 0")]   # T1: LATCH, A3 latched
 ev += [(700, "enc 1 1"), (900, f"keys {SIX:#x}"), (1200, "probe")]                                 # T2: six keys held

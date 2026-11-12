@@ -26,6 +26,8 @@ MIXER #	mixer #
 # %	# percent
 S# EMPTY	sample slot # empty
 S# #%	sample slot #, # percent
+# (2.0) ACCIDENT's
+ACCIDENT x#	accident, # settings moved
 # the sources and their knobs
 VA	V A
 FM	F M
@@ -64,6 +66,9 @@ STRNG	strings
 CHAPL	chapel
 BRITE	bright
 TOPS	tops
+# (2.0) SCREEN OFF's northern lights, SUOKNA's tunings
+GUOVS	guovssahas
+PYTHAG	pythagorean
 # Holvut's LOOP, FX's AIR
 LOWCUT	low cut
 PING	ping-pong

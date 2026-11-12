@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 GR!MM
-"""GR!MM V2's GENERATE in host mode (tests/host.c, its "probe": gen, ph, srcs):
+"""the GENERATE in host mode (tests/host.c, its "probe": gen, ph, srcs):
   - every note it plays is in the SCALE (C NATURAL MINOR), in each MODE, chord mode off and on
   - a track's pattern: playing; GENERATE on: its steps unheard (none of its sequenced notes on), the pattern itself
     unchanged; off: the pattern plays again, unchanged
@@ -177,10 +177,10 @@ for clock, play in ((0, 0), (0, 1), (1, 0), (1, 1)):
 # four tracks generating STORM: T1 BOWED BELL (PHYS), T2 GREGORIAN (choir, chord mode on), T3 WRAITH (PHASE), T4 CATHEDRAL
 # CHOIR (choir, chord mode on); chord mode then all off, or all on (SEL held, let go, on the tracks to switch)
 OLD = sys.argv[2] if len(sys.argv) > 2 else None
-# (Arctic Scream's, PRESETS turned from its start: T1 BOWED ICICLE (PHYS), T2 AURORA CHOIR (VOICE), T3 SNOW OWL
-# (PHASE), T4 TUNDRA VOICES (VOICE); all four loaded with chord mode off: on, SEL held on each in turn)
-LOAD = [(300, "enc 6 24"), (400, "enc 1 1"), (500, "enc 6 38"), (600, "enc 1 1"), (700, "enc 6 32"), (800, "enc 1 1"),
-        (900, "enc 6 39"), (1000, "enc 1 -3")]
+# (Arctic Scream's, PRESETS turned from its start: T1 BOWED ICICLE (PHYS), T2 RIDDU (Biegga), T3 SIGNAL FLARE
+# (VA), T4 AURORA CHOIR (VOICE); all four loaded with chord mode off: on, SEL held on each in turn)
+LOAD = [(300, "enc 6 24"), (400, "enc 1 1"), (500, "enc 6 28"), (600, "enc 1 1"), (700, "enc 6 25"), (800, "enc 1 1"),
+        (900, "enc 6 29"), (1000, "enc 1 -3")]
 
 
 def chords(on):                                 # (SEL held 650 ms, past HOLD_MS, on T1 .. T4)
@@ -202,7 +202,7 @@ for on in (0, 1):
     most = [max(sum(1 for s, tr, n in p["srcs"] if s == SRC_GEN and tr == t) for p in pr.values()) for t in (1, 2, 3, 4)]
     check(f"4 tracks STORM, chord mode {'on' if on else 'off'}: all four generating, every track heard ({heard})",
           last["gen"] == 15 and last["mode"] == [2, 2, 2, 2] and min(heard) > 20, f"gen {last['gen']} {last['mode']}")
-    # (Arctic Scream's sounds ring longer than GR!MM's: a track's release tails can fill its share, so a chord note
+    # (the sounds ring long: a track's release tails can fill its share, so a chord note
     # within it may find no voice of its own and is left out, as the rule says; never another track's voice taken)
     check(f"4 tracks STORM, chord mode {'on' if on else 'off'}: no generated note took another track's voice "
           f"({last['gv'][1]} chord notes left out, no voice of their own)", last["gv"][0] == 0, f"took: {last['gv']}")

@@ -226,7 +226,7 @@ static void fl_plain_window_init(void)
     __asm__ volatile("csync\n\tsti" ::: "memory");
 }
 
-/* GR!MM rc11: how long the interrupts stay off in one flash step (an erase ~50 ms: the key scan, the LEDs and the USB
+/* how long the interrupts stay off in one flash step (an erase ~50 ms: the key scan, the LEDs and the USB
  * audio all stand still): the longest, and how many went past 1 ms (TIMER4 ticks); the CPU command reads them */
 static uint32_t fl_irq_t0, fl_irq_max, fl_irq_slow;
 static inline uint32_t irq_save(void)

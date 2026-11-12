@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * GR!MM changes: Copyright (C) 2026 GR!MM */
-/* GR!MM's WHEEL source: Felucca's WHEEL engine (hugelton/Felucca firmware/src/eng_wheel.c, "Felucca's own design"), a
+/* Arctic Scream's WHEEL source: Felucca's WHEEL engine (hugelton/Felucca firmware/src/eng_wheel.c, "Felucca's own design"), a
  * tonewheel-style additive organ. Taken over: nine sines a voice at the drawbar footages (16' 5 1/3' 8' 4' 2 2/3' 2'
  * 1 3/5' 1 1/3' 1'), free-running wheels, the fold above ~6 kHz, the 16 registrations and their soft normalisation,
  * the percussion (single trigger, on the 4' or the 2 2/3', normal / soft, fast / slow; the 1' bar off and the bars
  * -3 dB with it, as the real circuit), the key click (high-passed noise at the key contact and, half, at the release),
  * the overdrive (tanh) and the rotary speaker (two rotors, the partials split at ~800 Hz, their amplitude and Doppler
  * folded into the per-block gains and increments: no per-sample cost). Not taken: SUB / BODY / TOP (0).
- * GR!MM's: the four knobs; the rotary fixed at SLOW (Felucca's default; no knob of its own); the track's state made
+ * Arctic Scream's: the four knobs; the rotary fixed at SLOW (Felucca's default; no knob of its own); the track's state made
  * once a block by the first of its voices (vblock); the engine interface.
  *   DRAWBARS  the registration: FLUTE MELLO HOLLW SMOOT 3BAR BLUES GOSPL ROCK TOPS CLARI REED STRNG CHAPL BRITE BASS FULL
  *   PERC      OFF, 2ND, 3RD, 2SOFT, 3SOFT, 2SLOW, 3SLOW

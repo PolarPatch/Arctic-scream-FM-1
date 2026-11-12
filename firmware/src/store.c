@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM's saves, the SLOOP way, in the six save sectors (platform.c save_flash: none in the sample area):
+/* Arctic Scream's saves, the SLOOP way, in the six save sectors (platform.c save_flash: none in the sample area):
  *   SOUNDS (sector 0, SND_N slots of 64 B): a track's sound: its source, that source's four, ENV, LATCH, CHORD, LFO
  *   (a sound saved before the LFO: DEPTH 0), FM: its own patch (FM ALGO, FM OP; saved before: the PATCH as built);
  *   its CATEGORY
@@ -48,45 +48,54 @@
 #define SLOT_LEN(tn, sq, lk) (4u + NT * ((tn) + (sq) + (lk)))   /* a slot: [0] used, its tracks, sequences, locks */
 #define SONG_PK 20u                             /* the song: its chain (16), MODE, the mutes and solos; (1.4, spare
                                                  * till then: 0) AIR's PING-PONG and SHIMMER */
-#define FX2_PK 8u                               /* (V2, version 8) MASTER's four, DRIVE's four */
-#define WORK_LEN(tn, sg, sq, lk, fm, fx) (NT * ((tn) + (sq) + (lk)) + 16u + 4u + (sg) + (fm) + (fx))   /* the working
+#define FX2_PK 8u                               /* (version 8) MASTER's four, DRIVE's four */
+#define EXT_PK 24u                              /* (2.0, version 9) the tracks' Biegga (4 x 4), JIEHKKI's LENGTH,
+                                                 * DRIFT, RUOHCAT, SCALE's TUNING, the RUOHCAT page's SAMPLE, SHARE,
+                                                 * VARY, 1 spare */
+#define BG_SLOT (1u + NT * 4u)                  /* (2.0) a slot's Biegga: BG_MARK, then the tracks' four each, in the
+                                                 * slots' stream's tail (after the FM patches: zeros before it) */
+#define BG_MARK 0xB9u
+#define WORK_LEN(tn, sg, sq, lk, fm, fx, ex) (NT * ((tn) + (sq) + (lk)) + 16u + 4u + (sg) + (fm) + (fx) + (ex))   /* the working
                                                  * project: tracks, effects, tempo, slot, .., sequences, locks, the
                                                  * song, the FM patches, MASTER and DRIVE (an older version's sizes: sg
                                                  * 0 before the song, lk 0 before locks, fm 0 before the FM patches, fx
                                                  * 0 before V2) */
 #define SLOT_PK SLOT_LEN(TRK_PK, SEQ_PK, LOCK_PK)
 #define SLOT_ALL (SLOT_PK + FM_ALL)             /* a slot in RAM: SLOT_PK, its FM patches after (the stream's tail) */
-#define WORK_PK WORK_LEN(TRK_PK, SONG_PK, SEQ_PK, LOCK_PK, FM_ALL, FX2_PK)
+#define WORK_PK WORK_LEN(TRK_PK, SONG_PK, SEQ_PK, LOCK_PK, FM_ALL, FX2_PK, EXT_PK)
 #define OBJ_HDR 12u                             /* magic, the save count, type, version, length */
-#define OBJ_MAGIC 0x4B504441u                   /* "ADPK" (Arctic Scream p0larpatch's own: its tracks are longer than GR!MM's,
-                                                 * so neither reads the other's saves; GR!MM's was "GRMK") */
-#define OBJ_VER 8u
+#define OBJ_MAGIC 0x4B504441u                   /* "ADPK" (Arctic Scream p0larpatch's own: its tracks are longer,
+                                                 * so neither reads the other's saves) */
+#define OBJ_VER 9u
 #define SLS_VER 6u                              /* the slots' stream (its layout as version 6's) */
-#define NOBJV 7u
-static const uint16_t OBJ_VERS[NOBJV][7] = {{8, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK}, {7, TRK_PK, 20, 260, 288, FM_ALL, 0},
-                                            {6, 52, 20, 260, 288, 0, 0}, {5, 52, 20, 196, 0, 0, 0},
-                                            {4, 52, 0, 196, 0, 0, 0}, {3, 48, 0, 196, 0, 0, 0},
-                                            {2, 44, 0, 196, 0, 0, 0}};   /* the versions loaded, newest first: a
+#define NOBJV 8u
+static const uint16_t OBJ_VERS[NOBJV][8] = {{9, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK, EXT_PK},
+                                            {8, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK, 0}, {7, TRK_PK, 20, 260, 288, FM_ALL, 0, 0},
+                                            {6, 52, 20, 260, 288, 0, 0, 0}, {5, 52, 20, 196, 0, 0, 0, 0},
+                                            {4, 52, 0, 196, 0, 0, 0, 0}, {3, 48, 0, 196, 0, 0, 0, 0},
+                                            {2, 44, 0, 196, 0, 0, 0, 0}};   /* the versions loaded, newest first: a
                                                  * track's, the song's, a sequence's, the locks', the FM patches', MASTER
-                                                 * and DRIVE's size (8: 1.3, GR!MM V2's MASTER and DRIVE; 7, Arctic
+                                                 * and DRIVE's, 2.0's EXT size (9: 2.0, Biegga, JIEHKKI, TUNING;
+                                                 * 8: 1.3, the MASTER and DRIVE; 7, Arctic
                                                  * Scream 1.0 .. 1.2's: before MASTER and DRIVE; 6: before
                                                  * the FM patches; 5: before chord steps and locks; 4: before the song;
                                                  * 3: before the LFO; 2: before ARP) */
-#define SLS_MAGIC 0x534C4441u                   /* "ADLS": a sector of the slots' stream (GR!MM's: "GRLS") */
+#define SLS_MAGIC 0x534C4441u                   /* "ADLS": a sector of the slots' stream */
 #define SLS_P (4096u - OBJ_HDR - 4u)            /* the stream's bytes a sector */
 #define SLS_N 3u                                /* its sectors: 3, 4, 5 */
 enum { OBJ_WORK, OBJ_SLOTS };
 enum { CAT_DRONE, CAT_PAD, CAT_BELL, CAT_ORGAN, CAT_KEYS, CAT_BASS, CAT_TEXTURE, CAT_VOICE, CAT_OTHER, NCAT };
 static const char *const CAT_NAME[NCAT] = {"DRONE", "PAD", "BELL", "ORGAN", "KEYS", "BASS", "TEXTURE", "VOICE", "OTHER"};
-_Static_assert(NENG <= PK_ENG + 1u, "a save keeps every source's settings (the eighth, HOWL, at bytes 52..55)");
-_Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4u * SLOT_ALL <= SLS_N * SLS_P &&
+_Static_assert(NENG <= PK_ENG + 2u, "a save keeps every source's settings (the eighth, HOWL, at bytes 52..55; the ninth, "
+               "Biegga, in WORK's EXT and the slots' tail)");
+_Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4u * (SLOT_ALL + BG_SLOT) <= SLS_N * SLS_P &&
                SAVE_NSECT >= 3u + SLS_N, "the save sectors");
 
-/* the factory sounds: GR!MM's own (first drafts; Arctic Scream p0larpatch's names), records as the user's (no CRC: in the image, read-only), first in
+/* the factory sounds: Arctic Scream p0larpatch's, records as the user's (no CRC: in the image, read-only), first in
  * each CATEGORY's list; their names beside them. Bytes: CATEGORY, its number, the source, its four, ENV (ATTACK, DECAY,
  * SUSTAIN, RELEASE), LATCH, CHORD (0x80 chord mode on, VOICING << 4 | CHORD TYPE), LFO (RATE, DEPTH, DESTINATION, SHAPE).
  * Sources: 0 VA (WAVE 0 SAW, 1 SQUARE, 2 SUPERSAW), 1 FM (PATCH 0 BELL, 1 ORGAN, 2 SOFT PAD, 3 REED), 3 VOICE, 4 WHEEL,
- * 5 PHYS (MODEL 0 MODAL, 1 STRING, 2 MEMBRANE, 3 SYMPATH), 6 PHASE. LFO DESTINATION 0 PITCH, 1 VOLUME, 3 .. 6 KNOB 1 .. 4;
+ * 5 PHYS (MODEL 0 MODAL, 1 STRING, 2 MEMBRANE, 3 SYMPATH), 6 PHASE, 7 HOWL, 8 BIEGGA (2.0; North Sami: the wind). LFO DESTINATION 0 PITCH, 1 VOLUME, 3 .. 6 KNOB 1 .. 4;
  * SHAPE 0 SINE, 1 TRIANGLE, 5 RANDOM, 6 DRIFT */
 #define FSND(c, n, e, k0, k1, k2, k3, a, d, s, r, la, ch, lr, ld, lt, ls)                                              \
     FSNDD(c, n, e, k0, k1, k2, k3, a, d, s, r, la, ch, lr, ld, lt, ls, 0, 0, 0)
@@ -110,39 +119,31 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSND(CAT_DRONE, 5, ENG_VOICE, 96, 6, 100, 90, 90, 90, 115, 100, 1, 0x05, 115, 30, 1, 5), /* SOLAR WIND */
     FSND(CAT_DRONE, 6, ENG_FM, 1, 50, 64, 12, 95, 90, 120, 100, 1, 0x05, 40, 0, 0, 0),      /* UNDER THE ICE */
     /* BELLS & METAL */
+    /* (2.0: FROST CHIME and STARLIGHT gone, room for RIDDU and POLAR STILL) */
     FSND(CAT_BELL, 1, ENG_FM, 0, 64, 90, 10, 0, 120, 0, 110, 0, 0x00, 40, 0, 0, 0),         /* ICE BELL */
-    FSND(CAT_BELL, 2, ENG_FM, 0, 80, 50, 0, 0, 100, 0, 95, 0, 0x00, 40, 0, 0, 0),           /* FROST CHIME */
-    FSND(CAT_BELL, 3, ENG_PHYS, 0, 110, 115, 0, 0, 90, 127, 110, 0, 0x00, 40, 0, 0, 0),     /* ICEBERG GONG */
-    FSND(CAT_BELL, 4, ENG_FM, 0, 85, 30, 20, 80, 100, 70, 95, 0, 0x00, 40, 0, 0, 0),        /* CRYSTAL HARP */
-    FSND(CAT_BELL, 5, ENG_PHYS, 0, 70, 110, 45, 85, 90, 90, 100, 0, 0x00, 40, 0, 0, 0),     /* BOWED ICICLE */
-    FSND(CAT_BELL, 6, ENG_FM, 0, 110, 20, 30, 0, 70, 0, 70, 0, 0x00, 40, 0, 0, 0),          /* STARLIGHT */
+    FSND(CAT_BELL, 2, ENG_PHYS, 0, 110, 115, 0, 0, 90, 127, 110, 0, 0x00, 40, 0, 0, 0),     /* ICEBERG GONG */
+    FSND(CAT_BELL, 3, ENG_FM, 0, 85, 30, 20, 80, 100, 70, 95, 0, 0x00, 40, 0, 0, 0),        /* CRYSTAL HARP */
+    FSND(CAT_BELL, 4, ENG_PHYS, 0, 70, 110, 45, 85, 90, 90, 100, 0, 0x00, 40, 0, 0, 0),     /* BOWED ICICLE */
     /* CHOIRS & VOICES */
     FSND(CAT_VOICE, 1, ENG_VOICE, 0, 14, 30, 40, 85, 90, 90, 95, 0, 0x12, 100, 1, 0, 0),    /* AURORA CHOIR */
     FSND(CAT_VOICE, 2, ENG_VOICE, 120, 4, 90, 45, 75, 80, 65, 90, 0, 0x05, 40, 0, 0, 0),    /* TUNDRA VOICES */
     FSND(CAT_VOICE, 3, ENG_VOICE, 20, 14, 20, 110, 80, 90, 115, 95, 0, 0x13, 35, 10, 3, 6), /* BLIZZARD BREATH */
     FSND(CAT_VOICE, 4, ENG_VOICE, 64, 10, 45, 30, 90, 95, 65, 100, 0, 0x01, 25, 100, 3, 0), /* NORTHERN CALL */
     FSND(CAT_VOICE, 5, ENG_FM, 2, 70, 64, 40, 85, 90, 115, 95, 0, 0x12, 95, 1, 0, 0),       /* EMPTY HORIZON */
-    /* ORGANS & KEYS */
-    FSND(CAT_ORGAN, 1, ENG_WHEEL, 15, 0, 20, 10, 10, 20, 75, 60, 0, 0x00, 40, 0, 0, 0),     /* ICE ORGAN */
-    FSND(CAT_ORGAN, 2, ENG_WHEEL, 12, 0, 10, 0, 10, 90, 127, 55, 0, 0x00, 40, 0, 0, 0),     /* BASE CAMP */
-    FSND(CAT_KEYS, 1, ENG_FM, 0, 45, 10, 5, 0, 75, 0, 50, 0, 0x00, 40, 0, 0, 0),            /* FROST KEYS */
-    FSND(CAT_KEYS, 2, ENG_FM, 0, 90, 20, 0, 0, 75, 0, 60, 0, 0x00, 40, 0, 0, 0),            /* SNOW GLOBE */
-    FSND(CAT_KEYS, 3, ENG_PHASE, 3, 0, 30, 6, 0, 105, 20, 80, 0, 0x00, 40, 0, 0, 0),        /* POLAR KEYS */
-    FSND(CAT_KEYS, 4, ENG_PHYS, 0, 30, 75, 0, 0, 90, 127, 60, 0, 0x00, 40, 0, 0, 0),        /* ICE PIANO */
     /* STRINGS & BRASS */
     FSND(CAT_OTHER, 1, ENG_PHYS, 1, 64, 110, 70, 100, 100, 65, 95, 0, 0x00, 40, 0, 0, 0),   /* TUNDRA STRINGS */
     FSND(CAT_OTHER, 2, ENG_VA, 0, 20, 70, 15, 65, 85, 105, 75, 0, 0x00, 100, 1, 0, 0),      /* ICEBREAKER */
     FSND(CAT_OTHER, 3, ENG_FM, 3, 85, 64, 15, 75, 90, 115, 85, 0, 0x00, 40, 0, 0, 0),       /* FOG HORN */
     FSND(CAT_OTHER, 4, ENG_PHYS, 1, 50, 115, 60, 85, 95, 70, 95, 1, 0x00, 95, 1, 0, 0),     /* SVALBARD CELLO */
     FSND(CAT_OTHER, 5, ENG_VA, 2, 40, 75, 5, 90, 90, 115, 95, 0, 0x00, 70, 1, 0, 0),        /* NORTH STRINGS */
-    /* LEADS & PLUCKS */
-    FSND(CAT_KEYS, 5, ENG_PHASE, 6, 0, 90, 0, 30, 90, 110, 80, 0, 0x00, 105, 1, 0, 0),      /* SNOW OWL */
-    FSND(CAT_KEYS, 6, ENG_VA, 1, 6, 55, 10, 40, 90, 110, 75, 0, 0x00, 40, 0, 0, 0),         /* SIGNAL FLARE */
-    FSND(CAT_KEYS, 7, ENG_FM, 0, 40, 10, 0, 0, 55, 0, 30, 0, 0x00, 40, 0, 0, 0),            /* ICICLE PLUCK */
-    FSND(CAT_KEYS, 8, ENG_PHYS, 3, 0, 85, 0, 0, 90, 127, 60, 0, 0x00, 40, 0, 0, 0),         /* FROST LUTE */
-    FSND(CAT_KEYS, 9, ENG_PHASE, 3, 0, 40, 4, 80, 90, 70, 80, 0, 0x00, 100, 1, 0, 0),       /* NORTHERN LIGHT */
+    /* KEYS (2.0: SIGNAL FLARE alone; ICE ORGAN, BASE CAMP, the other keys, leads and plucks gone: a drone machine) */
+    FSND(CAT_KEYS, 1, ENG_VA, 1, 6, 55, 10, 40, 90, 110, 75, 0, 0x00, 40, 0, 0, 0),         /* SIGNAL FLARE */
     /* TEXTURES */
     FSND(CAT_TEXTURE, 1, ENG_VOICE, 96, 12, 0, 127, 100, 90, 120, 105, 1, 0x00, 30, 90, 4, 0), /* WIND OVER ICE */
+    /* (2.0) Biegga, the wind: LATCH ON, a gentle wind, gusting a little, its TONE drifting on the LFO, a breeze
+     * rising over 4 bars; RIDDU (North Sami: a gale), the storm: hard gusts, the howl and the snow up, HOWL drifting */
+    FSNDD(CAT_TEXTURE, 2, ENG_BIEGGA, 60, 60, 50, 20, 100, 90, 127, 105, 1, 0x00, 20, 15, 5, 6, 35, 8, 3),   /* BIEGGA */
+    FSNDD(CAT_TEXTURE, 3, ENG_BIEGGA, 120, 95, 85, 60, 90, 90, 127, 100, 1, 0x00, 30, 30, 4, 6, 60, 40, 3),  /* RIDDU */
     /* HOWLS (Arctic Scream p0larpatch: the HOWL source, after Audrey II, together at the end of DRONE; LATCH ON, slow in and out; the LFO on BODY, DAMP,
      * FEEDBACK or TRK CUTOFF, wandering) */
     FSNDD(CAT_DRONE, 7, ENG_HOWL, 92, 70, 50, 40, 90, 90, 127, 110, 1, 0x00, 30, 25, 4, 6, 60, 0, 4),  /* POLAR HOWL */
@@ -150,6 +151,9 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSNDD(CAT_DRONE, 9, ENG_HOWL, 112, 40, 35, 60, 60, 90, 120, 100, 1, 0x00, 20, 20, 5, 0, 50, 0, 4), /* FROZEN SCREAM */
     FSNDD(CAT_DRONE, 10, ENG_HOWL, 88, 106, 95, 20, 110, 90, 127, 115, 1, 0x00, 25, 40, 9, 6, 75, 0, 4), /* WHITEOUT */
     FSNDD(CAT_DRONE, 11, ENG_HOWL, 104, 8, 30, 105, 40, 90, 110, 90, 1, 0x00, 60, 30, 4, 4, 55, 0, 4),  /* DEAD SIGNAL */
+    /* (2.0) POLAR STILL: WHITEOUT's calm sister: the loop awake and steady, hardly drifting (the LFO slow and
+     * shallow, BORGA low), slow in and slower out; for a long JIEHKKI piece where little happens */
+    FSNDD(CAT_DRONE, 14, ENG_HOWL, 92, 100, 95, 20, 115, 90, 127, 120, 1, 0x00, 10, 12, 9, 6, 25, 0, 5),  /* POLAR STILL */
     /* III: three Holvut voices in a CLUSTER chord (SPREAD), their semitone rubbing, dark (DAMP), BODY drifting on the LFO,
      * waking over 8 bars; a horrorscape for a held key around C4 */
     FSNDD(CAT_DRONE, 13, ENG_HOWL, 95, 62, 88, 55, 100, 90, 127, 115, 1, 0xAA, 14, 30, 4, 6, 65, 35, 4), /* III */
@@ -157,12 +161,10 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
 };
 static const char *const SND_FNAME[] = {
     "POLAR NIGHT", "SNOW VEIL", "GLACIER PAD", "MIDNIGHT SUN", "LICHEN", "SNOWDRIFT", "PERMAFROST", "DEEP FJORD",
-    "CRACKING ICE", "ARCTIC HUM", "SOLAR WIND", "UNDER THE ICE", "ICE BELL", "FROST CHIME", "ICEBERG GONG",
-    "CRYSTAL HARP", "BOWED ICICLE", "STARLIGHT", "AURORA CHOIR", "TUNDRA VOICES", "BLIZZARD BREATH", "NORTHERN CALL",
-    "EMPTY HORIZON", "ICE ORGAN", "BASE CAMP", "FROST KEYS", "SNOW GLOBE", "POLAR KEYS", "ICE PIANO",
-    "TUNDRA STRINGS", "ICEBREAKER", "FOG HORN", "SVALBARD CELLO", "NORTH STRINGS", "SNOW OWL", "SIGNAL FLARE",
-    "ICICLE PLUCK", "FROST LUTE", "NORTHERN LIGHT", "WIND OVER ICE", "POLAR HOWL", "WENDIGO", "FROZEN SCREAM",
-    "WHITEOUT", "DEAD SIGNAL", "III", "ICE WRAITH",
+    "CRACKING ICE", "ARCTIC HUM", "SOLAR WIND", "UNDER THE ICE", "ICE BELL", "ICEBERG GONG",
+    "CRYSTAL HARP", "BOWED ICICLE", "AURORA CHOIR", "TUNDRA VOICES", "BLIZZARD BREATH", "NORTHERN CALL",
+    "EMPTY HORIZON", "TUNDRA STRINGS", "ICEBREAKER", "FOG HORN", "SVALBARD CELLO", "NORTH STRINGS", "SIGNAL FLARE",
+    "WIND OVER ICE", "BIEGGA", "RIDDU", "POLAR HOWL", "WENDIGO", "FROZEN SCREAM", "WHITEOUT", "DEAD SIGNAL", "POLAR STILL", "III", "ICE WRAITH",
 };   /* (16 characters at most: the header beside HOME's tempo) */
 #define SND_NFACT (sizeof SND_FACTORY / sizeof SND_FACTORY[0])
 #define SND_DEFAULT (SND_NFACT - 1u)            /* the four tracks' sound at first power-on and at NEW: ICE WRAITH */
@@ -354,17 +356,17 @@ static int snd_save(uint32_t i, uint32_t t, uint32_t cat)   /* track t's sound i
     return snd_put(i, r);
 }
 static int snd_clear(uint32_t i) { return snd_put(i, 0); }
-static uint8_t snd_latch_off;                   /* (V2) SYSTEM 3's LATCH ALWAYS OFF: a sound loaded sets the track's
+static uint8_t snd_latch_off;                   /* SYSTEM 3's LATCH ALWAYS OFF: a sound loaded sets the track's
                                                  * LATCH OFF (grimm.c's sys_sync) */
 static void snd_apply(const uint8_t *r, uint32_t t)   /* a sound record into track t (a new source: its notes go over) */
 {
     uint32_t k, e = r[3] < NENG ? r[3] : 0u, la;
-    for (k = 0; k < 4u; k++) {                  /* (GR!MM rc9: within the knobs' ranges: a sound the editor wrote, a
+    for (k = 0; k < 4u; k++) {                  /* (within the knobs' ranges: a sound the editor wrote, a
                                                  * broken one, can't put a value past them, nor a filter out of control) */
         trk[t].p[e][k] = clamp(r[4 + k], 0, ENGINES[e]->max[k]);
         trk[t].env[k] = clamp(r[8 + k], 0, 127);
     }
-    la = snd_latch_off ? 0u : r[12] & 1u;       /* (V2: SYSTEM 3's ALWAYS OFF: LATCH OFF, whatever the sound's; the
+    la = snd_latch_off ? 0u : r[12] & 1u;       /* (SYSTEM 3's ALWAYS OFF: LATCH OFF, whatever the sound's; the
                                                  * byte's rest: DRONE's) */
     if (trk[t].latch && !la) nq_put(NQ_RELEASE, t, 0);   /* (LATCH ON -> OFF: its latched notes released) */
     trk[t].latch = (int32_t)la;
@@ -432,7 +434,7 @@ static uint8_t *pk_track(uint8_t *q, uint32_t t)
     q[43] = ch_pack(t);
     q[44] = (uint8_t)((trk[t].arp ? 0x80u : 0u) | (uint32_t)clamp(trk[t].arp_mode, 0, NARPMODE - 1));   /* ARP */
     q[45] = (uint8_t)((uint32_t)clamp(trk[t].arp_rate, 0, NARPRATE - 1) | (uint32_t)clamp(trk[t].ftype, 0, NFTYPE - 1) << 4 |
-                      (uint32_t)clamp(trk[t].fpos, 0, 1) << 6);   /* (GR!MM V2's MIXER 2 TYPE, POS over ARP's RATE: its
+                      (uint32_t)clamp(trk[t].fpos, 0, 1) << 6);   /* (the MIXER 2 TYPE, POS over ARP's RATE: its
                                                  * byte 32 is DRONE's here; saved before: 0, LP PRE) */
     q[46] = (uint8_t)((uint32_t)clamp(trk[t].arp_oct, 1, 4) |
                                                                                  (uint32_t)clamp(trk[t].dr_rise, 0, DR_NRISE - 1) << 4);
@@ -472,7 +474,7 @@ static const uint8_t *uk_track(const uint8_t *q0, uint32_t t, int isr, uint32_t 
     }
     for (k = 0; k < 4u; k++) trk[t].hw_x[k] = 0;   /* (1.4: HOWL's LOOP out of the top bits, then those cleared) */
     for (k = 0; k < 28u; k++) trk[t].hw_x[k / 7u] |= (int32_t)(q[1 + k] >> 7) << (k % 7u), q[1 + k] &= 127u;
-    for (e = 0; e < PK_ENG; e++)                /* (GR!MM rc9: every value loaded within its knob's range: a broken save
+    for (e = 0; e < PK_ENG; e++)                /* (every value loaded within its knob's range: a broken save
                                                  * can't put one past it) */
         for (k = 0; k < 4u; k++) trk[t].p[e][k] = clamp(q[1 + e * 4u + k], 0, ENGINES[e]->max[k]);
     for (k = 0; k < 4u; k++) trk[t].p[ENG_HOWL][k] = clamp(q[52 + k], 0, ENGINES[ENG_HOWL]->max[k]);
@@ -572,22 +574,30 @@ static void pk_work(uint8_t *q)
     q[17] = (uint8_t)((trk_mute & 15u) | (trk_solo & 15u) << 4);   /* the mutes and solos, */
     q[18] = (uint8_t)clamp(dl_pp, 0, 127), q[19] = (uint8_t)clamp(rv_shim, 0, 127);   /* (1.4) AIR */
     for (t = 0; t < NT; t++) pk_fm(q + SONG_PK + t * FM_PK, t);   /* the FM patches */
-    q += SONG_PK + FM_ALL;                      /* (V2) MASTER, DRIVE */
+    q += SONG_PK + FM_ALL;                      /* MASTER, DRIVE */
     q[0] = (uint8_t)clamp(mf_cut, 0, 127), q[1] = (uint8_t)clamp(mf_res, 0, 127);
     q[2] = (uint8_t)clamp(mf_type, 0, NFTYPE - 1), q[3] = (uint8_t)clamp(mf_pos, 0, NMPOS - 1);
     q[4] = (uint8_t)clamp(dr_amt, 0, 127), q[5] = (uint8_t)clamp(dr_type, 0, NDTYPE - 1);
     q[6] = (uint8_t)clamp(dr_tone, 0, 127), q[7] = (uint8_t)clamp(dr_mix, 0, 127);
+    q += FX2_PK;                                /* (2.0) EXT: Biegga, JIEHKKI, TUNING */
+    for (k = 0; k < EXT_PK; k++) q[k] = 0;
+    for (t = 0; t < NT; t++)
+        for (k = 0; k < 4u; k++) q[t * 4u + k] = (uint8_t)clamp(trk[t].p[ENG_BIEGGA][k], 0, 127);
+    q[16] = (uint8_t)clamp(jk_len, 0, JK_NLEN - 1), q[17] = (uint8_t)clamp(jk_drift, 0, 100);
+    q[18] = (uint8_t)clamp(jk_ruo, 0, 100), q[19] = (uint8_t)clamp(sc_tun, 0, NTUNING - 1);
+    q[20] = (uint8_t)clamp(ru_smp, 0, RU_NSMP - 1), q[21] = (uint8_t)clamp(ru_share, 0, 100);
+    q[22] = (uint8_t)clamp(ru_vary, 0, 100);
 }
 enum { UW_GLOBALS = 1, UW_CHAIN = 2 };
 static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: UW_GLOBALS, the effects, tempo, slot,
                                                  * SCALE, MODE, mutes too; UW_CHAIN, the song's chain too; vs: its
                                                  * version's row of OBJ_VERS, the sizes) */
 {
-    uint32_t t, k, tn = vs[1], sg = vs[2], sq = vs[3], lk = vs[4], fm = vs[5], fx = vs[6];
+    uint32_t t, k, tn = vs[1], sg = vs[2], sq = vs[3], lk = vs[4], fm = vs[5], fx = vs[6], ex = vs[7];
     int globals = (f & UW_GLOBALS) != 0;
     for (t = 0; t < NT; t++) q = uk_track(q, t, 0, tn);
     if (globals) {
-        for (k = 0; k < 16u; k++) *PK_FX[k] = clamp(q[k], 0, 127);   /* (GR!MM rc9: within the knobs' range) */
+        for (k = 0; k < 16u; k++) *PK_FX[k] = clamp(q[k], 0, 127);   /* (within the knobs' range) */
         seq_bpm = clamp(q[16] | q[17] << 8, 20, 300);
         slot_cur = q[18] & 3u;
         sel = q[19] & 3u;
@@ -597,12 +607,25 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
     for (t = 0; t < NT; t++) q = uk_seq(q, t, sq);
     for (t = 0; t < NT; t++) q = uk_lock(q, t, lk);
     for (t = 0; t < NT; t++) uk_fm(fm ? q + sg + t * FM_PK : 0, t);   /* (saved before them: the PATCH as built) */
-    if (globals) {                              /* (V2) MASTER, DRIVE; saved before them: MASTER open, DRIVE off */
+    if (globals) {                              /* MASTER, DRIVE; saved before them: MASTER open, DRIVE off */
         const uint8_t *x = q + sg + fm;
         mf_cut = fx ? clamp(x[0], 0, 127) : 127, mf_res = fx ? clamp(x[1], 0, 127) : 0;
         mf_type = fx ? clamp(x[2], 0, NFTYPE - 1) : FT_LP, mf_pos = fx ? clamp(x[3], 0, NMPOS - 1) : MP_END;
         dr_amt = fx ? clamp(x[4], 0, 127) : 0, dr_type = fx ? clamp(x[5], 0, NDTYPE - 1) : DT_SOFT;
         dr_tone = fx ? clamp(x[6], 0, 127) : 127, dr_mix = fx ? clamp(x[7], 0, 127) : 127;
+    }
+    {                                           /* (2.0) EXT; saved before it: Biegga as at power-on, JIEHKKI's
+                                                 * 15 MIN, 40 %, RUOHCAT off, TUNING EQUAL */
+        static const track_t T0 = TRK_DEF;
+        const uint8_t *x = q + sg + fm + fx;
+        for (t = 0; t < NT; t++)
+            for (k = 0; k < 4u; k++) trk[t].p[ENG_BIEGGA][k] = ex ? clamp(x[t * 4u + k], 0, 127) : T0.p[ENG_BIEGGA][k];
+        if (globals) {
+            jk_len = ex ? clamp(x[16], 0, JK_NLEN - 1) : 2, jk_drift = ex ? clamp(x[17], 0, 100) : 40;
+            jk_ruo = ex ? clamp(x[18], 0, 100) : 0, sc_tun = ex ? clamp(x[19], 0, NTUNING - 1) : TN_EQUAL;
+            ru_smp = ex ? clamp(x[20], 0, RU_NSMP - 1) : 0, ru_share = ex ? clamp(x[21], 0, 100) : 50;
+            ru_vary = ex ? clamp(x[22], 0, 100) : 30;
+        }
     }
     if (globals && !sg) dl_pp = rv_shim = 0;    /* (saved before the song: AIR off) */
     if (!sg) return;                            /* (saved before the song: as it is) */
@@ -613,6 +636,15 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
         trk_mute = q[17] & 15u, trk_solo = q[17] >> 4 & 15u;
         dl_pp = clamp(q[18], 0, 127), rv_shim = clamp(q[19], 0, 127);   /* (1.4 AIR; saved before it: 0, off) */
     }
+}
+static uint8_t slot_bg[4][BG_SLOT];             /* (2.0) a slot's Biegga ([0] BG_MARK: saved with it; else the
+                                                 * tracks' as they are, kept on a recall) */
+static void pk_slot_bg(uint32_t s)
+{
+    uint32_t t, k;
+    slot_bg[s][0] = BG_MARK;
+    for (t = 0; t < NT; t++)
+        for (k = 0; k < 4u; k++) slot_bg[s][1u + t * 4u + k] = (uint8_t)clamp(trk[t].p[ENG_BIEGGA][k], 0, 127);
 }
 static void pk_slot(uint8_t *q)                 /* the four tracks, their sequences and locks into a slot (used) */
 {
@@ -626,12 +658,19 @@ static void pk_slot(uint8_t *q)                 /* the four tracks, their sequen
 }
 static void uk_slot(const uint8_t *q, int isr)
 {
+    const uint8_t *q0 = q;
     uint32_t t;
     q += 4;
     for (t = 0; t < NT; t++) q = uk_track(q, t, isr, TRK_PK);
     for (t = 0; t < NT; t++) q = uk_seq(q, t, SEQ_PK);
     for (t = 0; t < NT; t++) q = uk_lock(q, t, LOCK_PK);
     for (t = 0; t < NT; t++) uk_fm(q + t * FM_PK, t);
+    if (q0 >= slots[0] && q0 < slots[0] + 4u * SLOT_ALL && slot_bg[(q0 - slots[0]) / SLOT_ALL][0] == BG_MARK) {   /* (2.0: its Biegga) */
+        const uint8_t *b = slot_bg[(q0 - slots[0]) / SLOT_ALL] + 1;
+        uint32_t k;
+        for (t = 0; t < NT; t++)
+            for (k = 0; k < 4u; k++) trk[t].p[ENG_BIEGGA][k] = clamp(b[t * 4u + k], 0, 127);
+    }
 }
 
 /* ---- the objects: WORK and SLOTS, each in a pair of sectors, the newer copy good */
@@ -656,7 +695,7 @@ static const uint8_t *obj_find(uint32_t type, const uint16_t **vs, uint32_t *s_o
     uint32_t v;
     for (v = type == OBJ_SLOTS ? 2u : 0u; v < NOBJV; v++) {
         const uint16_t *r = OBJ_VERS[v];
-        uint32_t len = type == OBJ_WORK ? WORK_LEN(r[1], r[2], r[3], r[4], r[5], r[6]) : 4u * SLOT_LEN(r[1], r[3], r[4]);
+        uint32_t len = type == OBJ_WORK ? WORK_LEN(r[1], r[2], r[3], r[4], r[5], r[6], r[7]) : 4u * SLOT_LEN(r[1], r[3], r[4]);
         const uint8_t *f = obj_newest(type, len, r[0], s_out);
         if (f) { *vs = r; return f; }
     }
@@ -689,8 +728,11 @@ static uint8_t *sls_byte(uint32_t b)            /* the slot byte at stream byte 
 {
     if (b < 4u * SLOT_PK) return &slots[b / SLOT_PK][b % SLOT_PK];
     b -= 4u * SLOT_PK;
-    return b < 4u * FM_ALL ? &slots[b / FM_ALL][SLOT_PK + b % FM_ALL] : 0;
+    if (b < 4u * FM_ALL) return &slots[b / FM_ALL][SLOT_PK + b % FM_ALL];
+    b -= 4u * FM_ALL;
+    return b < 4u * BG_SLOT ? &slot_bg[b / BG_SLOT][b % BG_SLOT] : 0;   /* (2.0: the slots' Biegga) */
 }
+static uint32_t sls_bg(uint32_t k) { return (4u * (SLOT_PK + FM_ALL) + k * BG_SLOT) / SLS_P; }   /* (.. its sector) */
 static uint32_t sls_fm(uint32_t k) { return (4u * SLOT_PK + k * FM_ALL) / SLS_P; }   /* slot k's FM patches' sector */
 static const uint8_t *sls_ok(uint32_t i)        /* sector i, good (its CRC), or 0 */
 {
@@ -731,7 +773,7 @@ static int slots_save(void)                     /* the slots changed, their sect
     static const uint8_t ORD[2][SLS_N] = {{2, 1, 0}, {2, 0, 1}};   /* (the old newest in sector 3 + 0, or + 1) */
     uint32_t m = 0, k, n;
     for (k = 0; k < 4u; k++)
-        if (slot_dirty >> k & 1u) m |= sls_of(k) | 1u << sls_fm(k);
+        if (slot_dirty >> k & 1u) m |= sls_of(k) | 1u << sls_fm(k) | 1u << sls_bg(k);
     for (n = 0; n < SLS_N; n++) {
         uint32_t i = slot_up ? ORD[slot_up == 3u ? 0 : 1][n] : n;
         if ((m >> i & 1u) && sls_write(i)) return -1;
@@ -815,12 +857,20 @@ static void store_boot(void)                    /* power-on: the newest good cop
             uint32_t sb = 4u * SLOT_PK + k * FM_ALL + b;
             slots[k][SLOT_PK + b] = good >> sls_fm(k) & 1u ? save_flash(3u + sb / SLS_P)[OBJ_HDR + sb % SLS_P] : 0u;
         }
+        for (b = 0; b < BG_SLOT; b++) {          /* (2.0) its Biegga (saved before it: zeros, none) */
+            uint32_t sb = 4u * (SLOT_PK + FM_ALL) + k * BG_SLOT + b;
+            slot_bg[k][b] = good >> sls_bg(k) & 1u ? save_flash(3u + sb / SLS_P)[OBJ_HDR + sb % SLS_P] : 0u;
+        }
     }
 }
 
 /* ---- the slots A..D */
-static void slot_save(uint32_t s) { pk_slot(slots[s & 3u]); slot_cur = (int32_t)(s & 3u); slot_dirty |= 1u << (s & 3u); }
-static void slot_erase(uint32_t s) { slots[s & 3u][0] = 0; slot_dirty |= 1u << (s & 3u); }
+static void slot_save(uint32_t s)
+{
+    pk_slot(slots[s & 3u]), pk_slot_bg(s & 3u);
+    slot_cur = (int32_t)(s & 3u), slot_dirty |= 1u << (s & 3u);
+}
+static void slot_erase(uint32_t s) { slots[s & 3u][0] = 0, slot_bg[s & 3u][0] = 0; slot_dirty |= 1u << (s & 3u); }
 static int slot_used(uint32_t s) { return slots[s & 3u][0] == 1u; }
 static int slot_has(uint32_t s, uint32_t t)     /* slot s used, track t's sequence in it with a note (SONG's lanes) */
 {
@@ -858,8 +908,8 @@ static void project_new(void)                   /* NEW: the four tracks' power-o
         trk[t].lfo_rate = T0.lfo_rate, trk[t].lfo_depth = T0.lfo_depth, trk[t].lfo_dest = T0.lfo_dest;
         trk[t].lfo_shape = T0.lfo_shape;
         trk[t].dr_borga = T0.dr_borga, trk[t].dr_storm = T0.dr_storm, trk[t].dr_rise = T0.dr_rise;
-        trk[t].level = T0.level, trk[t].dly = T0.dly, trk[t].rev = T0.rev, trk[t].grn = T0.grn, trk[t].pan = T0.pan;   /* (GR!MM
-                                                 * rc9: the mix too, as at power-on: a track left at VOLUME 0, its filter
+        trk[t].level = T0.level, trk[t].dly = T0.dly, trk[t].rev = T0.rev, trk[t].grn = T0.grn, trk[t].pan = T0.pan;   /* (Arctic Scream
+                                                 * the mix too, as at power-on: a track left at VOLUME 0, its filter
                                                  * closed, its FX 0 came out of NEW silent) */
         trk[t].cut = T0.cut, trk[t].res = T0.res, trk[t].fx = T0.fx, trk[t].ftype = T0.ftype, trk[t].fpos = T0.fpos;
         trk[t].warp = trk[t].morph = 0;
@@ -870,7 +920,7 @@ static void project_new(void)                   /* NEW: the four tracks' power-o
             nq_put(NQ_RESTART, t, 0);
         }
     }
-    trk_mute = trk_solo = 0;                    /* (GR!MM rc9: no track left muted or soloed) */
+    trk_mute = trk_solo = 0;                    /* (no track left muted or soloed) */
     seq_clear();
 }
 

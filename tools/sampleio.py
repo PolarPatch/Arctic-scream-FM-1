@@ -221,7 +221,7 @@ _IMA_VD, _IMA_NX = _ima_tables()
 
 
 def _ima_next(pred, idx, code):
-    """the decoder (GR!MM samples.c ima_nib): code from pred, idx -> pred, idx"""
+    """the decoder (Arctic Scream samples.c ima_nib): code from pred, idx -> pred, idx"""
     k = idx * 8 + (code & 7)
     pred = pred - _IMA_VD[k] if code & 8 else pred + _IMA_VD[k]
     return min(32767, max(-32768, pred)), _IMA_NX[k]
@@ -246,10 +246,10 @@ def _ima_code(pred, idx, x):
 def ima_encode(samples, loop_start, look=True):
     """IMA ADPCM, 4 bit, low nibble first, from predictor 0 / index 0
     -> (bytes, (predictor, index) at loop_start)
-    look (GR!MM V2): each code the one whose sample and the next two decode closest to the input (the squared
+    look: each code the one whose sample and the next two decode closest to the input (the squared
     errors summed; the next by any code, the one after by the standard choice; the lowest code on a tie). The
     standard choice follows a steep edge too slowly: a sample off by a third of full scale, heard as a crackle (a
-    singing voice: 242 samples off by over 3000 -> 0). The decoder is the same: any GR!MM plays it. look=False: the
+    singing voice: 242 samples off by over 3000 -> 0). The decoder is the same: any Arctic Scream plays it. look=False: the
     standard choice (the factory samples, tools/gen_samples.py, as they were made)."""
     if look:
         return _ima_encode_look(samples, loop_start)

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM V2's MIDI clock: SYSTEM 2's CLOCK (grimm.c includes this file after the sequencer and the arp).
+/* the MIDI clock: SYSTEM 2's CLOCK (grimm.c includes this file after the sequencer and the arp).
  *   INT      the FM-1's own tempo (SELECT / PRESETS on HOME); the clock and START / STOP from outside ignored
  *   INT+OUT  the same, and its clock out over USB (the jack has no output): F8 24 a beat, also while stopped (the
  *            other gear knows the tempo before PLAY): PLAY starts at the next pulse, FA and that pulse (the downbeat)
@@ -10,7 +10,7 @@
  *            play on them, 4 ticks a pulse, each in the control block whose sound holds its time. Each goes out when
  *            its sound plays (platform.c rt_flush, 10 kHz; other USB-MIDI held back ~1.2 ms before it)
  *   USB, TRS the clock from there, after SLOOP's mclk (isod89/sloop-fm1 seq.c, after Felucca 1.0's midi_clock.c, from
- *            contributions by ChanceTheMaker and keremimo; GPL-3.0; GR!MM's own code): a pulse is 4 of the sequencer's
+ *            contributions by ChanceTheMaker and keremimo; GPL-3.0): a pulse is 4 of the sequencer's
  *            96 ticks a beat, the first on the pulse, the other three between it and the next by the pulses' interval
  *            (smoothed), but never past the next pulse: the FM-1 follows the master's tempo and cannot drift. The tempo
  *            itself: per beat (24 pulses), smoothed; HOME shows "EXT" and it. START: from step 1, at its first pulse;

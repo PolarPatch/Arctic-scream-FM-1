@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
 # GR!MM changes (name, package identity): Copyright (C) 2026 GR!MM
-"""Build GR!MM (Dinghy, on Felucca / SLOOP's platform): the app, the update loader and an installable .fwsc package.
+"""Build Arctic Scream (Dinghy, on Felucca / SLOOP's platform): the app, the update loader and an installable .fwsc package.
 
   tools/build.py [--release X.Y[-suffix]]
 
@@ -48,10 +48,10 @@ SDK_SHA256 = {
     "cfg/eq_cfg_hw.bin": "41167491bffed4651750719c973d2758adeb9021a5670d02d6a53c85ed80ea7d",
 }
 
-PRODUCT = "FM-1_977"                # Arctic Scream 1.x: 977, every release (GR!MM's is 966) (FM-1_9NN: the installers resume its loader; the hub's
+PRODUCT = "FM-1_977"                # Arctic Scream 1.x: 977, every release (FM-1_9NN: the installers resume its loader; the hub's
                                     # other firmwares hold 950, 95x, 961, so not Dinghy's 9 + minor); Dinghy is 99N
 VERSION = None                      # APP_VER for release builds (else DEFAULT_VERSION)
-DEFAULT_VERSION = "1.5.2"
+DEFAULT_VERSION = "2.0"
 
 
 def toolchain():

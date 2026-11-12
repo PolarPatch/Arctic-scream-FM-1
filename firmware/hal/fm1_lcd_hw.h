@@ -8,6 +8,7 @@
  *   fm1_lcd_send_cmd(c)        D/C low, CS low, one byte (then fm1_lcd_wait)
  *   fm1_lcd_send_data(p, n)    D/C high, CS low, DMA n bytes from RAM p
  *   fm1_lcd_wait()             SPI done (or timeout, counted), pending cleared
+ *   fm1_lcd_done()             1: the SPI transfer is done (fm1_lcd_wait still clears it; lcd.c's LCD_IDLE meanwhile)
  *   fm1_lcd_deselect()         CS high
  *   fm1_lcd_backlight(on)      the backlight on (1) or off (0)
  */
@@ -47,6 +48,7 @@ FM1_INLINE void fm1_lcd_hw_init(void)
 
 FM1_INLINE void fm1_lcd_baud(uint32_t b) { FM1_LCD_SPI_BAUD = b; }
 
+static inline int fm1_lcd_done(void) { return (FM1_LCD_SPI_CON & 0x8000u) != 0; }
 static void fm1_lcd_wait(void)
 {
     uint32_t n;

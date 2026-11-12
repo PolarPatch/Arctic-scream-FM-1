@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM's sample slots: 4 slots of 72 KiB in the platform's sample area (platform.c: 0x97000..0xDF000), each one
+/* Arctic Scream's sample slots: 4 slots of 72 KiB in the platform's sample area (platform.c: 0x97000..0xDF000), each one
  * sample, mono, 22050 Hz, IMA ADPCM (4 bits, low nibble first, from predictor 0 / step index 0): 73216 bytes of data,
  * 146432 samples, 6.6 s a slot (26.6 s in all). The layout and the upload protocol follow Felucca's user sample slots
- * (hugelton/Felucca: web/EDITOR_PROTOCOL.md, cmds 11..15; tools/sampleio.py user_slot), GPL-3.0, with GR!MM's own
+ * (hugelton/Felucca: web/EDITOR_PROTOCOL.md, cmds 11..15; tools/sampleio.py user_slot), GPL-3.0, with Arctic Scream's own
  * magic and SysEx ID so neither firmware takes the other's data or commands:
  *   header at 0 (480 bytes): magic "GSMP", u16 version 1, u8 zone count (1), u8 0; name, 8 ASCII bytes; u32 data
  *   length, u32 CRC-32 (zlib) of the data, 8 bytes 0; one zone of 28 bytes: u32 off (0), n (samples), loop start, loop
@@ -34,7 +34,9 @@
 #include "grimm_samples.h"
 
 #define SMP_SLOTS 4u
+#ifndef SMP_SLOT_SIZE                           /* (2.0: the browser's own, web/fm1_web.c: 1 MiB, ~95 s) */
 #define SMP_SLOT_SIZE (72u * 1024u)             /* 72 KiB (so written: the build takes 0x12000 for a register address) */
+#endif
 #define SMP_DATA_OFF 512u
 #define SMP_HDR_LEN 480u
 #define SMP_MAX_DATA (SMP_SLOT_SIZE - SMP_DATA_OFF)   /* 73216 B */
@@ -47,6 +49,7 @@
 #define SMP_SCAN_SEGS 4u                        /* a main loop pass checks and indexes this many segments */
 _Static_assert(SMP_SLOTS * SMP_SLOT_SIZE <= SAMPLE_AREA_LEN, "the sample slots in the platform's sample area");
 _Static_assert(SMP_MAX_N % SMP_SEG == 0u, "whole segments");
+_Static_assert(SMP_MAX_N < (1u << 21) && SMP_SLOT_SIZE <= (1u << 21), "INFO's samples and WRITE's offset: 3 x 7 bits");
 
 static const int16_t IMA_STEP[89] = {           /* IMA ADPCM (Felucca's eng_sample.c) */
     7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66, 73, 80, 88, 97,
@@ -85,7 +88,7 @@ static inline int32_t ima_nib(uint32_t code, int32_t *pred, int32_t *idx)
     *idx = ima_nx[k];
     return *pred;
 }
-/* 2^(i/192), Q16: pitch ratios in 1/16 semitones, d16 >= -3072 (16 octaves down) (Felucca's eng_sample.c, as GR!MM's
+/* 2^(i/192), Q16: pitch ratios in 1/16 semitones, d16 >= -3072 (16 octaves down) (Felucca's eng_sample.c, as Arctic Scream's
  * GRAIN had it: the SAMPLE source's speed, the GRAIN effect's grain lengths and intervals) */
 static uint32_t pow2_q16(int32_t d16)
 {
@@ -189,7 +192,7 @@ static void smp_scan(uint32_t k)
 }
 
 /* ---- the upload */
-#define SX_HEAD 3u                              /* 7D 41 53 ("AS", Arctic Scream's; GR!MM's 7D 47 52) */
+#define SX_HEAD 3u                              /* 7D 41 53 ("AS", Arctic Scream's) */
 static uint8_t sx_buf[SMP_HDR_LEN + 8u];        /* a decoded data block or header */
 #define SX_INFO (1u + SMP_SLOTS * 17u)          /* INFO's reply: slots, then each: state, name (8), 0, n (3), max (3);
                                                  * then each: its root */

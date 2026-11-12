@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM's FX performance layer: FX held + the white keys G3 .. F4, each trick on while its key is held (several at
+/* Arctic Scream's FX performance layer: FX held + the white keys G3 .. F4, each trick on while its key is held (several at
  * once), over the whole output, after TAPE (app_audio: perform_render); FREEZE (the first white key, F2) is GRAIN's (grain.c).
  *   REV THROW, ECHO THROW: every track's REV / DLY send full (grimm.c's mix, its gains ramped); the tails ring on
  *   TAPE STOP: the output slows to a stop over ~1 s (its pitch falling); let go: back up to speed in ~0.3 s, in time
@@ -37,7 +37,7 @@ static int32_t pf_at(uint32_t i, uint32_t f)    /* history sample i (+ f / 65536
     int32_t a = pf_buf[i % PF_LEN], b = pf_buf[(i + 1u) % PF_LEN];
     return a + mul64_sh(b - a, (int32_t)f, 16);
 }
-static uint32_t pf_beat(void)                   /* a beat (history samples): the tempo's, a MIDI clock's (V2) */
+static uint32_t pf_beat(void)                   /* a beat (history samples): the tempo's, a MIDI clock's */
 {
     return ck_ext && ck_bpm10 ? 13230000u / ck_bpm10 : 1323000u / (uint32_t)clamp(seq_bpm, 20, 300);
 }

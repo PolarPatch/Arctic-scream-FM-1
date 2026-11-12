@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
 # GR!MM changes: Copyright (C) 2026 GR!MM
-"""Fixed-point tables for GR!MM's engines and effects (dsp.c, analog.c, fm6_core.c, hall.c, tape.c), no float on the target.
+"""Fixed-point tables for Arctic Scream's engines and effects (dsp.c, analog.c, fm6_core.c, hall.c, tape.c), no float on the target.
 
 The part of Felucca's tools/gen_tables.py (hugelton/Felucca) its ANALOG engine needs: the pitch table, the filter's
 cutoff curve and SVF coefficients, the soft clip, and the envelope steps (here two fixed times instead of Felucca's
-0..127 tables), plus GR!MM's SUPERSAW detune offsets. FS = 44100 Hz, the control rate every CTL (32) frames.
+0..127 tables), plus Arctic Scream's SUPERSAW detune offsets. FS = 44100 Hz, the control rate every CTL (32) frames.
 
   python3 tools/gen_tables.py firmware/gen/analog_tables.h
 """
@@ -16,7 +16,7 @@ from pathlib import Path
 
 FS = 44100
 CTL = 32
-ATTACK_MS = 3000        # GR!MM's drone envelope: a linear attack ...
+ATTACK_MS = 3000        # Arctic Scream's drone envelope: a linear attack ...
 RELEASE_MS = 6000       # ... and an exponential release, ~99 % of the way down after this
 
 
@@ -45,7 +45,7 @@ def main(path):
           "    uint32_t i = p + 64u, o = (i * 21846u) >> 22;     /* i / 192: the octave above PITCH_OCT's - 10 */",
           "    return PITCH_OCT[i - o * 192u] >> (10u - o);",
           "}"]
-    # envelope (Felucca's formulas for ENV_LIN / ENV_EXP, at GR!MM's two times)
+    # envelope (Felucca's formulas for ENV_LIN / ENV_EXP, at Arctic Scream's two times)
     atk = max(1, int((1 << 24) * CTL / (ATTACK_MS * FS / 1000)))
     tau = RELEASE_MS / 1000 / 4.6
     rel = max(1, min(65535, int(65536 * (1 - math.exp(-CTL / (tau * FS))))))
@@ -57,7 +57,7 @@ def main(path):
     L += arr("SVF_G", "uint16_t", [int(4096 * math.tan(math.pi * min(f, 0.45 * FS) / FS)) for f in fc])
     # soft clip curve for |x| in 0..2 (Q12 in, Q15 out): tanh
     L += arr("TANH_Q15", "int16_t", [int(32767 * math.tanh(i / 256 * 2)) for i in range(257)])
-    # SUPERSAW (GR!MM): the seven saws' frequency offsets at full DETUNE, Q15 of the pitch (Adam Szabo's measurements
+    # SUPERSAW (Arctic Scream): the seven saws' frequency offsets at full DETUNE, Q15 of the pitch (Adam Szabo's measurements
     # of the JP-8000's supersaw, "How to Emulate the Super Saw", 2010); the middle one is the note itself
     off = [-0.11002313, -0.06288439, -0.01952356, 0.0, 0.01991221, 0.06216538, 0.10745242]
     L += arr("SSAW_OFF_Q15", "int16_t", [int(round(o * 32768)) for o in off])

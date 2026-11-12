@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM's SAMPLE source: a sample slot (samples.c) played as a loop, as a tape loop plays. GR!MM's own:
+/* Arctic Scream's SAMPLE source: a sample slot (samples.c) played as a loop, as a tape loop plays. Its own:
  *   varispeed: the key sets the speed, as on tape (the slot's root key plays it as recorded, an octave down at half the
  *   speed and an octave lower); no time-stretching;
  *   the loop: from START, LENGTH long (50 ms .. to the sample's end), forward or (REVERSE) backward. Two heads: before
@@ -197,7 +197,7 @@ static void sampler_block(voice_t *v, const volatile int32_t *p, int32_t *mono, 
     /* the speed: the key against the root (varispeed) */
     d16 = VP16(v) - smp[t->cur.slot].root16;
     step = (pow2_q16(clamp(d16, -2304, 384)) >> 8) * (SMP_RATE_Q16 >> 8);
-    step += (uint32_t)((int32_t)(step >> 12) * tune_f);   /* (TUNE) */
+    step += (uint32_t)((int32_t)(step >> 12) * (tune_f + vc_fine));   /* (TUNE; a voice's own: DRONE, WARP, TUNING) */
     step = step > SP_STEP_MAX ? SP_STEP_MAX : step < 256u ? 256u : step;
 
     /* the heads: A, and B as they cross; their places move by the step, backward in a REVERSE loop */

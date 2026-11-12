@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM V2: FX's fifth and sixth pages, on the whole sound (grimm.c app_audio; the project's, store.c).
+/* FX's fifth and sixth pages, on the whole sound (grimm.c app_audio; the project's, store.c).
  *   MASTER: a filter, stereo: CUTOFF, RESONANCE, TYPE (LP / HP / BP: dsp.c's SVF and its outputs, as the tracks'),
  *     POSITION: PRE FX (the tracks' dry mix, before GRAIN's, DELAY's and SPACE's returns), POST REVERB (after them,
  *     before DRIVE and TAPE), END (after TAPE and PERFORM, the very last). The cutoff glides as the tracks' (~6 ms).
@@ -23,7 +23,7 @@ static volatile int32_t dr_amt, dr_type, dr_tone = 127, dr_mix = 127;   /* DRIVE
 #define DR_TOP 26000                            /* CLIP's and FOLD's (and FUZZ's offset's) level */
 static const uint16_t DR_LEVEL[NDTYPE][9] = {   /* each TYPE's gain (Q12) at AMOUNT 0, 16 .. 128: SOFT's loudness, at most
                                                  * +6 dB (tools/gen_drive_levels.py; Arctic Scream: at its mix's levels,
-                                                 * RMS 1000, 2000, 4000, its sounds darker and quieter than GR!MM's) */
+                                                 * RMS 1000, 2000, 4000, its sounds darker and quieter than Arctic Scream's) */
     {4096, 4096, 4096, 3850, 3011, 2375, 1896, 1534, 1281}, {4380, 3383, 2644, 1993, 1312, 940, 739, 635, 584},
     {4073, 3125, 2398, 1801, 1216, 913, 773, 707, 675}, {4073, 3125, 2398, 1870, 1382, 1155, 1094, 1095, 1092}};
 static int32_t mf_cs[NMPOS], mf_ic[NMPOS][2][2], mf_mx[NMPOS], dr_lp[2], dr_env;   /* audio: MASTER at each POSITION:

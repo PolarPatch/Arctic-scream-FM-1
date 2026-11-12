@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* GR!MM's TAPE effect: the whole mix (the tracks and every effect's return) through a worn tape, the last stage before
- * MASTER. GR!MM's own, from DELAY's wear (wear.c: the wow and flutter, the saturation; the design after X0X's TAPE, see
+/* Arctic Scream's TAPE effect: the whole mix (the tracks and every effect's return) through a worn tape, the last stage before
+ * MASTER. Arctic Scream's own, from DELAY's wear (wear.c: the wow and flutter, the saturation; the design after X0X's TAPE, see
  * tape.c):
  *   WOW         the read of a short line (~5 ms) moves with DELAY's wow (0.5 and 0.19 Hz, not quite periodic) and its
- *               flutter (6.1 Hz): up to ~+-2 % of pitch, a seasick transport (Arctic Scream 1.3: 3 x GR!MM's)
+ *               flutter (6.1 Hz): up to ~+-2 % of pitch, a seasick transport (1.3: three times the first)
  *   SATURATION  DELAY's tanh, driven 1x .. 12x (1.3: was 4x), the level made up after it, blended in with the knob: 0 = clean. One
  *               curve (tf_curve), made by the main loop when the knob moves (tapefx_poll), crossed over to from the
  *               last within a block: no step in the sound, and nothing heavy in the audio ISR

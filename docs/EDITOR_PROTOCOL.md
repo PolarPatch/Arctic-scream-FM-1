@@ -1,6 +1,6 @@
-# GR!MM editor protocol
+# Arctic Scream editor protocol
 
-How an editor (a web page, `tools/fm1_editor_test.py`) talks to GR!MM on the FM-1 over USB-MIDI SysEx: read and
+How an editor (a web page, `tools/fm1_editor_test.py`) talks to Arctic Scream on the FM-1 over USB-MIDI SysEx: read and
 write the user's sounds, the slots A–D and the settings, read the factory sounds, set the tracks' sounds live, and
 upload samples. The device side is `firmware/src/editor.c` (commands 20–26) and `firmware/src/samples.c` (11–16). The
 read/write scheme follows SLOOP's editor backup ([sloop-fm1](https://github.com/isod89/sloop-fm1)
@@ -8,13 +8,13 @@ read/write scheme follows SLOOP's editor backup ([sloop-fm1](https://github.com/
 COMMIT. The live one (23 TRACK) follows SLOOP's live SET: values at once, while playing, never saved.
 
 Protocol 1 (step 26a) has commands 20–22; protocol 2 (step 26b2) adds 23 TRACK; protocol 3 (Arctic Scream p0larpatch)
-adds 24 SEQ. INFO says which. 1.3 adds GR!MM V2's CPU and FX as 25 and 26 (GR!MM's 24 and 25: its 24 is SEQ here), and
+adds 24 SEQ. INFO says which. 1.3 adds the CPU and FX as 25 and 26, and
 the sample slots as objects 5–8, without a protocol number of their own.
 
 ## Frames
 
-- Request: `F0 7D 41 53 <cmd> <args…> F7`. `7D` is the non-commercial ID, `41 53` is "AS", Arctic Scream's (GR!MM's is
-  `47 52`, Felucca's and SLOOP's `46 4C`, so no firmware takes another's commands).
+- Request: `F0 7D 41 53 <cmd> <args…> F7`. `7D` is the non-commercial ID, `41 53` is "AS", Arctic Scream's (Felucca's and
+  SLOOP's is `46 4C`, so no firmware takes another's commands).
 - Every request gets one reply with the same head and `<cmd>`. A frame of another head, or an unknown command, gets
   none. Send one request at a time and wait for its reply.
 - Frames are at most 640 bytes between `F0` and `F7`.
@@ -42,12 +42,12 @@ Request: none. Reply, in order:
 
 | Bytes | |
 | --- | --- |
-| 1 | protocol version (3; 2 without SEQ; step 26a's GR!MM: 1, without TRACK) |
+| 1 | protocol version (3; 2 without SEQ; 1 without TRACK) |
 | 1 | object format (1). A PUT's BEGIN must name it |
 | n + 1 | the firmware version, ASCII, 0-terminated ("1.0") |
 | 1 | user sound slots (64) |
 | 1 | a sound's size (64) |
-| 1 | factory sounds (47) |
+| 1 | factory sounds (48; 1.5.2 and before: 47) |
 | 5 | a slot's size, u35 (2548) |
 | 5 | the settings' size, u35 (172; 1.4–1.5.1: 171; 1.3: 170; 1.2: 168) |
 | 1 | sample slots (4) |
@@ -62,12 +62,12 @@ Request: none. Reply, in order:
 | --- | --- | --- | --- | --- |
 | 0 | the settings | 172 (1.4–1.5.1: 171; 1.3: 170; 1.2: 168) | yes | yes |
 | 1–4 | slots A–D | 2548 | yes | yes |
-| 5–8 | sample slots 1–4 (1.3, GR!MM V2's): the slot's header, 32 bytes of nothing, the data | 512 + the data's length | yes | no |
+| 5–8 | sample slots 1–4 (1.3): the slot's header, 32 bytes of nothing, the data | 512 + the data's length | yes | no |
 | 16–79 | user sounds 1–64 (id 16 + slot) | 64 | yes | yes |
-| 80–126 | factory sounds 1–47 (id 80 + index, in the firmware's order) | 64 | yes | no |
+| 80–127 | factory sounds 1–48 (id 80 + index, in the firmware's order; 2.0 put BIEGGA, the 41st, before POLAR HOWL) | 64 | yes | no |
 
 A factory sound reads as a user sound's record, so it can be written into a user slot as it comes. An object is one
-7-bit byte (0–127): the 47 factory sounds end at 126. An empty sample slot is no object (rc 1); a restore writes a
+7-bit byte (0–127): the 48 factory sounds end at 127, the last id there is. An empty sample slot is no object (rc 1); a restore writes a
 sample back as an upload (11–13).
 
 ## 21 GET
@@ -156,7 +156,7 @@ sequence now (298 bytes).
 | 0 | `0x54` ("T") |
 | 1 | CATEGORY: 0 DRONE, 1 PAD, 2 BELL, 3 ORGAN, 4 KEYS, 5 BASS, 6 TEXTURE, 7 VOICE, 8 OTHER |
 | 2 | its number in the category (the name "DRONE 03"), 1–99 |
-| 3 | the source: 0 VA, 1 FM, 2 SAMPLE, 3 VOICE, 4 WHEEL, 5 PHYS, 6 PHASE, 7 Holvut |
+| 3 | the source: 0 VA, 1 FM, 2 SAMPLE, 3 VOICE, 4 WHEEL, 5 PHYS, 6 PHASE, 7 Holvut, 8 Biegga (2.0) |
 | 4–7 | the source's four knobs (SOUND page), each 0..its range |
 | 8–11 | ENV: ATTACK, DECAY, SUSTAIN, RELEASE (0–127) |
 | 12 | bit 0 LATCH; bits 1–7 DRONE's BORGA (0–100) |
@@ -171,7 +171,7 @@ An empty slot is 64 × `0xFF`. A PUT of 64 × `0xFF` empties the slot.
 Source knob ranges: VA WAVE 0–2, DETUNE, CUTOFF, RESONANCE 0–127. FM PATCH 0–3, BRIGHT, DECAY, DETUNE 0–127. SAMPLE
 SLOT 0–3, START, LENGTH 0–127, REVERSE 0–1. VOICE VOWEL 0–127, SHIFT 0–24, BUZZ, BREATH 0–127. WHEEL DRAWBARS 0–15,
 PERC 0–6, CLICK, DRIVE 0–127. PHYS MODEL 0–3, STRUCTURE, DAMP, BOW 0–127. PHASE WAVE 0–7, WAVE2 0–8, DCW, DETUNE
-0–127. Holvut FEEDBACK, BODY, DAMP, DRIVE 0–127.
+0–127. Holvut FEEDBACK, BODY, DAMP, DRIVE 0–127. Biegga (2.0) GUST, HOWL, TONE, SNOW 0–127.
 
 **DRONE** (Arctic Scream p0larpatch; all 0 in a sound from before it: off): BORGA in byte 12 bits 1–7; GOHCCAT (0 OFF,
 1–6: 1, 2, 4, 8, 16, 32 bars) in byte 16 bits 4–6; STOARBMA (0–100) bits 0–4 in byte 17 bits 3–7, bit 5 in byte 16
@@ -196,6 +196,8 @@ row of 5 an operator, OP1 first: RATIO (0–31, 0 = 0.5), FINE, LEVEL, ATTACK, D
 | 228–1267 | the four sequences, 260 bytes each (below) |
 | 1268–2419 | the four tracks' step locks, 288 bytes each (below) |
 | 2420–2547 | the four tracks' FM patches, 32 bytes each (as in a sound) |
+
+A slot's Biegga knobs (2.0) are kept on the FM-1 beside the slot, not in these 2548 bytes: a slot read here has none, and a slot written here keeps the tracks' Biegga as they are when it is recalled.
 
 **A track (56 bytes):**
 
@@ -229,15 +231,15 @@ step n's 4 bits in byte 256 + n / 2, the low nibble for even n, the high for odd
 | --- | --- |
 | 0 | the octave, signed, −2..2 |
 | 1 | TUNE, signed, −50..50 cents |
-| 2 | COLOUR: 0 RED, 1 AMBER, 2 TEAL, 3 VIOLET |
-| 3 | MIDI CHANNEL: 0 "1-4" .. 12 "13-16", 13 ALL > SEL, 14 .. 29 "CH 1 > SEL" .. "CH 16 > SEL" (V2) |
-| 4 | SCREEN OFF: 0 NEVER, 1, 5, 15, 30 MIN |
+| 2 | COLOUR: 0 ICE, 1 AURORA, 2 VIOLET, 3 PLASMA, 4 MONO (2.0) |
+| 3 | MIDI CHANNEL: 0 "1-4" .. 12 "13-16", 13 ALL > SEL, 14 .. 29 "CH 1 > SEL" .. "CH 16 > SEL" |
+| 4 | SCREEN OFF: 0 NEVER, 1, 5, 15, 30 MIN, 5 GUOVSSAHAS (2.0: the aurora after 2 min) |
 | 5 | SEQ MIDI OUT (0 / 1) |
 | 6 | MIDI LEARN's links in use (0–32) |
 | 7–166 | 32 links of 5 bytes, the oldest first: CC, page, knob (0–3), track (0–3), x (SOUND: the source; GRID: the step; SONG: the section; FM ALGO's FINE, FM OP: the operator) |
 | 167 | the settings' version (5; 1.4–1.5.1's: 4; 1.3's: 3; 1.2's: 1) |
-| 168 | CLOCK (1.3, GR!MM V2's): 0 INT, 1 INT+OUT, 2 USB, 3 TRS |
-| 169 | SYSTEM 3's LATCH (1.3, GR!MM V2's; version 3): 0 FROM SOUND (a sound loaded brings its own LATCH), 1 ALWAYS OFF (a sound loaded sets the track's LATCH off) |
+| 168 | CLOCK (1.3): 0 INT, 1 INT+OUT, 2 USB, 3 TRS |
+| 169 | SYSTEM 3's LATCH (1.3; version 3): 0 FROM SOUND (a sound loaded brings its own LATCH), 1 ALWAYS OFF (a sound loaded sets the track's LATCH off) |
 | 170 | SYSTEM 3's USB LEVEL (1.4; version 4): 0 .. 6, −12 .. +24 dB in 6 dB steps (2: 0 dB) |
 | 171 | SYSTEM 3's MOD OUT (1.5.2; version 5): 0 OFF, 1 ON (CC 102 LEVEL, CC 103 LFO on each track's channel, every 20 ms) |
 
@@ -249,7 +251,7 @@ Pages (a link's page): 0 SOUND, 1 SOURCE, 2 ENV, 3 LFO, 4 SCALE, 5 CHORD, 6 SONG
 14 ARP, 15 GRID, 16 PATTERN SETTINGS, 17 TAPE, 18 GRAIN, 19 DELAY, 20 SPACE, 23 FM ALGO, 24 FM OP, 25 DRONE, 26 MASTER,
 27 DRIVE (the others can't be learned; 28 is SYSTEM 3).
 
-## 25 CPU (GR!MM V2's 24, a diagnostic)
+## 25 CPU (the 24, a diagnostic)
 
 Where the audio time goes, as SYSTEM 2's CPU row measures it; `tools/fm1_cpu.py` prints it. It has no protocol number
 of its own (INFO stays 3); an Arctic Scream before 1.3 does not answer it.
@@ -264,7 +266,7 @@ Since 1.5.2 four more u35 follow, in bytes: how deep the main loop's stack has g
 the same for the interrupts' stack (each stack is filled with a pattern at power-on; the deepest word no longer
 holding it). A reader that takes only the first `3 + n` values is not disturbed; before 1.5.2 they are not there.
 
-## 26 FX (GR!MM V2's 25)
+## 26 FX (the 25)
 
 The project's effects, live (no protocol number of its own; an Arctic Scream before 1.3 does not answer it). A value set here acts at once and is kept by the project (the FM-1's autosave), as a knob's turn.
 
@@ -287,13 +289,13 @@ As before (`tools/fm1_sample_upload.py`, `firmware/src/samples.c`'s header): 11 
 off (3 × 7 bits), pack7 data (≤ 256 B, from 512 on, in order) → slot, off, rc; 13 END slot, pack7 header (480 B) →
 slot, rc; 14 ERASE slot → slot, rc; 15 INFO → slots, then per slot: state (0 empty, 1 ready, 2 checking), name
 (0-terminated, up to 8: the slot header's), samples (3 × 7 bits), capacity (3 × 7 bits), then (step 26c) per slot its
-root note (MIDI; 60 for an empty slot); 16 FACTORY (none) → rc: all four slots GR!MM's factory samples again (about
+root note (MIDI; 60 for an empty slot); 16 FACTORY (none) → rc: all four slots their factory samples again (about
 5 s; only while nothing sounds). Their rc: 0 ok, 1 arguments, 2 erase, 3 write, 4 not begun / out of order, 5 header
 or CRC, 6 something sounds, 7 no flash. Before step 26b2, INFO came back cut short when the four slots all had long
 names (and overran a buffer on the FM-1).
 
 The factory samples (step 26c, `tools/gen_samples.py` from `assets/samples/`): Arctic Scream has none for now
-(GR!MM's four are out), so FACTORY, or SYSTEM 2's SAMPLES: CLEAR and OCT+ on the FM-1, empties all four slots and
+(there are none built in), so FACTORY, or SYSTEM 2's SAMPLES: CLEAR and OCT+ on the FM-1, empties all four slots and
 power-on leaves them be. With samples built in, as an upload makes them (root C4): at power-on a slot whose 72 KiB
 are all erased (0xFF) gets its own, a slot that holds anything is never touched there, and FACTORY writes all four.
 
