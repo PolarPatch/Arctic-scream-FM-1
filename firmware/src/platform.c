@@ -61,6 +61,9 @@ static void rt_out(uint32_t st, uint32_t due)   /* audio ISR: a realtime byte ou
 #include "../../web/fm1_web.c"                 /* in a browser: a fake FM-1 (web/fm1_web.c) */
 #elif defined DINGHY_HOST
 #include "../../tests/host.c"                  /* on a computer: a fake FM-1 (tests/host.c) */
+#elif defined FM1_PLATFORM_FILE
+#include FM1_PLATFORM_FILE                      /* another host's fake FM-1, named by the file that includes grimm.c
+                                                 * (VIBE FM: Arctic Scream VIBE's port/fm1_vibe.c) */
 #else
 #include <stdint.h>
 #include "fm1_time.h"

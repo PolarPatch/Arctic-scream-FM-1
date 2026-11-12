@@ -2350,7 +2350,7 @@ static void app_start(void)                     /* once, at power-on: the saves,
         if (snd_lost) put_s(put_u(put_s(q, ", "), snd_lost), " LOST");
         hd_until = 15000u;
     }
-#if !defined DINGHY_HOST && !defined GRIMM_WEB
+#if !defined DINGHY_HOST && !defined GRIMM_WEB && !defined FM1_PLATFORM_FILE
     if (hl_boot.kind == 1u) {                   /* the watchdog restarted it (the main loop stood 8 s; a fault shows
                                                  * the red crash screen instead): said for ~15 s (not when only
                                                  * the chip's flag is left from an earlier one: platform.c hl_boot) */
