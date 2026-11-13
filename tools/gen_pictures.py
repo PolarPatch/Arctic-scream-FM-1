@@ -41,6 +41,51 @@ SOUNDS = {
     "tundra_aurora": ["POLAR NIGHT", "SOLAR WIND", "AURORA CHOIR"],
     "glacier": ["PERMAFROST", "GLACIER PAD"],
 }
+# (2.2) what moves in each picture while it shows (pictures.c animates it, nothing more is stored than this): in cells
+# (116 x 68: the drawing's pixels / 4). The colours a part takes are found by pick() in the picture's own palette.
+#   sh   shimmer: (kind CURTAIN, GLITTER or RAYS, rows, pick, high colour): the aurora's folds, a road of light on the
+#        water, rays of light breathing (CURTAIN also sways its rows' cells sideways)
+#   tw   twinkle: (rows, pick, n): the picked colours twinkling (n 0: glints, the ice's light), or n stars of
+#        the firmware's own on them (the sky's dark: a star of the drawing is mostly lost at 116 x 68), each its phase
+#   rp   ripple: rows of water, shifted a little each row
+#   sc   scroll: (rows, tenths of a cell a second): clouds racing, drift on the ice
+#   li   a light: (kind PULSE, FLICKER, BLINK or BEAM, x, y, radius, colour)
+#   fd   fade: (x0, x1, y0, y1, pick, colour): a figure fading into what is around it, and back
+#   dt   dots: (kind SNOW, DRIP, RISE or DRIFT, how many, x0, x1, y0, y1, tenths of a cell a second, wind, colour)
+SH_KIND = {"CURTAIN": 1, "GLITTER": 2, "RAYS": 3}
+LI_KIND = {"PULSE": 1, "FLICKER": 2, "BLINK": 3, "BEAM": 4}
+DT_KIND = {"SNOW": 1, "DRIP": 2, "RISE": 3, "DRIFT": 4}
+ANIM = {
+    "glacier": dict(sh=("CURTAIN", (0, 36), dict(lum=(60, 255), frac=0.8, cnt=(40, 9999)), (70, 250, 165)),
+                    tw=((0, 36), dict(lum=(0, 50)), 22), rp=(52, 67)),
+    "tundra_aurora": dict(sh=("CURTAIN", (0, 47), dict(lum=(75, 255), cnt=(100, 9999), frac=0.7), (70, 250, 165)),
+                          tw=((0, 47), dict(lum=(70, 255), cnt=(0, 60)), 0),
+                          dt=("SNOW", 14, 0, 115, 0, 67, 25, 8, "light")),
+    "icicles": dict(tw=((14, 60), dict(lum=(200, 255)), 0), dt=("DRIP", 8, 0, 115, 12, 62, 0, 0, "light")),
+    "voices": dict(sh=("CURTAIN", (0, 22), dict(lum=(60, 255), green=15, frac=0.7), (110, 240, 190)),
+                   fd=(34, 80, 41, 53, dict(lum=(0, 60)), (205, 215, 230)),
+                   dt=("SNOW", 10, 0, 115, 0, 67, 20, 4, "light")),
+    "hut": dict(li=("FLICKER", 55, 46, 9, (255, 200, 110)), tw=((0, 40), dict(lum=(0, 50)), 24),
+                dt=("SNOW", 10, 0, 115, 0, 67, 18, 3, "light")),
+    "flare": dict(li=("FLICKER", 62, 21, 13, (255, 90, 70)), tw=((0, 48), dict(lum=(0, 50)), 22),
+                  dt=("RISE", 6, 59, 65, 2, 20, 14, 2, (160, 130, 150))),
+    "blowing": dict(sc=((45, 67), 30), dt=("DRIFT", 16, 0, 115, 28, 67, 60, 0, "light")),
+    "fjord": dict(sh=("GLITTER", (40, 67), dict(lum=(50, 140)), (240, 240, 220)), rp=(40, 67),
+                  tw=((0, 28), dict(lum=(0, 40)), 18), li=("PULSE", 58, 16, 7, (240, 240, 215))),
+    "whiteout": dict(fd=(78, 86, 41, 51, dict(lum=(0, 190), frac=0.5), (215, 220, 228)),
+                     dt=("SNOW", 20, 0, 115, 0, 67, 30, 30, "light")),
+    "midnight_sun": dict(sh=("GLITTER", (43, 67), dict(lum=(85, 140)), (255, 232, 180)),
+                         rp=(43, 67), li=("PULSE", 75, 39, 8, (255, 225, 170))),
+    "ice_cave": dict(fd=(48, 68, 26, 60, dict(lum=(200, 255), frac=0.6), (150, 210, 235)),
+                     dt=("DRIP", 6, 0, 115, 0, 18, 0, 0, (120, 170, 200))),
+    "station": dict(li=("BLINK", 82, 17, 6, (255, 80, 60)), dt=("SNOW", 14, 0, 115, 0, 67, 25, 30, "light")),
+    "under_ice": dict(sh=("RAYS", (0, 67), dict(lum=(60, 190)), (170, 225, 250)),
+                      dt=("RISE", 10, 0, 115, 15, 67, 20, 0, (180, 220, 240))),
+    "iceberg": dict(rp=(42, 67), tw=((0, 34), dict(lum=(0, 50)), 20),
+                    sh=("RAYS", (18, 42), dict(lum=(150, 255), frac=0.6), (240, 250, 255))),
+    "lighthouse": dict(li=("BEAM", 65, 16, 64, (255, 250, 210))),
+    "vidda": dict(sc=((2, 36), 20), dt=("DRIFT", 18, 0, 115, 30, 67, 70, 0, "light")),
+}
 BAYER = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]], float) / 16.0 - 0.47
 
 
@@ -65,6 +110,62 @@ def convert(path):
     d = ((px[:, :, None, :] - pal[None, None, :, :]) ** 2).sum(-1)
     idx = d.argmin(-1).astype(np.uint8)
     return pal.astype(int), idx
+
+
+def pick(pal, idx, rows, c):
+    """the palette's colours a part takes (a mask of 16 bits): bright enough (lum), common or rare enough (cnt), most of
+    their cells in the rows and columns (frac), greener or redder than the rest (green, red)"""
+    lum = 0.3 * pal[:, 0] + 0.59 * pal[:, 1] + 0.11 * pal[:, 2]
+    cnt = np.bincount(idx.ravel(), minlength=16)
+    y0, y1 = rows
+    x0, x1 = c.get("cols", (0, PIC_W - 1))
+    inside = np.bincount(idx[y0:y1 + 1, x0:x1 + 1].ravel(), minlength=16)
+    m = 0
+    for i in range(16):
+        if cnt[i] == 0 or not (c.get("lum", (0, 255))[0] <= lum[i] <= c.get("lum", (0, 255))[1]):
+            continue
+        if not (c.get("cnt", (0, 99999))[0] <= cnt[i] <= c.get("cnt", (0, 99999))[1]):
+            continue
+        if inside[i] < c.get("frac", 0.0) * cnt[i] or inside[i] == 0:
+            continue
+        if "green" in c and not pal[i, 1] > pal[i, 0] + c["green"]:
+            continue
+        if "red" in c and not pal[i, 0] > pal[i, 2] + c["red"]:
+            continue
+        m |= 1 << i
+    return m
+
+
+def anim(name, pal, idx):                       # the picture's line of PIC_ANIM (pictures.c's pic_anim_t)
+    a = ANIM.get(name, {})
+    lum = 0.3 * pal[:, 0] + 0.59 * pal[:, 1] + 0.11 * pal[:, 2]
+    dark, light = int(np.argmin(lum)), int(np.argmax(lum))
+    col = lambda c: rgb565(pal[light]) if c == "light" else rgb565(c)
+    v = dict(sh=(0, 0, 0, 0, 0), tw=(0, 0, 0, 0), rp=(0, 0), sc=(0, 0, 0), li=(0, 0, 0, 0, 0), fd=(0, 0, 0, 0, 0, 0),
+             dt=(0, 0, 0, 0, 0, 0, 0, 0, 0))
+    if "sh" in a:
+        k, rows, c, hi = a["sh"]
+        v["sh"] = (pick(pal, idx, rows, c), SH_KIND[k], rows[0], rows[1], rgb565(hi))
+    if "tw" in a:
+        rows, c, n = a["tw"]
+        v["tw"] = (pick(pal, idx, rows, c), rows[0], rows[1], n)
+    if "rp" in a:
+        v["rp"] = a["rp"]
+    if "sc" in a:
+        (y0, y1), sp = a["sc"]
+        v["sc"] = (y0, y1, sp)
+    if "li" in a:
+        k, x, y, r, c = a["li"]
+        v["li"] = (LI_KIND[k], x, y, r, rgb565(c))
+    if "fd" in a:
+        x0, x1, y0, y1, c, to = a["fd"]
+        v["fd"] = (pick(pal, idx, (y0, y1), dict(c, cols=(x0, x1))), x0, x1, y0, y1, rgb565(to))
+    if "dt" in a:
+        k, n, x0, x1, y0, y1, sp, wind, c = a["dt"]
+        v["dt"] = (DT_KIND[k], n, x0, x1, y0, y1, sp, wind, col(c))
+    f = lambda t: ", ".join(str(int(x)) for x in t)
+    return "    {{%s}, {%s}, {%s}, {%s}, {%s}, {%s}, {%s}, %d}   /* %s */" % (
+        f(v["sh"]), f(v["tw"]), f(v["rp"]), f(v["sc"]), f(v["li"]), f(v["fd"]), f(v["dt"]), dark, name)
 
 
 def rle(b):
@@ -99,18 +200,20 @@ def main():
     out = ["/* generated by tools/gen_pictures.py from assets/pictures/ (a PNG each): do not edit */",
            "#define PIC_W %du" % PIC_W, "#define PIC_H %du" % PIC_H, "#define NPIC %du" % len(names)]
     total = 0
-    pals, datas = [], []
+    pals, datas, anims = [], [], []
     for i, n in enumerate(names):
         pal, idx = convert(os.path.join(SRC, n + ".png"))
         packed = bytes((idx[y, x] | idx[y, x + 1] << 4) for y in range(PIC_H) for x in range(0, PIC_W, 2))
         z = rle(packed)
         total += len(z) + 32
         pals.append(", ".join("0x%04X" % rgb565(c) for c in pal))
+        anims.append(anim(n, pal, idx))
         rows = [", ".join(str(v) for v in z[j:j + 32]) for j in range(0, len(z), 32)]
         out.append("static const uint8_t PIC_D%d[%d] = {\n    %s};   /* %s */" % (i, len(z), ",\n    ".join(rows), n))
         prev = Image.fromarray(pal[idx].astype(np.uint8)).resize((PIC_W * 2, PIC_H * 2), Image.NEAREST)
         prev.save(os.path.join(PREVIEW, n + ".png"))
     out.append("static const uint16_t PIC_PAL[NPIC][16] = {\n" + ",\n".join("    {%s}" % p for p in pals) + "};")
+    out.append("static const pic_anim_t PIC_ANIM[NPIC] = {   /* (2.2) what moves: pictures.c */\n" + ",\n".join(anims) + "};")
     out.append("static const uint8_t *const PIC_DATA[NPIC] = {%s};" % ", ".join("PIC_D%d" % i for i in range(len(names))))
     out.append("static const char *const PIC_NAME[NPIC] = {%s};" % ", ".join('"%s"' % n for n in names))
     out.append("static const uint8_t PIC_CAT[%d] = {%s};   /* store.c's categories, in their order */" %

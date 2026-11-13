@@ -653,26 +653,26 @@ static uint16_t wv_col(uint32_t t)              /* a track's colour (muted, LEVE
     return trk[t].level <= 0 || (trk_quiet >> t & 1u) ? UI_M : UI_ACCENTS[t];
 }
 static uint32_t pc_draw, pc_dim;                /* (2.1) the picture pc_row draws; dimmed (SKY) */
-static void pc_row(uint32_t y, const uint8_t *cells)   /* (2.1) a row of a sound's picture: its runs of a colour,
-                                                 * 2 x 2 pixels a cell, in HOME's field (SKY: dimmed, under the waves) */
+static int pc_want(uint32_t y) { return ui_in(HF_X, HF_Y + 1 + (int32_t)y * 2, HF_W, 2); }   /* (2.2: the strip's rows) */
+static void pc_row(uint32_t y, const uint16_t *col)   /* (2.1) a row of a sound's picture (2.2: as it moves,
+                                                 * pictures.c's pic_anim_rows): its runs of a colour, 2 x 2 pixels a
+                                                 * cell, in HOME's field (SKY: dimmed, under the waves) */
 {
-    const uint16_t *pal = PIC_PAL[pc_draw % NPIC];
     uint32_t x = 0, e;
-    if (!ui_in(HF_X, HF_Y + 1 + (int32_t)y * 2, HF_W, 2)) return;
     while (x < PIC_W) {
-        for (e = x + 1u; e < PIC_W && cells[e] == cells[x]; e++)
+        for (e = x + 1u; e < PIC_W && col[e] == col[x]; e++)
             ;
         ui_rect(HF_X + (int32_t)x * 2, HF_Y + 1 + (int32_t)y * 2, (int32_t)(e - x) * 2, 2,
-                pc_dim ? ui_mix(UI_K, pal[cells[x]], 7, 16) : pal[cells[x]]);
+                pc_dim ? ui_mix(UI_K, col[x], 7, 16) : col[x]);
         x = e;
     }
 }
 static void pic_home_card(void)                 /* (2.1) HOME a moment after PRESETS turned: the sound's picture, its name
-                                                 * on it (after Demake's) */
+                                                 * on it (after Demake's); (2.2) moving */
 {
     int32_t w = ui_len(pc_name) * 8 + 8;
     pc_draw = pc_id, pc_dim = 0;
-    pic_rows(pc_id, pc_row);
+    pic_anim_rows(pc_id, pic_card_t(), pc_want, pc_row);
     ui_rect(HF_X + 4, HF_Y + 5, w, 13, UI_K);
     ui_text(HF_X + 8, HF_Y + 8, pc_name, 1, UI_W);
 }
@@ -684,7 +684,7 @@ static void pic_home(void)                      /* Main: the stars, a wave a tra
     if (!sk_ok) sk_init();
     if (pc_mode == PC_SKY) {                    /* (2.1) SKY: the selected track's sound's picture, dimmed, for a sky */
         pc_draw = pic_of_track(sel), pc_dim = 1;
-        pic_rows(pc_draw, pc_row);
+        pic_anim_rows(pc_draw, fm1_ms, pc_want, pc_row);   /* (2.2: moving, always) */
         pc_dim = 0;
     } else
         for (i = 0; i < NSTAR; i++) ui_rect(sk_x[i] * 3, 27 + sk_y[i] * 3, 3, 3, sk_col(i));
@@ -749,6 +749,7 @@ static void ui_home_frame(int draw)             /* a frame of HOME's picture (dr
             i = an_rnd(NSTAR);
             if (!sk_ph[i]) sk_ph[i] = 1;
         }
+    if (pic_card_on() || pc_mode == PC_SKY) moved = 1;   /* (2.2) the picture moves: the field every frame */
     if (draw && moved) ui_home_part(HF_X, HF_Y, HF_W, HF_H);
 }
 static int32_t ui_oct;                          /* (the octave: SEL's keys) */
