@@ -19,7 +19,8 @@ Built, tested (host, stress 1..3, ARM, web, the device names in a Linux containe
 | 6 | The year turns: JAHKI | `year.c`, LFO's fifth page; project version 10 (EXT 32 B) | built |
 | 7 | SHIMMER moves with the weather | part of JAHKI (`rv_shq`) | built |
 | | The factory sounds' fingerprints | `tests/sound_prints.py`, in `tests/run_host.sh` | built |
-| | Pictures that move | `pictures.c` `pic_anim_rows`, `gen_pictures.py` `ANIM` | built (all 16) |
+| | Pictures that move | `pictures.c` `pic_anim_rows`, `gen_pictures.py` `ANIM` | built (all 38) |
+| | A picture for every factory sound (wished: no two alike) | 22 more scenes in `draw_pictures.py`; HOME keeps its stars (JAHKI's SKY only in the screensaver) | built |
 | | GOVVA, the pictures as a screensaver (wished on the FM-1) | SCREEN OFF's last, `ui.c` `ui_govva`; no text over the pictures | built |
 
 On the FM-1 (beta1): the JAHKI page at 65 % CPU, 69 % peak (the whole picture moved once per strip of the screen, and

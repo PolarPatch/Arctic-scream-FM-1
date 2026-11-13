@@ -73,8 +73,10 @@ Each track's wave glows on HOME as it plays, under a starry sky. The header show
 - While WARP or MORPH is up, the track's level is held where it was, so neither makes it suddenly louder or quieter; both sit on top of the knobs (the knobs themselves never move) and are saved with the project.
 
 **A picture for every sound (new in 2.1).** Turn PRESETS and HOME shows the sound's picture for a moment (2.2: the
-picture alone, the name is in the header): a glacier for the drones, the aurora for the pads, icicles for the bells, an ice cave for Holvut's sounds, a fjord
-for DEEP FJORD and MANDALORIA, a snowstorm for WHITEOUT. With **PICTURE** on SYSTEM 3 set to `SKY`, the selected
+picture alone, the name is in the header). From 2.2 each of the 38 factory sounds has a picture of its own: the aurora
+for POLAR NIGHT, a spruce forest in falling snow for SNOW VEIL, a fjord for DEEP FJORD, a wooden chapel and its bell for
+ICE BELL, painted houses under the mountain for SVALBARD CELLO, three standing stones for III, and so on. Your own
+sounds show their category's. With **PICTURE** on SYSTEM 3 set to `SKY`, the selected
 track's picture stays on HOME as its sky, dimmed under the waves; `OFF` shows none.
 
 **The pictures move (new in 2.2).** The card and the sky are not still: the aurora's curtains breathe and sway, snow
@@ -329,7 +331,8 @@ fog lower and duller.
 - **DEPTH, 0–100 %:** how far the seasons lean the sound. What leans: the tracks' filters, SPACE's SIZE (a longer or
   shorter tail than SIZE says) and SHIMMER (more or less of what you set; 0 stays 0). Between two seasons, between
   their leans. **At 0 nothing changes**: the year only turns. The knobs themselves never move.
-- **SKY:** ON shows the season's picture, moving, as HOME's sky (whatever PICTURE says).
+- **SKY:** ON: the screensaver (SCREEN OFF's GOVVA or GUOVSSAHAS) shows the season's picture, as it does whenever
+  DEPTH is above 0. HOME itself keeps its stars.
 - The screen shows the season's picture, the year as a band of its eight seasons with a line where it is now, and
   what it leans: CUT (the filters), SPACE (SIZE's steps) and SHIM (SHIMMER, % of what you set).
 - YEAR, DEPTH, SKY and the season are saved with the project. The season is saved when the project is saved anyway

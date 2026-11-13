@@ -688,9 +688,8 @@ static void pic_home(void)                      /* Main: the stars, a wave a tra
     uint32_t i, t;
     if (pic_card_on()) { pic_home_card(); return; }   /* (2.1) a sound's picture a moment */
     if (!sk_ok) sk_init();
-    if (pc_mode == PC_SKY || yr_sky) {          /* (2.1) SKY: the selected track's sound's picture, dimmed, for a sky
-                                                 * (2.2: JAHKI's SKY: the season's) */
-        pc_draw = yr_sky ? yr_pic() : pic_of_track(sel), pc_dim = 1;
+    if (pc_mode == PC_SKY) {                    /* (2.1) SKY: the selected track's sound's picture, dimmed, for a sky */
+        pc_draw = pic_of_track(sel), pc_dim = 1;
         pic_anim_rows(pc_draw, fm1_ms, pc_want, pc_row);   /* (2.2: moving, always) */
         pc_dim = 0;
     } else
@@ -756,7 +755,7 @@ static void ui_home_frame(int draw)             /* a frame of HOME's picture (dr
             i = an_rnd(NSTAR);
             if (!sk_ph[i]) sk_ph[i] = 1;
         }
-    if (pic_card_on() || pc_mode == PC_SKY || yr_sky) moved = 1;   /* (2.2) the picture moves: the field every frame */
+    if (pic_card_on() || pc_mode == PC_SKY) moved = 1;   /* (2.2) the picture moves: the field every frame */
     if (draw && moved) ui_home_part(HF_X, HF_Y, HF_W, HF_H);
 }
 static int32_t ui_oct;                          /* (the octave: SEL's keys) */
@@ -2294,8 +2293,7 @@ static uint32_t ui_pic_key(void)
 #define UI_H(v) (h = (h ^ (uint32_t)(v)) * 16777619u)
     UI_H(page), UI_H(sel), UI_H(sel_eng()), UI_H(ge_freeze), UI_H(ui_acc);
     if (page == PG_HOME)                        /* (2.1: the card, on or off; SKY's picture; 2.2: JAHKI's) */
-        UI_H(pic_card_on() ? pc_id + 1u : 0u), UI_H(pc_name[0]), UI_H(pc_mode == PC_SKY ? pic_of_track(sel) + 1u : 0u),
-            UI_H(yr_sky ? (uint32_t)yr_season + 1u : 0u);
+        UI_H(pic_card_on() ? pc_id + 1u : 0u), UI_H(pc_name[0]), UI_H(pc_mode == PC_SKY ? pic_of_track(sel) + 1u : 0u);
     for (k = 0; k < 4u; k++) {
         volatile int32_t *p = knob_param(page, k);
         UI_H(p ? *p : -1);
