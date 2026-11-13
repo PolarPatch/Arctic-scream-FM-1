@@ -412,7 +412,7 @@ export function soundTitle(r, meta) {                        // as the FM-1 name
 // ------------------------------------------------------------------ sequences (store.c's pk_seq: SEQ_PK B)
 export const SEQ_PK = 260, SEQ_N = 64;
 export const SEQ_DIV = ["1/4", "1/4T", "1/8", "1/8T", "1/16", "1/16T", "1/32", "1/32T"], SEQ_DIV_T = [96, 64, 48, 32, 24, 16, 12, 8];
-export const SEQ_MODE = ["FORWARD", "BACKWARD", "PINGPONG", "RANDOM"];
+export const SEQ_MODE = ["FORWARD", "BACKWARD", "PINGPONG", "RANDOM", "EVOLVE"];
 export function parseSeq(b) {                                // -> { steps, div, swing, mode, st: [{ note, chance, ratchet, len, chord }] }
   const st = [];
   for (let k = 0; k < SEQ_N; k++) {
