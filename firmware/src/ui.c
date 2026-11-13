@@ -651,10 +651,32 @@ static uint16_t wv_col(uint32_t t)              /* a track's colour (muted, LEVE
 {
     return trk[t].level <= 0 || (trk_quiet >> t & 1u) ? UI_M : UI_ACCENTS[t];
 }
+static void pc_row(uint32_t y, const uint8_t *cells)   /* (2.1) a row of the card's picture: its runs of a colour,
+                                                 * 2 x 2 pixels a cell, in HOME's field */
+{
+    const uint16_t *pal = PIC_PAL[pc_id % NPIC];
+    uint32_t x = 0, e;
+    if (!ui_in(HF_X, HF_Y + 1 + (int32_t)y * 2, HF_W, 2)) return;
+    while (x < PIC_W) {
+        for (e = x + 1u; e < PIC_W && cells[e] == cells[x]; e++)
+            ;
+        ui_rect(HF_X + (int32_t)x * 2, HF_Y + 1 + (int32_t)y * 2, (int32_t)(e - x) * 2, 2, pal[cells[x]]);
+        x = e;
+    }
+}
+static void pic_home_card(void)                 /* (2.1) HOME a moment after PRESETS turned: the sound's picture, its name
+                                                 * on it (after Demake's) */
+{
+    int32_t w = ui_len(pc_name) * 8 + 8;
+    pic_rows(pc_id, pc_row);
+    ui_rect(HF_X + 4, HF_Y + 5, w, 13, UI_K);
+    ui_text(HF_X + 8, HF_Y + 8, pc_name, 1, UI_W);
+}
 static void pic_home(void)                      /* Main: the stars, a wave a track */
 {
     int32_t y[SC_N], x;
     uint32_t i, t;
+    if (pic_card_on()) { pic_home_card(); return; }   /* (2.1) a sound's picture a moment */
     if (!sk_ok) sk_init();
     for (i = 0; i < NSTAR; i++) ui_rect(sk_x[i] * 3, 27 + sk_y[i] * 3, 3, 3, sk_col(i));
     ui_brackets(HF_X, HF_Y, HF_W, HF_H, 10, ui_acc);
@@ -2216,6 +2238,7 @@ static uint32_t ui_pic_key(void)
     uint32_t h = 2166136261u, k, t;
 #define UI_H(v) (h = (h ^ (uint32_t)(v)) * 16777619u)
     UI_H(page), UI_H(sel), UI_H(sel_eng()), UI_H(ge_freeze), UI_H(ui_acc);
+    if (page == PG_HOME) UI_H(pic_card_on() ? pc_id + 1u : 0u), UI_H(pc_name[0]);   /* (2.1: the card, on or off) */
     for (k = 0; k < 4u; k++) {
         volatile int32_t *p = knob_param(page, k);
         UI_H(p ? *p : -1);

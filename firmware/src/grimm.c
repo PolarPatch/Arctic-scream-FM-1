@@ -1670,6 +1670,7 @@ static void pgl_load(const uint8_t *r, uint32_t t)   /* a sound into track t, PR
             pgl_on |= 1u << (t * NPARAM + k);
     pgl_t0[t] = fm1_ms;
 }
+#include "pictures.c"                           /* (2.1) a picture for every sound: HOME's card */
 static void presets_turn(int32_t d)
 {
     uint32_t c = (uint32_t)brw_cat[sel] % NCAT, tries;
@@ -1694,6 +1695,7 @@ static void presets_turn(int32_t d)
     brw_cat[sel] = (int32_t)c, brw_pos[sel] = pos, trk_nm[sel][0] = 0;
     snd_rec_name(r, m);
     hd_say(m);
+    pic_card(sel);                              /* (2.1) its picture on HOME a moment */
 }
 #include "ui.c"                                 /* the screens (after the concept designs) */
 #include "reader.c"                             /* (1.5) the screen reader: what the screen shows, said */
