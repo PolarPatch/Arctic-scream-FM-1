@@ -72,6 +72,11 @@ Each track's wave glows on HOME as it plays, under a starry sky. The header show
 - **MORPH:** one knob through all four of the source's knobs at once (on PHYS: STRUCTURE, DAMP and BOW; the stepped ones, such as MODEL, stay as set), on a path of its own for each track and source, always the same, with a slow wandering around it that grows as you turn it up. At 0 the sound is as set.
 - While WARP or MORPH is up, the track's level is held where it was, so neither makes it suddenly louder or quieter; both sit on top of the knobs (the knobs themselves never move) and are saved with the project.
 
+**A picture for every sound (new in 2.1).** Turn PRESETS and HOME shows the sound's picture for a moment, its name on
+it: a glacier for the drones, the aurora for the pads, icicles for the bells, an ice cave for Holvut's sounds, a fjord
+for DEEP FJORD and MANDALORIA, a snowstorm for WHITEOUT. With **PICTURE** on SYSTEM 3 set to `SKY`, the selected
+track's picture stays on HOME as its sky, dimmed under the waves; `OFF` shows none.
+
 Press **HOME** again for the mixers. MIXER 1 draws each track as a curtain of standing ribbons, MIXER 2 as a ribbon
 across the stereo field.
 
@@ -234,7 +239,7 @@ whole piece by itself, moving as slowly as a glacier, and then dies out.
 |---|---|---|---|
 | LENGTH | DRIFT | **RUOHČAT** (to creak) | START |
 
-- **LENGTH:** 5, 10, 15, 25, 30 or 60 minutes, or ENDLESS.
+- **LENGTH:** 5, 10, 15, 25, 30 or 60 minutes, 2, 4 or 8 hours (new in 2.1: all night, to sleep by), or ENDLESS.
 - **START with nothing playing:** it plays its own notes, one on each track, from the SCALE: the root low on T1, its
   fifth on T2, a third and a fifth or second over them on T3 and T4 (SCALE OFF: natural minor). The tracks play the
   sounds you have on them, so pick four drones first. T1 starts at once and the others come in one after another, 5 to
@@ -252,6 +257,9 @@ whole piece by itself, moving as slowly as a glacier, and then dies out.
 - **RUOHČAT, 0–100 %:** the ice around the drone: cracks, drips and a deep boom now and then, each one different, in
   the mix and the reverb. At 1 % about one a minute; at 100 % a storm of them. It plays whenever it is up, the piece
   running or not.
+- **The ice answers (new in 2.1).** While RUOHČAT is up, the ice listens: a note you play (a key or MIDI, not the
+  sequencer's) may come back a few seconds later from far off in the ice, an octave up, a bell of ice deep in the
+  reverb. A quarter of your notes at 1 %, most of them at 100 %; one answer at a time.
 - The screen draws the piece as a glacier: its height is the sound, the part played lit, now a white line; under it
   each track's presence and its note. A crack flashes on the ice when RUOHČAT sounds.
 - LENGTH, DRIFT and RUOHČAT are saved with the project; START is not.
@@ -372,6 +380,10 @@ Each track has its own **64-step** pattern; all four play together on one tempo 
 
 <br clear="right">
 
+- **PLAY MODE:** FORWARD, BACKWARD, PINGPONG, RANDOM or **EVOLVE** (new in 2.1): forward, and each time the pattern
+  begins again, now and then one of its notes moves a step or two up or down the SCALE (and now and then a step's
+  CHANCE a little), written into the pattern. The loop never comes round quite the same, and wanders slowly. Pair it
+  with DICE.
 - **SELECT** moves the cursor; **hold SEQ + turn SELECT** sets the length. **PRESETS** sets the tempo.
 - **Stopped + REC:** each key fills a step and moves on. **Playing + REC:** notes land on the nearest step.
 - **Step locks:** hold **SEL** and turn a knob to lock that value to the step. **SEL + OCT−** clears them.
@@ -558,7 +570,7 @@ FM-1, not the project.
 |---|---|---|---|---|
 | SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA, MONO) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF |
 | SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES | CLOCK (INT, I+OUT, USB, TRS) |
-| SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB) | MOD OUT (OFF, ON) | |
+| SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB) | MOD OUT (OFF, ON) | PICTURE (CARD, SKY, OFF) |
 
 - **COLOUR:** pick the one that matches your FM-1. **MONO** (new in 2.0) turns the whole screen black and white, the
   greys as a fine pattern of dots, as on an old one-bit screen. The header stays clean so the sound's name reads.
@@ -584,6 +596,8 @@ FM-1, not the project.
   track's own channel (as its notes, MIDI CHANNEL): **CC 102** is how loud the track plays now (0 silent, 127 full) and
   **CC 103** is where its LFO is (64 the middle). Use it to drive lights, motors, a Max patch or another synth's filter
   from the FM-1. OFF by default, so a DAW gets nothing it did not ask for.
+- **PICTURE** (SYSTEM 3, new in 2.1): `CARD`, a sound's picture on HOME a moment while PRESETS turns; `SKY`, the
+  selected track's picture as HOME's sky, dimmed under the waves; `OFF`. Saved with the project.
 - **For app makers:** since 1.5.2 Arctic Scream also answers **PANEL OUT**, an open protocol that tells an app which buttons
   and keys are down and how the knobs turn, so it can draw the FM-1 as you play. It is silent until an app asks. See
   [docs/PANEL_OUT.md](docs/PANEL_OUT.md).
