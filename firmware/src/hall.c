@@ -73,6 +73,8 @@ static struct {
 /* the parameters, 0..127, written by the main loop */
 static volatile int32_t rv_size = 80, rv_damp = 48, rv_mix = 100, rv_pre = 16;  /* 6.4 s, ~2.5 kHz, return 79 %, 31 ms */
 static volatile int32_t rv_shim;                /* (1.4) SHIMMER, 0..127: 0 off */
+static volatile uint32_t rv_hold;               /* (2.2) the main loop: the ice holds its breath (jiehkki.c): as INF a
+                                                 * while, SIZE as it is */
 #define RV_INF 127
 
 /* Felucca's helpers: m / 2^sh rounded towards zero (a product that feeds back must not floor: a loop of floors holds
@@ -149,7 +151,7 @@ static void hall_render(const int32_t *in, int32_t *out, uint32_t n)
 {
     int16_t *b, *a;
     uint32_t i, k, s, m, d, w, rd, pd, any = 0, full = 0;
-    int32_t mix = rv_mix, size = rv_size, damp = rv_damp, pre = rv_pre;
+    int32_t mix = rv_mix, size = rv_hold ? RV_INF : rv_size, damp = rv_damp, pre = rv_pre;
     int32_t inf = size >= RV_INF, kd = inf ? 32767 : RV_KD(damp), st = inf ? 0 : 32767;
     int32_t xp = rv.x, hp = rv.hp, he = rv.he, sd = rv.send, ml = rv.ml, mr = rv.mr;
     int32_t sg = clamp(rv_shim, 0, 127), sl = rv.slp, shany = 0;

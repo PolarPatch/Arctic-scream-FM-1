@@ -37,7 +37,10 @@
  * (2.2) Its dusk (after PaperLagoon's sleep, hacha's, whose last minute is sparser, quieter, slower; written anew): as
  * the piece dies out (jk_fo: its last fifth, 1 .. 8 min) it does not only fade: its notes move half as often, the mix
  * stops changing, and its own tracks go one by one, the highest first (T4 a quarter into it, T3 at half, T2 at three
- * quarters), each let go into SPACE's tail, till T1's low note is alone and fades into silence. */
+ * quarters), each let go into SPACE's tail, till T1's low note is alone and fades into silence.
+ * (2.2) The ice holds its breath (after Arcturus S6's gated reverb freeze, Zeptosecond DSP's; written anew): with
+ * RUOHCAT up, now and then SPACE's tail is held still for 3 .. 10 s (SIZE's INF, hall.c's rv_hold: the knob as it is),
+ * the tracks playing on over it, then let go to die away as SIZE says: every ~90 s at 1 %, every ~20 s at 100 %. */
 
 #define JK_TICK 50u                             /* ms between the main loop's looks */
 #define JK_ENDLESS 9                            /* (JK_NLEN: grimm.c; 2.0's 6: store.c reads it as this) */
@@ -517,6 +520,20 @@ static int32_t jk_trk(uint32_t t)               /* audio, a block: track t's gai
 }
 
 /* main loop, each pass: the knob START, the piece, RUOHCAT; touched: a hand's (or a MIDI note's) last time */
+static uint32_t ih_next, ih_end;                /* (2.2) the ice's next held breath (0: none due), this one's end */
+static void ih_tick(uint32_t now)
+{
+    int32_t d = clamp(jk_ruo, 0, 100);
+    uint32_t m = 90000u - (uint32_t)d * 700u;
+    if (rv_hold) {
+        if ((int32_t)(now - ih_end) >= 0) rv_hold = 0, ih_next = now + m / 2u + jk_rnd(m);
+        return;
+    }
+    if (!d || jk.ended || rv_size >= RV_INF || rv_mix <= 0) { ih_next = 0; return; }   /* (off, over, INF by hand) */
+    if (ih_next && (int32_t)(now - ih_next) >= 0) rv_hold = 1, ih_end = now + 3000u + jk_rnd(7000u);
+    else if (!ih_next || ih_next - now > m * 3u / 2u) ih_next = now + m / 2u + jk_rnd(m);   /* (none due; RUOHCAT
+                                                 * turned up: sooner) */
+}
 static void jk_tick(uint32_t now, uint32_t touched)
 {
     if (jk.ended && (int32_t)(touched - jk.end_t) > 0) {   /* (over and silent: a hand wakes it) */
@@ -541,4 +558,5 @@ static void jk_tick(uint32_t now, uint32_t touched)
     }
     jk_glide(now);
     ru_tick(now);
+    ih_tick(now);
 }

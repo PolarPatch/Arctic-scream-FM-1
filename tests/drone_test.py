@@ -108,6 +108,14 @@ check("START with a note on: its own none, the note as it is", jk[15000]["own"] 
 ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}")] + [(6800 + 20 * i, f"enc {K3} 5") for i in range(20)]
 out, a, jk, notes = run("ruo", ev, 30000)
 check("RUOHCAT 100 %: the ice heard, nothing played", rms(a, 8, 30) > 100 and peak(a) < 32000, (rms(a, 8, 30), peak(a)))
+# (2.2) the ice holds its breath: RUOHCAT 100 %, a held chord into SPACE; SPACE held a while now and then, let go again
+ev = [(6000, "keys 145"), (6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}")] + \
+     [(6800 + 20 * i, f"enc {K3} 5") for i in range(20)]
+out, a, jk, notes = run("hold", ev + P(*range(8000, 120000, 500)), 120000)
+held = [t for t in sorted(jk) if jk[t]["hold"]]
+spans = [(t, u) for t, u in zip([held[0]] + [h for h, g in zip(held[1:], held) if h - g > 500], [g for h, g in zip(held[1:], held) if h - g > 500] + [held[-1]])] if held else []
+check("(2.2) RUOHCAT 100 %: SPACE held now and then (3 .. 10 s each), let go between",
+      2 <= len(spans) and all(2500 <= u - t <= 10500 for t, u in spans if u < 119000) and len(held) < len(jk) / 2, spans)
 
 
 def freq(a, t0, t1, lo, hi):                    # the strongest frequency between lo and hi Hz (interpolated)
