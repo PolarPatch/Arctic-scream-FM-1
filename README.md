@@ -31,6 +31,15 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
   - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
   - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
+- **New in 2.2 (in the making):**
+  - **JAHKI** (year; press LFO five times): the Arctic's year turning slowly under the music, through the Sami year's
+    eight seasons, from DALVI's polar night to GEASSI's midnight sun and CAKCA's autumn fog, each leaning the filters,
+    the reverb and SHIMMER a little. A year can take 8 minutes or 24 hours, or stand STILL.
+  - **The pictures move:** the aurora breathes, snow drifts, water glitters, the lighthouse's beam turns.
+  - **The ice holds its breath:** with RUOHČAT up, the reverb's tail is held still for a few seconds now and then.
+  - **JIEHKKI's dusk:** as a piece dies out, its tracks go one by one, the highest first, till one low note fades alone.
+    **START ALWAYS:** the piece begins by itself every time the FM-1 is switched on.
+  - **The keys as a display:** the piece's notes lit, RUOHČAT's cracks and drips flashing across the keys.
 - **New in 2.1 (in the making):**
   - **A picture for every sound.** Turn PRESETS and HOME shows the sound's picture a moment: a glacier, the aurora, an
     ice cave, a fjord, a snowstorm. SYSTEM 3's PICTURE can keep it as HOME's sky, under the waves.

@@ -5,6 +5,25 @@ built yet. The longer list of what waits, and why, is in `DEVELOPER.md` ("Ideas 
 Demake and ZEN-1, an idea taken from another firmware is written anew, never copied, and credited in `LICENSING.md`
 when it lands.
 
+## Status (2026-11-13, branch `feature/2.2`)
+
+Built, tested (host, stress 1..3, ARM, web, the device names in a Linux container) and documented in `MANUAL.md`:
+
+| | Idea | Where | |
+| --- | --- | --- | --- |
+| 1 | The ice holds its breath | `jiehkki.c` `ih_tick`, `hall.c` `rv_hold` | built |
+| 2 | A drone at power-on | JIEHKKI's START **ALWAYS** (`jk_always`; project EXT 23 bit 4) instead of a SYSTEM setting: no new settings version, and the piece is JIEHKKI's own | built |
+| 3 | The keys as a display | `kl_flash`, `kl_keys` (no LIGHTS setting: it lights only what JIEHKKI and RUOHCAT do, both opt-in) | built |
+| 4 | JIEHKKI's dusk | `jk_dusk` | built |
+| 5 | PRESETS glides | there since 2.0 (`pgl_load`: the source's knobs glide, a new source's notes cross over). ENV's glide was tried and dropped: the engine reads ENV as a note starts, so gliding it only made a dip (drone_test caught it) | as it was |
+| 6 | The year turns: JAHKI | `year.c`, LFO's fifth page; project version 10 (EXT 32 B) | built |
+| 7 | SHIMMER moves with the weather | part of JAHKI (`rv_shq`) | built |
+| | The factory sounds' fingerprints | `tests/sound_prints.py`, in `tests/run_host.sh` | built |
+| | Pictures that move | `pictures.c` `pic_anim_rows`, `gen_pictures.py` `ANIM` | built (all 16) |
+
+Not done: CPU and the screen's speed on a real FM-1 (SKY and the card now redraw HOME's field every frame, ~18 a
+second; GUOVSSAHAS draws the whole screen 30 a second, so it should hold).
+
 ## From Arcturus S6 (noted 2026-11-13)
 
 [Arcturus S6](https://github.com/zeptosecond-dsp/Arcturus-S6) (Zeptosecond DSP, GPL-3.0-only, on Dinghy): a

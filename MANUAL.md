@@ -77,6 +77,11 @@ it: a glacier for the drones, the aurora for the pads, icicles for the bells, an
 for DEEP FJORD and MANDALORIA, a snowstorm for WHITEOUT. With **PICTURE** on SYSTEM 3 set to `SKY`, the selected
 track's picture stays on HOME as its sky, dimmed under the waves; `OFF` shows none.
 
+**The pictures move (new in 2.2).** The card and the sky are not still: the aurora's curtains breathe and sway, snow
+drifts down, stars twinkle over the dark, water ripples and glitters under the moon and the midnight sun, the hut's
+window flickers, the station's light blinks, the lighthouse's beam turns, a figure fades into the snowstorm and back,
+icicles drip, bubbles rise under the ice. No video is stored: the FM-1 moves the picture itself, a little at a time.
+
 Press **HOME** again for the mixers. MIXER 1 draws each track as a curtain of standing ribbons, MIXER 2 as a ribbon
 across the stereo field.
 
@@ -240,6 +245,9 @@ whole piece by itself, moving as slowly as a glacier, and then dies out.
 | LENGTH | DRIFT | **RUOHČAT** (to creak) | START |
 
 - **LENGTH:** 5, 10, 15, 25, 30 or 60 minutes, 2, 4 or 8 hours (new in 2.1: all night, to sleep by), or ENDLESS.
+- **START:** OFF, ON, or **ALWAYS** (new in 2.2): on now, and again every time the FM-1 is switched on, a new piece
+  each time: Arctic Scream wakes up playing. ALWAYS is saved with the project (and stays after a piece has ended,
+  ready for the next power-on); turn START to OFF to stop it.
 - **START with nothing playing:** it plays its own notes, one on each track, from the SCALE: the root low on T1, its
   fifth on T2, a third and a fifth or second over them on T3 and T4 (SCALE OFF: natural minor). The tracks play the
   sounds you have on them, so pick four drones first. T1 starts at once and the others come in one after another, 5 to
@@ -250,7 +258,10 @@ whole piece by itself, moving as slowly as a glacier, and then dies out.
   filters open over the first minutes and close again as it dies out. In the opening (a sixth of LENGTH, four minutes
   at most) the notes move twice as often. **At 0 nothing moves**: the piece only rises and dies out. That is a
   sleep timer: play your drone, set LENGTH, DRIFT 0, START.
-- **The end:** over its last fifth (one to eight minutes) everything fades out. Then the notes are let go, the
+- **The end:** over its last fifth (one to eight minutes) everything fades out. **Its dusk (new in 2.2):** in that
+  last fifth the notes move half as often, the mix stops changing, and its own tracks go one by one, the highest
+  first: T4 a quarter of the way in, T3 at half, T2 at three quarters, each let go into the reverb's tail, until T1's
+  low note fades alone. Then the notes are let go, the
   sequencer and GENERATE stop, the screen goes dark, and the FM-1 stays silent until you touch it (a key, a button, a
   knob or a MIDI note). The first touch only wakes it, as with SCREEN OFF.
 - **START OFF** before the end: its own notes are let go and the mix is as you set it.
@@ -260,9 +271,16 @@ whole piece by itself, moving as slowly as a glacier, and then dies out.
 - **The ice answers (new in 2.1).** While RUOHČAT is up, the ice listens: a note you play (a key or MIDI, not the
   sequencer's) may come back a few seconds later from far off in the ice, an octave up, a bell of ice deep in the
   reverb. A quarter of your notes at 1 %, most of them at 100 %; one answer at a time.
+- **The ice holds its breath (new in 2.2).** While RUOHČAT is up, now and then the reverb's tail is held still for 3 to
+  10 seconds, as SIZE's INF holds it, the tracks playing on over it, then let go to die away as SIZE says. About every
+  minute and a half at 1 %, every 20 seconds at 100 %. SIZE itself is never changed; with SIZE at INF or SPACE's MIX
+  at 0 it does nothing.
+- **The keys show it (new in 2.2).** While no layer is held, the keys light the piece's own notes (every track's that
+  falls on the keyboard), and RUOHČAT's sounds flash across them: a crack lights a few keys side by side, a drip a high
+  key, a boom the lowest three, the ice's answer the key of its note.
 - The screen draws the piece as a glacier: its height is the sound, the part played lit, now a white line; under it
   each track's presence and its note. A crack flashes on the ice when RUOHČAT sounds.
-- LENGTH, DRIFT and RUOHČAT are saved with the project; START is not.
+- LENGTH, DRIFT and RUOHČAT are saved with the project; START only when it is ALWAYS.
 
 <br clear="right">
 
@@ -287,6 +305,36 @@ drone, water, wind. Load WAVs into the four sample slots with the [editor](#14--
 - A slot holds 6.6 seconds (22 kHz, mono). SAMPLE, SHARE and VARY are saved with the project.
 - The screen shows the four slots as strips of ice, as long as their samples; the ones SAMPLE plays are lit, and a
   white line runs along a sample while it plays.
+
+<br clear="right">
+
+### JAHKI: the Arctic's year (new in 2.2)
+
+<img src="docs/manual/screens/jahki.png" alt="JAHKI: GEASSI, the midnight sun, the year as a band of eight seasons" width="360" align="right">
+
+**Press LFO a fifth time.** *Jahki* is North Sami for "year". In the Sami year there are eight seasons, each named for
+how the weather and the land behave. JAHKI lets that year turn slowly under the music, every season leaning the sound
+a little: the polar night darker with a longer reverb, the midnight sun bright and open with more SHIMMER, the autumn
+fog lower and duller.
+
+| KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
+|---|---|---|---|
+| YEAR | SEASON | DEPTH | SKY |
+
+- **YEAR:** how long a whole year takes: 8 or 24 minutes, 1, 2, 8 or 24 hours. **STILL** keeps the season where it is.
+- **SEASON:** where the year is now; turn it to go there. The seasons, in order: **DALVI** winter (the polar night),
+  **GIDDADALVI** spring-winter (crust and glare), **GIDDA** spring, **GIDDAGEASSI** early summer, **GEASSI** summer
+  (the midnight sun), **CAKCAGEASSI** late summer, **CAKCA** autumn (rain and fog), **CAKCADALVI** early winter. (On
+  the screen without their letters đ and č: *giđđa*, *čakča*.)
+- **DEPTH, 0–100 %:** how far the seasons lean the sound. What leans: the tracks' filters, SPACE's SIZE (a longer or
+  shorter tail than SIZE says) and SHIMMER (more or less of what you set; 0 stays 0). Between two seasons, between
+  their leans. **At 0 nothing changes**: the year only turns. The knobs themselves never move.
+- **SKY:** ON shows the season's picture, moving, as HOME's sky, its name in the corner (whatever PICTURE says).
+- The screen shows the season's picture, the year as a band of its eight seasons with a line where it is now, and
+  what it leans: CUT (the filters), SPACE (SIZE's steps) and SHIM (SHIMMER, % of what you set).
+- YEAR, DEPTH, SKY and the season are saved with the project. The season is saved when the project is saved anyway
+  (or when you turn SEASON): the year moving on never writes the flash by itself.
+- The season names are from Giellatekno's North Sami dictionaries ([satni.uit.no](https://satni.uit.no)).
 
 <br clear="right">
 
