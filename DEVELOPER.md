@@ -410,6 +410,70 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
   6. **A welcome card** at the first start, the few controls that matter.
   - Also in ZEN-1: a conductor for the music (phrases, rests, echoes, a slow tide), nature beds from CC0 recordings
     (Freesound), a moon on its real phase from NASA's map, a painted or pixel look.
+- **What Demake showed (noted 2026-11-13).** [demake-synth](https://github.com/InigoHernandez/demake-synth) (GPL-3.0,
+  Sequencist / Inigo Hernandez, who also made MONO2K), rated 4.9: an ambient lofi machine on the author's own field
+  recordings. Ideas only, written from scratch and credited if they ship:
+  - **A picture for every sound** (the gold mine, 2.1: see "Pictures" below).
+  - **Wear as a stage on the whole mix:** COLOUR (saturate, crush, lossy codec smear, noise) then MEDIA (tape,
+    cassette, VHS, vinyl, radio, dictaphone). Arctic Scream's TAPE and DRIVE are close; an Arctic turn: the short-wave
+    radio of a weather station, with hiss and fading.
+  - **Patterns that change themselves:** MUTATE (notes to other scale notes), CHANCE (how often a step plays), EVOLVE
+    (the changes written back as it plays), so a loop never repeats the same way.
+  - **Three loops of different lengths against each other** (polyrhythm); chords as a harmony engine (a key plays the
+    scale degree's chord; a track follows another's harmony at an interval); scenes and songs; hold a note and turn
+    the knobs to edit just that note; a shared SPACE with tails of minutes, FREEZE, BLOOM, REVERSE.
+  - 12 voices, half on the FM-1's second core (as ECHOFIELD; see above).
+
+## Pictures (planned for 2.1, noted 2026-11-13)
+
+A picture for every sound, as Demake has: you see what a sound is before you hear it. The user is a photographer:
+the pictures can be his own photographs, scaled down and dithered into Arctic Scream's palette (a tool, as
+`tools/gen_pictures.py`), so they are ours to ship. Until then, pictures drawn by a script in the same pixel look.
+No pictures from anyone else.
+
+- **Where:** HOME, as a card for a moment while PRESETS turns (the sound's name on it, as Demake's "Laurus"); and, as a
+  SYSTEM choice, HOME's sky (the picture dimmed behind the four waves, following the selected track's sound). The VIBE
+  shows them big; the web player and the editor beside the sounds' list.
+- **How:** small (a cell of 2 x 2 pixels on the FM-1), a palette of 16 Arctic colours, ordered (Bayer) dither as COLOUR
+  MONO's, compressed; one per category first, then one per sound.
+- **The motifs, a first list** (the category's picture first; a sound's own where it has one):
+
+  | Sound | Picture |
+  | --- | --- |
+  | DRONE (category) | a glacier's front under the polar night |
+  | PERMAFROST | frozen ground, cracks in it, a low grey sky |
+  | DEEP FJORD, MANDALORIA | a fjord between steep mountains, the moon in the water |
+  | CRACKING ICE | sea ice breaking up, black water in the cracks |
+  | ARCTIC HUM | a power line over the tundra, humming in the cold |
+  | SOLAR WIND | the sun's storm: a sky of red and green aurora |
+  | UNDER THE ICE | under the sea ice looking up: blue light through it, bubbles |
+  | Holvut's (POLAR HOWL, WENDIGO, FROZEN SCREAM, ICE WRAITH, III) | an ice cave with a pale figure in it; WENDIGO the antlers in the dark forest's edge; FROZEN SCREAM a face in the ice; III three standing stones |
+  | WHITEOUT | a snowstorm, the horizon gone |
+  | DEAD SIGNAL | an abandoned weather station, its mast bent, one light |
+  | POLAR STILL | the sea flat as glass under the midnight sun |
+  | PAD (category) | the polar night, the aurora over the tundra |
+  | POLAR NIGHT, SNOW VEIL, GLACIER PAD, LICHEN, SNOWDRIFT | the aurora; snow falling in the dark; a glacier's blue; lichen on a stone; drifts along a ridge |
+  | MIDNIGHT SUN | the sun low over the ice, pink and gold |
+  | BELL (category), ICE BELL, CRYSTAL HARP, BOWED ICICLE | icicles under a shelf of ice, glinting |
+  | ICEBERG GONG | an iceberg alone in dark water |
+  | VOICE (category), AURORA CHOIR, TUNDRA VOICES, NORTHERN CALL | figures far off on the tundra; the aurora as a choir; a lone caller on a ridge |
+  | BLIZZARD BREATH | breath in the cold in a storm |
+  | EMPTY HORIZON | nothing but the horizon line and a pale sky |
+  | OTHER (category), TUNDRA STRINGS, NORTH STRINGS, SVALBARD CELLO | a hut with a light on the tundra; Longyearbyen's houses in the snow |
+  | ICEBREAKER | a ship breaking ice, its searchlight |
+  | FOG HORN | a lighthouse in fog |
+  | SIGNAL FLARE (KEYS) | a red flare rising over the sea ice |
+  | TEXTURE (category), WIND OVER ICE | snow blowing across bare ice |
+  | BIEGGA, RIDDU | wind over the vidda; a storm coming in from the sea over a coast |
+
+## The user's own material (noted 2026-11-13)
+
+- **Photographs:** the user is a photographer; his own pictures can be the sounds' pictures (scaled down, dithered).
+  Scaling and dithering them is planned with him.
+- **Field recordings:** his own, made with a Tascam X8: wind, water, air, under water. They could be samples (the
+  VIBE's ~95 s slots, the FM-1's 6.6 s ones), nature beds under the music (ZEN-1's idea), or EXCITE's sources for
+  Holvut. Finding them takes him time: ask when they are wanted, never go looking for them.
+
 - Tune the HOME waveform look for ICE WRAITH, and a stronger HOWL burst.
 - Move the redo buffer (`store.c` `redo_b`, 5 KB) into the pool now that the pool has room, to free main RAM.
 - Store `wv_d` (HOME's drawn waves) as 8-bit values instead of 32-bit: saves ~1.2 KB of main RAM.
