@@ -169,6 +169,15 @@ out, a, jk, notes = run("load", P(3000), 3500, {"GRIMM_SAVE_IN": str(sv)})
 check("power-on: all of it as saved (version 9)", jk[3000]["bg"][0][0] == 84 and jk[3000]["len"] == 4 and
       jk[3000]["drift"] == 70 and jk[3000]["ruo"] == 20 and jk[3000]["tun"] == 1 and jk[3000]["go"] == 0, jk[3000])
 
+# (2.2) START ALWAYS: saved with the project; at power-on the piece begins on its own (its own notes, rising)
+sv2 = OUT / "saves_always.bin"
+ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (7000, f"enc {K4} 2")]
+out, a, jk, notes = run("always", ev + P(9000), 50000, {"GRIMM_SAVE_OUT": str(sv2)})
+check("(2.2) START ALWAYS: it plays now", jk[9000]["go"] == 2 and jk[9000]["run"] == 1, jk[9000])
+out, a, jk, notes = run("always_on", P(2000, 40000), 41000, {"GRIMM_SAVE_IN": str(sv2)})
+check(".. power-on: START ALWAYS again, the piece begins on its own", jk[2000]["go"] == 2 and jk[40000]["run"] == 1 and
+      jk[40000]["own"] == 1 and len(notes[40000]) == 4 and rms(a, 30, 40) > 100, (jk[2000], jk[40000], notes[40000]))
+
 # a slot keeps its Biegga: GUST 84 saved into slot A (SAVE held + white key 5), GUST back down, A recalled (SAVE held +
 # white key 1)
 ev = BG + [(6800, f"btn {EDIT}"), (7000, f"enc {K1} 20"), (7400, f"down {SAVE}"), (8000, "keys 128"), (8200, "keys 0"),

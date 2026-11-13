@@ -399,7 +399,7 @@ static void ui_slab_make(uint32_t k, slab_t *S)
     case PG_JIEHKKI:                            /* (2.0) LENGTH, DRIFT %, RUOHCAT %, START */
         if (k == 0u) put_s(S->val, JK_LEN_NAME[clamp(v, 0, JK_NLEN - 1)]);
         else if (k < 3u) ui_3(S->val, (uint32_t)clamp(v, 0, 100));
-        else put_s(S->val, v ? "ON" : "OFF");
+        else put_s(S->val, v >= JK_ALWAYS ? "ALWAYS" : v ? "ON" : "OFF");   /* (2.2: ALWAYS) */
         return;
     case PG_RUOHCAT:                            /* (2.0) AMOUNT %, SAMPLE ("S1", "ALL"), SHARE %, VARY % */
         if (k == 1u) put_s(S->val, RU_SMP_SHORT[clamp(v, 0, RU_NSMP - 1)]);

@@ -252,6 +252,8 @@ static volatile int32_t pc_mode;                /* .. the project's (store.c's E
 static const char *const PC_NAME[NPC] = {"CARD", "SKY", "OFF"};
 #define JK_NLEN 10                              /* (2.0, jiehkki.c: JIEHKKI's LENGTHs; its knobs (store.c saves them); */
 static volatile int32_t jk_len, jk_drift, jk_ruo, jk_go;
+#define JK_ALWAYS 2                             /* (.. 2.2: START's ALWAYS, saved; a project loaded says it;) */
+static void jk_always(uint32_t on);
 #define RU_NSMP 6                               /* (.. the RUOHCAT page's SAMPLE: OFF, SLOT 1 .. 4, ALL; its knobs;) */
 static volatile int32_t ru_smp, ru_share, ru_vary;
 static volatile int32_t jk_cut[NT];             /* .. a track filter's move, << 8; */
@@ -1288,7 +1290,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_ARP ? (k == 0u ? NARPMODE - 1 : k == 1u ? NARPRATE - 1 : k == 2u ? 4 : 100) :
            pg == PG_LFO ? (k == 0u ? 127 : k == 1u ? 100 : k == 2u ? NLFODEST - 1 : NLFOSHAPE - 1) :
            pg == PG_DRONE ? (k < 2u ? 100 : k == 2u ? DR_NRISE - 1 : 1) :
-           pg == PG_JIEHKKI ? (k == 0u ? JK_NLEN - 1 : k == 3u ? 1 : 100) : pg == PG_RUOHCAT ? (k == 1u ? RU_NSMP - 1 : 100) :
+           pg == PG_JIEHKKI ? (k == 0u ? JK_NLEN - 1 : k == 3u ? JK_ALWAYS : 100) : pg == PG_RUOHCAT ? (k == 1u ? RU_NSMP - 1 : 100) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : NSCR - 1) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
            pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_LMAX : k == 3u ? NPC - 1 : 1) :
@@ -1426,7 +1428,7 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
     case PG_JIEHKKI:                            /* (2.0) LENGTH, DRIFT, RUOHCAT, START */
         if (k == 0u) put_s(s, JK_LEN_NAME[clamp(v, 0, JK_NLEN - 1)]);
         else if (k < 3u) put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
-        else put_s(s, v ? "ON" : "OFF");
+        else put_s(s, v >= JK_ALWAYS ? "ALWAYS" : v ? "ON" : "OFF");   /* (2.2: ALWAYS) */
         return;
     case PG_SYS3:                               /* (2.1: its PICTURE; the others as the slabs say them, ui.c) */
         if (k == 3u) { put_s(s, PC_NAME[clamp(v, 0, NPC - 1)]); return; }

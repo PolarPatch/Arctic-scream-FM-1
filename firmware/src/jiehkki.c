@@ -10,7 +10,8 @@
  *   RUOHCAT    (to creak, crack: sanit.oahpa.no) 0 .. 100 %: the ice around the drone, a crack, a drip, a deep boom now
  *              and then, each its own, from far apart (1 %, a minute or so) to a storm of them (100 %); heard whenever
  *              it is up, the piece playing or not. 0: none
- *   START      OFF, ON: the piece. Turned ON with nothing sounding, it plays its own notes, one a track (from the
+ *   START      OFF, ON, (2.2) ALWAYS: the piece (ALWAYS: ON, and again at every power-on, the project saying so:
+ *              Arctic Scream plays as it wakes, a piece of its own each time, after Arcturus S6's drone at power-on). Turned ON with nothing sounding, it plays its own notes, one a track (from the
  *              SCALE: ROOT low on T1, its fifth, a third and a fifth or second over it; SCALE OFF: as NATURAL
  *              MINOR), the tracks coming in one after another as it rises out of silence (10 .. 30 s); with notes
  *              sounding, it takes them as they are (and moves the mix alone). At its end
@@ -20,7 +21,8 @@
  * The main loop decides (jk_tick, every JK_TICK ms): the notes go through nq (as a key's, the ids JK_ID ..), the
  * gains and the filters' moves through jk_og, jk_tg, jk_cut; the audio ISR ramps them (jk_out, mix_tracks, trk_filter)
  * and plays RUOHCAT's sounds (ru_render: noise through band-passes, a falling sine, a slow low one; into the mix and
- * the REV bus). LENGTH, DRIFT and RUOHCAT are the project's (store.c, version 9); START is not saved.
+ * the REV bus). LENGTH, DRIFT and RUOHCAT are the project's (store.c, version 9); START is not saved (2.2: ALWAYS is,
+ * EXT's byte 23's bit 4).
  *
  * The RUOHCAT page (LFO, tapped a fourth time): the ice's sounds with your own samples among them (a joik heard far off
  * over the drone, the wind, water):
@@ -61,6 +63,9 @@ static struct {
     uint8_t note[NT], id[NT], want[NT];         /* its own notes now (0: none), their ids; a note to come in (enter) */
     int32_t cut_t[NT], cut[NT];                 /* a filter's move: where it goes, where it is (<< 8) */
     uint32_t rng;
+    int32_t go_was;                             /* (2.2) START as last seen; done: the piece over, START left as it was
+                                                 * (ALWAYS) till it is turned or the FM-1 wakes again */
+    uint32_t done;
 } jk = {.rng = 0x2545F491u};
 static volatile uint32_t jk_sleep;              /* main loop: the piece is over, the screen to go dark (grimm.c) */
 
@@ -126,10 +131,21 @@ static void jk_calm(void)                       /* the mix as set: every gain up
     for (t = 0; t < NT; t++) jk_tg[t] = 32767, jk.cut_t[t] = 0;
 }
 
+static void jk_always(uint32_t on)              /* (2.2) a project loaded: START ALWAYS in it (or not) */
+{
+    if (on) jk_go = JK_ALWAYS, jk.done = 0;
+    else if (jk_go == JK_ALWAYS) jk_go = 1;    /* (one playing goes on, as any loaded project leaves it) */
+    jk.go_was = jk_go;
+}
 static void jk_start(uint32_t now)
 {
     int32_t r = clamp(sc_root, 0, 11), n1 = jk_fit(0, 36 + r);
     uint32_t t, gap;
+#ifndef DINGHY_HOST
+    jk.rng ^= fm1_ticks() | 1u;                 /* (2.2: each piece its own, from the clock at its start; the host's
+                                                 * tests: as before, the same each run) */
+    if (!jk.rng) jk.rng = 0x2545F491u;
+#endif
     jk.run = 1, jk.t0 = now, jk.len = jk_len_ms(), jk.ended = 0;
     jk.own = !tracks_latched() && !playing;     /* (nothing sounding: its own notes, out of silence) */
     gap = jk.len ? jk.len / 60u : 12000u;       /* (the tracks coming in: 5 .. 12 s apart) */
@@ -160,7 +176,9 @@ static void jk_end(uint32_t now)                /* LENGTH played out: silence ti
     for (t = 0; t < NT; t++) nq_put(NQ_RELEASE, t, 0);   /* (the latched notes, the arps) */
     if (playing) playing = 0, nq_put(NQ_STOP, 0, (uint32_t)slot_cur & 3u);
     gen_on = 0;
-    jk.run = 0, jk.ended = 1, jk.end_t = now, jk_go = 0;
+    jk.run = 0, jk.ended = 1, jk.end_t = now, jk.done = 1;
+    if (jk_go != JK_ALWAYS) jk_go = 0;          /* (2.2: ALWAYS stays, for the next power-on) */
+    jk.go_was = jk_go;
     jk_og = 0;
     jk_sleep = 1;
 }
@@ -542,7 +560,8 @@ static void jk_tick(uint32_t now, uint32_t touched)
     }
     if (now - jk.tick < JK_TICK) return;
     jk.tick = now;
-    if (jk_go && !jk.run) jk_start(now);
+    if (jk_go != jk.go_was) jk.go_was = jk_go, jk.done = 0;   /* (2.2) START turned: a piece again */
+    if (jk_go && !jk.run && !jk.done) jk_start(now);
     else if (!jk_go && jk.run) jk_stop();
     if (jk.run) {
         uint32_t t;
