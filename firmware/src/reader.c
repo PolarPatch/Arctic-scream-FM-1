@@ -32,7 +32,7 @@ static int rd_own_text(uint32_t pg)             /* knob_text says this page's va
     switch (pg) {
     case PG_SOUND: case PG_SOURCE: case PG_ENV: case PG_SCALE: case PG_CHORD: case PG_SONG: case PG_LFO:
     case PG_DRONE: case PG_ARP: case PG_HOME: case PG_MIX1: case PG_MIX2: case PG_TAPE: case PG_LOOP: case PG_AIR:
-    case PG_JIEHKKI: case PG_RUOHCAT:
+    case PG_JIEHKKI: case PG_RUOHCAT: case PG_JAHKI:
     case PG_MASTER: case PG_DRIVE: case PG_GRAIN: case PG_DELAY: case PG_SPACE: return 1;
     default: return 0;
     }

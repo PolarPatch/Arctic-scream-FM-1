@@ -218,7 +218,7 @@ static void jk_glide(uint32_t now)              /* the filters' moves glide to w
         }
     }
     for (t = 0; t < (int32_t)NT; t++) {
-        jk.cut[t] += (jk.cut_t[t] + mid * d * 256 / 160 - jk.cut[t]) / 64;
+        jk.cut[t] += (jk.cut_t[t] + mid * d * 256 / 160 + yr_cut - jk.cut[t]) / 64;   /* (2.2: the season's lean) */
         jk_cut[t] = jk.cut[t];
     }
 }
@@ -609,4 +609,5 @@ static void jk_tick(uint32_t now, uint32_t touched)
     jk_glide(now);
     ru_tick(now);
     ih_tick(now);
+    yr_tick(now);                               /* (2.2) the year */
 }

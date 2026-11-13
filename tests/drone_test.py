@@ -173,6 +173,22 @@ out, a, jk, notes = run("load", P(3000), 3500, {"GRIMM_SAVE_IN": str(sv)})
 check("power-on: all of it as saved (version 9)", jk[3000]["bg"][0][0] == 84 and jk[3000]["len"] == 4 and
       jk[3000]["drift"] == 70 and jk[3000]["ruo"] == 20 and jk[3000]["tun"] == 1 and jk[3000]["go"] == 0, jk[3000])
 
+# (2.2) JAHKI (LFO x 5): YEAR 8 MIN (from 1 HOUR, 2 down), DEPTH 100 %: the seasons turn (a minute each), leaning
+ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (6800, f"btn {LFO}"), (7000, f"btn {LFO}"),
+      (7200, f"enc {K1} -2"), (7400, f"enc {K3} 100"), (136000, f"enc {K2} 3")]
+out, a, jk, notes = run("year", ev + P(6000, 9000, 40000, 70000, 100000, 135000, 137000), 145000, {"GRIMM_SAVE_OUT": str(OUT / "saves_year.bin")})
+check("(2.2) JAHKI: at power-on as never set: 1 HOUR, DALVI, DEPTH 0, nothing leaning",
+      jk[6000]["yr"] == 3 and jk[6000]["ys"] == 0 and jk[6000]["lean"] == 0 and jk[6000]["shq"] == 16 and jk[6000]["ycut"] == 0, jk[6000])
+check(".. YEAR 8 MIN, DEPTH 100 %: DALVI leans dark and long (SPACE + 14, the filters down)",
+      jk[9000]["yr"] == 1 and jk[9000]["ys"] == 0 and jk[9000]["lean"] >= 13 and jk[9000]["ycut"] < -2000, jk[9000])
+check(".. a minute a season: GIDDADALVI, then GIDDA (the leans between)", jk[70000]["ys"] == 1 and jk[135000]["ys"] == 2 and
+      jk[40000]["lean"] < jk[9000]["lean"], [(jk[t]["ys"], jk[t]["lean"], jk[t]["ycut"]) for t in (9000, 40000, 70000, 135000)])
+check(".. SEASON turned by hand: the year there (GIDDA, 3 on: CAKCAGEASSI, late summer: SHIMMER up)", jk[137000]["ys"] == 5 and jk[137000]["shq"] > 16,
+      jk[137000])
+out, a, jk, notes = run("year_on", P(3000), 3500, {"GRIMM_SAVE_IN": str(OUT / "saves_year.bin")})
+check(".. power-on: YEAR, DEPTH and the season turned to, as saved (version 10; the year moving on is no save)",
+      jk[3000]["yr"] == 1 and jk[3000]["yd"] == 100 and jk[3000]["ys"] == 5, jk[3000])
+
 # (2.2) START ALWAYS: saved with the project; at power-on the piece begins on its own (its own notes, rising)
 sv2 = OUT / "saves_always.bin"
 ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (7000, f"enc {K4} 2")]

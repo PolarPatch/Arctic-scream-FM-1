@@ -254,6 +254,12 @@ static const char *const PC_NAME[NPC] = {"CARD", "SKY", "OFF"};
 static volatile int32_t jk_len, jk_drift, jk_ruo, jk_go;
 #define JK_ALWAYS 2                             /* (.. 2.2: START's ALWAYS, saved; a project loaded says it;) */
 static void jk_always(uint32_t on);
+#define YR_NS 8                                 /* (2.2, year.c: JAHKI's seasons; YEAR's lengths; its knobs, store.c */
+#define YR_NLEN 7                               /* saves them and where the year is: 1 HOUR, DALVI, 0 %, OFF;) */
+static volatile int32_t yr_len = 3, yr_season, yr_depth, yr_sky;
+static void yr_at(uint32_t pos8);
+static uint32_t yr_pos8(void);
+static void yr_keep(void);
 #define RU_NSMP 6                               /* (.. the RUOHCAT page's SAMPLE: OFF, SLOT 1 .. 4, ALL; its knobs;) */
 static volatile int32_t ru_smp, ru_share, ru_vary;
 static volatile int32_t jk_cut[NT];             /* .. a track filter's move, << 8; */
@@ -1083,6 +1089,7 @@ static int32_t ch_last = -1;                    /* SEL's picture: the note last 
 /* ---- the screen: plain text, a row per value; only what changed is drawn */
 #define KEY0 41u                                /* key 0 = F2 (Arctic Scream p0larpatch: an octave down, for drones) */
 #include "gen.c"                                /* GENERATE (FX held + the black keys) */
+#include "year.c"                               /* (2.2) JAHKI: the year's eight seasons leaning the sound */
 #include "jiehkki.c"                            /* (2.0) JIEHKKI: a piece played on its own, LENGTH long; RUOHCAT */
 #define OCT_BOTH (1u << BTN_OCT_DOWN | 1u << BTN_OCT_UP)
 #define HOLD_MS 600u                            /* a button held this long: its hold function (HOME: SYSTEM) */
@@ -1130,7 +1137,7 @@ static char *put_ms(char *s, uint32_t q16)      /* a time, ms in Q16: "5 ms", "1
  * tap opens its first page, again the next (round); SYSTEM is HOME's, held */
 enum { PG_SOUND, PG_SOURCE, PG_ENV, PG_LFO, PG_SCALE, PG_CHORD, PG_SONG, PG_HOME, PG_MIX1, PG_MIX2, PG_SYSTEM,
        PG_SYS2, PG_SOUNDS, PG_PROJECTS, PG_ARP, PG_GRID, PG_PATTERN, PG_TAPE, PG_GRAIN, PG_DELAY, PG_SPACE, PG_PERFORM,
-       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, PG_RUOHCAT, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
+       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, PG_RUOHCAT, PG_JAHKI, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
                                                  * have; in their button's round by pg_key. TRACK: gone in step 25, its
                                                  * number kept: sys_load moves its links onto HOME) */
 typedef struct {
@@ -1182,7 +1189,8 @@ static const page_t PAGES[NPAGE] = {
     {"JIEHKKI", BTN_LFO, 1, 0, 1, {"LENGTH", "DRIFT", "RUOHCAT", "START"}},   /* (2.0: LFO's third, after DRONE: a
                                                  * piece on its own, jiehkki.c; North Sami: a glacier, to creak) */
     {"RUOHCAT", BTN_LFO, 1, 0, 1, {"AMOUNT", "SAMPLE", "SHARE", "VARY"}},   /* (2.0: LFO's fourth: RUOHCAT with
-                                                 * your samples among its sounds, jiehkki.c) */   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
+                                                 * your samples among its sounds, jiehkki.c) */
+    {"JAHKI", BTN_LFO, 1, 0, 1, {"YEAR", "SEASON", "DEPTH", "SKY"}},   /* (2.2: LFO's fifth: the year, year.c) */   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
                                                  * (tape.c), SPACE's SHIMMER (hall.c)) */
 };
 static uint32_t pg_key(uint32_t p)              /* its place in its button's round */
@@ -1276,6 +1284,7 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_AIR: return k == 0u ? &dl_pp : k == 1u ? &rv_shim : 0;
     case PG_JIEHKKI: return k == 0u ? &jk_len : k == 1u ? &jk_drift : k == 2u ? &jk_ruo : &jk_go;
     case PG_RUOHCAT: return k == 0u ? &jk_ruo : k == 1u ? &ru_smp : k == 2u ? &ru_share : &ru_vary;
+    case PG_JAHKI: return k == 0u ? &yr_len : k == 1u ? &yr_season : k == 2u ? &yr_depth : &yr_sky;
     default: return 0;                          /* (not built yet: the knobs do nothing) */
     }
 }
@@ -1291,6 +1300,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_LFO ? (k == 0u ? 127 : k == 1u ? 100 : k == 2u ? NLFODEST - 1 : NLFOSHAPE - 1) :
            pg == PG_DRONE ? (k < 2u ? 100 : k == 2u ? DR_NRISE - 1 : 1) :
            pg == PG_JIEHKKI ? (k == 0u ? JK_NLEN - 1 : k == 3u ? JK_ALWAYS : 100) : pg == PG_RUOHCAT ? (k == 1u ? RU_NSMP - 1 : 100) :
+           pg == PG_JAHKI ? (k == 0u ? YR_NLEN - 1 : k == 1u ? YR_NS - 1 : k == 2u ? 100 : 1) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : NSCR - 1) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
            pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_LMAX : k == 3u ? NPC - 1 : 1) :
@@ -1438,6 +1448,12 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
     case PG_RUOHCAT:                            /* (2.0) AMOUNT, SAMPLE, SHARE, VARY */
         if (k == 1u) put_s(s, RU_SMP_NAME[clamp(v, 0, RU_NSMP - 1)]);
         else put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
+        return;
+    case PG_JAHKI:                              /* (2.2) YEAR, SEASON, DEPTH, SKY */
+        if (k == 0u) put_s(s, YR_LEN_NAME[clamp(v, 0, YR_NLEN - 1)]);
+        else if (k == 1u) put_s(s, YR_NAME[clamp(v, 0, YR_NS - 1)]);
+        else if (k == 2u) put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
+        else put_s(s, v ? "ON" : "OFF");
         return;
     case PG_MASTER:
         if (k == 0u) hz_text(s, v, mf_type);

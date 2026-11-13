@@ -75,6 +75,8 @@ static volatile int32_t rv_size = 80, rv_damp = 48, rv_mix = 100, rv_pre = 16;  
 static volatile int32_t rv_shim;                /* (1.4) SHIMMER, 0..127: 0 off */
 static volatile uint32_t rv_hold;               /* (2.2) the main loop: the ice holds its breath (jiehkki.c): as INF a
                                                  * while, SIZE as it is */
+static volatile int32_t rv_lean, rv_shq = 16;   /* (2.2) the main loop: the season's lean (year.c): SIZE's steps
+                                                 * more or fewer (as set: SIZE), SHIMMER x rv_shq / 16 */
 #define RV_INF 127
 
 /* Felucca's helpers: m / 2^sh rounded towards zero (a product that feeds back must not floor: a loop of floors holds
@@ -151,10 +153,11 @@ static void hall_render(const int32_t *in, int32_t *out, uint32_t n)
 {
     int16_t *b, *a;
     uint32_t i, k, s, m, d, w, rd, pd, any = 0, full = 0;
-    int32_t mix = rv_mix, size = rv_hold ? RV_INF : rv_size, damp = rv_damp, pre = rv_pre;
+    int32_t mix = rv_mix, size = rv_hold || rv_size >= RV_INF ? RV_INF : clamp(rv_size + rv_lean, 0, RV_INF - 1);
+    int32_t damp = rv_damp, pre = rv_pre;
     int32_t inf = size >= RV_INF, kd = inf ? 32767 : RV_KD(damp), st = inf ? 0 : 32767;
     int32_t xp = rv.x, hp = rv.hp, he = rv.he, sd = rv.send, ml = rv.ml, mr = rv.mr;
-    int32_t sg = clamp(rv_shim, 0, 127), sl = rv.slp, shany = 0;
+    int32_t sg = clamp(rv_shim * rv_shq / 16, 0, 127), sl = rv.slp, shany = 0;
     uint32_t sc = rv.sc, sw = rv.sw;
     const int16_t *g = RV_G[size < 0 ? 0 : size > RV_INF ? RV_INF : size];
     if (n != 2u * RV_NC || mix <= 0)

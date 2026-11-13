@@ -49,9 +49,11 @@
 #define SONG_PK 20u                             /* the song: its chain (16), MODE, the mutes and solos; (1.4, spare
                                                  * till then: 0) AIR's PING-PONG and SHIMMER */
 #define FX2_PK 8u                               /* (version 8) MASTER's four, DRIVE's four */
-#define EXT_PK 24u                              /* (2.0, version 9) the tracks' Biegga (4 x 4), JIEHKKI's LENGTH,
+#define EXT_PK 32u                              /* (2.0, version 9) the tracks' Biegga (4 x 4), JIEHKKI's LENGTH,
                                                  * DRIFT, RUOHCAT, SCALE's TUNING, the RUOHCAT page's SAMPLE, SHARE,
-                                                 * VARY, 1 spare */
+                                                 * VARY, (2.1) PICTURE; (2.2, version 10: 8 more) JAHKI's YEAR, SEASON
+                                                 * (where the year is: 256 a year), DEPTH, SKY, 4 spare */
+#define EXT_PK9 24u                             /* (version 9's) */
 #define BG_SLOT (1u + NT * 4u)                  /* (2.0) a slot's Biegga: BG_MARK, then the tracks' four each, in the
                                                  * slots' stream's tail (after the FM patches: zeros before it) */
 #define BG_MARK 0xB9u
@@ -66,16 +68,18 @@
 #define OBJ_HDR 12u                             /* magic, the save count, type, version, length */
 #define OBJ_MAGIC 0x4B504441u                   /* "ADPK" (Arctic Scream p0larpatch's own: its tracks are longer,
                                                  * so neither reads the other's saves) */
-#define OBJ_VER 9u
+#define OBJ_VER 10u
 #define SLS_VER 6u                              /* the slots' stream (its layout as version 6's) */
-#define NOBJV 8u
-static const uint16_t OBJ_VERS[NOBJV][8] = {{9, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK, EXT_PK},
+#define NOBJV 9u
+static const uint16_t OBJ_VERS[NOBJV][8] = {{10, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK, EXT_PK},
+                                            {9, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK, EXT_PK9},
                                             {8, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK, 0}, {7, TRK_PK, 20, 260, 288, FM_ALL, 0, 0},
                                             {6, 52, 20, 260, 288, 0, 0, 0}, {5, 52, 20, 196, 0, 0, 0, 0},
                                             {4, 52, 0, 196, 0, 0, 0, 0}, {3, 48, 0, 196, 0, 0, 0, 0},
                                             {2, 44, 0, 196, 0, 0, 0, 0}};   /* the versions loaded, newest first: a
                                                  * track's, the song's, a sequence's, the locks', the FM patches', MASTER
-                                                 * and DRIVE's, 2.0's EXT size (9: 2.0, Biegga, JIEHKKI, TUNING;
+                                                 * and DRIVE's, 2.0's EXT size (10: 2.2, JAHKI; 9: 2.0, Biegga,
+                                                 * JIEHKKI, TUNING;
                                                  * 8: 1.3, the MASTER and DRIVE; 7, Arctic
                                                  * Scream 1.0 .. 1.2's: before MASTER and DRIVE; 6: before
                                                  * the FM patches; 5: before chord steps and locks; 4: before the song;
@@ -589,6 +593,8 @@ static void pk_work(uint8_t *q)
     q[20] = (uint8_t)clamp(ru_smp, 0, RU_NSMP - 1), q[21] = (uint8_t)clamp(ru_share, 0, 100);
     q[22] = (uint8_t)clamp(ru_vary, 0, 100), q[23] = (uint8_t)(clamp(pc_mode, 0, NPC - 1) | (jk_go == JK_ALWAYS) << 4);   /* (2.1:
                                                  * PICTURE; 2.2, its bit 4: JIEHKKI's START ALWAYS) */
+    q[24] = (uint8_t)clamp(yr_len, 0, YR_NLEN - 1), q[25] = (uint8_t)yr_pos8();   /* (2.2) JAHKI */
+    q[26] = (uint8_t)clamp(yr_depth, 0, 100), q[27] = (uint8_t)(yr_sky != 0);
 }
 enum { UW_GLOBALS = 1, UW_CHAIN = 2 };
 static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: UW_GLOBALS, the effects, tempo, slot,
@@ -629,6 +635,8 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
             ru_smp = ex ? clamp(x[20], 0, RU_NSMP - 1) : 0, ru_share = ex ? clamp(x[21], 0, 100) : 50;
             ru_vary = ex ? clamp(x[22], 0, 100) : 30, pc_mode = ex ? clamp(x[23] & 15, 0, NPC - 1) : PC_CARD;
             jk_always(ex && x[23] >> 4 & 1u);   /* (2.2: a project that always plays: it begins) */
+            yr_len = ex >= 32u ? clamp(x[24], 0, YR_NLEN - 1) : 3, yr_at(ex >= 32u ? x[25] : 0u);   /* (2.2) JAHKI; */
+            yr_depth = ex >= 32u ? clamp(x[26], 0, 100) : 0, yr_sky = ex >= 32u && x[27];   /* (before: 1 HOUR, DALVI, 0 %) */
         }
     }
     if (globals && !sg) dl_pp = rv_shim = 0;    /* (saved before the song: AIR off) */
@@ -791,6 +799,8 @@ static int autosave(void)                       /* the working project and the s
 {
     int rc;
     pk_work(st_img + OBJ_HDR);
+    if (!obj_gen[OBJ_WORK] || st_crc(st_img + OBJ_HDR, WORK_PK) != obj_crc[OBJ_WORK])   /* (2.2: saved anyway: where */
+        yr_keep(), pk_work(st_img + OBJ_HDR);   /* the year is now with it; never a save of its own) */
     if ((rc = obj_save(OBJ_WORK, WORK_PK)) != 0) return rc;
     return slot_dirty ? slots_save() : 0;
 }

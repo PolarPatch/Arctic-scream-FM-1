@@ -53,6 +53,14 @@ static uint32_t pic_of_track(uint32_t t)        /* the picture of track t's soun
     return PIC_CAT[(uint32_t)brw_cat[t] % (sizeof PIC_CAT)];
 }
 
+static uint32_t yr_pic(void)                    /* (2.2) JAHKI's season's picture (year.c's YR_PIC: by name) */
+{
+    uint32_t i;
+    for (i = 0; i < NPIC; i++)
+        if (same(PIC_NAME[i], YR_PIC[clamp(yr_season, 0, YR_NS - 1)])) return i;
+    return 0;
+}
+
 static void pic_card(uint32_t t)                /* main loop (PRESETS turned): HOME shows track t's picture a moment */
 {
     if (pc_mode != PC_CARD) return;             /* (SKY: HOME shows it always; OFF: never) */
@@ -109,11 +117,12 @@ static void pa_dots(void)                       /* where the dots are at pa_t (e
     for (i = 0; i < n; i++) {
         uint32_t r = pa_hash(i * 7919u + pa_id * 131u + 17u);
         int32_t sp = 128 + (int32_t)(r >> 16 & 127u), x = (int32_t)(r % (uint32_t)w), y = (int32_t)(r >> 8) % h, wb;
-        int32_t fall = d[6] * sp * t / 256 / 10000;   /* (cells, d[6] tenths a second, sp 0.5 .. 1) */
+        int32_t fall = (int32_t)((int64_t)d[6] * sp * t / 2560000);   /* (cells, d[6] tenths a second, sp 0.5 .. 1;
+                                                 * 64 bits: t runs to 10 min, SKY's) */
         wb = pa_sin((uint32_t)t * 2u / 3u + (r >> 4)) * 3 / 8192;   /* (a sway of 1 .. 2 cells) */
         switch (d[0]) {
         case DT_SNOW:
-            y = (y + fall) % h, x = ((x + d[7] * t / 10000 * sp / 256 + wb) % w + w) % w;
+            y = (y + fall) % h, x = x + (int32_t)((int64_t)d[7] * t * sp / 2560000) + wb;
             break;
         case DT_DRIP: {                         /* (each falls from its tip, quicker as it goes, and again) */
             int32_t per = 1300 + (int32_t)(r >> 20 & 1023u), ph = (t + (int32_t)(r & 4095u)) % per;
@@ -121,12 +130,13 @@ static void pa_dots(void)                       /* where the dots are at pa_t (e
             break;
         }
         case DT_RISE:
-            y = h - 1 - (y + fall) % h, x = ((x + wb + d[7] * t / 10000) % w + w) % w;
+            y = h - 1 - (y + fall) % h, x = x + wb + d[7] * t / 10000;
             break;
         case DT_DRIFT:                          /* (streaks along the wind: 3 cells, drawn in pa_row) */
-            x = (x + fall * 2) % w, y = (y + wb / 2 + h) % h;
+            x = x + fall * 2, y = y + wb / 2;
             break;
         }
+        x = (x % w + w) % w, y = (y % h + h) % h;   /* (always in its place's bounds) */
         pa_dx[pa_n] = (uint8_t)(d[2] + x), pa_dy[pa_n] = (uint8_t)(d[4] + y), pa_n++;
     }
 }

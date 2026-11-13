@@ -401,6 +401,12 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         else if (k < 3u) ui_3(S->val, (uint32_t)clamp(v, 0, 100));
         else put_s(S->val, v >= JK_ALWAYS ? "ALWAYS" : v ? "ON" : "OFF");   /* (2.2: ALWAYS) */
         return;
+    case PG_JAHKI:                              /* (2.2) YEAR, SEASON ("G.GEAS"), DEPTH %, SKY */
+        if (k == 0u) put_s(S->val, YR_LEN_NAME[clamp(v, 0, YR_NLEN - 1)]);
+        else if (k == 1u) put_s(S->val, YR_SHORT[clamp(v, 0, YR_NS - 1)]);
+        else if (k == 2u) ui_3(S->val, (uint32_t)clamp(v, 0, 100));
+        else put_s(S->val, v ? "ON" : "OFF");
+        return;
     case PG_RUOHCAT:                            /* (2.0) AMOUNT %, SAMPLE ("S1", "ALL"), SHARE %, VARY % */
         if (k == 1u) put_s(S->val, RU_SMP_SHORT[clamp(v, 0, RU_NSMP - 1)]);
         else ui_3(S->val, (uint32_t)clamp(v, 0, 100));
@@ -520,6 +526,8 @@ static void ui_slab_draw(void)
     for (j = 0; j < 8; j++)                     /* 8 segments: the knob's colour (the accent) filled, black empty */
         ui_rect(x + 4 + j * 6, 190, 5, 14, j < S->fill ? fc : UI_K);
     if (n <= 3) ui_text(x + 4, 214, S->val, 2, S->dim ? UI_M0 : fc);
+    else if (n > 6) ui_text_n(x + 1, 222, S->val, 7, S->dim ? UI_M0 : fc);   /* (2.2: "ENDLESS", "2 HOURS": 7 px a
+                                                 * letter, as the labels) */
     else ui_text(x + 4, 222, S->val, 1, S->dim ? UI_M0 : fc);
 }
 
@@ -550,7 +558,7 @@ static void ui_tint(uint32_t pg)
     case PG_ENV: a = BW_AMBER, b = BW_TEAL, c = BW_PERIWINKLE, x = BW_MAGENTA; break;
     case PG_LFO: a = BW_PINK, b = BW_CYAN, c = BW_AMBER, x = UI_W; break;
     case PG_DRONE: a = BW_CYAN, b = BW_VIOLET, c = BW_TEAL, x = BW_MAGENTA; break;
-    case PG_JIEHKKI: case PG_RUOHCAT: a = BW_SKY, b = BW_CYAN, c = BW_BLUE, x = BW_GREEN; break;
+    case PG_JIEHKKI: case PG_RUOHCAT: case PG_JAHKI: a = BW_SKY, b = BW_CYAN, c = BW_BLUE, x = BW_GREEN; break;
     case PG_SOUND: case PG_SOURCE: case PG_FMALGO: case PG_FMOP: case PG_LOOP: a = BW_PERIWINKLE, b = BW_TEAL, c = BW_PINK, x = BW_AMBER; break;
     case PG_GRID: case PG_PATTERN: a = BW_VIOLET, b = BW_CYAN, c = BW_PINK, x = BW_MAGENTA; break;
     case PG_SCALE: case PG_CHORD: a = BW_LAVENDER, b = BW_CYAN, c = BW_TEAL, x = BW_AMBER; break;
@@ -682,10 +690,13 @@ static void pic_home(void)                      /* Main: the stars, a wave a tra
     uint32_t i, t;
     if (pic_card_on()) { pic_home_card(); return; }   /* (2.1) a sound's picture a moment */
     if (!sk_ok) sk_init();
-    if (pc_mode == PC_SKY) {                    /* (2.1) SKY: the selected track's sound's picture, dimmed, for a sky */
-        pc_draw = pic_of_track(sel), pc_dim = 1;
+    if (pc_mode == PC_SKY || yr_sky) {          /* (2.1) SKY: the selected track's sound's picture, dimmed, for a sky
+                                                 * (2.2: JAHKI's SKY: the season's, its name) */
+        pc_draw = yr_sky ? yr_pic() : pic_of_track(sel), pc_dim = 1;
         pic_anim_rows(pc_draw, fm1_ms, pc_want, pc_row);   /* (2.2: moving, always) */
         pc_dim = 0;
+        if (yr_sky) ui_text(HF_X + HF_W - 4 - 8 * ui_len(YR_NAME[clamp(yr_season, 0, YR_NS - 1)]), HF_Y + 4,
+                            YR_NAME[clamp(yr_season, 0, YR_NS - 1)], 1, UI_M);
     } else
         for (i = 0; i < NSTAR; i++) ui_rect(sk_x[i] * 3, 27 + sk_y[i] * 3, 3, 3, sk_col(i));
     ui_brackets(HF_X, HF_Y, HF_W, HF_H, 10, ui_acc);
@@ -749,7 +760,7 @@ static void ui_home_frame(int draw)             /* a frame of HOME's picture (dr
             i = an_rnd(NSTAR);
             if (!sk_ph[i]) sk_ph[i] = 1;
         }
-    if (pic_card_on() || pc_mode == PC_SKY) moved = 1;   /* (2.2) the picture moves: the field every frame */
+    if (pic_card_on() || pc_mode == PC_SKY || yr_sky) moved = 1;   /* (2.2) the picture moves: the field every frame */
     if (draw && moved) ui_home_part(HF_X, HF_Y, HF_W, HF_H);
 }
 static int32_t ui_oct;                          /* (the octave: SEL's keys) */
@@ -1292,6 +1303,38 @@ static void pic_jiehkki(void)
     }
 }
 
+/* (2.2) JAHKI's page: the season's picture, small and moving (a pixel a cell); under it the year as a band of its
+ * eight seasons, the year's place on it; what the season leans now */
+static void yr_row(uint32_t y, const uint16_t *col)
+{
+    uint32_t x = 0, e;
+    while (x < PIC_W) {
+        for (e = x + 1u; e < PIC_W && col[e] == col[x]; e++)
+            ;
+        ui_rect(62 + (int32_t)x, 46 + (int32_t)y, (int32_t)(e - x), 1, col[x]);
+        x = e;
+    }
+}
+static void pic_jahki(void)
+{
+    static const uint16_t SC[YR_NS] = {RGB(0x1c, 0x2a, 0x6e), RGB(0x9c, 0xc8, 0xf0), RGB(0x3f, 0xb9, 0x50),
+                                       RGB(0x7c, 0xd8, 0x6a), RGB(0xff, 0xcb, 0x47), RGB(0xd9, 0xa4, 0x41),
+                                       RGB(0xb0, 0x5a, 0x3a), RGB(0x6a, 0x6e, 0x9a)};   /* (a season's colour) */
+    uint32_t s = (uint32_t)clamp(yr_season, 0, YR_NS - 1), at = (uint32_t)((uint64_t)yr_ph * 216u >> 32), k;
+    char l[28], r[12], *p;
+    put_s(l, YR_NAME[s]);
+    put_s(r, YR_LEN_NAME[clamp(yr_len, 0, YR_NLEN - 1)]);
+    ui_caption(l, r);
+    pic_anim_rows(yr_pic(), fm1_ms, 0, yr_row);
+    for (k = 0; k < YR_NS; k++)                 /* the year: its seasons, the one now lit */
+        ui_rect(PX0 + (int32_t)k * 27, 120, 26, 8, k == s ? SC[k] : ui_mix(UI_K, SC[k], 5, 16));
+    ui_rect(PX0 + (int32_t)at, 116, 2, 16, UI_W);
+    p = put_s(l, "CUT "), *p++ = yr_cut < 0 ? '-' : '+', p = put_u(p, (uint32_t)(yr_cut < 0 ? -yr_cut : yr_cut) >> 8);
+    p = put_s(p, " SPACE "), *p++ = rv_lean < 0 ? '-' : '+', p = put_u(p, (uint32_t)(rv_lean < 0 ? -rv_lean : rv_lean));
+    put_s(put_u(put_s(p, " SHIM "), (uint32_t)rv_shq * 100u / 16u), "%");
+    ui_text(PX0, 137, yr_depth > 0 ? l : "DEPTH 0: THE YEAR ONLY TURNS", 1, UI_L);
+}
+
 /* (2.0) RUOHCAT's page: the four sample slots as strips of ice, each as long as its sample, the ones SAMPLE plays
  * lit, a sample playing a white line moving along it; RUOHCAT's crack flashing as on JIEHKKI */
 static void pic_ruohcat(void)
@@ -1414,7 +1457,7 @@ static int ui_anim_page(uint32_t p)             /* the pages whose ribbons move 
     return p == PG_DRONE || p == PG_ENV || p == PG_TAPE || p == PG_GRAIN || p == PG_DELAY || p == PG_SPACE || p == PG_LFO ||
            p == PG_MIX1 || p == PG_MIX2 || p == PG_MASTER || p == PG_DRIVE || p == PG_SOUND || p == PG_FMOP || p == PG_FMALGO || p == PG_SCALE ||
            p == PG_CHORD || p == PG_PERFORM || p == PG_ARP || p == PG_LOOP || p == PG_AIR || p == PG_JIEHKKI ||
-           p == PG_RUOHCAT;
+           p == PG_RUOHCAT || p == PG_JAHKI;
 }
 
 /* ---- the aurora pages (Arctic Scream p0larpatch, after the DRONE and Holvut pages): every knob a ribbon of northern
@@ -2235,6 +2278,7 @@ static void ui_pic_draw(void)
     case PG_DRONE: pic_drone(); return;
     case PG_JIEHKKI: pic_jiehkki(); return;
     case PG_RUOHCAT: pic_ruohcat(); return;
+    case PG_JAHKI: pic_jahki(); return;
     case PG_SONG: pic_song(); return;
     case PG_PERFORM: pic_perform(); return;
     case PG_SOUNDS: pic_sounds(); return;
@@ -2252,8 +2296,9 @@ static uint32_t ui_pic_key(void)
     uint32_t h = 2166136261u, k, t;
 #define UI_H(v) (h = (h ^ (uint32_t)(v)) * 16777619u)
     UI_H(page), UI_H(sel), UI_H(sel_eng()), UI_H(ge_freeze), UI_H(ui_acc);
-    if (page == PG_HOME)                        /* (2.1: the card, on or off; SKY's picture) */
-        UI_H(pic_card_on() ? pc_id + 1u : 0u), UI_H(pc_name[0]), UI_H(pc_mode == PC_SKY ? pic_of_track(sel) + 1u : 0u);
+    if (page == PG_HOME)                        /* (2.1: the card, on or off; SKY's picture; 2.2: JAHKI's) */
+        UI_H(pic_card_on() ? pc_id + 1u : 0u), UI_H(pc_name[0]), UI_H(pc_mode == PC_SKY ? pic_of_track(sel) + 1u : 0u),
+            UI_H(yr_sky ? (uint32_t)yr_season + 1u : 0u);
     for (k = 0; k < 4u; k++) {
         volatile int32_t *p = knob_param(page, k);
         UI_H(p ? *p : -1);
