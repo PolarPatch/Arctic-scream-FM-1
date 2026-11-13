@@ -146,8 +146,13 @@ static void pa_row(uint32_t y, const uint8_t *cells)
     const uint16_t *pal = PIC_PAL[pa_id % NPIC];
     uint16_t out[PIC_W], lo = pal[pa->dark];
     uint32_t x, i, t = pa_t;
-    int32_t scr = 0, rip = 0, sway = 0, rowm = 4096, li = 0;
+    int32_t scr = 0, rip = 0, sway = 0, rowm = 4096, li = 0, ly = (int32_t)y - pa->li[2], fx;
     if (pa_want && !pa_want(y)) return;
+    ly = ly < 0 ? -ly : ly;                     /* (does anything but the dots move on this row: else its colours as
+                                                 * they are, the most of a picture's rows) */
+    fx = (pa->sh[1] && pa_in(y, pa->sh[2], pa->sh[3])) || (pa->tw[0] && pa_in(y, pa->tw[1], pa->tw[2])) ||
+         (pa->fd[0] && y >= pa->fd[3] && y <= pa->fd[4]) ||
+         (pa->li[0] && (ly < 3 || (pa->li[0] == LI_BEAM ? ly * 4 <= pa->li[3] + 3 : ly < pa->li[3])));
     if (pa_in(y, (uint32_t)pa->sc[0], (uint32_t)pa->sc[1])) scr = pa->sc[2] * (int32_t)(t % 600000u) / 10000;
     if (pa_in(y, pa->rp[0], pa->rp[1])) rip = pa_sin(y * 587u + t * 3u / 5u) * 3 / 8192;   /* (-1 .. 1 a row) */
     if (pa->sh[1] == SH_CURTAIN && pa_in(y, pa->sh[2], pa->sh[3])) {
@@ -177,6 +182,7 @@ static void pa_row(uint32_t y, const uint8_t *cells)
             if (s2 >= 0 && s2 < (int32_t)PIC_W && (pa->sh[0] >> cells[s2] & 1u)) c = cells[s2];
         }
         v = pal[c];
+        if (!fx) { out[x] = v; continue; }
         if (pa->sh[1] && (pa->sh[0] >> c & 1u) && pa_in(y, pa->sh[2], pa->sh[3])) {
             int32_t w;
             if (pa->sh[1] == SH_CURTAIN) {      /* (the folds of light running along, the green breaking through) */

@@ -72,8 +72,8 @@ Each track's wave glows on HOME as it plays, under a starry sky. The header show
 - **MORPH:** one knob through all four of the source's knobs at once (on PHYS: STRUCTURE, DAMP and BOW; the stepped ones, such as MODEL, stay as set), on a path of its own for each track and source, always the same, with a slow wandering around it that grows as you turn it up. At 0 the sound is as set.
 - While WARP or MORPH is up, the track's level is held where it was, so neither makes it suddenly louder or quieter; both sit on top of the knobs (the knobs themselves never move) and are saved with the project.
 
-**A picture for every sound (new in 2.1).** Turn PRESETS and HOME shows the sound's picture for a moment, its name on
-it: a glacier for the drones, the aurora for the pads, icicles for the bells, an ice cave for Holvut's sounds, a fjord
+**A picture for every sound (new in 2.1).** Turn PRESETS and HOME shows the sound's picture for a moment (2.2: the
+picture alone, the name is in the header): a glacier for the drones, the aurora for the pads, icicles for the bells, an ice cave for Holvut's sounds, a fjord
 for DEEP FJORD and MANDALORIA, a snowstorm for WHITEOUT. With **PICTURE** on SYSTEM 3 set to `SKY`, the selected
 track's picture stays on HOME as its sky, dimmed under the waves; `OFF` shows none.
 
@@ -329,7 +329,7 @@ fog lower and duller.
 - **DEPTH, 0–100 %:** how far the seasons lean the sound. What leans: the tracks' filters, SPACE's SIZE (a longer or
   shorter tail than SIZE says) and SHIMMER (more or less of what you set; 0 stays 0). Between two seasons, between
   their leans. **At 0 nothing changes**: the year only turns. The knobs themselves never move.
-- **SKY:** ON shows the season's picture, moving, as HOME's sky, its name in the corner (whatever PICTURE says).
+- **SKY:** ON shows the season's picture, moving, as HOME's sky (whatever PICTURE says).
 - The screen shows the season's picture, the year as a band of its eight seasons with a line where it is now, and
   what it leans: CUT (the filters), SPACE (SIZE's steps) and SHIM (SHIMMER, % of what you set).
 - YEAR, DEPTH, SKY and the season are saved with the project. The season is saved when the project is saved anyway
@@ -628,6 +628,9 @@ FM-1, not the project.
   **GUOVSSAHAS** (new in 2.0; North Sami for the northern lights): after two minutes untouched the screen becomes a
   night sky where three curtains of aurora fold and ripple, their hems burning green, rays shimmering up into violet,
   the whole sky slowly breathing (after pixelfx's Aurora, by Patch). The first touch brings the page back.
+  **GOVVA** (new in 2.2; North Sami for a picture): after one minute untouched the whole screen is the moving
+  picture, large and with nothing over it: the selected track's sound's, or the season's when JAHKI's SKY is on. Much
+  lighter for the FM-1 than GUOVSSAHAS while it plays. The first touch, any knob or button, brings the page back.
 - **MIDI LEARN:** set LEARN, turn a knob on the FM-1, then move one on your controller. Up to 32 links.
 - **SEQ MIDI OUT:** sends the sequencer's and the arpeggiator's notes out over USB.
 - **SAMPLES:** CLEAR and **OCT+** empties all four sample slots (stop and let the sound die out first).

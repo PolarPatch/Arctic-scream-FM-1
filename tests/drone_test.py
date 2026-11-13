@@ -219,6 +219,13 @@ check("GUOVSSAHAS: not before 2 min", jk[100000]["aur"] == 0, jk[100000])
 check("GUOVSSAHAS: after 2 min untouched, the aurora (lit)", jk[129000]["aur"] == 1 and jk[129000]["scr"] == 1, jk[129000])
 check("GUOVSSAHAS: a touch, back", jk[131000]["aur"] == 0 and jk[131000]["scr"] == 0, jk[131000])
 
+# (2.2) GOVVA: SCREEN OFF's very last; 1 min untouched: the moving picture (the screen lit); a knob back
+ev = [(6200, f"down {HOME}"), (6900, f"up {HOME}"), (7200, f"enc {K4} 6"), (70000, f"enc {K1} 1")]
+out, a, jk, notes = run("govva", ev + P(60000, 69000, 71000), 72000)
+check("(2.2) GOVVA: not before 1 min", jk[60000]["aur"] == 0, jk[60000])
+check(".. after 1 min untouched, the picture (lit)", jk[69000]["aur"] == 2 and jk[69000]["scr"] == 1, jk[69000])
+check(".. a knob turned, back", jk[71000]["aur"] == 0 and jk[71000]["scr"] == 0, jk[71000])
+
 # RUOHCAT's page (LFO x 4) with a sample: a 1.5 s tone of 440 Hz into slot 1 (as tools/fm1_sample_upload.py sends it),
 # SAMPLE SLOT 1, SHARE 100 %, AMOUNT 100 %: the sample heard (440 Hz the loudest), nothing else of the ice
 sys.path.insert(0, "tools")
@@ -282,4 +289,4 @@ check("ACCIDENT: EDIT + G4 moves T1's settings; EDIT + OCT- puts them back", pr[
 
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, PRESETS' crossing over, DICE, ACCIDENT ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT ok")

@@ -1054,10 +1054,14 @@ static uint32_t fac_at;                         /* RESTORE confirmed: when it wr
 static uint32_t learn_st;                       /* MIDI LEARN: 0 none; 1 TURN A KNOB; 2 MOVE A CC (learn_to: the knob) */
 static uint8_t learn_to[4];                     /* (the page, the knob, the track, x) */
 static uint32_t scr_dark, scr_woke, t_hand;     /* SCREEN OFF: dark; a touch woke it (this pass); the hands' last touch */
-#define NSCR 6
-static const uint16_t SCR_S[NSCR] = {0, 60, 300, 900, 1800, 120};   /* SCREEN OFF: NEVER, 1, 5, 15, 30 min (s); (2.0)
-                                                 * GUOVSSAHAS: the northern lights after 2 min (ui.c ui_aurora) */
-static uint32_t scr_aur;                        /* (2.0) the screen "dark" as GUOVSSAHAS: lit, the aurora on it */
+#define NSCR 7
+#define SCR_AUR 5u                              /* (SCREEN OFF's GUOVSSAHAS, GOVVA) */
+#define SCR_PIC 6u
+static const uint16_t SCR_S[NSCR] = {0, 60, 300, 900, 1800, 120, 60};   /* SCREEN OFF: NEVER, 1, 5, 15, 30 min (s); (2.0)
+                                                 * GUOVSSAHAS: the northern lights after 2 min (ui.c ui_aurora); (2.2)
+                                                 * GOVVA: the moving picture after 1 min (ui.c ui_govva) */
+static uint32_t scr_aur;                        /* (2.0) the screen "dark" as GUOVSSAHAS: lit, the aurora on it (2.2: 2,
+                                                 * GOVVA's picture) */
 static char *link_name(char *s, const uint8_t *L);
 static char hd_msg[24];                         /* (ui.c: in the header's place until hd_until) */
 static int32_t bat_lvl = -1;                    /* the battery's level (batt_poll; ui.c's header) */
@@ -1330,7 +1334,8 @@ static const char *lfo_dest_name(int32_t d)     /* DESTINATION: its name (a knob
     return d >= LD_K1 && d <= LD_K4 ? knob_name(PG_SOUND, (uint32_t)(d - LD_K1)) : LFO_DEST_NAME[d];
 }
 static const char *const COL_NAME[5] = {"ICE", "AURORA", "VIOLET", "PLASMA", "MONO"};   /* SYSTEM: COLOUR */
-static const char *const SCR_NAME[NSCR] = {"NEVER", "1 MIN", "5 MIN", "15 MIN", "30 MIN", "GUOVSSAHAS"};   /* SCREEN OFF */
+static const char *const SCR_NAME[NSCR] = {"NEVER", "1 MIN", "5 MIN", "15 MIN", "30 MIN", "GUOVSSAHAS",
+                                                 "GOVVA"};   /* SCREEN OFF */
 static const char *const LEARN_NAME[3] = {"OFF", "LEARN", "CLEAR ALL"};   /* SYSTEM 2: MIDI LEARN */
 static char *mch_text(char *s, int32_t v)       /* MIDI CHANNEL: "1-4" .. "13-16", "ALL > SEL", "CH 1 > SEL" .. */
 {
@@ -2802,13 +2807,15 @@ static void app_step(void)                      /* one pass of the main loop: on
         lcd_light(1);
     } else if (!scr_dark && set.scr && fm1_ms - t_hand >= SCR_S[set.scr % NSCR] * 1000u) {
         scr_dark = 1;
-        if (set.scr == NSCR - 1u) scr_aur = 1;
+        if (set.scr == SCR_AUR) scr_aur = 1;
+        else if (set.scr == SCR_PIC) scr_aur = 2;
         else lcd_light(0);
     }
     batt_poll();
     if (!scr_dark || scr_aur) {
         idle_ok = 1;                            /* (2.0) MIDI in while the screen's DMA runs (app_idle) */
-        if (scr_aur) ui_aurora(fm1_ms);
+        if (scr_aur == 2u) ui_govva(fm1_ms);
+        else if (scr_aur) ui_aurora(fm1_ms);
         else ui_update(set.oct);
         idle_ok = 0;
     }

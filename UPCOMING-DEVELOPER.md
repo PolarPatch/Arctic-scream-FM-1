@@ -20,9 +20,11 @@ Built, tested (host, stress 1..3, ARM, web, the device names in a Linux containe
 | 7 | SHIMMER moves with the weather | part of JAHKI (`rv_shq`) | built |
 | | The factory sounds' fingerprints | `tests/sound_prints.py`, in `tests/run_host.sh` | built |
 | | Pictures that move | `pictures.c` `pic_anim_rows`, `gen_pictures.py` `ANIM` | built (all 16) |
+| | GOVVA, the pictures as a screensaver (wished on the FM-1) | SCREEN OFF's last, `ui.c` `ui_govva`; no text over the pictures | built |
 
-Not done: CPU and the screen's speed on a real FM-1 (SKY and the card now redraw HOME's field every frame, ~18 a
-second; GUOVSSAHAS draws the whole screen 30 a second, so it should hold).
+On the FM-1 (beta1): the JAHKI page at 65 % CPU, 69 % peak (the whole picture moved once per strip of the screen, and
+GUOVSSAHAS lags while it plays). beta2: only the strip's rows moved, the rows with nothing moving copied as they are;
+GOVVA ~11 frames a second. To measure again.
 
 ## From Arcturus S6 (noted 2026-11-13)
 

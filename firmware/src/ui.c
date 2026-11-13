@@ -89,7 +89,7 @@ static void ui_region(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t bg, v
         cv_begin((uint32_t)w, (uint32_t)hh, bg);
         ui_ox = x;
         cv_oy = -y0;
-        f();
+        if (f) f();
         cv_oy = 0;
         cv_blit((uint32_t)x, (uint32_t)y0);
     }
@@ -356,7 +356,8 @@ static void ui_slab_make(uint32_t k, slab_t *S)
             else mch_text(S->val, v);
         }
         else if (k == 2u) S->fill = (uint8_t)((clamp(v, -50, 50) + 50) * 8 / 100), tune_text(S->val, v);
-        else if (v == NSCR - 1) S->fill = 8, put_s(S->val, "GUOVS");   /* (2.0: the northern lights) */
+        else if (v == SCR_AUR) S->fill = 8, put_s(S->val, "GUOVS");   /* (2.0: the northern lights) */
+        else if (v == SCR_PIC) S->fill = 8, put_s(S->val, "GOVVA");   /* (2.2: the moving picture) */
         else if (v) S->fill = (uint8_t)(2 * v), put_s(put_u(S->val, SCR_S[clamp(v, 0, NSCR - 1)] / 60u), "M");
         else S->fill = 8, put_s(S->val, "NVR");
         return;
@@ -675,14 +676,11 @@ static void pc_row(uint32_t y, const uint16_t *col)   /* (2.1) a row of a sound'
         x = e;
     }
 }
-static void pic_home_card(void)                 /* (2.1) HOME a moment after PRESETS turned: the sound's picture, its name
-                                                 * on it (after Demake's); (2.2) moving */
+static void pic_home_card(void)                 /* (2.1) HOME a moment after PRESETS turned: the sound's picture (after
+                                                 * Demake's); (2.2) moving */
 {
-    int32_t w = ui_len(pc_name) * 8 + 8;
     pc_draw = pc_id, pc_dim = 0;
-    pic_anim_rows(pc_id, pic_card_t(), pc_want, pc_row);
-    ui_rect(HF_X + 4, HF_Y + 5, w, 13, UI_K);
-    ui_text(HF_X + 8, HF_Y + 8, pc_name, 1, UI_W);
+    pic_anim_rows(pc_id, pic_card_t(), pc_want, pc_row);   /* (2.2: the picture alone: its name is in the header) */
 }
 static void pic_home(void)                      /* Main: the stars, a wave a track */
 {
@@ -691,12 +689,10 @@ static void pic_home(void)                      /* Main: the stars, a wave a tra
     if (pic_card_on()) { pic_home_card(); return; }   /* (2.1) a sound's picture a moment */
     if (!sk_ok) sk_init();
     if (pc_mode == PC_SKY || yr_sky) {          /* (2.1) SKY: the selected track's sound's picture, dimmed, for a sky
-                                                 * (2.2: JAHKI's SKY: the season's, its name) */
+                                                 * (2.2: JAHKI's SKY: the season's) */
         pc_draw = yr_sky ? yr_pic() : pic_of_track(sel), pc_dim = 1;
         pic_anim_rows(pc_draw, fm1_ms, pc_want, pc_row);   /* (2.2: moving, always) */
         pc_dim = 0;
-        if (yr_sky) ui_text(HF_X + HF_W - 4 - 8 * ui_len(YR_NAME[clamp(yr_season, 0, YR_NS - 1)]), HF_Y + 4,
-                            YR_NAME[clamp(yr_season, 0, YR_NS - 1)], 1, UI_M);
     } else
         for (i = 0; i < NSTAR; i++) ui_rect(sk_x[i] * 3, 27 + sk_y[i] * 3, 3, 3, sk_col(i));
     ui_brackets(HF_X, HF_Y, HF_W, HF_H, 10, ui_acc);
@@ -1315,6 +1311,7 @@ static void yr_row(uint32_t y, const uint16_t *col)
         x = e;
     }
 }
+static int yr_want(uint32_t y) { return ui_in(62, 46 + (int32_t)y, PIC_W, 1); }   /* (the strip's rows only) */
 static void pic_jahki(void)
 {
     static const uint16_t SC[YR_NS] = {RGB(0x1c, 0x2a, 0x6e), RGB(0x9c, 0xc8, 0xf0), RGB(0x3f, 0xb9, 0x50),
@@ -1325,7 +1322,7 @@ static void pic_jahki(void)
     put_s(l, YR_NAME[s]);
     put_s(r, YR_LEN_NAME[clamp(yr_len, 0, YR_NLEN - 1)]);
     ui_caption(l, r);
-    pic_anim_rows(yr_pic(), fm1_ms, 0, yr_row);
+    pic_anim_rows(yr_pic(), fm1_ms, yr_want, yr_row);
     for (k = 0; k < YR_NS; k++)                 /* the year: its seasons, the one now lit */
         ui_rect(PX0 + (int32_t)k * 27, 120, 26, 8, k == s ? SC[k] : ui_mix(UI_K, SC[k], 5, 16));
     ui_rect(PX0 + (int32_t)at, 116, 2, 16, UI_W);
@@ -2529,6 +2526,38 @@ static void ui_update(int32_t oct)
             ui_region(3 + (int32_t)k * 59, 165, 56, 72, UI_K, ui_slab_draw);
         }
     }
+}
+
+/* ---- (2.2) GOVVA (North Sami: a picture, satni.uit.no), SCREEN OFF's last: after a minute untouched the whole screen
+ * is the picture, moving (pictures.c's pic_anim_rows): JAHKI's season's with its SKY on, else the selected track's
+ * sound's; 2 x 2 pixels a cell, in the middle, black round it. Nothing over it, no text. A frame every UI_GOVVA_MS
+ * (~11 a second: far lighter than GUOVSSAHAS, the music first); the first touch only wakes the screen (grimm.c). */
+#define UI_GOVVA_MS 90u
+#define GV_X ((240 - 2 * (int32_t)PIC_W) / 2)
+#define GV_Y ((240 - 2 * (int32_t)PIC_H) / 2)
+static uint32_t gv_id;
+static int gv_want(uint32_t y) { return ui_in(GV_X, GV_Y + (int32_t)y * 2, 2 * PIC_W, 2); }
+static void gv_row(uint32_t y, const uint16_t *col)
+{
+    uint32_t x = 0, e;
+    while (x < PIC_W) {
+        for (e = x + 1u; e < PIC_W && col[e] == col[x]; e++)
+            ;
+        ui_rect(GV_X + (int32_t)x * 2, GV_Y + (int32_t)y * 2, (int32_t)(e - x) * 2, 2, col[x]);
+        x = e;
+    }
+}
+static void gv_draw(void) { pic_anim_rows(gv_id, fm1_ms, gv_want, gv_row); }
+static void ui_govva(uint32_t now)
+{
+    static uint32_t t_last, shown;
+    uint32_t id = yr_sky ? yr_pic() : pic_of_track(sel);
+    if (now - t_last < UI_GOVVA_MS) return;
+    if (now - t_last > 1000u || shown != id + 1u) ui_region(0, 0, 240, 240, UI_K, 0);   /* (its first frame, or another
+                                                 * picture: the screen black once) */
+    t_last = now, shown = id + 1u;
+    gv_id = id;
+    ui_region(GV_X, GV_Y, 2 * PIC_W, 2 * PIC_H, UI_K, gv_draw);
 }
 
 /* ---- (2.0) GUOVSSAHAS (North Sami: the northern lights, sanit.oahpa.no), SCREEN OFF's last: after two minutes
