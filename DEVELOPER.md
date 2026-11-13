@@ -394,6 +394,22 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
   - Why it was set aside: the picture was not good enough. The strands came out streaky and the hem did not burn.
   - Next time: try 2 x 2 pixel cells (pixel-art look, a quarter of the work), a real bloom, fewer and wider curtains,
     or a screensaver instead of HOME so the speed matters less.
+- **What ZEN-1 showed (noted 2026-11-13, waiting: not the direction for now, but 1 and 2 would be excellent).**
+  [zen-1](https://github.com/aceyprime/zen-1) (GPL-3.0, aceyprime) is an ambient firmware for the FM-1, highly rated:
+  living Japanese scenes where "every movement you see is a note you hear". Ideas only, to be written from scratch and
+  credited if they ship:
+  1. **The Arctic plays.** The picture makes the notes: the aurora's curtains as they fold play the drone's notes, the
+     ice cracks on screen when RUOHČAT creaks, a snowflake that lands rings a bell, pitched by where it lands. The keys
+     reach into the picture and the picture answers in sound. Made for the VIBE's display and stage.
+  2. **The ice answers.** A note played comes back a few seconds later from deep in the ice (RUOHČAT listening to the
+     keys), as ZEN-1's koi play your note back when they find it.
+  3. **Polar night and midnight sun:** a whole Arctic day in half an hour, the sound following the light (ZEN-1's
+     Natural).
+  4. **ACTIVITY:** one knob for how alive it all is (RUOHČAT, DRIFT, GENERATE, DICE together).
+  5. **JIEHKKI all night:** up to 8 hours, the picture dimming over its last ten minutes.
+  6. **A welcome card** at the first start, the few controls that matter.
+  - Also in ZEN-1: a conductor for the music (phrases, rests, echoes, a slow tide), nature beds from CC0 recordings
+    (Freesound), a moon on its real phase from NASA's map, a painted or pixel look.
 - Tune the HOME waveform look for ICE WRAITH, and a stronger HOWL burst.
 - Move the redo buffer (`store.c` `redo_b`, 5 KB) into the pool now that the pool has room, to free main RAM.
 - Store `wv_d` (HOME's drawn waves) as 8-bit values instead of 32-bit: saves ~1.2 KB of main RAM.
