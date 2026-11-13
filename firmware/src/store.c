@@ -583,7 +583,8 @@ static void pk_work(uint8_t *q)
     for (k = 0; k < EXT_PK; k++) q[k] = 0;
     for (t = 0; t < NT; t++)
         for (k = 0; k < 4u; k++) q[t * 4u + k] = (uint8_t)clamp(trk[t].p[ENG_BIEGGA][k], 0, 127);
-    q[16] = (uint8_t)clamp(jk_len, 0, JK_NLEN - 1), q[17] = (uint8_t)clamp(jk_drift, 0, 100);
+    q[16] = (uint8_t)(0x80 | clamp(jk_len, 0, JK_NLEN - 1)), q[17] = (uint8_t)clamp(jk_drift, 0, 100);   /* (2.1: LENGTH
+                                                 * with its top bit: 2.0's had no hours, its 6 was ENDLESS) */
     q[18] = (uint8_t)clamp(jk_ruo, 0, 100), q[19] = (uint8_t)clamp(sc_tun, 0, NTUNING - 1);
     q[20] = (uint8_t)clamp(ru_smp, 0, RU_NSMP - 1), q[21] = (uint8_t)clamp(ru_share, 0, 100);
     q[22] = (uint8_t)clamp(ru_vary, 0, 100);
@@ -621,7 +622,8 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
         for (t = 0; t < NT; t++)
             for (k = 0; k < 4u; k++) trk[t].p[ENG_BIEGGA][k] = ex ? clamp(x[t * 4u + k], 0, 127) : T0.p[ENG_BIEGGA][k];
         if (globals) {
-            jk_len = ex ? clamp(x[16], 0, JK_NLEN - 1) : 2, jk_drift = ex ? clamp(x[17], 0, 100) : 40;
+            jk_len = !ex ? 2 : x[16] & 0x80u ? clamp(x[16] & 0x7F, 0, JK_NLEN - 1) : x[16] >= 6u ? JK_NLEN - 1 : x[16];   /* (ENDLESS: the last) */
+            jk_drift = ex ? clamp(x[17], 0, 100) : 40;
             jk_ruo = ex ? clamp(x[18], 0, 100) : 0, sc_tun = ex ? clamp(x[19], 0, NTUNING - 1) : TN_EQUAL;
             ru_smp = ex ? clamp(x[20], 0, RU_NSMP - 1) : 0, ru_share = ex ? clamp(x[21], 0, 100) : 50;
             ru_vary = ex ? clamp(x[22], 0, 100) : 30;

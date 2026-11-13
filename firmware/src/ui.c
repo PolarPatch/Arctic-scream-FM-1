@@ -1243,8 +1243,11 @@ static void pic_jiehkki(void)
     char l[28], r[12], *p;
     if (jk.run && L) {                          /* the caption: the time left, LENGTH */
         uint32_t s = (jk_left(now) + 999u) / 1000u;
-        p = put_u(l, s / 60u), *p++ = ':', *p++ = (char)('0' + s % 60u / 10u), *p++ = (char)('0' + s % 10u);
-        put_s(p, jk.own ? " LEFT, ITS OWN" : " LEFT");
+        p = l;
+        if (s >= 3600u) p = put_u(p, s / 3600u), *p++ = ':', *p++ = (char)('0' + s / 600u % 6u), *p++ = (char)('0' + s / 60u % 10u);
+        else p = put_u(p, s / 60u);             /* (2.1: H:MM:SS from an hour on) */
+        *p++ = ':', *p++ = (char)('0' + s % 60u / 10u), *p++ = (char)('0' + s % 10u);
+        put_s(p, jk.own && s < 3600u ? " LEFT, ITS OWN" : " LEFT");   /* (hours: no room for ITS OWN) */
     } else if (jk.run) {
         uint32_t s = e / 1000u;
         p = put_s(put_u(put_s(l, "PLAYING "), s / 60u), ":"), *p++ = (char)('0' + s % 60u / 10u), *p++ = (char)('0' + s % 10u), *p = 0;

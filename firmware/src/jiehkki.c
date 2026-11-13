@@ -2,7 +2,7 @@
  * Copyright (C) 2026 PolarPatch */
 /* Arctic Scream 2.0's JIEHKKI page (LFO, tapped a third time; North Sami: a glacier, sanit.oahpa.no): a piece the
  * FM-1 plays on its own for as long as LENGTH says, moving as slowly as a glacier, then dying out.
- *   LENGTH     5, 10, 15, 25, 30, 60 MIN, ENDLESS: the piece's time
+ *   LENGTH     5, 10, 15, 25, 30, 60 MIN, (2.1) 2, 4, 8 HOURS (all night, to sleep by), ENDLESS: the piece's time
  *   DRIFT      0 .. 100 %: how much moves while it plays: the tracks' notes (its own; twice as often in its
  *              opening), their presence in the mix (a track rests a while, comes back), their filters (opening over
  *              the first minutes, closing as it dies out). 0: nothing moves, the piece only rises and dies out: a
@@ -33,9 +33,10 @@
  * SAMPLE, SHARE and VARY are the project's too (store.c's EXT). */
 
 #define JK_TICK 50u                             /* ms between the main loop's looks */
-#define JK_ENDLESS 6                            /* (JK_NLEN: grimm.c) */
-static const uint8_t JK_MIN[JK_NLEN] = {5, 10, 15, 25, 30, 60, 0};   /* LENGTH's minutes (0: ENDLESS) */
-static const char *const JK_LEN_NAME[JK_NLEN] = {"5 MIN", "10 MIN", "15 MIN", "25 MIN", "30 MIN", "60 MIN", "ENDLESS"};
+#define JK_ENDLESS 9                            /* (JK_NLEN: grimm.c; 2.0's 6: store.c reads it as this) */
+static const uint16_t JK_MIN[JK_NLEN] = {5, 10, 15, 25, 30, 60, 120, 240, 480, 0};   /* LENGTH's minutes (0: ENDLESS) */
+static const char *const JK_LEN_NAME[JK_NLEN] = {"5 MIN", "10 MIN", "15 MIN", "25 MIN", "30 MIN", "60 MIN", "2 HOURS",
+                                                 "4 HOURS", "8 HOURS", "ENDLESS"};
 #define JK_ID 202u                              /* its notes' origin (lat_id): JK_ID + 2 t + (0, 1) */
 static const uint8_t JK_LO[NT] = {33, 43, 45, 52}, JK_HI[NT] = {52, 62, 64, 76};   /* a track's notes' range */
 
