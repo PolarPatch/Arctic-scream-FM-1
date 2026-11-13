@@ -2320,6 +2320,7 @@ static void midi_in(void)
                 nq_note(NQ_OFF, m, 0, MIDI_ID(d1));
                 midi_held[d1] &= (uint8_t)~(0x11u << m);
             }
+        if (on) ru_heard(n);                    /* (2.1: the ice may answer it) */
         if (on && trk[t].latch)
             nq_note(NQ_TOGGLE, t, n, MIDI_ID(d1));
         else if (on) {
@@ -2662,6 +2663,7 @@ static void app_step(void)                      /* one pass of the main loop: on
                                              * step, its chord as it is now) */
             if (!playing) seq[sel].cursor = (seq[sel].cursor + 1) % clamp(seq[sel].steps, 1, SEQ_N);
         }
+        ru_heard(n);                            /* (2.1: the ice may answer it) */
         if (trk[sel].latch && !rec)             /* (LATCH ON: that key's voices on, or off) */
             nq_note(NQ_TOGGLE | NQ_ECHO | NQ_OCT(set.oct), sel, n, KEY_ID(k));
         else {

@@ -30,7 +30,10 @@
  *   VARY       0 .. 100 %: 0, a sample whole, from its start, as recorded; up, from further in, shorter, now and then a
  *              fourth, a fifth or an octave down or up
  * A sample comes in over 20 ms and goes over its last 100 ms, panned, with a share into SPACE; two at most at once.
- * SAMPLE, SHARE and VARY are the project's too (store.c's EXT). */
+ * SAMPLE, SHARE and VARY are the project's too (store.c's EXT).
+ * (2.1) The ice answers (after ZEN-1's koi, aceyprime's, who play your note back when they find it; written anew):
+ * with RUOHCAT up, a note you play (a key, MIDI; not the sequencer's, not the piece's) comes back a few seconds later
+ * from far off in the ice, an octave up, a bell of ice: often or seldom as RUOHCAT is up, one at a time. */
 
 #define JK_TICK 50u                             /* ms between the main loop's looks */
 #define JK_ENDLESS 9                            /* (JK_NLEN: grimm.c; 2.0's 6: store.c reads it as this) */
@@ -232,7 +235,7 @@ static void jk_move(uint32_t now)               /* DRIFT: a note, a track's pres
 }
 
 /* ---- RUOHCAT: the main loop picks an event's time and its sound, the audio plays it */
-enum { RU_CRACK, RU_DRIP, RU_BOOM, RU_SMP };
+enum { RU_CRACK, RU_DRIP, RU_BOOM, RU_SMP, RU_ANS };   /* (2.1, RU_ANS: the ice's answer) */
 typedef struct {
     uint8_t type, hits;                         /* RU_; a crack's sub-cracks to come */
     uint16_t gap;                               /* .. samples between them (at most) */
@@ -277,11 +280,31 @@ static int ru_pick(ru_ev_t *E)                  /* main loop: a sample event int
     return 1;
 }
 
+static uint32_t ra_due, ra_note;                /* main loop: the ice's answer, when (0: none), its note */
+static void ru_heard(uint32_t n)                /* main loop: a note played by a hand (a key, MIDI): the ice may answer */
+{
+    int32_t d = clamp(jk_ruo, 0, 100);
+    if (!d || jk.ended || ra_due) return;       /* (RUOHCAT off, the piece over, an answer already coming) */
+    if (jk_rnd(100) >= (uint32_t)(25 + d * 6 / 10)) return;   /* (25 % of the notes at 1 %, 85 % at 100 %) */
+    ra_note = n, ra_due = fm1_ms + 1500u + jk_rnd(3500);
+    if (!ra_due) ra_due = 1u;
+}
+
 static void ru_tick(uint32_t now)
 {
     int32_t d = clamp(jk_ruo, 0, 100);
     uint32_t mean, r;
     ru_ev_t *E;
+    if (ra_due && (int32_t)(now - ra_due) >= 0) {   /* (2.1) the answer: the note an octave up, far off, into SPACE */
+        ra_due = 0;
+        if (d && !jk.ended) {
+            E = &ru_q[ru_w % 4u];
+            E->type = RU_ANS, E->inc = pitch_inc((uint32_t)clamp(((int32_t)ra_note + 12) * 16, 0, 2047));
+            E->amp = 2600 + (int32_t)jk_rnd(1800), E->pan = (int32_t)jk_rnd(32768), E->send = 26000;
+            ru_last = RU_ANS;
+            ru_w = ru_w + 1u;
+        }
+    }
     if (!d || jk.ended) { ru_next = now + 2000u; return; }
     if ((int32_t)(now - ru_next) < 0) return;
     mean = 60000u >> (d / 16);                  /* (1 %: ~a minute apart; 50 %: ~8 s; 100 %: under 1 s) */
@@ -322,7 +345,7 @@ static struct {
     uint16_t gap, cnt;
     uint8_t sh1, sh2;                           /* its envelopes' falls: e -= e >> sh a sample (2^sh samples) */
     int32_t e1, e2, amp, gl, gr, send, n1, n2, n3, n4, lp;   /* (e1, e2: Q23, amp << 8) */
-    uint32_t ph, inc, inc_lo;
+    uint32_t ph, inc, inc_lo, ph2;              /* (ph2: the answer's second partial) */
     tsvf_t f1, f2;
     int32_t k1, k2;
 } ru[RU_N];
@@ -399,6 +422,8 @@ static void ru_begin(const ru_ev_t *E)
         ru[i].k1 = 900, ru[i].k2 = 1800;
         tsvf_coef_k(&ru[i].f1, E->cut1, ru[i].k1), tsvf_coef_k(&ru[i].f2, E->cut2, ru[i].k2);
         ru[i].sh1 = (uint8_t)(8u + (E->gap > 1000u) + (E->gap > 1400u));   /* (a crack ~6 .. 23 ms) */
+    } else if (E->type == RU_ANS) {             /* (a bell of ice: its note, and a partial 2.75 x it that dies sooner) */
+        ru[i].inc_lo = (E->inc >> 2) * 11u, ru[i].ph2 = 0, ru[i].sh1 = 15, ru[i].sh2 = 13;   /* (~0.7 s, ~0.2 s) */
     } else if (E->type == RU_DRIP) {
         ru[i].inc_lo = E->inc / 2u + E->inc / 16u, ru[i].sh1 = 11;   /* (~46 ms) */
     } else {
@@ -428,6 +453,12 @@ static void ru_render(int32_t *out, int32_t *rev, uint32_t n)   /* audio: RUOHCA
                     ru[k].hits--, ru[k].cnt = (uint16_t)(ru[k].gap / 2u + (uint32_t)(noise32(&ru_rng) % ru[k].gap));
                     ru[k].e1 = (ru[k].amp * (8 + (int32_t)(noise32(&ru_rng) & 7u)) / 16) << 8;
                 }
+                break;
+            case RU_ANS:
+                y = mulq15(sine_i(ru[k].ph), ru[k].e1 >> 8) + (mulq15(sine_i(ru[k].ph2), ru[k].e2 >> 8) >> 2);
+                ru[k].ph += ru[k].inc, ru[k].ph2 += ru[k].inc_lo;
+                ru[k].e1 -= (ru[k].e1 >> ru[k].sh1) + (ru[k].e1 > 0);
+                ru[k].e2 -= (ru[k].e2 >> ru[k].sh2) + (ru[k].e2 > 0);
                 break;
             case RU_DRIP:
                 y = mulq15(sine_i(ru[k].ph), ru[k].e1 >> 8);
