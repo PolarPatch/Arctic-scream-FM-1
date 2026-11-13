@@ -229,7 +229,7 @@ static const char *const LONG_LAB[][2] = {
     {"DECAY", "DEC"}, {"SUSTAIN", "SUS"}, {"RELEASE", "REL"}, {"DENSITY", "DENS"}, {"SCATTER", "SCAT"},
     {"REVERSE", "REV"}, {"SECTION", "SECT"}, {"PATTERN", "PATT"}, {"REPEATS", "REPEAT"}, {"OCTAVES", "OCTAVE"},
     {"RATCHET", "RATCH"}, {"VOICING", "VOICNG"}, {"CHANCE", "CHNC"}, {"ACTION", "DO"}, {"MIDI LEARN", "LEARN"},
-    {"SEQ MIDI OUT", "SEQOUT"}, {"TRK CUTOFF", "TRKCUT"},
+    {"SEQ MIDI OUT", "SEQOUT"}, {"TRK CUTOFF", "TRKCUT"}, {"PICTURE", "PIC"},
 };
 static void ui_label(char *d, const char *s)    /* a knob's name on a slab (at most 6 characters: 48 px) */
 {
@@ -369,6 +369,7 @@ static void ui_slab_make(uint32_t k, slab_t *S)
                                                  * (1.5.2) MOD OUT: OFF, ON */
         if (k == 1u) { usb_db(S->val, v, ""); return; }
         if (k == 2u) { put_s(S->val, v ? "ON" : "OFF"); return; }
+        if (k == 3u) { put_s(S->val, PC_NAME[clamp(v, 0, NPC - 1)]); return; }   /* (2.1: PICTURE) */
         put_s(S->val, v ? "OFF" : "SOUND");
         return;
     case PG_SOUNDS:
@@ -651,16 +652,18 @@ static uint16_t wv_col(uint32_t t)              /* a track's colour (muted, LEVE
 {
     return trk[t].level <= 0 || (trk_quiet >> t & 1u) ? UI_M : UI_ACCENTS[t];
 }
-static void pc_row(uint32_t y, const uint8_t *cells)   /* (2.1) a row of the card's picture: its runs of a colour,
-                                                 * 2 x 2 pixels a cell, in HOME's field */
+static uint32_t pc_draw, pc_dim;                /* (2.1) the picture pc_row draws; dimmed (SKY) */
+static void pc_row(uint32_t y, const uint8_t *cells)   /* (2.1) a row of a sound's picture: its runs of a colour,
+                                                 * 2 x 2 pixels a cell, in HOME's field (SKY: dimmed, under the waves) */
 {
-    const uint16_t *pal = PIC_PAL[pc_id % NPIC];
+    const uint16_t *pal = PIC_PAL[pc_draw % NPIC];
     uint32_t x = 0, e;
     if (!ui_in(HF_X, HF_Y + 1 + (int32_t)y * 2, HF_W, 2)) return;
     while (x < PIC_W) {
         for (e = x + 1u; e < PIC_W && cells[e] == cells[x]; e++)
             ;
-        ui_rect(HF_X + (int32_t)x * 2, HF_Y + 1 + (int32_t)y * 2, (int32_t)(e - x) * 2, 2, pal[cells[x]]);
+        ui_rect(HF_X + (int32_t)x * 2, HF_Y + 1 + (int32_t)y * 2, (int32_t)(e - x) * 2, 2,
+                pc_dim ? ui_mix(UI_K, pal[cells[x]], 7, 16) : pal[cells[x]]);
         x = e;
     }
 }
@@ -668,6 +671,7 @@ static void pic_home_card(void)                 /* (2.1) HOME a moment after PRE
                                                  * on it (after Demake's) */
 {
     int32_t w = ui_len(pc_name) * 8 + 8;
+    pc_draw = pc_id, pc_dim = 0;
     pic_rows(pc_id, pc_row);
     ui_rect(HF_X + 4, HF_Y + 5, w, 13, UI_K);
     ui_text(HF_X + 8, HF_Y + 8, pc_name, 1, UI_W);
@@ -678,7 +682,12 @@ static void pic_home(void)                      /* Main: the stars, a wave a tra
     uint32_t i, t;
     if (pic_card_on()) { pic_home_card(); return; }   /* (2.1) a sound's picture a moment */
     if (!sk_ok) sk_init();
-    for (i = 0; i < NSTAR; i++) ui_rect(sk_x[i] * 3, 27 + sk_y[i] * 3, 3, 3, sk_col(i));
+    if (pc_mode == PC_SKY) {                    /* (2.1) SKY: the selected track's sound's picture, dimmed, for a sky */
+        pc_draw = pic_of_track(sel), pc_dim = 1;
+        pic_rows(pc_draw, pc_row);
+        pc_dim = 0;
+    } else
+        for (i = 0; i < NSTAR; i++) ui_rect(sk_x[i] * 3, 27 + sk_y[i] * 3, 3, 3, sk_col(i));
     ui_brackets(HF_X, HF_Y, HF_W, HF_H, 10, ui_acc);
     for (t = 0; t < NT; t++) {
         int32_t c = WV_Y(t), flat = 1;
@@ -2174,15 +2183,16 @@ static void pic_sys3(void)                      /* SYSTEM 3: LATCH, what it does
                                                  * (Arctic Scream p0larpatch) USB LEVEL, the computer's recording */
 {
     char v[12];
-    ui_caption("LATCH, USB, MOD OUT", 0);
-    sys3_row(42, "LATCH", set.latch ? "ALWAYS OFF" : "FROM SOUND");
-    ui_text(PX0 + 6, 60, set.latch ? "A SOUND LOADED: THE" : "A SOUND BRINGS ITS OWN", 1, UI_M);
-    ui_text(PX0 + 6, 71, set.latch ? "TRACK'S LATCH OFF" : "LATCH WITH IT", 1, UI_M);
-    ui_text(PX0 + 6, 84, "SEL + OCT+: TRACK'S LATCH", 1, UI_M);
-    sys3_row(98, "USB LEVEL", usb_db(v, set.usb, " "));
-    ui_text(PX0 + 6, 116, "THE COMPUTER RECORDS AT", 1, UI_M);
-    ui_text(PX0 + 6, 127, "THIS LEVEL, NOT THE KNOB'S", 1, UI_M);
-    sys3_row(143, "MOD OUT", set.mod ? "CC 102, 103" : "OFF");   /* (1.5.2: LEVEL, LFO) */
+    ui_caption("LATCH, USB, MOD, PICTURE", 0);
+    sys3_row(40, "LATCH", set.latch ? "ALWAYS OFF" : "FROM SOUND");
+    ui_text(PX0 + 6, 57, set.latch ? "A SOUND LOADED: LATCH OFF" : "A SOUND BRINGS ITS LATCH", 1, UI_M);
+    ui_text(PX0 + 6, 68, "SEL + OCT+: TRACK'S LATCH", 1, UI_M);
+    sys3_row(82, "USB LEVEL", usb_db(v, set.usb, " "));
+    ui_text(PX0 + 6, 99, "THE COMPUTER RECORDS AT IT", 1, UI_M);
+    sys3_row(112, "MOD OUT", set.mod ? "CC 102, 103" : "OFF");   /* (1.5.2: LEVEL, LFO) */
+    sys3_row(132, "PICTURE", PC_NAME[clamp(pc_mode, 0, NPC - 1)]);   /* (2.1) */
+    ui_text(PX0 + 6, 149, pc_mode == PC_SKY ? "HOME'S SKY: THE SOUND'S" : pc_mode == PC_OFF ? "NO PICTURES" :
+            "A MOMENT WHILE PRESETS TURNS", 1, UI_M);
 }
 
 static void pic_notbuilt(void) { ui_text(120 - 4 * 13, 96, "NOT BUILT YET", 1, UI_M); }
@@ -2241,7 +2251,8 @@ static uint32_t ui_pic_key(void)
     uint32_t h = 2166136261u, k, t;
 #define UI_H(v) (h = (h ^ (uint32_t)(v)) * 16777619u)
     UI_H(page), UI_H(sel), UI_H(sel_eng()), UI_H(ge_freeze), UI_H(ui_acc);
-    if (page == PG_HOME) UI_H(pic_card_on() ? pc_id + 1u : 0u), UI_H(pc_name[0]);   /* (2.1: the card, on or off) */
+    if (page == PG_HOME)                        /* (2.1: the card, on or off; SKY's picture) */
+        UI_H(pic_card_on() ? pc_id + 1u : 0u), UI_H(pc_name[0]), UI_H(pc_mode == PC_SKY ? pic_of_track(sel) + 1u : 0u);
     for (k = 0; k < 4u; k++) {
         volatile int32_t *p = knob_param(page, k);
         UI_H(p ? *p : -1);

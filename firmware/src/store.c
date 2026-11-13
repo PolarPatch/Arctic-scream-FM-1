@@ -587,7 +587,7 @@ static void pk_work(uint8_t *q)
                                                  * with its top bit: 2.0's had no hours, its 6 was ENDLESS) */
     q[18] = (uint8_t)clamp(jk_ruo, 0, 100), q[19] = (uint8_t)clamp(sc_tun, 0, NTUNING - 1);
     q[20] = (uint8_t)clamp(ru_smp, 0, RU_NSMP - 1), q[21] = (uint8_t)clamp(ru_share, 0, 100);
-    q[22] = (uint8_t)clamp(ru_vary, 0, 100);
+    q[22] = (uint8_t)clamp(ru_vary, 0, 100), q[23] = (uint8_t)clamp(pc_mode, 0, NPC - 1);   /* (2.1: PICTURE) */
 }
 enum { UW_GLOBALS = 1, UW_CHAIN = 2 };
 static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: UW_GLOBALS, the effects, tempo, slot,
@@ -626,7 +626,7 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
             jk_drift = ex ? clamp(x[17], 0, 100) : 40;
             jk_ruo = ex ? clamp(x[18], 0, 100) : 0, sc_tun = ex ? clamp(x[19], 0, NTUNING - 1) : TN_EQUAL;
             ru_smp = ex ? clamp(x[20], 0, RU_NSMP - 1) : 0, ru_share = ex ? clamp(x[21], 0, 100) : 50;
-            ru_vary = ex ? clamp(x[22], 0, 100) : 30;
+            ru_vary = ex ? clamp(x[22], 0, 100) : 30, pc_mode = ex ? clamp(x[23], 0, NPC - 1) : PC_CARD;
         }
     }
     if (globals && !sg) dl_pp = rv_shim = 0;    /* (saved before the song: AIR off) */

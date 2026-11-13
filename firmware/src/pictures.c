@@ -45,6 +45,7 @@ static uint32_t pic_of_track(uint32_t t)        /* the picture of track t's soun
 
 static void pic_card(uint32_t t)                /* main loop (PRESETS turned): HOME shows track t's picture a moment */
 {
+    if (pc_mode != PC_CARD) return;             /* (SKY: HOME shows it always; OFF: never) */
     pc_id = pic_of_track(t);
     trk_sname(t, pc_name);
     pc_until = fm1_ms + PC_CARD_MS;

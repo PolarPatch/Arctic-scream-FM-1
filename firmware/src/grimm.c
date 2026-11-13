@@ -246,6 +246,10 @@ static void mix_add(int32_t *o, uint32_t st, const int32_t *x, int32_t g0, int32
  * MIXER 2's TYPE: LP (as V1.0, the same code), HP (open, bypassed: CUTOFF at the bottom), BP (never open), the
  * same SVF's outputs (dsp.c tsvf_any); POS: PRE (as V1.0: the sends hear it filtered) or POST (mix_tracks: the sends
  * hear the track before it, only its dry sound filtered) */
+enum { PC_CARD, PC_SKY, PC_OFF, NPC };          /* (2.1) SYSTEM 3's PICTURE: a sound's picture on HOME a moment while
+                                                 * PRESETS turns, or always as HOME's sky, or never (pictures.c) */
+static volatile int32_t pc_mode;                /* .. the project's (store.c's EXT: 2.0's, CARD) */
+static const char *const PC_NAME[NPC] = {"CARD", "SKY", "OFF"};
 #define JK_NLEN 10                              /* (2.0, jiehkki.c: JIEHKKI's LENGTHs; its knobs (store.c saves them); */
 static volatile int32_t jk_len, jk_drift, jk_ruo, jk_go;
 #define RU_NSMP 6                               /* (.. the RUOHCAT page's SAMPLE: OFF, SLOT 1 .. 4, ALL; its knobs;) */
@@ -1169,7 +1173,7 @@ static const page_t PAGES[NPAGE] = {
                                                  * SOURCE's) */
     {"MASTER", BTN_FX, 1, 0, 1, {"CUTOFF", "RESONANCE", "TYPE", "POSITION"}},   /* (FX's 5th and 6th, master.c) */
     {"DRIVE", BTN_FX, 1, 0, 1, {"AMOUNT", "TYPE", "TONE", "MIX"}},
-    {"SYSTEM 3", BTN_HOME, 1, 0, 0, {"LATCH", "USB", "MOD", ""}},   /* (a NEW project's tracks' LATCH) */
+    {"SYSTEM 3", BTN_HOME, 1, 0, 0, {"LATCH", "USB", "MOD", "PICTURE"}},   /* (a NEW project's tracks' LATCH) */
     {"LOOP", BTN_EDIT, 1, 1, 1, {"GATE", "BLOOM", "LOWCUT", "EXCITE"}},   /* (1.4: a HOWL track's, after SOUND: its
                                                  * loop's GATE, BLOOM, LOWCUT and EXCITE, howl.c) */
     {"AIR", BTN_FX, 1, 0, 1, {"PING", "SHIMMR", "", ""}},
@@ -1265,7 +1269,7 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_PROJECTS: return k == 0u ? &pj_slot : k == 3u ? &pj_act : 0;   /* (CATEGORY, TYPE: "-") */
     case PG_SYSTEM: return k == 0u ? &sy_col : k == 1u ? &sy_mch : k == 2u ? &sy_tune : &sy_scr;
     case PG_SYS2: return k == 0u ? &sy_learn : k == 1u ? &sy_out : k == 2u ? &sy_fac : &sy_clk;
-    case PG_SYS3: return k == 0u ? &sy_latch : k == 1u ? &sy_usb : k == 2u ? &sy_mod : 0;
+    case PG_SYS3: return k == 0u ? &sy_latch : k == 1u ? &sy_usb : k == 2u ? &sy_mod : &pc_mode;
     case PG_LOOP: return &trk[sel].hw_x[k & 3u];
     case PG_AIR: return k == 0u ? &dl_pp : k == 1u ? &rv_shim : 0;
     case PG_JIEHKKI: return k == 0u ? &jk_len : k == 1u ? &jk_drift : k == 2u ? &jk_ruo : &jk_go;
@@ -1287,7 +1291,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_JIEHKKI ? (k == 0u ? JK_NLEN - 1 : k == 3u ? 1 : 100) : pg == PG_RUOHCAT ? (k == 1u ? RU_NSMP - 1 : 100) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : NSCR - 1) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
-           pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_LMAX : 1) :
+           pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_LMAX : k == 3u ? NPC - 1 : 1) :
            pg == PG_FMALGO ? (k == 0u ? 31 : k == 1u ? 7 : k == 2u ? 5 : 99) :
            pg == PG_FMOP ? (k ? 99 : 31) : pg == PG_MIX2 ? (k == 1u ? NFTYPE - 1 : k == 2u ? 1 : 127) :
            pg == PG_MASTER ? (k == 2u ? NFTYPE - 1 : k == 3u ? NMPOS - 1 : 127) :
@@ -1423,6 +1427,11 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
         if (k == 0u) put_s(s, JK_LEN_NAME[clamp(v, 0, JK_NLEN - 1)]);
         else if (k < 3u) put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
         else put_s(s, v ? "ON" : "OFF");
+        return;
+    case PG_SYS3:                               /* (2.1: its PICTURE; the others as the slabs say them, ui.c) */
+        if (k == 3u) { put_s(s, PC_NAME[clamp(v, 0, NPC - 1)]); return; }
+        if (k == 1u) { usb_db(s, v, " "); return; }
+        put_s(s, k == 2u ? (v ? "ON" : "OFF") : v ? "ALWAYS OFF" : "FROM SOUND");
         return;
     case PG_RUOHCAT:                            /* (2.0) AMOUNT, SAMPLE, SHARE, VARY */
         if (k == 1u) put_s(s, RU_SMP_NAME[clamp(v, 0, RU_NSMP - 1)]);
