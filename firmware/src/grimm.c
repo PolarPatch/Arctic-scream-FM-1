@@ -2746,6 +2746,7 @@ static void app_step(void)                      /* one pass of the main loop: on
         if (id < 27u) { if (p >= 0 && p < 27) lit |= 1u << p; }
         else if (o >= base && o < base + 27u) lit |= 1u << (o - base);
     }
+    lit |= kl_keys();                           /* (2.2) JIEHKKI's notes, RUOHCAT's flashes (a layer held: its own below) */
     if (b_down >> BTN_SEQ & 1u)                 /* (SEQ held: the tools' eight keys lit; 2.0: DICE's eight too) */
         for (k = 0; k < 8u; k++) lit |= 1u << WK[k] | 1u << WK2[k];
     if (b_down >> BTN_EDIT & 1u)                /* (2.0: EDIT held: ACCIDENT's three) */

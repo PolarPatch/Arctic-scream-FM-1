@@ -79,6 +79,10 @@ check("LENGTH 5 MIN, START: its own notes, one a track", jk[30000]["run"] == 1 a
 check(".. rising out of silence", rms(a, 7, 8) < rms(a, 60, 70) * 0.5, (rms(a, 7, 8), rms(a, 60, 70)))
 check(".. heard in its middle", rms(a, 150, 160) > 300, rms(a, 150, 160))
 check(".. dying out over its last minutes", rms(a, 290, 295) < rms(a, 200, 210) * 0.5, (rms(a, 290, 295), rms(a, 200, 210)))
+lit = {int(m.group(1)): int(m.group(2), 16) for m in re.finditer(r"^probe (\d+) .* lit ([0-9a-f]+)", out, re.M)}
+want = sum(1 << (int(n.split(":")[1]) - 41) for n in notes[30000] if 41 <= int(n.split(":")[1]) < 68)
+check("(2.2) the keys light the piece's own notes (every track's on the keys)", lit[30000] == want and want,
+      (hex(lit[30000]), notes[30000]))
 trk = lambda ms: sorted(n.split(":")[0] for n in notes[ms])
 check("(2.2) its dusk: the tracks go one by one, the highest first, T1 alone at the last",
       trk(240000) == ["1", "2", "3", "4"] and trk(270000) == ["1", "2", "3"] and trk(285000) == ["1", "2"] and

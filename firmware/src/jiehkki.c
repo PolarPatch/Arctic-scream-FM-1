@@ -42,7 +42,10 @@
  * quarters), each let go into SPACE's tail, till T1's low note is alone and fades into silence.
  * (2.2) The ice holds its breath (after Arcturus S6's gated reverb freeze, Zeptosecond DSP's; written anew): with
  * RUOHCAT up, now and then SPACE's tail is held still for 3 .. 10 s (SIZE's INF, hall.c's rv_hold: the knob as it is),
- * the tracks playing on over it, then let go to die away as SIZE says: every ~90 s at 1 %, every ~20 s at 100 %. */
+ * the tracks playing on over it, then let go to die away as SIZE says: every ~90 s at 1 %, every ~20 s at 100 %.
+ * (2.2) The keys show it (after Arcturus S6's keys as a display, written anew): while nothing is held, the keys light
+ * JIEHKKI's own notes (every track's), and RUOHCAT's sounds flash across them: a crack, a few keys side by side; a
+ * drip, a high key; a boom, the lowest three; the ice's answer, the key of its note. kl_keys: grimm.c's lights. */
 
 #define JK_TICK 50u                             /* ms between the main loop's looks */
 #define JK_ENDLESS 9                            /* (JK_NLEN: grimm.c; 2.0's 6: store.c reads it as this) */
@@ -313,6 +316,32 @@ static int ru_pick(ru_ev_t *E)                  /* main loop: a sample event int
     return 1;
 }
 
+static uint32_t kl_until, kl_mask;              /* (2.2) a flash on the keys: till when, which (key 0 .. 26) */
+static void kl_flash(uint32_t type, uint32_t note)   /* (2.2) RUOHCAT's event of type on the keys (RU_ANS: its note) */
+{
+    uint32_t h = (ru_w + 1u) * 2654435761u >> 16, p, base = (uint32_t)(KEY0 + 12 * set.oct);
+    switch (type) {
+    case RU_CRACK: p = h % 24u, kl_mask = 7u << p, kl_until = fm1_ms + 140u; break;
+    case RU_DRIP: kl_mask = 1u << (20u + h % 7u), kl_until = fm1_ms + 90u; break;
+    case RU_BOOM: kl_mask = 7u, kl_until = fm1_ms + 420u; break;
+    case RU_ANS:
+        while (note < base) note += 12u;
+        while (note >= base + 27u) note -= 12u;
+        kl_mask = 1u << (note - base), kl_until = fm1_ms + 600u;
+        break;
+    default: return;
+    }
+}
+static uint32_t kl_keys(void)                   /* (2.2) the keys JIEHKKI and RUOHCAT light now (key 0 .. 26) */
+{
+    uint32_t m = 0, t, base = (uint32_t)(KEY0 + 12 * set.oct);
+    if (jk.run)
+        for (t = 0; t < NT; t++)
+            if (jk.note[t] >= base && jk.note[t] < base + 27u) m |= 1u << (jk.note[t] - base);
+    if ((int32_t)(kl_until - fm1_ms) > 0) m |= kl_mask;
+    return m;
+}
+
 static uint32_t ra_due, ra_note;                /* main loop: the ice's answer, when (0: none), its note */
 static void ru_heard(uint32_t n)                /* main loop: a note played by a hand (a key, MIDI): the ice may answer */
 {
@@ -335,6 +364,7 @@ static void ru_tick(uint32_t now)
             E->type = RU_ANS, E->inc = pitch_inc((uint32_t)clamp(((int32_t)ra_note + 12) * 16, 0, 2047));
             E->amp = 2600 + (int32_t)jk_rnd(1800), E->pan = (int32_t)jk_rnd(32768), E->send = 26000;
             ru_last = RU_ANS;
+            kl_flash(RU_ANS, ra_note + 12u);
             ru_w = ru_w + 1u;
         }
     }
@@ -369,6 +399,7 @@ static void ru_tick(uint32_t now)
         break;
     }
     ru_last = E->type;
+    kl_flash(E->type, 0);
     ru_w = ru_w + 1u;
 }
 
