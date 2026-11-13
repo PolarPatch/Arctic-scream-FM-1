@@ -33,7 +33,11 @@
  * SAMPLE, SHARE and VARY are the project's too (store.c's EXT).
  * (2.1) The ice answers (after ZEN-1's koi, aceyprime's, who play your note back when they find it; written anew):
  * with RUOHCAT up, a note you play (a key, MIDI; not the sequencer's, not the piece's) comes back a few seconds later
- * from far off in the ice, an octave up, a bell of ice: often or seldom as RUOHCAT is up, one at a time. */
+ * from far off in the ice, an octave up, a bell of ice: often or seldom as RUOHCAT is up, one at a time.
+ * (2.2) Its dusk (after PaperLagoon's sleep, hacha's, whose last minute is sparser, quieter, slower; written anew): as
+ * the piece dies out (jk_fo: its last fifth, 1 .. 8 min) it does not only fade: its notes move half as often, the mix
+ * stops changing, and its own tracks go one by one, the highest first (T4 a quarter into it, T3 at half, T2 at three
+ * quarters), each let go into SPACE's tail, till T1's low note is alone and fades into silence. */
 
 #define JK_TICK 50u                             /* ms between the main loop's looks */
 #define JK_ENDLESS 9                            /* (JK_NLEN: grimm.c; 2.0's 6: store.c reads it as this) */
@@ -194,14 +198,22 @@ static void jk_glide(uint32_t now)              /* the filters' moves glide to w
         jk_cut[t] = jk.cut[t];
     }
 }
+static uint32_t jk_dusk(uint32_t now)           /* (2.2) how far into its dusk (its dying out): 0 .. 256 (0: not yet) */
+{
+    uint32_t e = now - jk.t0, L = jk.len, fo = jk_fo(L);
+    if (!jk.run || !L || e + fo <= L) return 0;
+    return e >= L ? 256u : 256u - (uint32_t)((uint64_t)(L - e) * 256u / fo);
+}
 static void jk_move(uint32_t now)               /* DRIFT: a note, a track's presence, the filters' targets */
 {
     int32_t d = clamp(jk_drift, 0, 100), t, n;
+    uint32_t dk = jk_dusk(now);
     if (!d) { jk_calm(); return; }
     if (jk.own && (int32_t)(now - jk.next_move) >= 0) {   /* (a note: every ~4 min at 1 %, ~25 s at 100 %; in
                                                  * its opening, twice as often) */
         uint32_t m = 240000u - (uint32_t)d * 2150u;
         if (now - jk.t0 < jk_open(jk.len)) m /= 2u;
+        if (dk) m *= 2u;                        /* (2.2: its dusk, half as often) */
         jk.next_move = now + m * 6u / 10u + jk_rnd(m * 8u / 10u);
         int32_t k;
         t = jk_rnd(6) ? 1 + (int32_t)jk_rnd(3) : 0;
@@ -223,7 +235,7 @@ static void jk_move(uint32_t now)               /* DRIFT: a note, a track's pres
             jk_play((uint32_t)t, n);
         }
     }
-    for (t = 0; t < (int32_t)NT; t++) {
+    for (t = 0; t < (int32_t)NT && !dk; t++) {   /* (2.2: in its dusk the mix stays as it is) */
         if ((int32_t)(now - jk.next_g[t]) >= 0) {   /* (a track's presence, its filter: every 40 .. 120 s) */
             int32_t g = 32767 - (int32_t)jk_rnd((uint32_t)d * 200u);
             jk.next_g[t] = now + 40000u + jk_rnd(80000u);
@@ -521,6 +533,9 @@ static void jk_tick(uint32_t now, uint32_t touched)
         for (t = 1; t < NT; t++)                /* (its own tracks coming in) */
             if (jk.want[t] && (int32_t)(now - jk.enter[t]) >= 0) jk_play(t, jk.want[t]), jk.want[t] = 0;
         jk_og = jk_arc(now);
+        if (jk.own && jk_dusk(now))             /* (2.2) its dusk: its own tracks go, the highest first */
+            for (t = 1; t < NT; t++)
+                if (jk_dusk(now) >= 64u * (NT - t)) jk_play(t, 0), jk.want[t] = 0, jk_tg[t] = 32767;
         jk_move(now);
         if (jk.len && now - jk.t0 >= jk.len) jk_end(now);
     }

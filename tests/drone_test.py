@@ -69,7 +69,8 @@ P = lambda *ts: [(t, "probe") for t in ts]
 # JIEHKKI: LFO x 3, LENGTH 5 MIN (KNOB 1 from 15 MIN, 2 down), START (KNOB 4); a key after its end
 ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (6800, f"enc {K1} -1"), (6900, f"enc {K1} -1"),
       (7000, f"enc {K4} 1"), (330000, "keys 1"), (330300, "keys 0"), (331000, "keys 1"), (334000, "keys 0")]
-out, a, jk, notes = run("piece", ev + P(6900, 9000, 30000, 200000, 320000, 330500, 334000), 336000)
+out, a, jk, notes = run("piece", ev + P(6900, 9000, 30000, 200000, 240000, 270000, 285000, 300000, 320000, 330500,
+                                         334000), 336000)
 check("LENGTH 5 MIN, START: T1 at once, the others to come", [n.split(":")[0] for n in notes[9000]] == ["1"],
       notes[9000])
 check(".. heard from its first seconds", rms(a, 11, 13) > rms(a, 60, 70) * 0.25, (rms(a, 11, 13), rms(a, 60, 70)))
@@ -78,6 +79,10 @@ check("LENGTH 5 MIN, START: its own notes, one a track", jk[30000]["run"] == 1 a
 check(".. rising out of silence", rms(a, 7, 8) < rms(a, 60, 70) * 0.5, (rms(a, 7, 8), rms(a, 60, 70)))
 check(".. heard in its middle", rms(a, 150, 160) > 300, rms(a, 150, 160))
 check(".. dying out over its last minutes", rms(a, 290, 295) < rms(a, 200, 210) * 0.5, (rms(a, 290, 295), rms(a, 200, 210)))
+trk = lambda ms: sorted(n.split(":")[0] for n in notes[ms])
+check("(2.2) its dusk: the tracks go one by one, the highest first, T1 alone at the last",
+      trk(240000) == ["1", "2", "3", "4"] and trk(270000) == ["1", "2", "3"] and trk(285000) == ["1", "2"] and
+      trk(300000) == ["1"], [trk(m) for m in (240000, 270000, 285000, 300000)])
 check(".. silent at its end (5 min)", rms(a, 309, 328) < 3, rms(a, 309, 328))
 check(".. its notes let go, START OFF, the screen dark", not notes[320000] and jk[320000]["go"] == 0 and
       jk[320000]["ended"] == 1 and jk[320000]["scr"] == 1, (notes[320000], jk[320000]))
