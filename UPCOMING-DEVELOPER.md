@@ -24,7 +24,8 @@ Built, tested (host, stress 1..3, ARM, web, the device names in a Linux containe
 
 On the FM-1 (beta1): the JAHKI page at 65 % CPU, 69 % peak (the whole picture moved once per strip of the screen, and
 GUOVSSAHAS lags while it plays). beta2: only the strip's rows moved, the rows with nothing moving copied as they are;
-GOVVA ~11 frames a second. To measure again.
+GOVVA ~11 frames a second. beta2 on the FM-1: the same 65 %: that number is the audio's alone (VOICES 44, SPACE 8),
+the screen is not in it; what was playing, not the pictures. With JAHKI on, GUOVSSAHAS shows the seasons (GOVVA).
 
 ## From Arcturus S6 (noted 2026-11-13)
 

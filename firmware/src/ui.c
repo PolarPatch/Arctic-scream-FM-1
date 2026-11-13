@@ -2529,8 +2529,8 @@ static void ui_update(int32_t oct)
 }
 
 /* ---- (2.2) GOVVA (North Sami: a picture, satni.uit.no), SCREEN OFF's last: after a minute untouched the whole screen
- * is the picture, moving (pictures.c's pic_anim_rows): JAHKI's season's with its SKY on, else the selected track's
- * sound's; 2 x 2 pixels a cell, in the middle, black round it. Nothing over it, no text. A frame every UI_GOVVA_MS
+ * is the picture, moving (pictures.c's pic_anim_rows): JAHKI's season's while JAHKI is on (DEPTH up or SKY on; then
+ * GUOVSSAHAS too shows the seasons, never the aurora), else the selected track's sound's; 2 x 2 pixels a cell, in the middle, black round it. Nothing over it, no text. A frame every UI_GOVVA_MS
  * (~11 a second: far lighter than GUOVSSAHAS, the music first); the first touch only wakes the screen (grimm.c). */
 #define UI_GOVVA_MS 90u
 #define GV_X ((240 - 2 * (int32_t)PIC_W) / 2)
@@ -2551,7 +2551,7 @@ static void gv_draw(void) { pic_anim_rows(gv_id, fm1_ms, gv_want, gv_row); }
 static void ui_govva(uint32_t now)
 {
     static uint32_t t_last, shown;
-    uint32_t id = yr_sky ? yr_pic() : pic_of_track(sel);
+    uint32_t id = yr_on() ? yr_pic() : pic_of_track(sel);
     if (now - t_last < UI_GOVVA_MS) return;
     if (now - t_last > 1000u || shown != id + 1u) ui_region(0, 0, 240, 240, UI_K, 0);   /* (its first frame, or another
                                                  * picture: the screen black once) */

@@ -43,6 +43,7 @@ static void yr_at(uint32_t pos8)                /* (store.c) a project loaded: t
 }
 static uint32_t yr_pos8(void) { return yr_kept; }   /* (store.c) where the project keeps it */
 static void yr_keep(void) { yr_kept = yr_ph >> 24; }   /* (store.c's autosave, saving anyway) where it is now */
+static int yr_on(void) { return yr_depth > 0 || yr_sky; }   /* (2.2) in use (the screensavers show its seasons) */
 
 static void yr_tick(uint32_t now)               /* the year on; the leans from where it is */
 {

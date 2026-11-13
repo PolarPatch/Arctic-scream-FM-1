@@ -225,6 +225,11 @@ out, a, jk, notes = run("govva", ev + P(60000, 69000, 71000), 72000)
 check("(2.2) GOVVA: not before 1 min", jk[60000]["aur"] == 0, jk[60000])
 check(".. after 1 min untouched, the picture (lit)", jk[69000]["aur"] == 2 and jk[69000]["scr"] == 1, jk[69000])
 check(".. a knob turned, back", jk[71000]["aur"] == 0 and jk[71000]["scr"] == 0, jk[71000])
+# .. JAHKI on (DEPTH up), SCREEN OFF at GUOVSSAHAS: its seasons, never the aurora
+ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (6800, f"btn {LFO}"), (7000, f"btn {LFO}"),
+      (7200, f"enc {K3} 50"), (7600, f"down {HOME}"), (8300, f"up {HOME}"), (8600, f"enc {K4} 5")]
+out, a, jk, notes = run("govva_year", ev + P(130000), 131000)
+check(".. JAHKI on, GUOVSSAHAS set: the seasons instead of the aurora", jk[130000]["aur"] == 2 and jk[130000]["scr"] == 1, jk[130000])
 
 # RUOHCAT's page (LFO x 4) with a sample: a 1.5 s tone of 440 Hz into slot 1 (as tools/fm1_sample_upload.py sends it),
 # SAMPLE SLOT 1, SHARE 100 %, AMOUNT 100 %: the sample heard (440 Hz the loudest), nothing else of the ice

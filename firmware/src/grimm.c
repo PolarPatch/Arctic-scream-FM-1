@@ -260,6 +260,7 @@ static volatile int32_t yr_len = 3, yr_season, yr_depth, yr_sky;
 static void yr_at(uint32_t pos8);
 static uint32_t yr_pos8(void);
 static void yr_keep(void);
+static int yr_on(void);                         /* (2.2) JAHKI in use: DEPTH up or SKY on (year.c) */
 #define RU_NSMP 6                               /* (.. the RUOHCAT page's SAMPLE: OFF, SLOT 1 .. 4, ALL; its knobs;) */
 static volatile int32_t ru_smp, ru_share, ru_vary;
 static volatile int32_t jk_cut[NT];             /* .. a track filter's move, << 8; */
@@ -2807,8 +2808,9 @@ static void app_step(void)                      /* one pass of the main loop: on
         lcd_light(1);
     } else if (!scr_dark && set.scr && fm1_ms - t_hand >= SCR_S[set.scr % NSCR] * 1000u) {
         scr_dark = 1;
-        if (set.scr == SCR_AUR) scr_aur = 1;
-        else if (set.scr == SCR_PIC) scr_aur = 2;
+        if (set.scr == SCR_PIC || (set.scr == SCR_AUR && yr_on())) scr_aur = 2;   /* (JAHKI on: its seasons, never
+                                                 * the aurora) */
+        else if (set.scr == SCR_AUR) scr_aur = 1;
         else lcd_light(0);
     }
     batt_poll();
