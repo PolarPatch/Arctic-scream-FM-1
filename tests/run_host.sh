@@ -76,3 +76,5 @@ python3 tests/rc11_test.py build/host/grimm
 python3 tests/reader_test.py build/host/grimm
 # (1.5.2) PANEL OUT: the panel for an app, and nothing before an app asks (tests/panel_out_test.py)
 python3 tests/panel_out_test.py build/host/grimm
+# (2.2) the 38 factory sounds as they were (tests/sound_prints.py; a meant change: --golden)
+python3 tests/sound_prints.py
