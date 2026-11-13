@@ -667,11 +667,13 @@ static void uk_slot(const uint8_t *q, int isr)
     for (t = 0; t < NT; t++) q = uk_seq(q, t, SEQ_PK);
     for (t = 0; t < NT; t++) q = uk_lock(q, t, LOCK_PK);
     for (t = 0; t < NT; t++) uk_fm(q + t * FM_PK, t);
-    if (q0 >= slots[0] && q0 < slots[0] + 4u * SLOT_ALL && slot_bg[(q0 - slots[0]) / SLOT_ALL][0] == BG_MARK) {   /* (2.0: its Biegga) */
-        const uint8_t *b = slot_bg[(q0 - slots[0]) / SLOT_ALL] + 1;
-        uint32_t k;
-        for (t = 0; t < NT; t++)
-            for (k = 0; k < 4u; k++) trk[t].p[ENG_BIEGGA][k] = clamp(b[t * 4u + k], 0, 127);
+    for (t = 0; t < 4u && q0 != slots[t]; t++)   /* (which slot it is: one of the four, or a copy elsewhere) */
+        ;
+    if (t < 4u && slot_bg[t][0] == BG_MARK) {   /* (2.0: its Biegga; 2.1: found without a pointer past slots[0]) */
+        const uint8_t *b = slot_bg[t] + 1;
+        uint32_t k, u;
+        for (u = 0; u < NT; u++)
+            for (k = 0; k < 4u; k++) trk[u].p[ENG_BIEGGA][k] = clamp(b[u * 4u + k], 0, 127);
     }
 }
 
