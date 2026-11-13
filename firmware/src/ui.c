@@ -1261,7 +1261,7 @@ static void pic_jiehkki(void)
         uint32_t s = e / 1000u;
         p = put_s(put_u(put_s(l, "PLAYING "), s / 60u), ":"), *p++ = (char)('0' + s % 60u / 10u), *p++ = (char)('0' + s % 10u), *p = 0;
     } else
-        put_s(l, tracks_latched() || playing ? "START: WITH THESE NOTES" : "START: ITS OWN NOTES");
+        put_s(l, tracks_latched() || playing ? "START: THESE NOTES" : "START: OWN NOTES");
     put_s(r, JK_LEN_NAME[clamp(jk_len, 0, JK_NLEN - 1)]);
     ui_caption(l, r);
     at = L && jk.run ? (uint32_t)((uint64_t)(e < L ? e : L) * 216u / L) : 0;
