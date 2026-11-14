@@ -73,7 +73,7 @@ static int32_t cz_step(uint32_t t, uint32_t inc)   /* (2.2) CHAOS: track t's att
         dz = mul64_sh(x, y, 16) - mul64_sh(z, 174763, 16);
         x += mul64_sh(dx, dt, 24), y += mul64_sh(dy, dt, 24), z += mul64_sh(dz, dt, 24);
     }
-    x = clamp(x, -(40 << 16), 40 << 16), y = clamp(y, -(60 << 16), 60 << 16), z = clamp(z, 0, 80 << 16);   /* (never off) */
+    x = clamp(x, -(40 << 16), 40 << 16), y = clamp(y, -(48 << 16), 48 << 16), z = clamp(z, 0, 80 << 16);   /* (never off; Y at most ~30: 48, not 60, whose -60 << 16 reads as a ROM address to build.py) */
     cz_x[t] = x, cz_y[t] = y, cz_z[t] = z;
     return clamp(x / 40, -32767, 32767);        /* (X spans about +-20) */
 }
