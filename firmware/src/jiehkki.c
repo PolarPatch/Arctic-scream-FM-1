@@ -123,8 +123,52 @@ static void jk_play(uint32_t t, int32_t n)      /* track t's own note to n (the 
     if (jk.note[t]) nq_note(NQ_OFF, t, jk.note[t], jk.id[t]), jk_mo(0u, t, jk.note[t]);
     jk.note[t] = (uint8_t)(n > 0 ? n : 0), jk.id[t] = (uint8_t)id;
 }
+/* (2.2, after HADAL-1's motif, Polystellarflow's: written anew) MOTIF: with its own notes, the piece is born with a few
+ * notes of its own (3 .. 5, the SCALE's, around two octaves over T1), heard now and then over the drone on T4's sound:
+ * the first after its opening, then every ~2 .. 6 minutes (DRIFT up: more often), each time a little changed (a note
+ * a step of the scale up or down, now and then one more or one less), slow, each note ~1.2 .. 2.4 s. Never in its
+ * dusk. Its notes out over MIDI as T4's (jk_mo) */
+static uint32_t jk_open(uint32_t L);           /* (below) */
+static uint32_t jk_dusk(uint32_t now);
+#define MF_ID 210u                              /* its notes' origin (lat_id): MF_ID, MF_ID + 1 in turn */
+#define MF_MAX 5u
+static struct { uint8_t n, i, note[MF_MAX], on, id; uint32_t next, t; } mf;
+static void mf_born(uint32_t now)               /* a piece of its own begins: its motif */
+{
+    uint32_t k;
+    int32_t b = jk_step(jk.note[0] + 24, 0);
+    mf.n = (uint8_t)(3u + jk_rnd(3u)), mf.i = 0, mf.on = 0;
+    for (k = 0; k < mf.n; k++) mf.note[k] = (uint8_t)clamp(jk_step(b, (int32_t)jk_rnd(7u) - 2), JK_LO[3], JK_HI[3]);
+    mf.next = now + jk_open(jk.len) + 20000u + jk_rnd(40000u);
+}
+static void mf_off(void)
+{
+    if (mf.on) nq_note(NQ_OFF, 3, mf.on, mf.id), jk_mo(0u, 3, mf.on), mf.on = 0;
+}
+static void mf_tick(uint32_t now)               /* (jk_tick) its notes, one after another, then a while till the next */
+{
+    if (!jk.own || jk_dusk(now)) { mf_off(), mf.i = 0; return; }
+    if (!mf.i) {
+        if ((int32_t)(now - mf.next) < 0) return;
+        mf.i = 1, mf.t = now;
+    }
+    if ((int32_t)(now - mf.t) < 0) return;
+    mf_off();
+    if (mf.i > mf.n) {                          /* (played: changed a little for the next time, then a while) */
+        uint32_t k = jk_rnd(mf.n), d = (uint32_t)clamp(jk_drift, 0, 100);
+        mf.note[k] = (uint8_t)clamp(jk_step(mf.note[k], jk_rnd(2u) ? 1 : -1), JK_LO[3], JK_HI[3]);
+        if (!jk_rnd(4u) && mf.n < MF_MAX) mf.note[mf.n] = mf.note[mf.n - 1u], mf.n++;
+        else if (!jk_rnd(5u) && mf.n > 3u) mf.n--;
+        mf.i = 0, mf.next = now + 360000u - d * 2400u + jk_rnd(60000u);
+        return;
+    }
+    mf.id = (uint8_t)(mf.id == MF_ID ? MF_ID + 1u : MF_ID), mf.on = mf.note[mf.i - 1u];
+    nq_note(NQ_ON, 3, mf.on, mf.id), jk_mo(1u, 3, mf.on);
+    mf.t = now + 1200u + jk_rnd(1200u), mf.i++;
+}
 static void jk_notes_off(void)
 {
+    mf_off(), mf.i = 0;
     uint32_t t;
     for (t = 0; t < NT; t++) jk_play(t, 0), jk.want[t] = 0;
 }
@@ -173,6 +217,7 @@ static void jk_start(uint32_t now)
         jk.want[2] = (uint8_t)jk_fit(2, jk_step(n1 + 12, 2));   /* (a third, an octave up) */
         jk.want[3] = (uint8_t)jk_fit(3, jk_step(n1 + 24, jk_rnd(2) ? 4 : 1));   /* (a fifth or second over it) */
         for (t = 1; t < NT; t++) jk.enter[t] = now + t * gap - gap / 4u + jk_rnd(gap / 2u);
+        mf_born(now);                           /* (2.2: its motif) */
     }
 }
 static void jk_stop(void)                       /* turned OFF: its notes out, the mix as set */
@@ -614,6 +659,7 @@ static void jk_tick(uint32_t now, uint32_t touched)
             for (t = 1; t < NT; t++)
                 if (jk_dusk(now) >= 64u * (NT - t)) jk_play(t, 0), jk.want[t] = 0, jk_tg[t] = 32767;
         jk_move(now);
+        mf_tick(now);                           /* (2.2: its motif now and then) */
         if (jk.len && now - jk.t0 >= jk.len) jk_end(now);
     }
     jk_glide(now);

@@ -294,6 +294,10 @@ whole piece by itself, moving as slowly as a glacier, and then dies out.
   low note fades alone. Then the notes are let go, the
   sequencer and GENERATE stop, the screen goes dark, and the FM-1 stays silent until you touch it (a key, a button, a
   knob or a MIDI note). The first touch only wakes it, as with SCREEN OFF.
+- **MOTIF (new in 2.2):** with its own notes, a piece is born with a few notes of its own (three to five, from the
+  SCALE), heard now and then high over the drone with T4's sound: the first after its opening, then every two to six
+  minutes (more often with DRIFT up), each time a little changed, a note moved a step, now and then one more or one
+  less. Something to recognise in a long piece. Never in its dusk.
 - **START OFF** before the end: its own notes are let go and the mix is as you set it.
 - **RUOHČAT, 0–100 %:** the ice around the drone: cracks, drips and a deep boom now and then, each one different, in
   the mix and the reverb. At 1 % about one a minute; at 100 % a storm of them. It plays whenever it is up, the piece

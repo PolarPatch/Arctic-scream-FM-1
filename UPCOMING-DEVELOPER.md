@@ -22,6 +22,7 @@ Built, tested (host, stress 1..3, ARM, web, the device names in a Linux containe
 | | Pictures that move | `pictures.c` `pic_anim_rows`, `gen_pictures.py` `ANIM` | built (all 38) |
 | | A picture for every factory sound (wished: no two alike) | 22 more scenes in `draw_pictures.py`; HOME keeps its stars (JAHKI's SKY only in the screensaver) | built |
 | | GOVVA, the pictures as a screensaver (wished on the FM-1) | SCREEN OFF's last, `ui.c` `ui_govva`; no text over the pictures | built |
+| 18 | MOTIF | JIEHKKI's own notes: 3 .. 5 of the SCALE on T4, after its opening, then every ~2 .. 6 min (DRIFT), a note moved each time (`jiehkki.c` `mf_tick`, ids 210, 211); never in its dusk | built |
 | 22 | MIDI out with roles | JIEHKKI's own notes out on their tracks' channels with SEQ MIDI OUT (`jiehkki.c` `jk_mo`, kept in `echo_on`); JAHKI's season as CC 104 on T1's with MOD OUT (`year.c`) | built |
 | 19 | Pictures that melt | GOVVA (and so JAHKI's seasons there): a new picture dissolves in over 3 s, a 4 x 4 ordered dither cell by cell, both moving (`ui.c` `gv_draw`, two passes while melting) | built |
 | 20 | SWELL | PERFORM's ninth white key (G3) or CC 1: `sw_e` up ~4 s, down ~1.5 s; the tracks +2.5 dB, REV send + 64, the filters 24 steps open | built |

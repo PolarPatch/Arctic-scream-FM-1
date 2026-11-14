@@ -445,6 +445,24 @@ ons = {st for st, n, v in mo if st.startswith("9")}
 check("MIDI out with roles: JIEHKKI's notes on T1's and T2's channels; the season as CC 104",
       {"90", "91"} <= ons and ("B0", "104", "0") in mo, (sorted(ons), [m for m in mo if m[1] == "104"]))
 
+# (2.2) MOTIF: JIEHKKI's own notes (15 MIN): a few notes of its own on T4, heard after its opening, then again a few
+# minutes on, a little changed (SEQ MIDI OUT on: read as T4's notes out)
+ev = [(3000, f"down {HOME}"), (3700, f"up {HOME}"), (3900, f"btn {HOME}"), (4100, f"enc {K2} 1"), (4300, f"btn {LFO}"),
+      (4500, f"btn {LFO}"), (4700, f"btn {LFO}"), (5100, f"enc {K4} 1")]
+out, a, jk, notes = run("motif", ev, 520000)
+t4 = [(int(t), int(n)) for t, n in re.findall(r"^\s*(\d+) ms  MIDI out 93 (\d+) 100$", out, re.M)]
+runs, cur = [], []
+for t, n in t4[1:]:                             # (the first: T4's own note coming in)
+    if cur and t - cur[-1][0] > 5000:
+        runs.append(cur)
+        cur = []
+    cur.append((t, n))
+if cur: runs.append(cur)
+m = [[n for t, n in r] for r in runs]
+check("MOTIF: a few notes over the drone, again minutes later, a little changed",
+      len(m) >= 2 and all(3 <= len(x) <= 5 for x in m[:2]) and m[0] != m[1] and runs[1][0][0] - runs[0][0][0] > 120000,
+      (m, [r[0][0] for r in runs]))
+
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna, MOTION, the second core's way, the guide, SWELL, MIDI out roles ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna, MOTION, the second core's way, the guide, SWELL, MIDI out roles, MOTIF ok")
