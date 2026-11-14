@@ -2644,25 +2644,49 @@ static void ui_update(int32_t oct)
 #define GV_X ((240 - 2 * (int32_t)PIC_W) / 2)
 #define GV_Y ((240 - 2 * (int32_t)PIC_H) / 2)
 static uint32_t gv_id;
+/* (2.2, after HADAL-1's pictures melting into each other, Polystellarflow's: written anew) another picture: the old
+ * one dissolves into the new over GV_MELT_MS, cell by cell in a 4 x 4 ordered dither (each cell the new one's once
+ * the way there passes its threshold), both moving meanwhile */
+#define GV_MELT_MS 3000u
+static const uint8_t GV_BAYER[16] = {0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5};
+static uint32_t gv_old, gv_t0, gv_f, gv_mask;   /* the picture going; when it began; how far (0 .. 16); this pass's
+                                                 * cells (0 all, 1 the new one's, 2 the old one's) */
 static int gv_want(uint32_t y) { return ui_in(GV_X, GV_Y + (int32_t)y * 2, 2 * PIC_W, 2); }
+static int gv_cell(uint32_t x, uint32_t y)      /* (this pass draws cell x, y) */
+{
+    uint32_t nw = GV_BAYER[(y & 3u) * 4u + (x & 3u)] < gv_f;
+    return !gv_mask || (gv_mask == 1u) == nw;
+}
 static void gv_row(uint32_t y, const uint16_t *col)
 {
     uint32_t x = 0, e;
     while (x < PIC_W) {
-        for (e = x + 1u; e < PIC_W && col[e] == col[x]; e++)
+        if (!gv_cell(x, y)) { x++; continue; }
+        for (e = x + 1u; e < PIC_W && col[e] == col[x] && gv_cell(e, y); e++)
             ;
         ui_rect(GV_X + (int32_t)x * 2, GV_Y + (int32_t)y * 2, (int32_t)(e - x) * 2, 2, col[x]);
         x = e;
     }
 }
-static void gv_draw(void) { pic_anim_rows(gv_id, fm1_ms, gv_want, gv_row); }
+static void gv_draw(void)
+{
+    if (gv_f < 16u) {                           /* (melting: the old one's cells, then the new one's) */
+        gv_mask = 2u, pic_anim_rows(gv_old, fm1_ms, gv_want, gv_row);
+        gv_mask = 1u, pic_anim_rows(gv_id, fm1_ms, gv_want, gv_row);
+        gv_mask = 0;
+        return;
+    }
+    pic_anim_rows(gv_id, fm1_ms, gv_want, gv_row);
+}
 static void ui_govva(uint32_t now)
 {
     static uint32_t t_last, shown;
     uint32_t id = yr_on() ? yr_pic() : pic_of_track(sel);
     if (now - t_last < UI_GOVVA_MS) return;
-    if (now - t_last > 1000u || shown != id + 1u) ui_region(0, 0, 240, 240, UI_K, 0);   /* (its first frame, or another
-                                                 * picture: the screen black once) */
+    if (now - t_last > 1000u) ui_region(0, 0, 240, 240, UI_K, 0), shown = 0, gv_f = 16;   /* (its first frame: the screen
+                                                 * black once, the picture at once) */
+    else if (shown != id + 1u) gv_old = shown - 1u, gv_t0 = now, gv_f = 0;   /* (2.2: another: it melts in) */
+    if (gv_f < 16u) gv_f = (now - gv_t0) * 16u / GV_MELT_MS, gv_f = gv_f > 16u ? 16u : gv_f;
     t_last = now, shown = id + 1u;
     gv_id = id;
     ui_region(GV_X, GV_Y, 2 * PIC_W, 2 * PIC_H, UI_K, gv_draw);

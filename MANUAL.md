@@ -698,7 +698,8 @@ FM-1, not the project.
   **GOVVA** (new in 2.2; North Sami for a picture): after one minute untouched the whole screen is the moving
   picture, large and with nothing over it: the selected track's sound's, or the season's while JAHKI is on (DEPTH up
   or SKY on; then GUOVSSAHAS too shows the seasons instead of the aurora). Much
-  lighter for the FM-1 than GUOVSSAHAS while it plays. The first touch, any knob or button, brings the page back.
+  lighter for the FM-1 than GUOVSSAHAS while it plays. When the picture changes (a new season), the old one melts into
+  the new over three seconds, cell by cell. The first touch, any knob or button, brings the page back.
 - **MIDI LEARN:** set LEARN, turn a knob on the FM-1, then move one on your controller. Up to 32 links.
 - **SEQ MIDI OUT:** sends the sequencer's and the arpeggiator's notes out over USB.
 - **SAMPLES:** CLEAR and **OCT+** empties all four sample slots (stop and let the sound die out first).
