@@ -30,7 +30,7 @@
  *              (kept across sources; a source's own envelope runs inside it)
  *   LFO        LFO (the track's: RATE ~60 s a cycle .. ~20 Hz, free-running; DEPTH 0..100 %, 0 off; DESTINATION PITCH
  *              (+-1 octave), VOLUME, PAN, the source's four knobs by their names, REV SEND, GRAIN SEND: moved around the
- *              knob, the knob not; SHAPE SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT) (lfo.c) -> DRONE
+ *              knob, the knob not; SHAPE SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT, (2.2) CHAOS) (lfo.c) -> DRONE
               (Arctic Scream p0larpatch, after Jangada's: BORGA 0..100 %, four slow random walks on the sound and each
               voice's detune and breath; STOARBMA 0..100 %, the tension; GOHCCAT OFF, 1..32 bars, its rise on the
               tempo; LATCH as SOURCE's; the sound's, saved with it) (drone.c)

@@ -365,7 +365,10 @@ Since 2.0 the attack swells instead of ramping: a note stays faint for most of a
 | RATE (60 s a cycle – 20 Hz) | DEPTH (0 = off) | DESTINATION | SHAPE |
 
 - **Destinations:** PITCH, VOLUME, PAN, the source's four knobs by name, REV SEND, GRAIN SEND, the track's CUTOFF.
-- **Shapes:** SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT.
+- **Shapes:** SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT, **CHAOS** (new in 2.2).
+- **CHAOS:** a strange attractor (Lorenz's), each track its own. It moves smoothly and never repeats: it circles on one
+  side for a while, then flips to the other, never the same way twice. RATE sets its speed (a cycle is about one turn).
+  Slow, on CUTOFF or a source's knob, it is movement for a drone that never sounds like a loop.
 - **VOLUME swings around the track's VOLUME**, so a track at VOLUME 0 still sounds on the LFO's peaks. To silence a
   track, mute it (**hold GLO + keys 1–4**). A square wave on VOLUME at a fast RATE (~6 Hz) is a tremolo-picked guitar.
 

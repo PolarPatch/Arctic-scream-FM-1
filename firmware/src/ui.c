@@ -1962,7 +1962,8 @@ static int32_t lfo_row(uint32_t sh, uint32_t x)  /* the picture's SHAPE at colum
 {
     static const int16_t R[7] = {9000, -20000, 26000, -6000, 15000, -28000, 9000};   /* (RANDOM, DRIFT: an example) */
     int32_t v;
-    if (sh == LS_RND) v = R[x / 9u];
+    if (sh == LS_CHAOS) v = CZ_PIC[x];          /* (2.2: an example; the dot runs along it at RATE) */
+    else if (sh == LS_RND) v = R[x / 9u];
     else if (sh == LS_DRIFT) v = lfo_shape(LS_DRIFT, (x % 9u) * 477218588u, R[x / 9u], R[x / 9u + 1u]);
     else v = lfo_shape(sh, x * 79536431u, 0, 0);   /* (2^32 / 54) */
     return 15 - v * 11 / 32767;
