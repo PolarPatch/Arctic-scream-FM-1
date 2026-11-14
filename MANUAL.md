@@ -26,7 +26,7 @@
 <img src="docs/manual/screens/boot.png" alt="The boot screen: ARCTIC SCREAM, glitched as on the banner" width="300" align="right">
 
 Arctic Scream has **four tracks, T1–T4**. Each track plays its own sound, has its own sequence and goes through the
-shared effects. **Six voices** are shared by all four. When the FM-1 is working hard (new in 2.2), a new note takes over
+shared effects. **Six voices** are shared by all four. When the FM-1 is working hard (new in 2.1), a new note takes over
 the quietest note that is already fading out instead of adding one more, so heavy sounds play a little fewer notes
 rather than stutter. If it is still too much, a note is let go and the header says `CPU FULL: NOTE DROPPED`.
 
@@ -74,14 +74,14 @@ Each track's wave glows on HOME as it plays, under a starry sky. The header show
 - **MORPH:** one knob through all four of the source's knobs at once (on PHYS: STRUCTURE, DAMP and BOW; the stepped ones, such as MODEL, stay as set), on a path of its own for each track and source, always the same, with a slow wandering around it that grows as you turn it up. At 0 the sound is as set.
 - While WARP or MORPH is up, the track's level is held where it was, so neither makes it suddenly louder or quieter; both sit on top of the knobs (the knobs themselves never move) and are saved with the project.
 
-**A picture for every sound (new in 2.1).** Turn PRESETS and HOME shows the sound's picture for a moment (2.2: the
-picture alone, the name is in the header). From 2.2 each of the 38 factory sounds has a picture of its own: the aurora
+**A picture for every sound (new in 2.1).** Turn PRESETS and HOME shows the sound's picture for a moment (2.1: the
+picture alone, the name is in the header). From 2.1 each of the 38 factory sounds has a picture of its own: the aurora
 for POLAR NIGHT, a spruce forest in falling snow for SNOW VEIL, a fjord for DEEP FJORD, a wooden chapel and its bell for
 ICE BELL, painted houses under the mountain for SVALBARD CELLO, three standing stones for III, and so on. Your own
 sounds show their category's. With **PICTURE** on SYSTEM 3 set to `SKY`, the selected
 track's picture stays on HOME as its sky, dimmed under the waves; `OFF` shows none.
 
-**The pictures move (new in 2.2).** The card and the sky are not still: the aurora's curtains breathe and sway, snow
+**The pictures move (new in 2.1).** The card and the sky are not still: the aurora's curtains breathe and sway, snow
 drifts down, stars twinkle over the dark, water ripples and glitters under the moon and the midnight sun, the hut's
 window flickers, the station's light blinks, the lighthouse's beam turns, a figure fades into the snowstorm and back,
 icicles drip, bubbles rise under the ice. No video is stored: the FM-1 moves the picture itself, a little at a time.
@@ -124,7 +124,7 @@ across the stereo field.
 | **PHYS** | MODEL | STRUCTURE | DAMP | BOW | Bowed and struck strings, bars, plates, membranes |
 | **PHASE** | WAVE | WAVE2 | DCW | DETUNE | Phase distortion |
 | **Biegga** | GUST | HOWL | TONE | SNOW | The wind: noise singing at the note (new in 2.0) |
-| **Jiekna** | STRIKE | RING | HOLLOW | BRITTLE | Ice that sings when struck or bowed: a loop tuned to the note (new in 2.2) |
+| **Jiekna** | STRIKE | RING | HOLLOW | BRITTLE | Ice that sings when struck or bowed: a loop tuned to the note (new in 2.1) |
 
 ### Holvut, the feedback voice
 
@@ -191,7 +191,7 @@ drop the whole sound. The note sets the howl's pitch, so a chord of Biegga is a 
 
 <br clear="right">
 
-### Jiekna, the singing ice (new in 2.2)
+### Jiekna, the singing ice (new in 2.1)
 
 <img src="docs/manual/screens/jiekna.png" alt="Jiekna's SOUND page: a standing wave on the ice, a strike's spark, the bow" width="300" align="right">
 
@@ -275,7 +275,7 @@ whole piece by itself, moving as slowly as a glacier, and then dies out.
 | LENGTH | DRIFT | **RUOHČAT** (to creak) | START |
 
 - **LENGTH:** 5, 10, 15, 25, 30 or 60 minutes, 2, 4 or 8 hours (new in 2.1: all night, to sleep by), or ENDLESS.
-- **START:** OFF, ON, or **ALWAYS** (new in 2.2): on now, and again every time the FM-1 is switched on, a new piece
+- **START:** OFF, ON, or **ALWAYS** (new in 2.1): on now, and again every time the FM-1 is switched on, a new piece
   each time: Arctic Scream wakes up playing. ALWAYS is saved with the project (and stays after a piece has ended,
   ready for the next power-on); turn START to OFF to stop it.
 - **START with nothing playing:** it plays its own notes, one on each track, from the SCALE: the root low on T1, its
@@ -288,13 +288,13 @@ whole piece by itself, moving as slowly as a glacier, and then dies out.
   filters open over the first minutes and close again as it dies out. In the opening (a sixth of LENGTH, four minutes
   at most) the notes move twice as often. **At 0 nothing moves**: the piece only rises and dies out. That is a
   sleep timer: play your drone, set LENGTH, DRIFT 0, START.
-- **The end:** over its last fifth (one to eight minutes) everything fades out. **Its dusk (new in 2.2):** in that
+- **The end:** over its last fifth (one to eight minutes) everything fades out. **Its dusk (new in 2.1):** in that
   last fifth the notes move half as often, the mix stops changing, and its own tracks go one by one, the highest
   first: T4 a quarter of the way in, T3 at half, T2 at three quarters, each let go into the reverb's tail, until T1's
   low note fades alone. Then the notes are let go, the
   sequencer and GENERATE stop, the screen goes dark, and the FM-1 stays silent until you touch it (a key, a button, a
   knob or a MIDI note). The first touch only wakes it, as with SCREEN OFF.
-- **MOTIF (new in 2.2):** with its own notes, a piece is born with a few notes of its own (three to five, from the
+- **MOTIF (new in 2.1):** with its own notes, a piece is born with a few notes of its own (three to five, from the
   SCALE), heard now and then high over the drone with T4's sound: the first after its opening, then every two to six
   minutes (more often with DRIFT up), each time a little changed, a note moved a step, now and then one more or one
   less. Something to recognise in a long piece. Never in its dusk.
@@ -305,11 +305,11 @@ whole piece by itself, moving as slowly as a glacier, and then dies out.
 - **The ice answers (new in 2.1).** While RUOHČAT is up, the ice listens: a note you play (a key or MIDI, not the
   sequencer's) may come back a few seconds later from far off in the ice, an octave up, a bell of ice deep in the
   reverb. A quarter of your notes at 1 %, most of them at 100 %; one answer at a time.
-- **The ice holds its breath (new in 2.2).** While RUOHČAT is up, now and then the reverb's tail is held still for 3 to
+- **The ice holds its breath (new in 2.1).** While RUOHČAT is up, now and then the reverb's tail is held still for 3 to
   10 seconds, as SIZE's INF holds it, the tracks playing on over it, then let go to die away as SIZE says. About every
   minute and a half at 1 %, every 20 seconds at 100 %. SIZE itself is never changed; with SIZE at INF or SPACE's MIX
   at 0 it does nothing.
-- **The keys show it (new in 2.2).** While no layer is held, the keys light the piece's own notes (every track's that
+- **The keys show it (new in 2.1).** While no layer is held, the keys light the piece's own notes (every track's that
   falls on the keyboard), and RUOHČAT's sounds flash across them: a crack lights a few keys side by side, a drip a high
   key, a boom the lowest three, the ice's answer the key of its note.
 - The screen draws the piece as a glacier: its height is the sound, the part played lit, now a white line; under it
@@ -342,7 +342,7 @@ drone, water, wind. Load WAVs into the four sample slots with the [editor](#14--
 
 <br clear="right">
 
-### JAHKI: the Arctic's year (new in 2.2)
+### JAHKI: the Arctic's year (new in 2.1)
 
 <img src="docs/manual/screens/jahki.png" alt="JAHKI: GEASSI, the midnight sun, the year as a band of eight seasons" width="360" align="right">
 
@@ -392,7 +392,7 @@ Since 2.0 the attack swells instead of ramping: a note stays faint for most of a
 
 <img src="docs/manual/screens/env2.png" alt="ENV 2: LOOP BREATHE, the envelope going round, and the four voice steps across the stereo field" width="300" align="right">
 
-**ENV 2** (new in 2.2, **press ENV again**): the envelope that goes round, a note's wait, and the notes spread out.
+**ENV 2** (new in 2.1, **press ENV again**): the envelope that goes round, a note's wait, and the notes spread out.
 
 | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 |---|---|---|---|
@@ -419,7 +419,7 @@ Since 2.0 the attack swells instead of ramping: a note stays faint for most of a
 | RATE (60 s a cycle – 20 Hz) | DEPTH (0 = off) | DESTINATION | SHAPE |
 
 - **Destinations:** PITCH, VOLUME, PAN, the source's four knobs by name, REV SEND, GRAIN SEND, the track's CUTOFF.
-- **Shapes:** SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT, **CHAOS** (new in 2.2).
+- **Shapes:** SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT, **CHAOS** (new in 2.1).
 - **CHAOS:** a strange attractor (Lorenz's), each track its own. It moves smoothly and never repeats: it circles on one
   side for a while, then flips to the other, never the same way twice. RATE sets its speed (a cycle is about one turn).
   Slow, on CUTOFF or a source's knob, it is movement for a drone that never sounds like a loop.
@@ -496,7 +496,7 @@ Each track has its own **64-step** pattern; all four play together on one tempo 
 - **Stopped + REC:** each key fills a step and moves on. **Playing + REC:** notes land on the nearest step.
 - **Step locks:** hold **SEL** and turn a knob to lock that value to the step. **SEL + OCT−** clears them.
 - **Hold REC ~1 s:** clears the selected track's pattern (undoable).
-- **MOTION (new in 2.2): hold REC and turn a knob.** From that turn on, the knob's move is taken (up to two minutes)
+- **MOTION (new in 2.1): hold REC and turn a knob.** From that turn on, the knob's move is taken (up to two minutes)
   until you let go of REC; then it plays by itself, over and over, as long as it took: a filter opening over a minute,
   a reverb swelling, by hand, once. It runs whether the sequencer plays or not. Four lanes in all, any track's knobs;
   a new move on a knob replaces its old one. **Hold REC + OCT−** clears the selected track's moves. The moves are
@@ -638,7 +638,7 @@ and you land back in time when you let go.
 
 FREEZE is a toggle: tap it to hold the grain cloud, tap again to let go.
 
-**SWELL (new in 2.2): key 9** (G3, the ninth white key). While you hold it the whole sound rises over about four
+**SWELL (new in 2.1): key 9** (G3, the ninth white key). While you hold it the whole sound rises over about four
 seconds: the tracks a little louder, more of them in SPACE, their filters opening. Let go and it falls back over a
 second and a half. The **mod wheel (CC 1)** of a MIDI keyboard does the same by hand, as far as you turn it.
 
@@ -689,7 +689,7 @@ FM-1, not the project.
 | SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA, MONO) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF |
 | SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES | CLOCK (INT, I+OUT, USB, TRS) |
 | SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB, and each with SPK OFF) | MOD OUT (OFF, ON) | PICTURE (CARD, SKY, OFF) |
-| SYSTEM 4 (new in 2.2) | SOUND (HEADPHONES, SPEAKER) | HELP (ON, OFF) | | |
+| SYSTEM 4 (new in 2.1) | SOUND (HEADPHONES, SPEAKER) | HELP (ON, OFF) | | |
 
 - **COLOUR:** pick the one that matches your FM-1. **MONO** (new in 2.0) turns the whole screen black and white, the
   greys as a fine pattern of dots, as on an old one-bit screen. The header stays clean so the sound's name reads.
@@ -699,13 +699,13 @@ FM-1, not the project.
   **GUOVSSAHAS** (new in 2.0; North Sami for the northern lights): after two minutes untouched the screen becomes a
   night sky where three curtains of aurora fold and ripple, their hems burning green, rays shimmering up into violet,
   the whole sky slowly breathing (after pixelfx's Aurora, by Patch). The first touch brings the page back.
-  **GOVVA** (new in 2.2; North Sami for a picture): after one minute untouched the whole screen is the moving
+  **GOVVA** (new in 2.1; North Sami for a picture): after one minute untouched the whole screen is the moving
   picture, large and with nothing over it: the selected track's sound's, or the season's while JAHKI is on (DEPTH up
   or SKY on; then GUOVSSAHAS too shows the seasons instead of the aurora). Much
   lighter for the FM-1 than GUOVSSAHAS while it plays. When the picture changes (a new season), the old one melts into
   the new over three seconds, cell by cell. The first touch, any knob or button, brings the page back.
 - **MIDI LEARN:** set LEARN, turn a knob on the FM-1, then move one on your controller. Up to 32 links.
-- **SEQ MIDI OUT:** sends the sequencer's and the arpeggiator's notes out over USB, and (new in 2.2) JIEHKKI's own
+- **SEQ MIDI OUT:** sends the sequencer's and the arpeggiator's notes out over USB, and (new in 2.1) JIEHKKI's own
   notes, each track's on its channel, so another synth, a DAW or a MIDI-to-CV box can follow the piece.
 - **SAMPLES:** CLEAR and **OCT+** empties all four sample slots (stop and let the sound die out first).
 - **CLOCK:** `INT`, the FM-1's own tempo. `I+OUT`, the same, and its MIDI clock out over USB (START, STOP and 24 pulses a
@@ -717,23 +717,23 @@ FM-1, not the project.
 - **USB LEVEL** (SYSTEM 3, new in 1.4): how loud a computer records the FM-1, in 6 dB steps from −12 to +24 dB. `0 DB` is
   the volume knob all the way up; higher steps make quiet drones louder in the recording, and a limiter keeps them from
   clipping. The volume knob itself only sets the speaker and the headphones.
-  **SPK OFF (new in 2.2):** turn past `+24 DB` for the same seven levels with `SPK OFF`: while a computer takes the sound
+  **SPK OFF (new in 2.1):** turn past `+24 DB` for the same seven levels with `SPK OFF`: while a computer takes the sound
   over USB, the speaker and the headphone jack go quiet, so you hear it once, from the computer. When the computer
   stops, the speaker comes back. The knob's slab says `SPK OFF`; the row above it, the level.
 - **MOD OUT** (SYSTEM 3, new in 1.5.2): sends how each track moves out over USB as MIDI CC, 50 times a second, on the
   track's own channel (as its notes, MIDI CHANNEL): **CC 102** is how loud the track plays now (0 silent, 127 full) and
   **CC 103** is where its LFO is (64 the middle). Use it to drive lights, motors, a Max patch or another synth's filter
-  from the FM-1. OFF by default, so a DAW gets nothing it did not ask for. (New in 2.2) **CC 104** on T1's channel says
+  from the FM-1. OFF by default, so a DAW gets nothing it did not ask for. (New in 2.1) **CC 104** on T1's channel says
   JAHKI's season as it turns: DALVI 0, GIDDADALVI 16, … CAKCADALVI 112.
 - **PICTURE** (SYSTEM 3, new in 2.1): `CARD`, a sound's picture on HOME a moment while PRESETS turns; `SKY`, the
   selected track's picture as HOME's sky, dimmed under the waves; `OFF`. Saved with the project.
-- **SYSTEM 4** (new in 2.2: **HOME once more** after SYSTEM 3):
+- **SYSTEM 4** (new in 2.1: **HOME once more** after SYSTEM 3):
   - **SOUND:** `HEADPHONES` (the whole range, as before) or `SPEAKER`, a curve for the FM-1's little speaker: the
     deepest lows it cannot play taken away (they only make it rattle and eat the loudness), the low mids lifted a little
     so a drone still sounds deep. It shapes the speaker and the headphone jack, never the USB sound.
   - **HELP:** `ON` (the start) shows a short line under the picture for a moment when you turn a knob, saying what it
     does ("EACH NOTE WAITS THIS LONG"). `OFF` for none.
-- **The guide (new in 2.2):** the very first time Arctic Scream starts, three short pages show the first steps. Any key
+- **The guide (new in 2.1):** the very first time Arctic Scream starts, three short pages show the first steps. Any key
   or button turns the page; after the third it is gone.
 - **For app makers:** since 1.5.2 Arctic Scream also answers **PANEL OUT**, an open protocol that tells an app which buttons
   and keys are down and how the knobs turn, so it can draw the FM-1 as you play. It is silent until an app asks. See
@@ -810,15 +810,15 @@ The eight Holvut sounds hold their notes (LATCH) and start with DRONE on.
 | EDIT | OCT− / OCT+ | Undo / redo |
 | FX | white keys 1–8 | PERFORM: FREEZE … STUTTER |
 | FX | black keys | GENERATE: T1–T4 on / off, MODE, OCTAVE, RANGE |
-| FX | G3 (key 9) | SWELL, held (2.2) |
+| FX | G3 (key 9) | SWELL, held (2.1) |
 | SEL | (alone, let go) | Chord mode on / off |
 | SEL | a knob (sequencer pages) | Lock that value to the step |
 | SEL | OCT− (sequencer pages) | Clear the step's locks |
 | SEL | OCT+ | The track's LATCH on / off |
 | SEQ | white keys 1–8 | Sequencer tools |
 | SEQ | turn SELECT | Pattern length |
-| REC | turn a knob | MOTION: its move recorded, then looped (2.2) |
-| REC | OCT− | The track's MOTION cleared (2.2) |
+| REC | turn a knob | MOTION: its move recorded, then looped (2.1) |
+| REC | OCT− | The track's MOTION cleared (2.1) |
 | SAVE | white keys 1–4 / 5–8 | Recall / save slots A–D |
 | GLO | white keys 1–4 / 5–8 | Mute / solo T1–T4 |
 | ARP | (alone) | Arpeggiator on / off |
