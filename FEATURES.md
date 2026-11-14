@@ -22,7 +22,7 @@ feedback screams: slow, cold sounds that hum for minutes, and a voice that wakes
 ## At a glance
 
 - Four tracks, six voices shared between them.
-- Nine sound sources, among them **Holvut**, a feedback loop that howls by itself, and **Biegga**, the wind.
+- Ten sound sources, among them **Holvut**, a feedback loop that howls by itself, **Biegga**, the wind, and (2.2) **Jiekna**, the singing ice.
 - **DRONE**: a sound that lives on its own (BORGA, STOARBMA, GOHCCAT).
 - **JIEHKKI**: a whole piece the FM-1 plays by itself for 5 to 60 minutes (or ENDLESS), then dies out; **RUOHČAT**,
   the ice cracking around it.
@@ -59,6 +59,7 @@ EDIT opens SOUND (the source's four knobs), then SOURCE (the source and LATCH). 
 | PHASE | WAVE | WAVE2 | DCW | DETUNE | Phase distortion |
 | **Holvut** | FEEDBACK | BODY | DAMP | DRIVE | A feedback loop that howls (below) |
 | **Biegga** | GUST | HOWL | TONE | SNOW | The wind (2.0, below) |
+| **Jiekna** | STRIKE | RING | HOLLOW | BRITTLE | The singing ice (2.2, below) |
 
 **FM ALGO**: ALGO 1–32, FEEDBACK, OP (the operator, 1–6), FINE. **FM OP**: that operator's RATIO, LEVEL, ATTACK,
 DECAY.
@@ -91,6 +92,18 @@ scratch for the FM-1.
     own wakes and colours the howl. The slab shows the slot (`S2 45%`, or `EMPTY`).
 - The howl's pitch comes mostly from the loop itself, not the key, so OCT− and OCT+ do not move it by an octave.
   [DEVELOPER.md](DEVELOPER.md) describes a possible change.
+
+### Jiekna, the singing ice (2.2)
+
+*Jiekŋa* is North Sami for "ice" (Giellatekno's dictionaries; JIEKNA on the screen). Written for Arctic Scream after
+Romain Guy's Adrift (its resonators: a burst into a delay tuned to the note), none of its code.
+
+- Noise, a burst at the note's start (STRIKE) or a soft bow all along, into a loop of the note's period in the voice's
+  pool scratch; round the loop a first-order all-pass (BRITTLE: dispersion, glass to metal), a one-pole (the damping;
+  HOLLOW's brightness), the gain (RING: x 0.885 .. ~1.01 a turn, a soft knee holding it in over 1) and its sign
+  (HOLLOW's upper half: turned over, the odd harmonics, the line halved to keep the note), a DC blocker low enough
+  (~2.5 Hz) to keep it in tune.
+- Fixed point; within 1 % of VA's pitch across the keys (tests/drone_test.py).
 
 ### Biegga, the wind (2.0)
 

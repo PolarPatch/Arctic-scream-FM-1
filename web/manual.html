@@ -218,7 +218,7 @@ C("02", "HOME and the mixers", "var(--aurora)",
 C("03", "Sources: EDIT", "var(--violet)",
   "EDIT opens the track's SOUND page, the source's four knobs, then SOURCE (a Holvut track has LOOP between them). Nine sources, each with its own picture.", [
   P("SOURCE", "Tap EDIT twice (Holvut: three times)", "source", K(
-    ["SOURCE", "Picks the track's source.", "VA, FM, SAMPLE, VOICE, WHEEL, PHYS, PHASE, Holvut, Biegga"],
+    ["SOURCE", "Picks the track's source.", "VA, FM, SAMPLE, VOICE, WHEEL, PHYS, PHASE, Holvut, Biegga, Jiekna"],
     ["LATCH", "Holds the notes: a key starts its note, the same key again stops it.", "OFF / ON"], ["", "", ""], ["", "", ""])),
   P("Holvut, the feedback voice", "EDIT, source Holvut", "holvut", K(
     ["FEEDBACK", "Wakes the loop. Below the threshold it sleeps (THE LOOP: ASLEEP); past ~2/3 it grows out of silence and howls by itself (HOWLING). Its last steps (120–127) overblow: the howl leaps up the overtones.", "0–100 %"],
@@ -281,7 +281,14 @@ C("03", "Sources: EDIT", "var(--violet)",
     ["TONE", "The rush under it: a far storm … snow hissing past.", "~150 Hz – ~10 kHz"],
     ["SNOW", "Grains of snow ticking on the ice.", "0–100 %"]),
     ["Biegga is North Sami (and Lule Sami) for wind. Noise sings at the note like wind in a gap, so a chord of Biegga is a chord the wind sings. About as light on the processor as VA.",
-     "The factory sound BIEGGA (TEXTURE) holds its note, gusts, and its storm rises over 4 bars."])]),
+     "The factory sound BIEGGA (TEXTURE) holds its note, gusts, and its storm rises over 4 bars."]),
+  P("Jiekna, the singing ice " + NEW, "EDIT, source Jiekna", "jiekna", K(
+    ["STRIKE", "A bow (soft noise all along) at the bottom, a strike (a burst at the start) at the top, both between.", "BOW … STRIKE"],
+    ["RING", "How long it sings: a knock, seconds, and at the top ENDLESS, an endless drone of ice that never clips.", "0–100 %"],
+    ["HOLLOW", "Lower half a string (every harmonic), upper half a pipe (the odd ones, ice over water); darker to brighter in each.", "STRING … PIPE"],
+    ["BRITTLE", "Pulls the overtones apart: a clean string, glass, a bell, metal.", "0–100 %"]),
+    ["Jiekŋa is North Sami for ice. Noise is played into a loop tuned to the note: ice that sings when struck or bowed, glass rubbed at the rim. About as light as Biegga.",
+     "After Romain Guy's Adrift (a burst into a delay tuned to the note), written anew."])]),
 
 C("04", "DRONE: a sound that lives on its own", "var(--teal)",
   "Press LFO twice. DRONE makes a held sound move by itself, slowly, and never the same way twice. The knobs have North Sami names.", [

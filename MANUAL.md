@@ -124,6 +124,7 @@ across the stereo field.
 | **PHYS** | MODEL | STRUCTURE | DAMP | BOW | Bowed and struck strings, bars, plates, membranes |
 | **PHASE** | WAVE | WAVE2 | DCW | DETUNE | Phase distortion |
 | **Biegga** | GUST | HOWL | TONE | SNOW | The wind: noise singing at the note (new in 2.0) |
+| **Jiekna** | STRIKE | RING | HOLLOW | BRITTLE | Ice that sings when struck or bowed: a loop tuned to the note (new in 2.2) |
 
 ### Holvut, the feedback voice
 
@@ -187,6 +188,31 @@ drop the whole sound. The note sets the howl's pitch, so a chord of Biegga is a 
 - **SNOW:** grains of snow ticking on the ice.
 - It costs about as much as VA, half of Holvut. DRONE's BORGA moves GUST, HOWL and TONE.
 - The factory sound **BIEGGA** (TEXTURE) holds its note, gusts, and its storm rises over 4 bars.
+
+<br clear="right">
+
+### Jiekna, the singing ice (new in 2.2)
+
+<img src="docs/manual/screens/jiekna.png" alt="Jiekna's SOUND page: a standing wave on the ice, a strike's spark, the bow" width="300" align="right">
+
+*Jiekŋa* is North Sami for "ice" (on the screen without its ŋ: JIEKNA). A short burst of noise, or a soft bow of it, is
+played into a loop tuned to the note, and the loop rings: ice that sings when it is struck or bowed, glass rubbed at
+the rim, a stone skimming the frozen lake, a frozen string.
+
+| KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
+|---|---|---|---|
+| STRIKE (BOW .. STRIKE) | RING | HOLLOW (STRING .. PIPE) | BRITTLE |
+
+- **STRIKE:** at the bottom a bow, soft noise all along the note; at the top a strike, a burst at its start that is
+  gone in a few milliseconds; between them both.
+- **RING:** how long it sings: a knock at 0, seconds in the middle, and at the top (`ENDLESS`) it sings on by itself,
+  an endless drone of ice, held in so it never clips.
+- **HOLLOW:** the lower half a string, every harmonic; the upper half a pipe, the loop turned over, only the odd
+  harmonics: the hollow tone of ice over water. Within each half, darker to brighter.
+- **BRITTLE:** pulls its overtones apart, from a clean string to glass, a bell, a bar of metal.
+- It is about as light as Biegga. DRONE's BORGA moves STRIKE, RING and BRITTLE. ENV 2's LOOP on a bowed Jiekna makes it
+  swell and fade like breath on glass.
+- The idea, a burst played into a loop tuned to the note, comes from Romain Guy's Adrift; written anew for the ice.
 
 <br clear="right">
 
@@ -360,6 +386,8 @@ fog lower and duller.
 Since 2.0 the attack swells instead of ramping: a note stays faint for most of a long ATTACK and blooms at the end
 (half way through it is 18 dB down, where it used to be 6), so a key flows in like a drone.
 
+<img src="docs/manual/screens/env2.png" alt="ENV 2: LOOP BREATHE, the envelope going round, and the four voice steps across the stereo field" width="300" align="right">
+
 **ENV 2** (new in 2.2, **press ENV again**): the envelope that goes round, a note's wait, and the notes spread out.
 
 | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
@@ -377,6 +405,8 @@ Since 2.0 the attack swells instead of ramping: a note stays faint for most of a
   With SPREAD, a held chord becomes a wide choir.
 - The picture: the envelope over a few seconds (its wait, LOOP's turns), and under it the four places, the next one lit.
 - ENV 2 is the track's and is saved with the project and the slots, not with a sound.
+
+<br clear="right">
 
 **LFO** (per track): slow movement. It never restarts with a note, so drones keep breathing.
 

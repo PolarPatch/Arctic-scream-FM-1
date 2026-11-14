@@ -49,18 +49,19 @@
 #define SONG_PK 20u                             /* the song: its chain (16), MODE, the mutes and solos; (1.4, spare
                                                  * till then: 0) AIR's PING-PONG and SHIMMER */
 #define FX2_PK 8u                               /* (version 8) MASTER's four, DRIVE's four */
-#define EXT_PK 48u                              /* (2.0, version 9) the tracks' Biegga (4 x 4), JIEHKKI's LENGTH,
+#define EXT_PK 64u                              /* (2.0, version 9) the tracks' Biegga (4 x 4), JIEHKKI's LENGTH,
                                                  * DRIFT, RUOHCAT, SCALE's TUNING, the RUOHCAT page's SAMPLE, SHARE,
                                                  * VARY, (2.1) PICTURE; (2.2, version 10: 8 more) JAHKI's YEAR, SEASON
                                                  * (where the year is: 256 a year), DEPTH, SKY, 4 spare; (2.2, version
-                                                 * 11: 16 more) the tracks' ENV 2 (LOOP, ONSET, SPREAD, DETUNE each) */
+                                                 * 11: 32 more) the tracks' ENV 2 (LOOP, ONSET, SPREAD, DETUNE each),
+                                                 * their Jiekna (its four) */
 #define EXT_PK10 32u                            /* (version 10's) */
 #define EXT_PK9 24u                             /* (version 9's) */
 #define BG_SLOT (1u + NT * 4u)                  /* (2.0) a slot's Biegga: BG_MARK, then the tracks' four each, in the
                                                  * slots' stream's tail (after the FM patches: zeros before it) */
 #define BG_MARK 0xB9u
-#define E2_SLOT (NT * 4u)                       /* (2.2) a slot's ENV 2: the tracks' four each, in the slots' stream's
-                                                 * tail after the Biegga (zeros before it: off, as then) */
+#define E2_SLOT (NT * 8u)                       /* (2.2) a slot's ENV 2 and Jiekna: the tracks' four and four each, in
+                                                 * the slots' stream's tail after the Biegga (zeros before it: off) */
 #define WORK_LEN(tn, sg, sq, lk, fm, fx, ex) (NT * ((tn) + (sq) + (lk)) + 16u + 4u + (sg) + (fm) + (fx) + (ex))   /* the working
                                                  * project: tracks, effects, tempo, slot, .., sequences, locks, the
                                                  * song, the FM patches, MASTER and DRIVE (an older version's sizes: sg
@@ -95,8 +96,8 @@ static const uint16_t OBJ_VERS[NOBJV][8] = {{11, TRK_PK, 20, 260, 288, FM_ALL, F
 enum { OBJ_WORK, OBJ_SLOTS };
 enum { CAT_DRONE, CAT_PAD, CAT_BELL, CAT_ORGAN, CAT_KEYS, CAT_BASS, CAT_TEXTURE, CAT_VOICE, CAT_OTHER, NCAT };
 static const char *const CAT_NAME[NCAT] = {"DRONE", "PAD", "BELL", "ORGAN", "KEYS", "BASS", "TEXTURE", "VOICE", "OTHER"};
-_Static_assert(NENG <= PK_ENG + 2u, "a save keeps every source's settings (the eighth, HOWL, at bytes 52..55; the ninth, "
-               "Biegga, in WORK's EXT and the slots' tail)");
+_Static_assert(NENG <= PK_ENG + 3u, "a save keeps every source's settings (the eighth, HOWL, at bytes 52..55; the ninth, "
+               "Biegga, and (2.2) the tenth, Jiekna, in WORK's EXT and the slots' tail)");
 _Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4u * (SLOT_ALL + BG_SLOT + E2_SLOT) <= SLS_N * SLS_P &&
                SAVE_NSECT >= 3u + SLS_N, "the save sectors");
 
@@ -603,6 +604,7 @@ static void pk_work(uint8_t *q)
     for (t = 0; t < NT; t++) {                  /* (2.2, version 11) ENV 2 */
         q[32 + t * 4u] = (uint8_t)clamp(trk[t].e_loop, 0, NELOOP - 1), q[33 + t * 4u] = (uint8_t)clamp(trk[t].e_onset, 0, 100);
         q[34 + t * 4u] = (uint8_t)clamp(trk[t].spread, 0, 100), q[35 + t * 4u] = (uint8_t)clamp(trk[t].detune, 0, 100);
+        for (k = 0; k < 4u; k++) q[48 + t * 4u + k] = (uint8_t)clamp(trk[t].p[ENG_JIEKNA][k], 0, 127);   /* (Jiekna) */
     }
 }
 enum { UW_GLOBALS = 1, UW_CHAIN = 2 };
@@ -639,9 +641,10 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
             for (k = 0; k < 4u; k++) trk[t].p[ENG_BIEGGA][k] = ex ? clamp(x[t * 4u + k], 0, 127) : T0.p[ENG_BIEGGA][k];
         for (t = 0; t < NT; t++) {              /* (2.2, version 11: ENV 2; before it: off) */
             const uint8_t *y = x + 32u + t * 4u;
-            int on = ex >= 48u;
+            int on = ex >= 64u;
             trk[t].e_loop = on ? clamp(y[0], 0, NELOOP - 1) : 0, trk[t].e_onset = on ? clamp(y[1], 0, 100) : 0;
             trk[t].spread = on ? clamp(y[2], 0, 100) : 0, trk[t].detune = on ? clamp(y[3], 0, 100) : 0;
+            for (k = 0; k < 4u; k++) trk[t].p[ENG_JIEKNA][k] = ex >= 64u ? clamp(x[48u + t * 4u + k], 0, 127) : T0.p[ENG_JIEKNA][k];
         }
         if (globals) {
             jk_len = !ex ? 2 : x[16] & 0x80u ? clamp(x[16] & 0x7F, 0, JK_NLEN - 1) : x[16] >= 6u ? JK_NLEN - 1 : x[16];   /* (ENDLESS: the last) */
@@ -676,10 +679,12 @@ static void pk_slot_bg(uint32_t s)
 static uint8_t slot_e2[4][E2_SLOT];             /* (2.2) a slot's ENV 2 (saved before it: zeros, off) */
 static void pk_slot_e2(uint32_t s)
 {
-    uint32_t t;
+    uint32_t t, k;
     for (t = 0; t < NT; t++) {
-        slot_e2[s][t * 4u] = (uint8_t)clamp(trk[t].e_loop, 0, NELOOP - 1), slot_e2[s][t * 4u + 1u] = (uint8_t)clamp(trk[t].e_onset, 0, 100);
-        slot_e2[s][t * 4u + 2u] = (uint8_t)clamp(trk[t].spread, 0, 100), slot_e2[s][t * 4u + 3u] = (uint8_t)clamp(trk[t].detune, 0, 100);
+        uint8_t *b = slot_e2[s] + t * 8u;
+        b[0] = (uint8_t)clamp(trk[t].e_loop, 0, NELOOP - 1), b[1] = (uint8_t)clamp(trk[t].e_onset, 0, 100);
+        b[2] = (uint8_t)clamp(trk[t].spread, 0, 100), b[3] = (uint8_t)clamp(trk[t].detune, 0, 100);
+        for (k = 0; k < 4u; k++) b[4u + k] = (uint8_t)clamp(trk[t].p[ENG_JIEKNA][k], 0, 127);
     }
 }
 static void pk_slot(uint8_t *q)                 /* the four tracks, their sequences and locks into a slot (used) */
@@ -709,12 +714,13 @@ static void uk_slot(const uint8_t *q, int isr)
         for (u = 0; u < NT; u++)
             for (k = 0; k < 4u; k++) trk[u].p[ENG_BIEGGA][k] = clamp(b[u * 4u + k], 0, 127);
     }
-    if (t < 4u) {                               /* (2.2: its ENV 2) */
-        const uint8_t *b = slot_e2[t];
-        uint32_t u;
+    if (t < 4u) {                               /* (2.2: its ENV 2, its Jiekna) */
+        uint32_t u, k;
         for (u = 0; u < NT; u++) {
-            trk[u].e_loop = clamp(b[u * 4u], 0, NELOOP - 1), trk[u].e_onset = clamp(b[u * 4u + 1u], 0, 100);
-            trk[u].spread = clamp(b[u * 4u + 2u], 0, 100), trk[u].detune = clamp(b[u * 4u + 3u], 0, 100);
+            const uint8_t *b = slot_e2[t] + u * 8u;
+            trk[u].e_loop = clamp(b[0], 0, NELOOP - 1), trk[u].e_onset = clamp(b[1], 0, 100);
+            trk[u].spread = clamp(b[2], 0, 100), trk[u].detune = clamp(b[3], 0, 100);
+            for (k = 0; k < 4u; k++) trk[u].p[ENG_JIEKNA][k] = clamp(b[4u + k], 0, 127);
         }
     }
 }

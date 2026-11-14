@@ -160,6 +160,8 @@ SHOTS = {
     "phase": lambda: src(S(), 1).hold("C3", "G3").w(1500),
     # (2.0) the drone machine
     "biegga": lambda: src(S(), -1).hold("C3", "G3").w(2500),
+    "jiekna": lambda: src(S(), -2).hold("C3", "G3").w(2500),   # (2.2: the singing ice)
+    "env2": lambda: S().tap(ENV, ENV).turn(K1, 2).turn(K2, 10).turn(K3, 60).turn(K4, 40).hold("C3", "G3").w(2500),
     "jiehkki": lambda: S().tap(LFO, LFO, LFO).turn(K3, 40).turn(K4, 1).w(40000),
     "ruohcat": lambda: sample(sample(S(), 0, "JOIK", 330, 3.0, 3500), 2, "ELV", 220, 1.5, 5000)
                        .tap(LFO, LFO, LFO, LFO).turn(K2, 5).turn(K3, 30).turn(K1, 100).w(9000),

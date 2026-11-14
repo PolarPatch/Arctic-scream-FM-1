@@ -377,6 +377,22 @@ out, a0, jk0, notes = run("cpu_cool", ev + P(9000), 9500)
 check("CPU guard: hot, new notes take a release over (no voice added); cool, never; heard either way",
       jk[9000]["took"] >= 2 and jk0[9000]["took"] == 0 and rms(a, 8.0, 9.0) > 100, (jk[9000]["took"], jk0[9000]["took"], round(rms(a, 8, 9))))
 
+# (2.2) Jiekna, the tenth source (the singing ice): on T1 (EDIT twice: SOURCE, + 9), C3 struck: heard, in tune with VA's
+# C3, never clipping, its ring dying away with RING as set; RING up to the top: it sings on, held (no clip)
+ev = [(5000, f"btn {EDIT}"), (5300, f"btn {EDIT}"), (5600, f"enc {K1} 9"), (7000, f"keys {1 << 7}"), (12000, "keys 0")]
+out, a, jk, notes = run("jiekna", ev, 14000)
+out, av, jk, notes = run("jiekna_va", [(7000, f"keys {1 << 7}"), (12000, "keys 0")], 14000)
+if have_np:
+    fj, fv = freq(a, 7.3, 9.3, 110, 160), freq(av, 7.3, 9.3, 110, 160)   # (its fundamental: the strongest there)
+    check("Jiekna: heard, never clipping, C3 in tune with VA's (within 1.5 %)", rms(a, 7.2, 8) > 200 and peak(a) < 32000 and
+          abs(fj / fv - 1) < 0.015, (round(rms(a, 7.2, 8)), peak(a), round(fj, 1), round(fv, 1)))
+ev = [(5000, f"btn {EDIT}"), (5300, f"btn {EDIT}"), (5600, f"enc {K1} 9"), (5800, f"btn {EDIT}"), (6000, f"enc {K1} -90"),
+      (6300, f"enc {K2} 27"), (7000, f"keys {1 << 7}"), (25000, "keys 0")]
+out, a, jk, notes = run("jiekna_endless", ev, 26000)
+check("Jiekna RING at the top, bowed: it sings on by itself, held (no clip, no dying away)",
+      rms(a, 20, 24) > 0.5 * rms(a, 9, 13) and rms(a, 20, 24) > 200 and peak(a) < 32000,
+      (round(rms(a, 9, 13)), round(rms(a, 20, 24)), peak(a)))
+
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna ok")

@@ -108,7 +108,7 @@ static char *ui_3(char *s, uint32_t v) { s[0] = (char)('0' + v / 100u % 10u), s[
 static uint32_t ui_pc(int32_t v) { return ((uint32_t)clamp(v, 0, 127) * 100u + 63u) / 127u; }
 
 /* a source's short name (the HOME slabs: "T2 FM") */
-static const char *const SRC_CODE[NENG] = {"VA", "FM", "SA", "VO", "WH", "PH", "PD", "HW", "BI"};
+static const char *const SRC_CODE[NENG] = {"VA", "FM", "SA", "VO", "WH", "PH", "PD", "HW", "BI", "JI"};
 
 /* ---- the header */
 static char ui_hb[12], ui_hl[24], ui_hr[12];    /* the button, the left, the right */
@@ -1368,6 +1368,35 @@ static void pic_ruohcat(void)
     if (now - hit_t < 300u) ui_rect(PX0, 141, 214, 2, ru_last == RU_SMP ? UI_W : BW_SKY);   /* (RUOHCAT: a sound begun) */
 }
 
+/* (2.2) EditJiekna: the singing ice as a standing wave on a sheet of ice, its turns the harmonics (HOLLOW: the odd ones,
+ * the wave turned over at the ends), drawn twice, its echoes fainter as RING lets them die (or not), BRITTLE pulling the
+ * turns apart; a strike's spark at the left end, a bow's stroke across it; moving (UI_ANIM_MS) */
+static void pic_jiekna(void)
+{
+    const volatile int32_t *p = trk[sel].p[ENG_JIEKNA];
+    int32_t st = clamp(p[0], 0, 127), rg = clamp(p[1], 0, 127), ho = clamp(p[2], 0, 127), br = clamp(p[3], 0, 127);
+    int32_t y[55], i, j, n = ho >= 64 ? 3 : 2, d;
+    char l[16], r[16];
+    put_s(l, st > 107 ? "STRIKE" : st < 20 ? "BOW" : "STRIKE + BOW");
+    put_s(r, ho >= 64 ? "PIPE" : "STRING");
+    ui_caption(l, r);
+    ui_rect(PX0, 132, 216, 2, ui_mix(UI_K, UI_KC[2], 6u, 16u));   /* (the ice) */
+    for (j = 0; j < 4; j++) {                   /* the wave, its echoes fainter by RING */
+        uint32_t lv = (uint32_t)clamp(12 - j * (14 - rg / 10) / 3, 2, 12);
+        for (i = 0; i < 55; i++) {
+            int32_t ph = i * 256 * n / 54 + (br * i * i) / 300;   /* (BRITTLE: the turns pulled apart) */
+            d = hw_wave((uint32_t)(ph + j * 9) & 255u) * hw_wave((hw_ph * (uint32_t)(4 + j)) & 255u) / 64;
+            y[i] = 92 + d * (30 - j * 6) / 64;
+        }
+        ui_glow(PX0, 4, y, 55, ui_mix(UI_K, j ? UI_KC[1] : UI_KC[0], lv, 16u));
+    }
+    if (st > 20) ui_rect(PX0, 86 + (int32_t)(hw_ph % 3u) * 4, 5, 5, ui_mix(UI_K, ui_acc, (uint32_t)(st / 9), 16u));   /* (the strike) */
+    if (st < 107) {                             /* (the bow) */
+        int32_t bx = PX0 + 40 + hw_wave((hw_ph * 2u) & 255u) / 2;
+        ui_line(bx, 60, bx + 50, 124, ui_mix(UI_K, UI_KC[3], (uint32_t)((127 - st) / 9 + 2), 16u));
+    }
+}
+
 /* (2.0) EditBiegga: the wind as streaks blowing across, torn into gusts (GUST: how far they swing and how fast),
  * their colour TONE's (dark .. bright); HOWL's whistle a thin line singing through them, tighter as it narrows; SNOW's
  * grains drifting down and across; moving (a frame every UI_ANIM_MS) */
@@ -2299,6 +2328,7 @@ static void ui_pic_draw(void)
         case ENG_PHYS: pic_phys(); return;
         case ENG_HOWL: pic_howl(); return;
         case ENG_BIEGGA: pic_biegga(); return;
+        case ENG_JIEKNA: pic_jiekna(); return;
         default: pic_phase(); return;
         }
     case PG_SOURCE: pic_source(); return;
