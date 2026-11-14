@@ -136,3 +136,35 @@ picture stays, and a little of it moves, drawn by the firmware each frame:
 `tools/gen_pictures.py` marks each picture's moving parts (palette entries for the shimmer, a horizon row for the
 water, regions for the lights), `pictures.c` animates them over the still picture. Photographs get the generic ones
 (snow, stars, a slow pan). Costs to measure on the FM-1 first: redrawing the card each frame over SPI.
+
+## From Adrift (noted 2026-11-14)
+
+[Adrift](https://github.com/romainguy/adrift) (Romain Guy, MPL-2.0, on felucca-bsp): a 16-voice physical-modelling
+synth, each note an exciter played into a key-tracked bucket-brigade delay loop that rings at the note's pitch. Its
+six voice groups, its many presets of plucked and bowed instruments and its own engine stay its own; these three
+fit, written anew and credited in `LICENSING.md` when they land.
+
+### 8. A resonator of ice (a tenth source)
+
+Adrift's heart: a short burst (a pluck, noise, a bowed swell) sent into a delay loop tuned to the note, its feedback
+deciding how long it sings, its sign (inverted: a pipe's hollow, odd harmonics) and an all-pass's dispersion (bells,
+metal bars) its colour. For Arctic Scream a source of the ice's own: ice that sings when it is struck or bowed, glass
+bowls, a frozen string, the long tones of a lake freezing. Fits next to Holvut (feedback) and BIEGGA (noise at the
+note): the drone's sources so far are made, not struck. Knobs (a sketch): STRIKE (bow .. strike: the exciter's
+shape), RING (feedback, up to self-oscillation for an endless drone), HOLLOW (the loop's sign, blended), BRITTLE
+(dispersion: glass to metal). CPU to measure first: a fractional delay and an all-pass a voice.
+
+### 9. Breathing and staggered entries (an envelope that loops, a delay before it)
+
+Adrift's exciter envelope can loop while a key is held (attack-decay, or decay-attack-decay), and each group can wait
+0..2 s before it sounds (one key, a strummed chord). For Arctic Scream: ENV's LOOP (OFF, A-D, D-A-D) makes a held
+drone breathe on its own, slow swells like breath or wind, at ENV's own times; and a track's ONSET (0..2 s, longer for
+drones, up to ~8 s) lets the four tracks come in one after another from a single chord, as JIEHKKI's tracks do. On
+the ENV page; saved with the sound.
+
+### 10. PRESETS: listen, then keep or go back
+
+Adrift plays a preset as you turn to it, and OCT+ keeps it, OCT- goes back to the sound you had (all of it, as it
+was). Arctic Scream's PRESETS changes the sound at once (and since 2.0 glides there). An undo for it: after turning
+PRESETS, the sound before is kept for a while; OCT- (or EDIT + OCT-, the undo that exists) brings it back, as long as
+nothing else has been changed. Nothing new to learn for those who never want it.
