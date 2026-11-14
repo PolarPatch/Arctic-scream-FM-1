@@ -22,6 +22,7 @@ Built, tested (host, stress 1..3, ARM, web, the device names in a Linux containe
 | | Pictures that move | `pictures.c` `pic_anim_rows`, `gen_pictures.py` `ANIM` | built (all 38) |
 | | A picture for every factory sound (wished: no two alike) | 22 more scenes in `draw_pictures.py`; HOME keeps its stars (JAHKI's SKY only in the screensaver) | built |
 | | GOVVA, the pictures as a screensaver (wished on the FM-1) | SCREEN OFF's last, `ui.c` `ui_govva`; no text over the pictures | built |
+| 22 | MIDI out with roles | JIEHKKI's own notes out on their tracks' channels with SEQ MIDI OUT (`jiehkki.c` `jk_mo`, kept in `echo_on`); JAHKI's season as CC 104 on T1's with MOD OUT (`year.c`) | built |
 | 19 | Pictures that melt | GOVVA (and so JAHKI's seasons there): a new picture dissolves in over 3 s, a 4 x 4 ordered dither cell by cell, both moving (`ui.c` `gv_draw`, two passes while melting) | built |
 | 20 | SWELL | PERFORM's ninth white key (G3) or CC 1: `sw_e` up ~4 s, down ~1.5 s; the tracks +2.5 dB, REV send + 64, the filters 24 steps open | built |
 | 17, 21 | SYSTEM 4: SOUND (speaker), HELP; the guide | `grimm.c` `spk_eq` (shifts only, the speaker and jack, never USB); `help.c` (a line under the picture a knob turned, 26 characters; three guide pages at the first start, the FM-1 only; host `GRIMM_GUIDE`); settings version 6 (173 B) | built |

@@ -105,12 +105,22 @@ static uint32_t jk_left(uint32_t now)           /* ms left of the piece (ENDLESS
     return jk.run && L && e < L ? L - e : 0;
 }
 
+/* (2.2, after HADAL-1's MIDI out, Polystellarflow's: written anew) the piece's own notes out over USB-MIDI too, each
+ * track's on its channel (as its keys', MIDI CHANNEL), while SEQ MIDI OUT is on: another synth, a DAW or a MIDI-to-CV
+ * box can follow the piece. Kept in echo_on as the echoes are (a channel changed, SEQ MIDI OUT off: let go) */
+static void jk_mo(uint32_t on, uint32_t t, uint32_t n)
+{
+    uint32_t c = (set.mch < MCH_ALL ? set.mch : 0u) + (t & 3u);
+    if (c > 15u || n > 127u || !midi_room()) return;
+    if (on && mo_seq) midi_send(0x90u | c, n, 100u), echo_on[n] |= (uint16_t)(1u << c);
+    else if (!on && (echo_on[n] >> c & 1u)) midi_send(0x80u | c, n, 0u), echo_on[n] &= (uint16_t)~(1u << c);
+}
 static void jk_play(uint32_t t, int32_t n)      /* track t's own note to n (the new one on, then the old one let go) */
 {
     uint32_t id = JK_ID + 2u * t + (jk.id[t] == JK_ID + 2u * t);
     if (n == jk.note[t]) return;
-    if (n > 0) nq_note(NQ_ON, t, (uint32_t)n, id);
-    if (jk.note[t]) nq_note(NQ_OFF, t, jk.note[t], jk.id[t]);
+    if (n > 0) nq_note(NQ_ON, t, (uint32_t)n, id), jk_mo(1u, t, (uint32_t)n);
+    if (jk.note[t]) nq_note(NQ_OFF, t, jk.note[t], jk.id[t]), jk_mo(0u, t, jk.note[t]);
     jk.note[t] = (uint8_t)(n > 0 ? n : 0), jk.id[t] = (uint8_t)id;
 }
 static void jk_notes_off(void)

@@ -435,6 +435,16 @@ out, a, jk, notes = run("swell", ev, 19000)
 b0, b1, b2 = rms(a, 8, 9), rms(a, 13.3, 14.3), rms(a, 17.5, 18.5)
 check("SWELL: held, the sound rises; let go, it falls back", b1 > 1.2 * b0 and b2 < 1.1 * b0, (round(b0), round(b1), round(b2)))
 
+# (2.2) MIDI out with roles: SEQ MIDI OUT on (SYSTEM 2), MOD OUT on (SYSTEM 3): JIEHKKI's own notes out on their tracks'
+# channels; JAHKI's season as CC 104 on T1's
+ev = [(3000, f"down {HOME}"), (3700, f"up {HOME}"), (3900, f"btn {HOME}"), (4100, f"enc {K2} 1"), (4300, f"btn {HOME}"),
+      (4500, f"enc {K3} 1"), (4700, f"btn {LFO}"), (4900, f"btn {LFO}"), (5100, f"btn {LFO}"), (5300, f"enc {K4} 1")]
+out, a, jk, notes = run("midi_roles", ev, 20000)
+mo = re.findall(r"MIDI out ([0-9A-F]{2}) (\d+) (\d+)", out)
+ons = {st for st, n, v in mo if st.startswith("9")}
+check("MIDI out with roles: JIEHKKI's notes on T1's and T2's channels; the season as CC 104",
+      {"90", "91"} <= ons and ("B0", "104", "0") in mo, (sorted(ons), [m for m in mo if m[1] == "104"]))
+
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna, MOTION, the second core's way, the guide, SWELL ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna, MOTION, the second core's way, the guide, SWELL, MIDI out roles ok")

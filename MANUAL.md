@@ -701,7 +701,8 @@ FM-1, not the project.
   lighter for the FM-1 than GUOVSSAHAS while it plays. When the picture changes (a new season), the old one melts into
   the new over three seconds, cell by cell. The first touch, any knob or button, brings the page back.
 - **MIDI LEARN:** set LEARN, turn a knob on the FM-1, then move one on your controller. Up to 32 links.
-- **SEQ MIDI OUT:** sends the sequencer's and the arpeggiator's notes out over USB.
+- **SEQ MIDI OUT:** sends the sequencer's and the arpeggiator's notes out over USB, and (new in 2.2) JIEHKKI's own
+  notes, each track's on its channel, so another synth, a DAW or a MIDI-to-CV box can follow the piece.
 - **SAMPLES:** CLEAR and **OCT+** empties all four sample slots (stop and let the sound die out first).
 - **CLOCK:** `INT`, the FM-1's own tempo. `I+OUT`, the same, and its MIDI clock out over USB (START, STOP and 24 pulses a
   beat) for a DAW or another instrument to follow. `USB` or `TRS`: the FM-1 follows a MIDI clock from there: START plays
@@ -718,7 +719,8 @@ FM-1, not the project.
 - **MOD OUT** (SYSTEM 3, new in 1.5.2): sends how each track moves out over USB as MIDI CC, 50 times a second, on the
   track's own channel (as its notes, MIDI CHANNEL): **CC 102** is how loud the track plays now (0 silent, 127 full) and
   **CC 103** is where its LFO is (64 the middle). Use it to drive lights, motors, a Max patch or another synth's filter
-  from the FM-1. OFF by default, so a DAW gets nothing it did not ask for.
+  from the FM-1. OFF by default, so a DAW gets nothing it did not ask for. (New in 2.2) **CC 104** on T1's channel says
+  JAHKI's season as it turns: DALVI 0, GIDDADALVI 16, … CAKCADALVI 112.
 - **PICTURE** (SYSTEM 3, new in 2.1): `CARD`, a sound's picture on HOME a moment while PRESETS turns; `SKY`, the
   selected track's picture as HOME's sky, dimmed under the waves; `OFF`. Saved with the project.
 - **SYSTEM 4** (new in 2.2: **HOME once more** after SYSTEM 3):
