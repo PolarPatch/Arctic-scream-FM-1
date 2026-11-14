@@ -358,6 +358,24 @@ fog lower and duller.
 Since 2.0 the attack swells instead of ramping: a note stays faint for most of a long ATTACK and blooms at the end
 (half way through it is 18 dB down, where it used to be 6), so a key flows in like a drone.
 
+**ENV 2** (new in 2.2, **press ENV again**): the envelope that goes round, a note's wait, and the notes spread out.
+
+| KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
+|---|---|---|---|
+| LOOP (OFF, PULSE, BREATHE) | ONSET (0 – 8 s) | SPREAD (0 – 100 %) | DETUNE (0 – 100 %) |
+
+- **LOOP:** while a note is held, the envelope goes round by itself. **PULSE** rises over ATTACK and falls over DECAY
+  to almost nothing, again and again: a slow pulse, a breath of wind. **BREATHE** falls to SUSTAIN and rises again: a
+  drone that breathes. ATTACK and DECAY set how slowly.
+- **ONSET:** each note waits this long before it sounds. Set the four tracks to different ONSETs and one chord comes in
+  track by track. A note let go while it waits still plays, as long as it was held.
+- **SPREAD:** each new note takes the next of four places in the stereo field, left, right, then nearer the middle,
+  round and round, so a chord opens up across the stereo field. 0: all in the middle, as before.
+- **DETUNE:** each of those four places a little out of tune, up to about 24 cents, every other note up and down.
+  With SPREAD, a held chord becomes a wide choir.
+- The picture: the envelope over a few seconds (its wait, LOOP's turns), and under it the four places, the next one lit.
+- ENV 2 is the track's and is saved with the project and the slots, not with a sound.
+
 **LFO** (per track): slow movement. It never restarts with a note, so drones keep breathing.
 
 | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |

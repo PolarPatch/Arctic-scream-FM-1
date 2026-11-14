@@ -440,6 +440,11 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         if (k == 3u) { put_s(S->val, SEQ_MODE_SHORT[clamp(v, 0, SEQ_NMODE - 1)]); return; }
         if (k == 0u) { put_u(S->val, (uint32_t)v); return; }
         break;
+    case PG_ENV2:                               /* (2.2) LOOP ("BRTHE"), ONSET ("0.8S"), SPREAD %, DETUNE % */
+        if (k == 0u) put_s(S->val, v == EL_BREATHE ? "BRTHE" : EL_NAME[clamp(v, 0, NELOOP - 1)]);
+        else if (k == 1u) ui_time(S->val, (uint32_t)clamp(v, 0, 100) * 80u << 16);
+        else ui_3(S->val, (uint32_t)clamp(v, 0, 100));
+        return;
     case PG_ENV:
         if (k == 2u) { ui_3(S->val, ui_pc(v)); return; }
         ui_time(S->val, k == 0u ? pow2_q16(v * 20) : k == 1u ? 10u * pow2_q16(v * 15) : 10u * pow2_q16((v * 33) >> 1));
@@ -559,7 +564,7 @@ static void ui_tint(uint32_t pg)
 {
     uint16_t a, b, c, x;
     switch (pg) {
-    case PG_ENV: a = BW_AMBER, b = BW_TEAL, c = BW_PERIWINKLE, x = BW_MAGENTA; break;
+    case PG_ENV: case PG_ENV2: a = BW_AMBER, b = BW_TEAL, c = BW_PERIWINKLE, x = BW_MAGENTA; break;
     case PG_LFO: a = BW_PINK, b = BW_CYAN, c = BW_AMBER, x = UI_W; break;
     case PG_DRONE: a = BW_CYAN, b = BW_VIOLET, c = BW_TEAL, x = BW_MAGENTA; break;
     case PG_JIEHKKI: case PG_RUOHCAT: case PG_JAHKI: a = BW_SKY, b = BW_CYAN, c = BW_BLUE, x = BW_GREEN; break;
@@ -1451,12 +1456,48 @@ static void pic_env(void)                       /* Env: the shape of the track's
     ui_rect(PX0 + wa * 4, y[wa] - 2, 5, 5, ui_acc);   /* (the peak) */
 }
 
+static void pic_env2(void)                      /* (2.2) Env 2: the envelope over a few seconds as a ribbon (its
+                                                 * wait first, ONSET; LOOP's turns), and under it the four voice steps,
+                                                 * where each sits in the stereo field (SPREAD) and how far off its pitch
+                                                 * (DETUNE), the next one lit */
+{
+    const volatile int32_t *e = trk[sel].env;
+    int32_t lp = clamp(trk[sel].e_loop, 0, NELOOP - 1), on = clamp(trk[sel].e_onset, 0, 100);
+    int32_t sp = clamp(trk[sel].spread, 0, 100), dt = clamp(trk[sel].detune, 0, 100);
+    int32_t wa = 2 + clamp(e[0], 0, 127) * 10 / 127, wd = 2 + clamp(e[1], 0, 127) * 8 / 127, ys = 28 - clamp(e[2], 0, 127) * 25 / 127;
+    int32_t w0 = on * 14 / 100, y[54], x, k, lo;
+    char l[24];
+    put_s(put_s(l, "LOOP "), EL_NAME[lp]);
+    ui_caption(l, 0);
+    lo = lp == EL_PULSE ? 28 : ys;              /* (where a turn goes down to) */
+    for (x = 0; x < 54; x++) {                  /* the level a column (28: 0, 3: full) */
+        int32_t v, c = x - w0, p = c - wa;
+        if (c < 0) v = 28;                      /* (the wait) */
+        else if (p <= 0) v = 28 - 25 * c / wa;  /* (the attack) */
+        else if (!lp) v = p <= wd ? 3 + (ys - 3) * p / wd : ys;
+        else {                                  /* (the turns: down over DECAY, up over ATTACK) */
+            p %= wa + wd;
+            v = p < wd ? 3 + (lo - 3) * p / wd : lo + (3 - lo) * (p - wd) / wa;
+        }
+        y[x] = 50 + (v - 3) * 70 / 25 + hw_wave(((uint32_t)x * 11u + hw_ph * 3u) & 255u) / 40;
+    }
+    if (w0 > 1) ui_text(PX0 + 2, 104, "WAIT", 1, UI_KC[1]);
+    ui_glow(PX0 + 2, 4, y, 54, UI_KC[0]);
+    for (k = 0; k < 4; k++) {                   /* the steps: left .. right by SPREAD, up and down by DETUNE */
+        int32_t px = PX0 + 104 + VS_PAN[k] * sp / 100 * 96 / 32767, py = 126 - VS_DET[k] * dt * 6 / 100;
+        uint16_t c = (uint32_t)k == (vs_next[sel] & 3u) ? ui_acc : UI_KC[2];
+        ui_rect(px - 3, py - 3, 7, 7, c);
+    }
+    ui_rect(PX0 + 8, 126, 192, 1, UI_KC[3]);    /* (the stereo field, L .. R) */
+    ui_text(PX0, 132, "L", 1, UI_M), ui_text(PX0 + 206, 132, "R", 1, UI_M);
+}
+
 static int ui_anim_page(uint32_t p)             /* the pages whose ribbons move (ui_update) */
 {
     return p == PG_DRONE || p == PG_ENV || p == PG_TAPE || p == PG_GRAIN || p == PG_DELAY || p == PG_SPACE || p == PG_LFO ||
            p == PG_MIX1 || p == PG_MIX2 || p == PG_MASTER || p == PG_DRIVE || p == PG_SOUND || p == PG_FMOP || p == PG_FMALGO || p == PG_SCALE ||
            p == PG_CHORD || p == PG_PERFORM || p == PG_ARP || p == PG_LOOP || p == PG_AIR || p == PG_JIEHKKI ||
-           p == PG_RUOHCAT || p == PG_JAHKI;
+           p == PG_RUOHCAT || p == PG_JAHKI || p == PG_ENV2;
 }
 
 /* ---- the aurora pages (Arctic Scream p0larpatch, after the DRONE and Holvut pages): every knob a ribbon of northern
@@ -2262,6 +2303,7 @@ static void ui_pic_draw(void)
         }
     case PG_SOURCE: pic_source(); return;
     case PG_ENV: pic_env(); return;
+    case PG_ENV2: pic_env2(); return;
     case PG_MIX1: case PG_MIX2: pic_mix(); return;
     case PG_TAPE: pic_tape(); return;
     case PG_GRAIN: pic_grain(); return;

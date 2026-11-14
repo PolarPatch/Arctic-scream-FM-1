@@ -323,6 +323,52 @@ check("LFO CHAOS: wide, both sides, smooth, its turns' tops nearly all different
       jk[sorted(jk)[0]]["lsh"] == 7 and max(v) > 12000 and min(v) < -12000 and step < 16000 and len(turns) >= 3 and
       len(peaks) >= 0.8 * len(turns), (max(v), min(v), step, len(turns), len(peaks)))
 
+# (2.2) ENV 2 (ENV twice): ONSET, a note's wait; LOOP PULSE, the envelope going round while the note is held; SPREAD,
+# the notes taking places in the stereo field (L and R apart), nothing of it at 0
+ENVB = 4
+def side(a, t0, t1):                            # the RMS of L - R from t0 to t1 s
+    x = a[2 * int(t0 * 44100):2 * int(t1 * 44100)]
+    d = [x[i] - x[i + 1] for i in range(0, len(x) - 1, 2)]
+    return math.sqrt(sum(v * v for v in d) / max(1, len(d)))
+ev = [(5000, f"btn {ENVB}"), (5300, f"btn {ENVB}"), (5600, f"enc {K2} 25"), (7000, f"keys {1 << 7}"), (10800, "keys 0")]
+out, a, jk, notes = run("onset", ev, 11000, env={})
+check("ENV 2 ONSET 2 s: silent for its wait, then the note", rms(a, 7.1, 8.8) < 30 and rms(a, 9.3, 10.5) > 150,
+      (round(rms(a, 7.1, 8.8)), round(rms(a, 9.3, 10.5))))
+ev = [(5000, f"btn {ENVB}"), (5300, f"btn {ENVB}"), (5600, f"enc {K2} 25"), (7000, f"keys {1 << 7}"), (7400, "keys 0")]
+out, a, jk, notes = run("onset_tap", ev, 12000)
+check("ENV 2 ONSET: a note let go while it waits still plays after the wait", rms(a, 7.1, 8.8) < 30 and
+      rms(a, 9.0, 10.0) > 60, (round(rms(a, 7.1, 8.8)), round(rms(a, 9.0, 10.0))))
+ev = [(5000, f"btn {ENVB}"), (5300, f"btn {ENVB}"), (5600, f"enc {K1} 1"), (6000, f"keys {1 << 7}")]
+out, a, jk, notes = run("loop", ev, 30000)
+w = [rms(a, 10 + 0.25 * i, 10.25 + 0.25 * i) for i in range(76)]
+check("ENV 2 LOOP PULSE: a held note goes round, down and up again, more than once",
+      max(w) > 3 * (min(w) + 1) and sum(1 for i in range(1, 75) if w[i - 1] > w[i] < w[i + 1] and w[i] < 0.4 * max(w)) >= 2,
+      [round(x) for x in w[::4]])
+ev = [(5000, f"btn {ENVB}"), (5300, f"btn {ENVB}"), (5600, f"enc {K3} 100"), (6000, f"keys {1 << 7 | 1 << 11 | 1 << 14}")]
+out, a, jk, notes = run("spread", ev, 10000)
+out0, a0, jk0, notes0 = run("spread0", [(6000, f"keys {1 << 7 | 1 << 11 | 1 << 14}")], 10000)
+check("ENV 2 SPREAD 100 %: three notes apart in the stereo field (twice the side of SPREAD 0's, its reverb's)",
+      side(a, 8, 9.5) > 2 * side(a0, 8, 9.5),
+      (round(side(a, 8, 9.5)), round(rms(a, 8, 9.5)), round(side(a0, 8, 9.5))))
+sv3 = OUT / "saves_env2.bin"
+ev = [(5000, f"btn {ENVB}"), (5300, f"btn {ENVB}"), (5600, f"enc {K1} 2"), (5900, f"enc {K2} 10"), (6200, f"enc {K3} 50"),
+      (6500, f"enc {K4} 30")]
+out, a, jk, notes = run("env2_save", ev + P(7000), 40000, {"GRIMM_SAVE_OUT": str(sv3)})
+out, a, jk2, notes = run("env2_load", P(3000), 3500, {"GRIMM_SAVE_IN": str(sv3)})
+e2 = lambda d: (d["el"], d["eo"], d["es"], d["ed"])
+check("ENV 2 saved with the project (version 11): at power-on as set (BREATHE, 0.8 s, 50 %, 30 %)",
+      e2(jk[7000]) == (2, 10, 50, 30) and e2(jk2[3000]) == (2, 10, 50, 30), (e2(jk[7000]), e2(jk2[3000])))
+# a slot keeps its ENV 2: SPREAD 40 into slot A, SPREAD to 0, A recalled: 40 again; a power-on: still in the slot
+ev = [(5000, f"btn {ENVB}"), (5300, f"btn {ENVB}"), (5600, f"enc {K3} 40"), (7400, f"down {SAVE}"), (8000, "keys 128"),
+      (8200, "keys 0"), (8400, f"up {SAVE}"), (9000, f"enc {K3} -40"), (9400, f"down {SAVE}"), (10000, "keys 1"),
+      (10200, "keys 0"), (10400, f"up {SAVE}")]
+sv4 = OUT / "saves_e2slot.bin"
+out, a, jk, notes = run("e2slot", ev + P(9300, 11000), 40000, {"GRIMM_SAVE_OUT": str(sv4)})
+ev = [(5000, f"down {SAVE}"), (5600, "keys 1"), (5800, "keys 0"), (6000, f"up {SAVE}")]
+out, a, jk2, notes = run("e2slot_on", P(4000) + ev + P(7000), 7500, {"GRIMM_SAVE_IN": str(sv4)})
+check("slot A: its ENV 2 recalled (SPREAD 40, after 0), and after a power-on",
+      jk[9300]["es"] == 0 and jk[11000]["es"] == 40 and jk2[7000]["es"] == 40, (jk[9300]["es"], jk[11000]["es"], jk2[7000]["es"]))
+
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2 ok")

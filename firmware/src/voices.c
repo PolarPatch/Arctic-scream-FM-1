@@ -74,7 +74,13 @@ typedef struct {
     volatile int32_t warp, morph;               /* HOME: WARP, MORPH 0..127 (chaos.c) */
     volatile int32_t hw_x[4];                   /* (Arctic Scream 1.4) Holvut's LOOP page: GATE, BLOOM, LOW CUT, EXCITE
                                                  * 0..127 (howl.c; 0: as before it) */
+    volatile int32_t e_loop, e_onset, spread, detune;   /* (2.2) ENV 2: LOOP (EL_), ONSET 0..100 (x 80 ms), SPREAD,
+                                                 * DETUNE 0..100 % (the voice steps); 0: as before them */
 } track_t;
+enum { EL_OFF, EL_PULSE, EL_BREATHE, NELOOP };
+static const char *const EL_NAME[NELOOP] = {"OFF", "PULSE", "BREATHE"};   /* (2.2) ENV 2's LOOP: PULSE (after Adrift's A-D: up over ATTACK, down
+                                                 * over DECAY to nothing, again), BREATHE (D-A-D: down to SUSTAIN, up
+                                                 * again), while the note is held; written anew */
 enum { HX_GATE, HX_BLOOM, HX_LCUT, HX_EXCITE };
 #define TRK_DEF {ENG_VA, {{0, 10, 90, 30}, {0, 64, 64, 20}, {0, 0, 127, 0}, {0, 12, 64, 10}, {4, 0, 40, 0}, {0, 64, 80, 64}, {0, 0, 60, 0}, {96, 64, 50, 40}, {64, 64, 64, 16}}, 100, 0, 100, 0, 64, 0, \
                  {60, 85, 51, 105}, 0, 0, 0, 0, 0, 4, 1, 50, 40, 30, 9, 0, 84, 24, 100, 0, 0, {{0}}}
@@ -98,6 +104,15 @@ static int32_t vc_xf[NV], vc_xq[NV], vc_xe[NV];   /* (2.0) a voice crossing over
                                                  * how far now, its level when it began (its level: that x 1 - the cube
                                                  * of how far, the new sound's attack's mirror: the two hold the sum) */
 static uint32_t vblock;                         /* audio: + 1 every control block (fm.c: once a block a track) */
+/* (2.2) ENV 2: ONSET, a note's wait before it sounds; the voice steps (after SHRUB's voice control, written anew): each
+ * new note of a track takes the next of four steps, a place in the stereo field (SPREAD: its share in the track's side
+ * signal, sbuf: mixed L + side, R - side) and a detune (DETUNE), round and round */
+static uint32_t vc_wait[NV];                    /* audio: control steps left before the note sounds (ONSET) */
+static uint32_t vc_held[NV], vc_gate[NV];       /* audio: (ONSET) a note let go while it waited: how long it was held,
+                                                 * then how long it still plays (control steps; 0: as held) */
+static uint8_t vc_vs[NV], vs_next[NT];          /* audio: a voice's step; a track's next */
+static const int16_t VS_PAN[4] = {-32767, 32767, -16384, 16384}, VS_DET[4] = {2, -2, -1, 1};
+static uint32_t sb_used;                        /* audio: the tracks with a side signal this render (bit t) */
 
 /* the screen's numbers (the engines' text functions use them too) */
 static char *put_u(char *s, uint32_t v)         /* v in decimal at s; returns the end */
@@ -232,6 +247,9 @@ static void voice_begin(voice_t *v)             /* a note from silence */
     vc_atp[v - vc] = 0;
     v->stage = ST_ATK;
     vc_vel[v - vc] = vc_wvel[v - vc], vc_atk[v - vc] = vc_watk[v - vc];   /* (GENERATE's volume, attack) */
+    vc_vs[v - vc] = (uint8_t)(vs_next[v->trk]++ & 3u);   /* (2.2: the voice steps; ONSET: x 80 ms in control steps) */
+    vc_wait[v - vc] = (uint32_t)clamp(trk[v->trk].e_onset, 0, 100) * 110u;
+    vc_held[v - vc] = vc_gate[v - vc] = 0;
 }
 
 /* the tracks' ENV as steps, from the knobs, once a render: ATTACK a linear step (Q24 a control step), DECAY and RELEASE
@@ -265,7 +283,9 @@ static int32_t env_tick(voice_t *v)
         v->seen = v->req;
         vc_xf[v - vc] = 0;
         if (!v->want_on) {
-            if (v->stage == ST_ATK || v->stage == ST_SUS)
+            if (v->stage == ST_ATK && vc_wait[v - vc])   /* (2.2: let go while it waits: it still plays, as long as */
+                vc_held[v - vc] |= 0x80000000u;        /* it was held, after the wait) */
+            else if (v->stage == ST_ATK || v->stage == ST_SUS)
                 v->stage = ST_REL;
         } else if (v->stage == ST_OFF) {
             voice_begin(v);
@@ -280,7 +300,19 @@ static int32_t env_tick(voice_t *v)
     }
     switch (v->stage) {
     case ST_ATK: {                              /* (2.0: along it in a straight line, its level the cube) */
-        int32_t p = vc_atp[v - vc] + (vc_atk[v - vc] ? GEN_ATK[(vc_atk[v - vc] - 1u) & 7u] : c->atk);   /* (V2:
+        int32_t p;
+        if (vc_wait[v - vc]) {                  /* (2.2: ONSET, still waiting) */
+            uint32_t h = vc_held[v - vc];
+            if (!(h >> 31)) vc_held[v - vc] = h + 1u;   /* (how long held) */
+            if (!--vc_wait[v - vc] && h >> 31) vc_gate[v - vc] = (h & 0x7FFFFFFFu) + 1u;
+            e = 0;
+            break;
+        }
+        if (vc_gate[v - vc] && !--vc_gate[v - vc]) {   /* (its time held, played: let go) */
+            v->stage = ST_REL;
+            break;
+        }
+        p = vc_atp[v - vc] + (vc_atk[v - vc] ? GEN_ATK[(vc_atk[v - vc] - 1u) & 7u] : c->atk);   /* (V2:
                                                  * GENERATE's attack, or the track's) */
         if (p >= (1 << 24)) {
             p = 1 << 24;
@@ -289,9 +321,19 @@ static int32_t env_tick(voice_t *v)
         vc_atp[v - vc] = p, e = atk_cube(p);
         break;
     }
-    case ST_SUS: {                              /* DECAY to SUSTAIN, and SUSTAIN */
-        int32_t d = mulq16(e - c->sus, c->dec);
-        e -= d ? d : e > c->sus ? 1 : e < c->sus ? -1 : 0;
+    case ST_SUS: {                              /* DECAY to SUSTAIN, and SUSTAIN; (2.2) LOOP: PULSE down to nothing,
+                                                 * BREATHE to SUSTAIN, and up again (from where it is) */
+        int32_t lp = trk[v->trk % NT].e_loop, to = lp == EL_PULSE ? 0 : c->sus;
+        int32_t d = mulq16(e - to, c->dec);
+        if (vc_gate[v - vc] && !--vc_gate[v - vc]) {   /* (ONSET: its time held, played) */
+            v->stage = ST_REL;
+            break;
+        }
+        e -= d ? d : e > to ? 1 : e < to ? -1 : 0;
+        if (lp > EL_OFF && lp < NELOOP && e - to < (1 << 24) / 48) {
+            v->stage = ST_ATK;
+            vc_atp[v - vc] = atk_root(e);
+        }
         break;
     }
     case ST_REL:
@@ -329,6 +371,7 @@ static int32_t env_tick(voice_t *v)
 /* the audio ISR: n frames (a multiple of CTL, at most VB) of every sounding voice into tb[its track] (mono); returns
  * the tracks that sound (bit t), whose buffers it zeroed first; the others' are left as they were */
 #define VB 256u
+static int32_t sbuf[NT][VB];                    /* audio: (2.2) the tracks' side signals (SPREAD) */
 static void ctl_hook(void);                     /* grimm.c: a control block's notes (the main loop's asks, the
                                                  * sequencer), before the voices */
 static uint32_t voices_render(int32_t (*tb)[VB], uint32_t n)
@@ -336,6 +379,7 @@ static uint32_t voices_render(int32_t (*tb)[VB], uint32_t n)
     uint32_t b, i, k, used = 0, envd = 0;
     if (n > VB)
         return 0;
+    sb_used = 0;
     for (b = 0; b < n; b += CTL, vblock++) {
         ctl_hook();
         for (k = 0; k < NV; k++)                /* nothing sounds and nothing is asked for: nothing to do */
@@ -361,10 +405,23 @@ static uint32_t voices_render(int32_t (*tb)[VB], uint32_t n)
             }
             vc_fine = dr_fine[k] + ch_fine[k] + tn_fine(v->note);   /* (DRONE: its detune and breath, drone.c; WARP's,
                                                  * chaos.c; 2.0 SCALE's TUNING, scale.c) */
+            if (trk[t].detune > 0)              /* (2.2: DETUNE, the voice's step: up to +-24 cents) */
+                vc_fine += VS_DET[vc_vs[k] & 3u] * clamp(trk[t].detune, 0, 100) * 28 / 100;
             if (dr_gain[k] < 32767 || dr_gain_was[k] < 32767) amp0 = mulq15(amp0, dr_gain_was[k]), amp1 = mulq15(amp1, dr_gain[k]);
             dr_gain_was[k] = dr_gain[k];
             vc_at = b;
-            ENGINES[v->eng]->block(v, lfo_params(k, t, v->eng), tb[t] + b, amp0, amp1);   /* (the engine it began
+            if (trk[t].spread > 0) {            /* (2.2: SPREAD: the voice alone, then into the track and its side) */
+                int32_t vb[CTL], *o = tb[t] + b, *sd = sbuf[t] + b;
+                int32_t g = VS_PAN[vc_vs[k] & 3u] * clamp(trk[t].spread, 0, 100) / 100;
+                if (!(sb_used >> t & 1u)) {
+                    sb_used |= 1u << t;
+                    for (i = 0; i < n; i++) sbuf[t][i] = 0;
+                }
+                for (i = 0; i < CTL; i++) vb[i] = 0;
+                ENGINES[v->eng]->block(v, lfo_params(k, t, v->eng), vb, amp0, amp1);
+                for (i = 0; i < CTL; i++) o[i] += vb[i], sd[i] += ((vb[i] >> 4) * g) >> 11;   /* (+-2^19 x Q15: in 32 bits) */
+            } else
+                ENGINES[v->eng]->block(v, lfo_params(k, t, v->eng), tb[t] + b, amp0, amp1);   /* (the engine it began
                                                  * with; the LFO's on one of its knobs) */
             vc_fine = 0;
         }

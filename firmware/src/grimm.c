@@ -221,6 +221,7 @@ static inline int32_t mulq15w(int32_t a, int32_t b)
 {
     return (a >> 15) * b + (int32_t)(((uint32_t)a & 0x7FFFu) * (uint32_t)b >> 15);
 }
+static int32_t mix_gs[NT];                      /* audio: (2.2) each track's side gain (SPREAD), the last block's */
 static int32_t mix_g[NT][5];                    /* audio: each track's gains (L, R, DLY, REV, GRAIN) as the last block
                                                  * ended: this block's ramps start there */
 static void mix_add(int32_t *o, uint32_t st, const int32_t *x, int32_t g0, int32_t g1, uint32_t n)   /* o[i st] +=
@@ -284,18 +285,13 @@ static int tf_open(uint32_t t)                   /* the track filter bypassed no
     uint32_t ty = (uint32_t)clamp(trk[t].ftype, 0, NFTYPE - 1);
     return ty == FT_LP ? tgt >= 127 << 8 && cs >= (127 << 8) - 64 : ty == FT_HP && tgt <= 0 && cs <= 64;
 }
-static void trk_filter(uint32_t t, int32_t *x, uint32_t n)
+static int32_t tf_is[NT][2];                    /* audio: (2.2) the side signal's filter state (SPREAD: sbuf) */
+static int32_t tf_pass(int32_t *x, uint32_t n, int32_t cs, int32_t tgt, int32_t r, uint32_t ty, int32_t *ic)   /* the
+                                                 * filter over x from cutoff cs on; returns where cs is */
 {
-    int32_t tgt = tf_tgt(t), cs = tf_cs[t], ic1, ic2;
-    int32_t r = clamp(trk[t].res + dr_res[t] + ch_res[t], 0, 127) * 7 / 8;   /* (DRONE's on both: drone.c; WARP's) */
-    uint32_t ty = (uint32_t)clamp(trk[t].ftype, 0, NFTYPE - 1), i, j;
+    int32_t ic1 = ic[0], ic2 = ic[1];
+    uint32_t i, j;
     tsvf_t c;
-    if (tf_open(t)) {                           /* (open: as it is) */
-        tf_cs[t] = ty == FT_LP ? 127 << 8 : 0, tf_on[t] = 0;
-        return;
-    }
-    if (!tf_on[t]) tf_on[t] = 1, tf_ic[t][0] = 0, tf_ic[t][1] = ty == FT_LP ? x[0] >> 2 : 0;   /* (from bypassed: no step) */
-    ic1 = tf_ic[t][0], ic2 = tf_ic[t][1];
     if (ty == FT_LP) {
         for (i = 0; i < n; i += CTL) {
             cs += (tgt - cs) >> 3;
@@ -311,7 +307,23 @@ static void trk_filter(uint32_t t, int32_t *x, uint32_t n)
                 x[j] = soft_knee(tsvf_any(&c, k, ty, x[j] >> 2, &ic1, &ic2), 100000) << 2;
         }
     }
-    tf_cs[t] = cs, tf_ic[t][0] = ic1, tf_ic[t][1] = ic2;
+    ic[0] = ic1, ic[1] = ic2;
+    return cs;
+}
+static void trk_filter(uint32_t t, int32_t *x, uint32_t n)   /* (2.2: and the track's side signal, SPREAD's, the same) */
+{
+    int32_t tgt = tf_tgt(t), cs = tf_cs[t];
+    int32_t r = clamp(trk[t].res + dr_res[t] + ch_res[t], 0, 127) * 7 / 8;   /* (DRONE's on both: drone.c; WARP's) */
+    uint32_t ty = (uint32_t)clamp(trk[t].ftype, 0, NFTYPE - 1);
+    if (tf_open(t)) {                           /* (open: as it is) */
+        tf_cs[t] = ty == FT_LP ? 127 << 8 : 0, tf_on[t] = 0;
+        return;
+    }
+    if (!tf_on[t]) tf_on[t] = 1, tf_ic[t][0] = 0, tf_ic[t][1] = ty == FT_LP ? x[0] >> 2 : 0, tf_is[t][0] = tf_is[t][1] = 0;   /* (from
+                                                 * bypassed: no step) */
+    if (sb_used >> t & 1u) tf_pass(sbuf[t], n, cs, tgt, r, ty, tf_is[t]);
+    else tf_is[t][0] = tf_is[t][1] = 0;
+    tf_cs[t] = tf_pass(x, n, cs, tgt, r, ty, tf_ic[t]);
 }
 static void trk_peak(uint32_t t, const int32_t *x, uint32_t n)   /* its peak, roughly: HOME's candle */
 {
@@ -375,6 +387,12 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
                 mix_add(gbus, 1u, x, mix_g[t][4], g[4], n);
             }
         }
+        if (sb_used >> t & 1u) {                /* (2.2: SPREAD's side: L + it, R - it, at the track's level) */
+            int32_t gs = lv * 23 / 32;          /* (a voice at one side: about as loud as in the middle) */
+            mix_add(out, 2u, sbuf[t], mix_gs[t], gs, n);
+            mix_add(out + 1, 2u, sbuf[t], -mix_gs[t], -gs, n);
+            mix_gs[t] = gs;
+        } else mix_gs[t] = 0;
         for (k = 0; k < 5u; k++) mix_g[t][k] = g[k];
     }
 }
@@ -1153,7 +1171,7 @@ static char *put_ms(char *s, uint32_t q16)      /* a time, ms in Q16: "5 ms", "1
  * tap opens its first page, again the next (round); SYSTEM is HOME's, held */
 enum { PG_SOUND, PG_SOURCE, PG_ENV, PG_LFO, PG_SCALE, PG_CHORD, PG_SONG, PG_HOME, PG_MIX1, PG_MIX2, PG_SYSTEM,
        PG_SYS2, PG_SOUNDS, PG_PROJECTS, PG_ARP, PG_GRID, PG_PATTERN, PG_TAPE, PG_GRAIN, PG_DELAY, PG_SPACE, PG_PERFORM,
-       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, PG_RUOHCAT, PG_JAHKI, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
+       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, PG_RUOHCAT, PG_JAHKI, PG_ENV2, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
                                                  * have; in their button's round by pg_key. TRACK: gone in step 25, its
                                                  * number kept: sys_load moves its links onto HOME) */
 typedef struct {
@@ -1206,7 +1224,9 @@ static const page_t PAGES[NPAGE] = {
                                                  * piece on its own, jiehkki.c; North Sami: a glacier, to creak) */
     {"RUOHCAT", BTN_LFO, 1, 0, 1, {"AMOUNT", "SAMPLE", "SHARE", "VARY"}},   /* (2.0: LFO's fourth: RUOHCAT with
                                                  * your samples among its sounds, jiehkki.c) */
-    {"JAHKI", BTN_LFO, 1, 0, 1, {"YEAR", "SEASON", "DEPTH", "SKY"}},   /* (2.2: LFO's fifth: the year, year.c) */   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
+    {"JAHKI", BTN_LFO, 1, 0, 1, {"YEAR", "SEASON", "DEPTH", "SKY"}},   /* (2.2: LFO's fifth: the year, year.c) */
+    {"ENV 2", BTN_ENV, 1, 1, 1, {"LOOP", "ONSET", "SPREAD", "DETUNE"}},   /* (2.2: ENV's second: the envelope looping,
+                                                 * a note's wait, the voice steps, voices.c) */   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
                                                  * (tape.c), SPACE's SHIMMER (hall.c)) */
 };
 static uint32_t pg_key(uint32_t p)              /* its place in its button's round */
@@ -1266,6 +1286,8 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_SOUND: return &trk[sel].p[sel_eng()][k];
     case PG_SOURCE: return k == 0u ? &trk[sel].eng : k == 1u ? &trk[sel].latch : 0;
     case PG_ENV: return &trk[sel].env[k];
+    case PG_ENV2: return k == 0u ? &trk[sel].e_loop : k == 1u ? &trk[sel].e_onset : k == 2u ? &trk[sel].spread :
+                         &trk[sel].detune;
     case PG_SONG: return k == 0u ? &song_sect : k == 1u ? &song_pat[clamp(song_sect, 0, SONG_N - 1)] :
                          k == 2u ? &song_rep[clamp(song_sect, 0, SONG_N - 1)] : &song_mode;
     case PG_LFO: return k == 0u ? &trk[sel].lfo_rate : k == 1u ? &trk[sel].lfo_depth : k == 2u ? &trk[sel].lfo_dest :
@@ -1317,6 +1339,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_DRONE ? (k < 2u ? 100 : k == 2u ? DR_NRISE - 1 : 1) :
            pg == PG_JIEHKKI ? (k == 0u ? JK_NLEN - 1 : k == 3u ? JK_ALWAYS : 100) : pg == PG_RUOHCAT ? (k == 1u ? RU_NSMP - 1 : 100) :
            pg == PG_JAHKI ? (k == 0u ? YR_NLEN - 1 : k == 1u ? YR_NS - 1 : k == 2u ? 100 : 1) :
+           pg == PG_ENV2 ? (k == 0u ? NELOOP - 1 : 100) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : NSCR - 1) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
            pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_KMAX : k == 3u ? NPC - 1 : 1) :
@@ -1463,6 +1486,11 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
         if (k == 3u) { put_s(s, PC_NAME[clamp(v, 0, NPC - 1)]); return; }
         if (k == 1u) { usb_db(s, v, " "); return; }
         put_s(s, k == 2u ? (v ? "ON" : "OFF") : v ? "ALWAYS OFF" : "FROM SOUND");
+        return;
+    case PG_ENV2:                               /* (2.2) LOOP, ONSET, SPREAD, DETUNE */
+        if (k == 0u) put_s(s, EL_NAME[clamp(v, 0, NELOOP - 1)]);
+        else if (k == 1u) put_ms(s, (uint32_t)clamp(v, 0, 100) * 80u << 16);
+        else put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
         return;
     case PG_RUOHCAT:                            /* (2.0) AMOUNT, SAMPLE, SHARE, VARY */
         if (k == 1u) put_s(s, RU_SMP_NAME[clamp(v, 0, RU_NSMP - 1)]);

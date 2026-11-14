@@ -142,6 +142,7 @@ static uint32_t ed_commit(uint32_t o)
         if (ED_RX[0] > 1u) return ER_BAD;
         memcpy(slots[o - EO_SLOT], ED_RX, SLOT_ALL);
         slot_bg[o - EO_SLOT][0] = 0;            /* (2.0: its Biegga not in the editor's slot: the tracks' kept) */
+        memset(slot_e2[o - EO_SLOT], 0, E2_SLOT);   /* (2.2: nor its ENV 2: off) */
         slot_dirty |= 1u << (o - EO_SLOT);
         if (slots_save()) return ER_FLASH;
         put_s(m, "EDITOR: SLOT A SAVED"), m[13] = (char)('A' + o - EO_SLOT);

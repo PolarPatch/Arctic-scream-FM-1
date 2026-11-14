@@ -22,6 +22,7 @@ Built, tested (host, stress 1..3, ARM, web, the device names in a Linux containe
 | | Pictures that move | `pictures.c` `pic_anim_rows`, `gen_pictures.py` `ANIM` | built (all 38) |
 | | A picture for every factory sound (wished: no two alike) | 22 more scenes in `draw_pictures.py`; HOME keeps its stars (JAHKI's SKY only in the screensaver) | built |
 | | GOVVA, the pictures as a screensaver (wished on the FM-1) | SCREEN OFF's last, `ui.c` `ui_govva`; no text over the pictures | built |
+| 9, 13 | ENV 2: LOOP, ONSET; SPREAD, DETUNE | ENV's second page (`PG_ENV2`): `voices.c` `env_tick` (LOOP PULSE, BREATHE; ONSET, a note let go while it waits plays as held), the voice steps (`sbuf`, a side signal a track, its own filter state `tf_is`); saved in EXT (project version 11) and the slots' stream's tail (`slot_e2`), not in a sound (its record is full for FM) | built |
 | 11 | CHAOS | LFO SHAPE CHAOS (`lfo.c` `cz_step`: Lorenz, Q16, each track its own; saved as SHAPE 7, 2.1 reads DRIFT); DRONE's walks keep theirs (no free knob on DRONE) | built |
 | 15 | USB LEVEL: SPK OFF | `grimm.c` `out_stage` (`spk_g`, ramped), USB LEVEL's knob 7 .. 13 (no new setting: 2.1 reads them as 0 dB); `drone_test.py` (host: `GRIMM_USB_FEED`) | built |
 | 10 | PRESETS: listen, then go back | there already: a browse is one undo (`undo_take(UK_SND \| sel)`), EDIT + OCT-; now in MANUAL and `drone_test.py` | as it was |

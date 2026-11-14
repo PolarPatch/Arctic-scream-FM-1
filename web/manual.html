@@ -313,6 +313,11 @@ C("05", "ENV and LFO", "var(--amber)",
     ["DECAY", "How fast it falls to SUSTAIN.", "~10 ms – 10 s"],
     ["SUSTAIN", "The level it holds.", "0–100 %"],
     ["RELEASE", "How it dies away after the key.", "~10 ms – 20 s"])),
+  P("ENV 2 " + NEW, "Tap ENV again", "env", K(
+    ["LOOP", "While a note is held the envelope goes round: PULSE up over ATTACK and down over DECAY to almost nothing, BREATHE down to SUSTAIN and up again.", "OFF, PULSE, BREATHE"],
+    ["ONSET", "Each note waits this long first. Different on each track: one chord comes in track by track.", "0 – 8 s"],
+    ["SPREAD", "Each new note takes the next of four places in the stereo field: a chord opens up.", "0–100 %"],
+    ["DETUNE", "Those four places a little out of tune, up and down: a wide choir.", "0–100 %"])),
   P("LFO", "Tap LFO", "lfo", K(
     ["RATE", "How fast. It never restarts with a note, so drones keep breathing.", "60 s a cycle – 20 Hz"],
     ["DEPTH", "How much (0 = off).", "0–100"],
