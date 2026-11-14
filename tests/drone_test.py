@@ -369,6 +369,14 @@ out, a, jk2, notes = run("e2slot_on", P(4000) + ev + P(7000), 7500, {"GRIMM_SAVE
 check("slot A: its ENV 2 recalled (SPREAD 40, after 0), and after a power-on",
       jk[9300]["es"] == 0 and jk[11000]["es"] == 40 and jk2[7000]["es"] == 40, (jk[9300]["es"], jk[11000]["es"], jk2[7000]["es"]))
 
+# (2.2) the CPU guard: hot (host: GRIMM_CPU_HOT), a new note takes a release over instead of a free voice; cool, never
+ev = [(6000, f"keys {1 << 7}"), (6500, "keys 0"), (7000, f"keys {1 << 9}"), (7500, "keys 0"), (8000, f"keys {1 << 11}"),
+      (8500, "keys 0")]
+out, a, jk, notes = run("cpu_hot", ev + P(9000), 9500, {"GRIMM_CPU_HOT": "1"})
+out, a0, jk0, notes = run("cpu_cool", ev + P(9000), 9500)
+check("CPU guard: hot, new notes take a release over (no voice added); cool, never; heard either way",
+      jk[9000]["took"] >= 2 and jk0[9000]["took"] == 0 and rms(a, 8.0, 9.0) > 100, (jk[9000]["took"], jk0[9000]["took"], round(rms(a, 8, 9))))
+
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2 ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard ok")

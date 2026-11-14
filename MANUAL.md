@@ -26,7 +26,9 @@
 <img src="docs/manual/screens/boot.png" alt="The boot screen: ARCTIC SCREAM, glitched as on the banner" width="300" align="right">
 
 Arctic Scream has **four tracks, T1–T4**. Each track plays its own sound, has its own sequence and goes through the
-shared effects. **Six voices** are shared by all four.
+shared effects. **Six voices** are shared by all four. When the FM-1 is working hard (new in 2.2), a new note takes over
+the quietest note that is already fading out instead of adding one more, so heavy sounds play a little fewer notes
+rather than stutter. If it is still too much, a note is let go and the header says `CPU FULL: NOTE DROPPED`.
 
 Every track starts with **ICE WRAITH**, a Holvut sound that holds its notes: press a low key and let it howl.
 

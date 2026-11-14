@@ -723,6 +723,15 @@ static int take_from(uint32_t t, int phys, int rel, uint32_t *v)   /* track t's 
         if (lat_trk[i] == t && (!phys || trk[t].eng == ENG_PHYS)) { *v = drop_at(i); return 1; }
     return 0;
 }
+/* (2.2, after SHRUB's, written anew) the CPU guard: the blocks running hot (the last ~0.5 s's average over 85 % of a
+ * block's time), a new note takes over the quietest release (a fade, then its attack: no click) before it adds a
+ * voice; the overload guard (shed_voice) stays the last resort */
+#ifdef DINGHY_HOST                              /* (host: GRIMM_CPU_HOT=1, tests/host.c's cpu_hot_force) */
+#define CPU_HOT() (cpu_hot_force || cpu_now > BUDGET_TICKS / 20u * 17u)
+#else
+#define CPU_HOT() (cpu_now > BUDGET_TICKS / 20u * 17u)
+#endif
+static volatile uint32_t cpu_took;              /* audio: notes that took a release over, hot (tests/probe.c) */
 static int pick_voice(uint32_t t, uint32_t note, uint32_t *v)
 {
     uint32_t w, u, most = 0, from = NT;
@@ -730,6 +739,13 @@ static int pick_voice(uint32_t t, uint32_t note, uint32_t *v)
     if (!phys) {
         for (w = 0; w < NV; w++)                /* (its own release of this note: it again) */
             if (!voice_latched(w) && !voice_idle(w) && vc[w].note == note && vc[w].trk == t) { *v = w; return 1; }
+        if (CPU_HOT()) {                        /* (2.2: hot: the quietest release, any track's, before an idle one) */
+            uint32_t best = NV;
+            int32_t lv = 0x7FFFFFFF;
+            for (w = 0; w < NV; w++)
+                if (vc[w].stage == ST_REL && !voice_latched(w) && voice_level(w) < lv) lv = voice_level(w), best = w;
+            if (best < NV) { *v = best, cpu_took++; return 1; }
+        }
         for (w = 0; w < NV; w++)
             if (!voice_latched(w) && voice_idle(w)) { *v = w; return 1; }
     }
