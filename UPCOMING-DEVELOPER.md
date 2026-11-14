@@ -267,3 +267,11 @@ screen reader says them too.
 HADAL-1 sends what it plays out over USB, each part on its own channel. For Arctic Scream: JIEHKKI's four tracks
 (and the MOTIF) out on their tracks' channels while SEQ MIDI OUT is on, so another synth, a DAW or a MIDI-to-CV box
 can follow the piece; the season (JAHKI) as a CC.
+
+## Memory: the reserve (noted 2026-11-14)
+
+beta6: flash ~200 KB free, RAM (.data + .bss) 6.7 KB, the pool 1.5 KB. The biggest buffers: DELAY's line `dl_buf` 116
+KB, the voices' scratch `vx_pool` 48 KB, GRAIN's `ge_buf` 44 KB, the screen `cv_px` 30 KB, PERFORM's `pf_buf` 26 KB.
+When it gets tight (the user's choice): DELAY's line at half the sample rate (22 kHz, still 2.6 s; the echoes a little
+darker, above ~10 kHz gone): 58 KB of the pool back. Not now. The moving pictures cost ~6 KB of flash and ~70 B of
+RAM (the pictures themselves are there as stills anyway): kept.
