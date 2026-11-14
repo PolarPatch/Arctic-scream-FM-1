@@ -251,10 +251,12 @@ footer p { margin: 4px 0; }
   <table class="knobs">
     <tr><th></th><th>K1</th><th>K2</th><th>K3</th><th>K4</th></tr>
     <tr><td>ENV</td><td>ATTACK</td><td>DECAY</td><td>SUSTAIN</td><td>RELEASE</td></tr>
+    <tr><td>ENV 2</td><td>LOOP</td><td>ONSET</td><td>SPREAD</td><td>DETUNE</td></tr>
     <tr><td>LFO</td><td>RATE</td><td>DEPTH</td><td>DESTINATION</td><td>SHAPE</td></tr>
     <tr><td style="color:var(--ice)">DRONE</td><td>BORGA</td><td>STOARBMA</td><td>GOHCCAT</td><td>LATCH</td></tr>
     <tr><td style="color:var(--sky)">JIEHKKI</td><td>LENGTH</td><td>DRIFT</td><td>RUOHCAT</td><td>START</td></tr>
     <tr><td style="color:var(--sky)">RUOHCAT</td><td>AMOUNT</td><td>SAMPLE</td><td>SHARE</td><td>VARY</td></tr>
+    <tr><td style="color:var(--sky)">JAHKI</td><td>YEAR</td><td>SEASON</td><td>DEPTH</td><td>SKY</td></tr>
   </table>
   <dl>
     <dt>DESTINATION</dt><dd>PITCH, VOLUME, PAN, <b>the source's four knobs</b> by name, REV SEND, GRAIN SEND, the track's CUTOFF.</dd>
@@ -267,12 +269,13 @@ footer p { margin: 4px 0; }
     <dt>STOARBMA</dt><dd><i>Storm.</i> The tension: the filter opens, resonance and drive rise, the voices spread up to ±12 cents, the walks get deeper and faster.</dd>
     <dt>GOHCCAT</dt><dd><i>To wake.</i> OFF or 1–32 bars for the storm to reach STOARBMA, on the tempo. A drone woken from silence starts calm and rises.</dd>
   </dl>
-  <p style="margin:6px 0 4px;color:var(--label)"><b style="color:var(--fg)">LFO</b> a third time: <b style="color:var(--fg)">JIEHKKI</b> (<i>glacier</i>), a piece that plays itself; a fourth: <b style="color:var(--fg)">RUOHCAT</b>, your samples among the ice's sounds.</p>
+  <p style="margin:6px 0 4px;color:var(--label)"><b style="color:var(--fg)">LFO</b> a third time: <b style="color:var(--fg)">JIEHKKI</b> (<i>glacier</i>), a piece that plays itself; a fourth: <b style="color:var(--fg)">RUOHCAT</b>, your samples among the ice's sounds; a fifth: <b style="color:var(--fg)">JAHKI</b> (<i>year</i>), the eight Sami seasons.</p>
   <dl>
-    <dt>LENGTH</dt><dd>5, 10, 15, 25, 30, 60 MIN or ENDLESS. At the end it fades out, stops, the screen goes dark; a touch wakes it.</dd>
+    <dt>LENGTH</dt><dd>5, 10, 15, 25, 30, 60 MIN, 2, 4, 8 HOURS or ENDLESS. At the end a dusk (its tracks go one by one), it stops, the screen goes dark; a touch wakes it.</dd>
     <dt>DRIFT</dt><dd>How much moves: its own notes, a track resting, the filters. 0: only the rise and the fade (a sleep timer).</dd>
-    <dt>RUOHCAT</dt><dd><i>To creak.</i> Ice cracks, drips and deep booms around the drone, one a minute … a storm. Plays whenever it is up.</dd>
-    <dt>START</dt><dd>Nothing playing: its own notes, one a track from the SCALE, rising out of silence. Notes playing: it takes them.</dd>
+    <dt>RUOHCAT</dt><dd><i>To creak.</i> Ice cracks, drips and deep booms around the drone, one a minute … a storm; your note answered from the ice; the reverb held still now and then. Plays whenever it is up.</dd>
+    <dt>START</dt><dd>Nothing playing: its own notes, one a track from the SCALE, rising out of silence. Notes playing: it takes them. ALWAYS: again at every power-on.</dd>
+    <dt>YEAR</dt><dd>JAHKI: a year's time, 8 MIN … 24 HOURS, or STILL. SEASON: DALVI … CAKCADALVI, where it is. DEPTH: how far the seasons lean the filters, SPACE and SHIMMER (0: not at all). SKY: the season's picture on HOME.</dd>
   </dl>
 </section>
 
@@ -298,6 +301,7 @@ footer p { margin: 4px 0; }
     <dt>hold SEL + knob</dt><dd>Lock a sound value to the step. + OCT−: clear its locks.</dd>
     <dt>hold SEQ + SELECT</dt><dd>The pattern's length.</dd>
     <dt>hold REC ~1 s</dt><dd>Clear the track's pattern (undoable).</dd>
+    <dt>REC held + a knob</dt><dd>MOTION: the move recorded, then looped by itself. REC + OCT−: the track's moves cleared.</dd>
   </dl>
   <h3>HOLD SEQ + A WHITE KEY</h3>
   <div class="kb"><span><i>1</i>CLEAR</span><span><i>2</i>RANDOM</span><span><i>3</i>SHIFT ←</span><span><i>4</i>SHIFT →</span><span><i>5</i>COPY</span><span><i>6</i>PASTE</span><span><i>7</i>DOUBLE</span><span><i>8</i>MUTATE</span></div>
@@ -355,7 +359,8 @@ footer p { margin: 4px 0; }
     <tr><th></th><th>K1</th><th>K2</th><th>K3</th><th>K4</th></tr>
     <tr><td>SYSTEM</td><td>COLOUR</td><td>MIDI CHANNEL</td><td>TUNE</td><td>SCREEN OFF</td></tr>
     <tr><td>SYSTEM 2</td><td>MIDI LEARN</td><td>SEQ MIDI OUT</td><td>SAMPLES</td><td>CLOCK</td></tr>
-    <tr><td>SYSTEM 3</td><td>LATCH</td><td>USB LEVEL</td><td>MOD</td><td></td></tr>
+    <tr><td>SYSTEM 3</td><td>LATCH</td><td>USB LEVEL</td><td>MOD</td><td>PICTURE</td></tr>
+    <tr><td>SYSTEM 4</td><td>SOUND</td><td>HELP</td><td></td><td></td></tr>
   </table>
   <dl>
     <dt>COLOUR</dt><dd>ICE, AURORA, VIOLET, PLASMA, MONO (black and white, in dots).</dd>
@@ -363,7 +368,7 @@ footer p { margin: 4px 0; }
     <dt>MIDI CHANNEL</dt><dd>1-4 … 13-16, ALL &gt; SEL, CH n &gt; SEL (channel n alone, the selected track). MIDI in: USB or the TRS jack.</dd>
     <dt>CLOCK</dt><dd>INT; I+OUT (clock out over USB); USB or TRS (follows a MIDI clock: START, CONTINUE, STOP).</dd>
     <dt>LATCH</dt><dd>FROM SOUND (a sound brings its own) or ALWAYS OFF. Any page: hold SEL + OCT+ for the track's LATCH.</dd>
-    <dt>USB LEVEL</dt><dd>The computer's recording, −12 … +24 dB (0 dB: the volume knob at the top).</dd>
+    <dt>USB LEVEL</dt><dd>The computer's recording, −12 … +24 dB (0 dB: the volume knob at the top); past +24 dB with SPK OFF, the speaker quiet while the computer listens.</dd>
     <dt>SAMPLES</dt><dd>CLEAR, then OCT+: the four sample slots emptied.</dd>
     <dt>OCT− + OCT+</dt><dd>Together, on SYSTEM 2: reset CPU PEAK and USB REC DROPS.</dd>
   </dl>
