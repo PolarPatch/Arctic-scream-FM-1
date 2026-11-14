@@ -155,3 +155,5 @@ See [docs/BUILDING.md](docs/BUILDING.md).
 ## Licence
 
 GPL-3.0. See [LICENSE](LICENSE). Bugs and questions: open an issue on this repository.
+
+You can also try Arctic Scream in the browser, no flashing needed, in the free community [FM-1 Emulator](https://fm1-emulator.atst.tools/).
