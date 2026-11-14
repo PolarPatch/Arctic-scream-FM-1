@@ -165,7 +165,7 @@ static void ui_head_text(void)
     else if (page == PG_HOME) tempo_text(ui_hr, "> ");   /* (Main: the tempo; a MIDI clock's: "EXT 120.4") */
     else if (P->btn == BTN_SEL) put_u(put_s(ui_hr, "T"), sel + 1u);
     else if (page == PG_ARP) put_s(ui_hr, trk[sel].latch ? "LATCH" : "");   /* (Arp: LATCH, if on) */
-    else if (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3) put_s(ui_hr, "V" APP_VER);   /* (System: the
+    else if (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3 || page == PG_SYS4) put_s(ui_hr, "V" APP_VER);   /* (System: the
                                                  * version) */
     else if (page == PG_FMALGO || page == PG_FMOP) put_u(put_s(ui_hr, "OP "), (uint32_t)clamp(fm_op, 0, 5) + 1u);   /* (EditFM:
                                                  * the operator) */
@@ -365,6 +365,9 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         if (k == 3u) { put_s(S->val, v == CK_OUT ? "I+OUT" : CK_NAME[clamp(v, 0, CK_N - 1)]); return; }
         put_s(S->val, k == 2u ? (v ? SMP_FACT_N ? "RESTORE" : "CLEAR" : "KEEP") : k ? (v ? "ON" : "OFF") :
               v == LEARN_CLEAR ? "CLEAR" : LEARN_NAME[clamp(v, 0, 2)]);
+        return;
+    case PG_SYS4:                               /* (2.2) SOUND: "PHONES", "SPKR"; HELP: ON, OFF */
+        put_s(S->val, k == 0u ? (v ? "SPKR" : "PHONES") : v ? "ON" : "OFF");
         return;
     case PG_SYS3:                               /* LATCH: FROM SOUND, ALWAYS OFF; USB LEVEL: -12DB .. +24DB;
                                                  * (1.5.2) MOD OUT: OFF, ON */
@@ -577,7 +580,7 @@ static void ui_tint(uint32_t pg)
     case PG_MIX1: case PG_MIX2: case PG_TRACK: a = BW_CYAN, b = BW_GREEN, c = BW_VIOLET, x = BW_MAGENTA; break;
     case PG_SONG: a = BW_GOLD, b = BW_MAGENTA, c = BW_PERIWINKLE, x = BW_CYAN; break;
     case PG_SOUNDS: case PG_PROJECTS: a = BW_BLUE, b = BW_AMBER, c = BW_TEAL, x = BW_MAGENTA; break;
-    case PG_SYSTEM: case PG_SYS2: case PG_SYS3: a = BW_SKY, b = BW_PERIWINKLE, c = BW_BLUE, x = BW_CYAN; break;
+    case PG_SYSTEM: case PG_SYS2: case PG_SYS3: case PG_SYS4: a = BW_SKY, b = BW_PERIWINKLE, c = BW_BLUE, x = BW_CYAN; break;
     default:
         ui_d = UI_D0, ui_m = UI_M0, ui_l = UI_L0, ui_acc = ui_hd = ui_acc_user;
         return;
@@ -2294,6 +2297,15 @@ static void sys3_row(int32_t y, const char *l, const char *v)
     ui_text(PX0 + 6, y + 4, l, 1, UI_L);
     ui_text(PX0 + 210 - 8 * ui_len(v), y + 4, v, 1, UI_W);
 }
+static void pic_sys4(void)                      /* (2.2) SYSTEM 4: SOUND (the speaker's curve), HELP */
+{
+    ui_caption("SOUND, HELP", 0);
+    sys3_row(40, "SOUND", spk_mode ? "SPEAKER" : "HEADPHONES");
+    ui_text(PX0 + 6, 57, spk_mode ? "LOWS OFF, LOW MIDS UP" : "THE WHOLE RANGE", 1, UI_M);
+    ui_text(PX0 + 6, 68, "USB AS EVER", 1, UI_M);
+    sys3_row(82, "HELP", help_on ? "ON" : "OFF");
+    ui_text(PX0 + 6, 99, help_on ? "A KNOB TURNED SAYS WHAT IT DOES" : "NO HELP LINES", 1, UI_M);
+}
 static void pic_sys3(void)                      /* SYSTEM 3: LATCH, what it does; the combo for the track's;
                                                  * (Arctic Scream p0larpatch) USB LEVEL, the computer's recording */
 {
@@ -2359,6 +2371,7 @@ static void ui_pic_draw(void)
     case PG_SYSTEM: pic_system(); return;
     case PG_SYS2: pic_sys2(); return;
     case PG_SYS3: pic_sys3(); return;
+    case PG_SYS4: pic_sys4(); return;
     default: pic_notbuilt(); return;
     }
 }
@@ -2409,8 +2422,9 @@ static uint32_t ui_pic_key(void)
     if (page == PG_JIEHKKI)                     /* (2.0: its caption, the time a second; playing or not, its notes) */
         UI_H(jk.run), UI_H(jk.ended), UI_H(jk_left(fm1_ms) / 1000u), UI_H(jk.run ? (fm1_ms - jk.t0) / 1000u : 0u),
             UI_H(tracks_latched()), UI_H(playing);
-    if (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3) {   /* the settings, the links */
+    if (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3 || page == PG_SYS4) {   /* the settings, the links */
         UI_H(set.col), UI_H(set.mch), UI_H(set.tune), UI_H(set.scr), UI_H(set.out), UI_H(set.nlk), UI_H(set.latch), UI_H(set.usb);
+        UI_H(set.sys4);
         for (k = 0; k < NLINK * 5u; k++) UI_H(set.lk[k / 5u][k % 5u]);
     }
     if (PAGES[page].btn == BTN_SEQ) {           /* the pattern, its settings, the cursor, the step playing */

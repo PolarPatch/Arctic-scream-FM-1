@@ -22,7 +22,7 @@ static int32_t mo_was[MO_N];                    /* (mo_home: the knob's value, k
 
 static int mo_ok(uint32_t pg, uint32_t k)       /* a knob that can move by itself */
 {
-    if (pg == PG_SYSTEM || pg == PG_SYS2 || pg == PG_SYS3 || PAGES[pg].btn == BTN_SAVE || pg == PG_PERFORM ||
+    if (pg == PG_SYSTEM || pg == PG_SYS2 || pg == PG_SYS3 || pg == PG_SYS4 || PAGES[pg].btn == BTN_SAVE || pg == PG_PERFORM ||
         PAGES[pg].btn == BTN_SEQ || pg == PG_SONG || pg == PG_SOURCE || pg == PG_TRACK)
         return 0;
     if ((pg == PG_SOUND && sel_eng() == ENG_FM && k == 0u) || (pg == PG_DRONE && k == 3u) || (pg == PG_JIEHKKI && k == 3u))

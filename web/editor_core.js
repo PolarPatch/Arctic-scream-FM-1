@@ -538,7 +538,8 @@ export const FT_NAMES = ["LP", "HP", "BP"];
 export const SET_V1 = 168;                                   // V1.0's settings (version 1, no CLOCK)
 export const SET_V2 = 169;                                   // V2's version 2 (CLOCK, no LATCH)
 export const SET_V3 = 170;                                   // version 3's (LATCH, no USB LEVEL: 0 dB)
-export const SET_V4 = 171;                                   // version 4's, 1.4 .. 1.5.1 (no MOD OUT: OFF); version 5's: 172
+export const SET_V4 = 171;                                   // version 4's, 1.4 .. 1.5.1 (no MOD OUT: OFF)
+export const SET_V5 = 172;                                   // version 5's, 1.5.2 .. 2.0 (no SYSTEM 4); version 6's (2.1): 173
 export const MCH_NAMES = [...Array.from({ length: 13 }, (_, k) => `${k + 1}-${k + 4}`), "ALL > SEL",
   ...Array.from({ length: 16 }, (_, k) => `CH ${k + 1} > SEL`)];
 export const CLOCK_NAMES = ["INT", "INT+OUT", "USB", "TRS"];
@@ -562,7 +563,7 @@ export function checkBackup(b, info) {                       // -> [{id, data, w
   const sizes = new Map(backupObjects(info).map(([id, size, what]) => [id, [size, what]]));
   return b.objects.map((o) => {
     const d = unb64(o.data), s = sizes.get(o.id);
-    const oldset = o.id === OBJ.SET && (d.length === SET_V1 || d.length === SET_V2 || d.length === SET_V3 || d.length === SET_V4) && s && s[0] > d.length;   // (an
+    const oldset = o.id === OBJ.SET && (d.length === SET_V1 || d.length === SET_V2 || d.length === SET_V3 || d.length === SET_V4 || d.length === SET_V5) && s && s[0] > d.length;   // (an
                                                              // older Arctic Scream's settings: 1.0's, V2's version 2: taken)
     if (!s || (d.length !== s[0] && !oldset) || crc32(d) !== o.crc) throw new EditorError(`object ${o.id} is damaged or not this firmware's`, 90);
     return { id: o.id, data: d, what: s[1] };

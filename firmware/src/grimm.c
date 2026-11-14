@@ -432,6 +432,20 @@ static void live_mix(int32_t *out, uint32_t n)  /* audio: the input into the mix
 static const int32_t USB_G[USB_LMAX + 1u] = {1027, 2051, 4092, 8165, 16291, 32505, 64856};
 static volatile uint8_t usb_lvl = USB_L0;       /* set.usb, for the audio (sys_sync) */
 static int32_t spk_g = 4096;                    /* (2.2) the speaker's and the jack's gain (Q12), ramped: SPK OFF */
+static volatile uint8_t spk_mode, help_on = 1;  /* (2.2) SYSTEM 4: SOUND SPEAKER; HELP (ui.c) */
+/* (2.2, after HADAL-1's SOUND MODE, Polystellarflow's: written anew) SOUND SPEAKER: the speaker and the jack (never the
+ * USB) through a curve for the FM-1's little speaker: the lows it cannot play taken away (a one-pole high-pass, ~110
+ * Hz: they only rattle it and eat the headroom), the low mids lifted a little (~200 .. 450 Hz, about +3 dB: a drone
+ * still deep). Shifts only; faded in and out over ~50 ms */
+static int32_t sm_hp[2], sm_x[2], sm_a[2], sm_b[2], sm_g;
+static inline int32_t spk_eq(int32_t x, uint32_t c)
+{
+    int32_t s = sm_hp[c] + x - sm_x[c], y;
+    sm_x[c] = x, sm_hp[c] = s - (s >> 6);       /* (high-pass: x (1 - 2^-6) a sample, ~110 Hz) */
+    sm_a[c] += (x - sm_a[c]) >> 5, sm_b[c] += (x - sm_b[c]) >> 4;   /* (~220 Hz, ~450 Hz: the band between) */
+    y = sm_hp[c] + ((sm_b[c] - sm_a[c]) >> 1);
+    return x + (((y - x) * sm_g) >> 12);        /* (sm_g: 0 .. 4096, the curve's share) */
+}
 #define OUT_LIM 32440                           /* (-0.09 dBFS) */
 static int32_t out_env;                         /* audio: the limiter's peak (its gain: OUT_LIM / it) */
 static uint32_t isqrt32(uint32_t v)             /* floor(sqrt(v)) */
@@ -485,6 +499,8 @@ static void out_stage(int32_t *out, uint32_t n)
         int32_t x = clamp(out[2u * i], -500000, 500000), y = clamp(out[2u * i + 1u], -500000, 500000);
         int32_t l = (x * g) >> 12, r = (y * g) >> 12;
         side_lim(&l, &r, &se);
+        if (sm_g != (spk_mode ? 4096 : 0)) sm_g += spk_mode ? 2 : -2;   /* (2.2: SOUND SPEAKER, ~50 ms) */
+        if (sm_g) l = spk_eq(l, 0), r = spk_eq(r, 1);
         out_lim(&l, &r, &env);
         if (rec) {                              /* (the USB recording: MASTER at its top, USB LEVEL's gain) */
             int32_t ul = (int32_t)(((int64_t)x * ug) >> 12), ur = (int32_t)(((int64_t)y * ug) >> 12);
@@ -1142,9 +1158,12 @@ static struct {
                                                  * -12 .. +24 dB; USB_L0 (0 dB) before; (2.2) 7 .. 13 the same, SPK
                                                  * OFF (USB_KMAX) */
     uint8_t mod;                                /* (1.5.2, SET_VER 5) SYSTEM 3's MOD OUT: 0 OFF (before), 1 ON */
+    uint8_t sys4;                               /* (2.2, SET_VER 6) SYSTEM 4: bit 0 SOUND SPEAKER (0 HEADPHONES, before),
+                                                 * bit 1 HELP OFF (0 ON) */
 } set;
-#define SET_VER 5u
+#define SET_VER 6u
 static uint32_t set_dirty, set_t;               /* the settings changed, when */
+static volatile int32_t sy_snd, sy_help;       /* (2.2) SYSTEM 4's knobs: SOUND (1 SPEAKER), HELP (1 ON) */
 static volatile int32_t sy_col, sy_mch, sy_tune, sy_scr, sy_learn, sy_out, sy_fac, sy_clk, sy_latch, sy_usb, sy_mod;   /* SYSTEM's,
                                                  * SYSTEM 2's, SYSTEM 3's knobs (sy_fac: SAMPLES, 1 RESTORE: OCT+
                                                  * writes the factory ones) */
@@ -1239,7 +1258,7 @@ static char *put_ms(char *s, uint32_t q16)      /* a time, ms in Q16: "5 ms", "1
  * tap opens its first page, again the next (round); SYSTEM is HOME's, held */
 enum { PG_SOUND, PG_SOURCE, PG_ENV, PG_LFO, PG_SCALE, PG_CHORD, PG_SONG, PG_HOME, PG_MIX1, PG_MIX2, PG_SYSTEM,
        PG_SYS2, PG_SOUNDS, PG_PROJECTS, PG_ARP, PG_GRID, PG_PATTERN, PG_TAPE, PG_GRAIN, PG_DELAY, PG_SPACE, PG_PERFORM,
-       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, PG_RUOHCAT, PG_JAHKI, PG_ENV2, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
+       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, PG_RUOHCAT, PG_JAHKI, PG_ENV2, PG_SYS4, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
                                                  * have; in their button's round by pg_key. TRACK: gone in step 25, its
                                                  * number kept: sys_load moves its links onto HOME) */
 typedef struct {
@@ -1293,7 +1312,9 @@ static const page_t PAGES[NPAGE] = {
     {"RUOHCAT", BTN_LFO, 1, 0, 1, {"AMOUNT", "SAMPLE", "SHARE", "VARY"}},   /* (2.0: LFO's fourth: RUOHCAT with
                                                  * your samples among its sounds, jiehkki.c) */
     {"JAHKI", BTN_LFO, 1, 0, 1, {"YEAR", "SEASON", "DEPTH", "SKY"}},   /* (2.2: LFO's fifth: the year, year.c) */
-    {"ENV 2", BTN_ENV, 1, 1, 1, {"LOOP", "ONSET", "SPREAD", "DETUNE"}},   /* (2.2: ENV's second: the envelope looping,
+    {"ENV 2", BTN_ENV, 1, 1, 1, {"LOOP", "ONSET", "SPREAD", "DETUNE"}},
+    {"SYSTEM 4", BTN_HOME, 1, 0, 0, {"SOUND", "HELP", "", ""}},   /* (2.2: after SYSTEM 3: the speaker's sound, the
+                                                 * help on the screen) */   /* (2.2: ENV's second: the envelope looping,
                                                  * a note's wait, the voice steps, voices.c) */   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
                                                  * (tape.c), SPACE's SHIMMER (hall.c)) */
 };
@@ -1319,8 +1340,8 @@ static uint32_t page = PG_HOME;
 static uint32_t next_page(uint32_t b)           /* button b tapped: its first page, or (on one of its) the next */
 {
     uint32_t p, first = NPAGE, nx = NPAGE, on = PAGES[page].btn == b && pg_on(page);
-    if (b == BTN_HOME && (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3))
-        return page == PG_SYSTEM ? PG_SYS2 : page == PG_SYS2 ? PG_SYS3 : PG_SYSTEM;
+    if (b == BTN_HOME && (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3 || page == PG_SYS4))
+        return page == PG_SYSTEM ? PG_SYS2 : page == PG_SYS2 ? PG_SYS3 : page == PG_SYS3 ? PG_SYS4 : PG_SYSTEM;
     for (p = 0; p < NPAGE; p++) {
         if (PAGES[p].btn != b || !pg_on(p)) continue;
         if (first == NPAGE || pg_key(p) < pg_key(first)) first = p;
@@ -1386,6 +1407,7 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_SYSTEM: return k == 0u ? &sy_col : k == 1u ? &sy_mch : k == 2u ? &sy_tune : &sy_scr;
     case PG_SYS2: return k == 0u ? &sy_learn : k == 1u ? &sy_out : k == 2u ? &sy_fac : &sy_clk;
     case PG_SYS3: return k == 0u ? &sy_latch : k == 1u ? &sy_usb : k == 2u ? &sy_mod : &pc_mode;
+    case PG_SYS4: return k == 0u ? &sy_snd : k == 1u ? &sy_help : 0;
     case PG_LOOP: return &trk[sel].hw_x[k & 3u];
     case PG_AIR: return k == 0u ? &dl_pp : k == 1u ? &rv_shim : 0;
     case PG_JIEHKKI: return k == 0u ? &jk_len : k == 1u ? &jk_drift : k == 2u ? &jk_ruo : &jk_go;
@@ -1410,7 +1432,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_ENV2 ? (k == 0u ? NELOOP - 1 : 100) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : NSCR - 1) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
-           pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_KMAX : k == 3u ? NPC - 1 : 1) :
+           pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_KMAX : k == 3u ? NPC - 1 : 1) : pg == PG_SYS4 ? 1 :
            pg == PG_FMALGO ? (k == 0u ? 31 : k == 1u ? 7 : k == 2u ? 5 : 99) :
            pg == PG_FMOP ? (k ? 99 : 31) : pg == PG_MIX2 ? (k == 1u ? NFTYPE - 1 : k == 2u ? 1 : 127) :
            pg == PG_MASTER ? (k == 2u ? NFTYPE - 1 : k == 3u ? NMPOS - 1 : 127) :
@@ -1549,6 +1571,9 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
         if (k == 0u) put_s(s, JK_LEN_NAME[clamp(v, 0, JK_NLEN - 1)]);
         else if (k < 3u) put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
         else put_s(s, v >= JK_ALWAYS ? "ALWAYS" : v ? "ON" : "OFF");   /* (2.2: ALWAYS) */
+        return;
+    case PG_SYS4:                               /* (2.2) SOUND, HELP */
+        put_s(s, k == 0u ? (v ? "SPEAKER" : "HEADPHONES") : v ? "ON" : "OFF");
         return;
     case PG_SYS3:                               /* (2.1: its PICTURE; the others as the slabs say them, ui.c) */
         if (k == 3u) { put_s(s, PC_NAME[clamp(v, 0, NPC - 1)]); return; }
@@ -1928,7 +1953,7 @@ static void learn_end(const char *m)
 static void learn_knob(uint32_t pg, uint32_t k) /* a knob turned while LEARN waits: the parameter (SYSTEM's, SAVE's,
                                                  * PERFORM's: none) */
 {
-    if (!learn_st || pg == PG_SYSTEM || pg == PG_SYS2 || pg == PG_SYS3 || PAGES[pg].btn == BTN_SAVE || pg == PG_PERFORM ||
+    if (!learn_st || pg == PG_SYSTEM || pg == PG_SYS2 || pg == PG_SYS3 || pg == PG_SYS4 || PAGES[pg].btn == BTN_SAVE || pg == PG_PERFORM ||
         !knob_param(pg, k))
         return;
     if (pg == PG_HOME && k == 0u) pg = PG_MIX1; /* (HOME's VOLUME: the track's LEVEL, as MIXER 1's) */
@@ -2094,6 +2119,7 @@ static void sys_sync(void)
     uint8_t col = (uint8_t)clamp(sy_col, 0, 4), mch = (uint8_t)clamp(sy_mch, 0, MCH_MAX), scr = (uint8_t)clamp(sy_scr, 0, NSCR - 1);
     uint8_t out = (uint8_t)clamp(sy_out, 0, 1), clk = (uint8_t)clamp(sy_clk, 0, CK_N - 1), la = (uint8_t)clamp(sy_latch, 0, 1);
     uint8_t ul = (uint8_t)clamp(sy_usb, 0, (int32_t)USB_KMAX), md = (uint8_t)clamp(sy_mod, 0, 1);
+    uint8_t s4 = (uint8_t)((sy_snd ? 1u : 0u) | (sy_help ? 0u : 2u));
     uint32_t n, t;
     if (mch != set.mch || (set.out && !out)) mo_flush = 1;
     if (mch != set.mch)
@@ -2104,15 +2130,16 @@ static void sys_sync(void)
                     midi_held[n] &= (uint8_t)~(0x11u << t);
                 }
     if (tn != set.tune || col != set.col || mch != set.mch || scr != set.scr || out != set.out || clk != set.clk ||
-        la != set.latch || ul != set.usb || md != set.mod) {
+        la != set.latch || ul != set.usb || md != set.mod || s4 != set.sys4) {
         set.tune = tn, set.col = col, set.mch = mch, set.scr = scr, set.out = out, set.clk = clk, set.latch = la;
-        set.usb = ul, set.mod = md;
+        set.usb = ul, set.mod = md, set.sys4 = s4;
         set_dirty = 1, set_t = fm1_ms;
     }
     ck_mode = set.clk, rt_usb_fast = set.clk == CK_USB;   /* (CLOCK: the audio ISR's, platform.c's) */
     ui_acc_user = UI_ACCENTS[set.col & 3u], cv_mono = set.col == 4u;   /* (MONO: ICE's accent, all of it black and white) */
     tune_f = (set.tune * 23666 + set.tune * set.tune * 7) / 10000;   /* (2^(c / 1200) - 1, x 4096) */
     mo_seq = set.out, snd_latch_off = set.latch, usb_lvl = set.usb;
+    spk_mode = set.sys4 & 1u, help_on = !(set.sys4 & 2u);   /* (2.2: SYSTEM 4) */
 }
 static void sys_load(void)                      /* the settings at power-on into SYSTEM's knobs (version 19's: the
                                                  * octave alone; steps 20..24's: no ver, their links to HOME's T1..T4
@@ -2120,33 +2147,38 @@ static void sys_load(void)                      /* the settings at power-on into
 {
     int8_t o = 0;
     uint32_t i;
-    set.usb = USB_L0, set.mod = 0;              /* (the older ones' below: no USB LEVEL, 0 dB; no MOD OUT, OFF) */
+    set.usb = USB_L0, set.mod = 0, set.sys4 = 0;   /* (the older ones' below: no USB LEVEL, 0 dB; no MOD OUT, OFF; no
+                                                 * SYSTEM 4: HEADPHONES, HELP ON) */
     if (!settings_load(&set, sizeof set))
         ;
-    else if (!settings_load(&set, sizeof set - 1u))   /* (SET_VER 4's, 1.5.1 and before: no MOD OUT) */
-        set.mod = 0;
-    else if (!settings_load(&set, sizeof set - 2u))   /* (SET_VER 3's: no USB LEVEL) */
-        set.usb = USB_L0, set.mod = 0;
-    else if (!settings_load(&set, sizeof set - 3u))   /* (V2's before SET_VER 3: no LATCH, OFF) */
-        set.latch = 0, set.usb = USB_L0, set.mod = 0;
-    else if (!settings_load(&set, sizeof set - 4u))   /* (V1.0's: no CLOCK, INT) */
-        set.clk = CK_INT, set.latch = 0, set.usb = USB_L0, set.mod = 0;
-    else if (!settings_load(&set, sizeof set - 5u))   /* (steps 20..24's: no version either) */
-        set.ver = 0, set.clk = CK_INT, set.latch = 0, set.usb = USB_L0, set.mod = 0;
+    else if (!settings_load(&set, sizeof set - 1u))   /* (SET_VER 5's, 2.0 and before: no SYSTEM 4) */
+        set.sys4 = 0;
+    else if (!settings_load(&set, sizeof set - 2u))   /* (SET_VER 4's, 1.5.1 and before: no MOD OUT) */
+        set.mod = 0, set.sys4 = 0;
+    else if (!settings_load(&set, sizeof set - 3u))   /* (SET_VER 3's: no USB LEVEL) */
+        set.usb = USB_L0, set.mod = 0, set.sys4 = 0;
+    else if (!settings_load(&set, sizeof set - 4u))   /* (V2's before SET_VER 3: no LATCH, OFF) */
+        set.latch = 0, set.usb = USB_L0, set.mod = 0, set.sys4 = 0;
+    else if (!settings_load(&set, sizeof set - 5u))   /* (V1.0's: no CLOCK, INT) */
+        set.clk = CK_INT, set.latch = 0, set.usb = USB_L0, set.mod = 0, set.sys4 = 0;
+    else if (!settings_load(&set, sizeof set - 6u))   /* (steps 20..24's: no version either) */
+        set.ver = 0, set.clk = CK_INT, set.latch = 0, set.usb = USB_L0, set.mod = 0, set.sys4 = 0;
     else {
         set.oct = settings_load(&o, 1) ? 0 : o;
         set.tune = 0, set.col = set.mch = set.scr = set.out = set.nlk = 0, set.ver = 0, set.clk = CK_INT, set.latch = 0;
-        set.usb = USB_L0, set.mod = 0;
+        set.usb = USB_L0, set.mod = 0, set.sys4 = 0;
     }
     if (set.mch > MCH_MAX) set.mch = 0;
     if (set.clk >= CK_N) set.clk = CK_INT;
     if (set.latch > 1u) set.latch = 0;
     if (set.usb > USB_KMAX) set.usb = USB_L0;   /* (2.2: 7 .. 13 SPK OFF; 2.1 and before read them as 0 dB) */
     if (set.mod > 1u) set.mod = 0;
+    if (set.sys4 > 3u) set.sys4 = 0;
     if (set.oct < -2 || set.oct > 2) set.oct = 0;
     if (set.nlk > NLINK) set.nlk = 0;
     sy_col = set.col, sy_mch = set.mch, sy_tune = set.tune, sy_scr = set.scr, sy_out = set.out, sy_clk = set.clk;
     sy_latch = set.latch, sy_usb = set.usb, sy_mod = set.mod;
+    sy_snd = set.sys4 & 1u, sy_help = !(set.sys4 & 2u);
     sys_sync();
     set_dirty = 0;
     if (!set.ver)                               /* (steps 20..24's; V1.0's are version 1: as they are) */
