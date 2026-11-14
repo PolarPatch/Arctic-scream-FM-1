@@ -22,6 +22,7 @@ Built, tested (host, stress 1..3, ARM, web, the device names in a Linux containe
 | | Pictures that move | `pictures.c` `pic_anim_rows`, `gen_pictures.py` `ANIM` | built (all 38) |
 | | A picture for every factory sound (wished: no two alike) | 22 more scenes in `draw_pictures.py`; HOME keeps its stars (JAHKI's SKY only in the screensaver) | built |
 | | GOVVA, the pictures as a screensaver (wished on the FM-1) | SCREEN OFF's last, `ui.c` `ui_govva`; no text over the pictures | built |
+| 15 | USB LEVEL: SPK OFF | `grimm.c` `out_stage` (`spk_g`, ramped), USB LEVEL's knob 7 .. 13 (no new setting: 2.1 reads them as 0 dB); `drone_test.py` (host: `GRIMM_USB_FEED`) | built |
 | 10 | PRESETS: listen, then go back | there already: a browse is one undo (`undo_take(UK_SND \| sel)`), EDIT + OCT-; now in MANUAL and `drone_test.py` | as it was |
 
 On the FM-1 (beta1): the JAHKI page at 65 % CPU, 69 % peak (the whole picture moved once per strip of the screen, and

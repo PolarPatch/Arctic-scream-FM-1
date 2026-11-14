@@ -621,7 +621,7 @@ FM-1, not the project.
 |---|---|---|---|---|
 | SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA, MONO) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF |
 | SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES | CLOCK (INT, I+OUT, USB, TRS) |
-| SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB) | MOD OUT (OFF, ON) | PICTURE (CARD, SKY, OFF) |
+| SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB, and each with SPK OFF) | MOD OUT (OFF, ON) | PICTURE (CARD, SKY, OFF) |
 
 - **COLOUR:** pick the one that matches your FM-1. **MONO** (new in 2.0) turns the whole screen black and white, the
   greys as a fine pattern of dots, as on an old one-bit screen. The header stays clean so the sound's name reads.
@@ -647,6 +647,9 @@ FM-1, not the project.
 - **USB LEVEL** (SYSTEM 3, new in 1.4): how loud a computer records the FM-1, in 6 dB steps from −12 to +24 dB. `0 DB` is
   the volume knob all the way up; higher steps make quiet drones louder in the recording, and a limiter keeps them from
   clipping. The volume knob itself only sets the speaker and the headphones.
+  **SPK OFF (new in 2.2):** turn past `+24 DB` for the same seven levels with `SPK OFF`: while a computer takes the sound
+  over USB, the speaker and the headphone jack go quiet, so you hear it once, from the computer. When the computer
+  stops, the speaker comes back. The knob's slab says `SPK OFF`; the row above it, the level.
 - **MOD OUT** (SYSTEM 3, new in 1.5.2): sends how each track moves out over USB as MIDI CC, 50 times a second, on the
   track's own channel (as its notes, MIDI CHANNEL): **CC 102** is how loud the track plays now (0 silent, 127 full) and
   **CC 103** is where its LFO is (64 the middle). Use it to drive lights, motors, a Max patch or another synth's filter

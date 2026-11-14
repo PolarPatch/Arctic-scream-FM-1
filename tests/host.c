@@ -163,8 +163,15 @@ static uint32_t stk_irq(void) { return 0u; }
 #define STK_IRQ_SZ 0u
 static uint32_t host_rec_from = 1, host_rec_to;   /* (GRIMM_USB_REC=FROM,TO: a computer reads the USB audio from FROM to TO ms) */
 static int usb_recording(void) { return fm1_ms >= host_rec_from && fm1_ms < host_rec_to; }
-static int usb_feeding(void) { return 0; }      /* (no USB audio ring here) */
-static void usb_feed(const int32_t *x, uint32_t n) { (void)x; (void)n; }
+static uint32_t host_feed;                      /* (2.2: GRIMM_USB_FEED=1: the computer takes the sound while it records) */
+static int32_t host_usb_pk;                     /* (the USB sound's peak since the last probe: "usbpk MS PEAK") */
+static int usb_feeding(void) { return host_feed && usb_recording(); }   /* (no USB audio ring here: its peak only) */
+static void usb_feed(const int32_t *x, uint32_t n)
+{
+    uint32_t i;
+    for (i = 0; i < 2u * n; i++)
+        if ((x[i] < 0 ? -x[i] : x[i]) > host_usb_pk) host_usb_pk = x[i] < 0 ? -x[i] : x[i];
+}
 static void compat_exit(void);                  /* (tests/compat.c) */
 static int save_flash_write(uint32_t i, uint32_t off, const void *p, uint32_t n)   /* NOR: a write only clears bits */
 {
@@ -481,8 +488,10 @@ static void platform_poll(void)                 /* one call = one millisecond */
         } else if (script[step].kind == HK_CLOCK) {
             hg.t0 = (uint64_t)script[step].t * 24000u, hg.k = 0, hg.bpm10 = script[step].a;
             hg.end = script[step].t + script[step].b, hg.src = (uint32_t)script[step].src;
-        } else if (script[step].kind == HK_PROBE)
+        } else if (script[step].kind == HK_PROBE) {
             host_probe();
+            if (host_feed) printf("usbpk %u %d\n", fm1_ms, (int)host_usb_pk), host_usb_pk = 0;
+        }
         else if (script[step].st >= 0xF8u)      /* (realtime: the clock's ring, at its time) */
             rt_in_at(script[step].st, (uint32_t)script[step].src, rt_now());
         else if (script[step].st) {
@@ -574,6 +583,7 @@ int main(int argc, char **argv)
         host_store[0] = 1, host_store[1] = (uint8_t)n, host_store[2] = (uint8_t)(n >> 8);
     }
     if (getenv("GRIMM_USB_REC")) sscanf(getenv("GRIMM_USB_REC"), "%u,%u", &host_rec_from, &host_rec_to);
+    host_feed = getenv("GRIMM_USB_FEED") != 0;
     if (getenv("GRIMM_SAVE_IN")) {              /* (tests/compat.c: the save sectors an older Arctic Scream wrote) */
         FILE *f = fopen(getenv("GRIMM_SAVE_IN"), "rb");
         (void)save_flash(0);

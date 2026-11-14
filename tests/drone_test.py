@@ -300,6 +300,16 @@ pr = probes(out)
 check("PRESETS: turned three times, then EDIT + OCT-: the sound before the browse back", pr[7400][2] != pr[6200][2] and
       pr[8600][2] == pr[6200][2], (pr[6200][2], pr[7400][2], pr[8600][2]))
 
+# (2.2) USB LEVEL's SPK OFF (SYSTEM 3, KNOB 2 past +24 DB): while a computer takes the sound over USB, the speaker and
+# the jack quiet (no click: a ramp), the computer still gets it; after, the speaker back
+ev = [(5000, f"down {HOME}"), (5700, f"up {HOME}"), (6000, f"btn {HOME}"), (6300, f"btn {HOME}"), (6600, f"enc {K2} 7"),
+      (7000, f"keys {1 << 7}"), (8500, "probe"), (11500, "probe"), (13500, "probe"), (14000, "keys 0")]
+out, a, jk, notes = run("spk_off", ev, 14200, env={"GRIMM_USB_FEED": "1", "GRIMM_USB_REC": "9000,12000"})
+pk = {int(m.group(1)): int(m.group(2)) for m in re.finditer(r"^usbpk (\d+) (\d+)$", out, re.M)}
+b, d, f = rms(a, 7.8, 8.8), rms(a, 9.5, 11.8), rms(a, 12.6, 13.6)
+check("SPK OFF: the speaker quiet while the computer takes the sound, back after; USB has it",
+      b > 100 and d < 0.01 * b and f > 0.3 * b and pk.get(11500, 0) > 1000, (round(b), round(d), round(f), pk))
+
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF ok")

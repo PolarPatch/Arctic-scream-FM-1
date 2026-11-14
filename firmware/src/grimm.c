@@ -407,8 +407,13 @@ static void live_mix(int32_t *out, uint32_t n)  /* audio: the input into the mix
  * USB LEVEL moves it -12 .. +24 dB (USB_G, Q12: 4092 at 0 dB, MASTER's top) */
 #define USB_L0 2u                               /* USB LEVEL 0 dB (MASTER's top) */
 #define USB_LMAX 6u
+#define USB_KMAX 13u                            /* (2.2, after SHRUB's USB LEVEL, written anew) USB LEVEL's knob: 7 .. 13
+                                                 * the same levels, SPK OFF: the speaker and the jack quiet while a
+                                                 * computer takes the sound over USB (heard there, not twice) */
+#define usb_lv(v) ((uint32_t)(v) > USB_LMAX ? (uint32_t)(v) - USB_LMAX - 1u : (uint32_t)(v))   /* (its level, 0 .. 6) */
 static const int32_t USB_G[USB_LMAX + 1u] = {1027, 2051, 4092, 8165, 16291, 32505, 64856};
 static volatile uint8_t usb_lvl = USB_L0;       /* set.usb, for the audio (sys_sync) */
+static int32_t spk_g = 4096;                    /* (2.2) the speaker's and the jack's gain (Q12), ramped: SPK OFF */
 #define OUT_LIM 32440                           /* (-0.09 dBFS) */
 static int32_t out_env;                         /* audio: the limiter's peak (its gain: OUT_LIM / it) */
 static uint32_t isqrt32(uint32_t v)             /* floor(sqrt(v)) */
@@ -454,8 +459,10 @@ static inline void out_lim(int32_t *l, int32_t *r, int32_t *env)
 }
 static void out_stage(int32_t *out, uint32_t n)
 {
-    int32_t g = out_gain(), env = out_env, ue = usb_env, ug = USB_G[usb_lvl <= USB_LMAX ? usb_lvl : USB_L0], u[64], se = side_env;
+    int32_t g = out_gain(), env = out_env, ue = usb_env, ug = USB_G[usb_lvl <= USB_KMAX ? usb_lv(usb_lvl) : USB_L0], u[64];
+    int32_t se = side_env, sg = spk_g, st;
     uint32_t i, rec = (uint32_t)usb_feeding();
+    st = rec && usb_lvl > USB_LMAX && usb_lvl <= USB_KMAX ? 0 : 4096;   /* (2.2: SPK OFF while the computer takes it) */
     for (i = 0; i < n; i++) {
         int32_t x = clamp(out[2u * i], -500000, 500000), y = clamp(out[2u * i + 1u], -500000, 500000);
         int32_t l = (x * g) >> 12, r = (y * g) >> 12;
@@ -468,8 +475,11 @@ static void out_stage(int32_t *out, uint32_t n)
             if ((i & 31u) == 31u || i + 1u == n)
                 usb_feed(u, (i & 31u) + 1u);
         }
+        if (sg != st) sg += sg < st ? 4 : -4;   /* (~23 ms: no click) */
+        if (sg < 4096) l = (l * sg) >> 12, r = (r * sg) >> 12;
         out[2u * i] = l, out[2u * i + 1u] = r;
     }
+    spk_g = sg;
     out_env = env;
     usb_env = ue;
     side_env = se;
@@ -1043,7 +1053,8 @@ static struct {
     uint8_t latch;                              /* (SET_VER 3) SYSTEM 3's LATCH: 0 FROM SOUND (before: so), 1
                                                  * ALWAYS OFF */
     uint8_t usb;                                /* (Arctic Scream p0larpatch, SET_VER 4) SYSTEM 3's USB LEVEL: 0 .. 6,
-                                                 * -12 .. +24 dB; USB_L0 (0 dB) before */
+                                                 * -12 .. +24 dB; USB_L0 (0 dB) before; (2.2) 7 .. 13 the same, SPK
+                                                 * OFF (USB_KMAX) */
     uint8_t mod;                                /* (1.5.2, SET_VER 5) SYSTEM 3's MOD OUT: 0 OFF (before), 1 ON */
 } set;
 #define SET_VER 5u
@@ -1308,7 +1319,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_JAHKI ? (k == 0u ? YR_NLEN - 1 : k == 1u ? YR_NS - 1 : k == 2u ? 100 : 1) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : NSCR - 1) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
-           pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_LMAX : k == 3u ? NPC - 1 : 1) :
+           pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_KMAX : k == 3u ? NPC - 1 : 1) :
            pg == PG_FMALGO ? (k == 0u ? 31 : k == 1u ? 7 : k == 2u ? 5 : 99) :
            pg == PG_FMOP ? (k ? 99 : 31) : pg == PG_MIX2 ? (k == 1u ? NFTYPE - 1 : k == 2u ? 1 : 127) :
            pg == PG_MASTER ? (k == 2u ? NFTYPE - 1 : k == 3u ? NMPOS - 1 : 127) :
@@ -1375,12 +1386,14 @@ static char *tune_text(char *s, int32_t v)      /* TUNE: "+00", "-12" */
     s[1] = (char)('0' + v / 10 % 10), s[2] = (char)('0' + v % 10), s[3] = 0;
     return s + 3;
 }
-static char *usb_db(char *s, int32_t v, const char *sp)   /* USB LEVEL: "-12DB" .. "+24DB" (sp between); returns s */
+static char *usb_db(char *s, int32_t v, const char *sp)   /* USB LEVEL: "-12DB" .. "+24DB" (sp between), (2.2) " SPK
+                                                 * OFF" after it on 7 .. 13; returns s */
 {
-    int32_t d = (clamp(v, 0, (int32_t)USB_LMAX) - (int32_t)USB_L0) * 6;
+    int32_t u = clamp(v, 0, (int32_t)USB_KMAX), d = ((int32_t)usb_lv(u) - (int32_t)USB_L0) * 6;
     char *e = s;
     if (d) *e++ = d < 0 ? '-' : '+';
-    put_s(put_s(put_u(e, (uint32_t)(d < 0 ? -d : d)), sp), "DB");
+    e = put_s(put_s(put_u(e, (uint32_t)(d < 0 ? -d : d)), sp), "DB");
+    if (u > (int32_t)USB_LMAX) put_s(e, " SPK OFF");
     return s;
 }
 static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on page pg, as the screen shows it */
@@ -1983,7 +1996,7 @@ static void sys_sync(void)
     int8_t tn = (int8_t)clamp(sy_tune, -50, 50);
     uint8_t col = (uint8_t)clamp(sy_col, 0, 4), mch = (uint8_t)clamp(sy_mch, 0, MCH_MAX), scr = (uint8_t)clamp(sy_scr, 0, NSCR - 1);
     uint8_t out = (uint8_t)clamp(sy_out, 0, 1), clk = (uint8_t)clamp(sy_clk, 0, CK_N - 1), la = (uint8_t)clamp(sy_latch, 0, 1);
-    uint8_t ul = (uint8_t)clamp(sy_usb, 0, (int32_t)USB_LMAX), md = (uint8_t)clamp(sy_mod, 0, 1);
+    uint8_t ul = (uint8_t)clamp(sy_usb, 0, (int32_t)USB_KMAX), md = (uint8_t)clamp(sy_mod, 0, 1);
     uint32_t n, t;
     if (mch != set.mch || (set.out && !out)) mo_flush = 1;
     if (mch != set.mch)
@@ -2031,7 +2044,7 @@ static void sys_load(void)                      /* the settings at power-on into
     if (set.mch > MCH_MAX) set.mch = 0;
     if (set.clk >= CK_N) set.clk = CK_INT;
     if (set.latch > 1u) set.latch = 0;
-    if (set.usb > USB_LMAX) set.usb = USB_L0;
+    if (set.usb > USB_KMAX) set.usb = USB_L0;   /* (2.2: 7 .. 13 SPK OFF; 2.1 and before read them as 0 dB) */
     if (set.mod > 1u) set.mod = 0;
     if (set.oct < -2 || set.oct > 2) set.oct = 0;
     if (set.nlk > NLINK) set.nlk = 0;

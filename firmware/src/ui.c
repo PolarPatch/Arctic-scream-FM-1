@@ -368,7 +368,10 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         return;
     case PG_SYS3:                               /* LATCH: FROM SOUND, ALWAYS OFF; USB LEVEL: -12DB .. +24DB;
                                                  * (1.5.2) MOD OUT: OFF, ON */
-        if (k == 1u) { usb_db(S->val, v, ""); return; }
+        if (k == 1u) {                      /* (2.2: SPK OFF says itself; its level on the page above) */
+            if (v > (int32_t)USB_LMAX) put_s(S->val, "SPK OFF"); else usb_db(S->val, v, "");
+            return;
+        }
         if (k == 2u) { put_s(S->val, v ? "ON" : "OFF"); return; }
         if (k == 3u) { put_s(S->val, PC_NAME[clamp(v, 0, NPC - 1)]); return; }   /* (2.1: PICTURE) */
         put_s(S->val, v ? "OFF" : "SOUND");
