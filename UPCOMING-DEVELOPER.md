@@ -218,3 +218,47 @@ Both Adrift and SHRUB run on both of the chip's cores; ECHOFIELD renders half it
 across the two cores (T1, T2 here; T3, T4 there) or the effects (SPACE, SHIMMER, GRAIN) moved over, the screen and
 the main loop never waiting on the audio. Its headroom pays for 8, 11 and 12. Boot the core, share the buffers safely,
 measure both (SYSTEM 2's CPU per core), and keep a fallback to one core if the second fails to start.
+
+## From HADAL-1 (noted 2026-11-14)
+
+[HADAL-1](https://github.com/sparky480v/hadal-1) (Polystellarflow, MPL-2.0, on fm1-base, after Charles Vestal's AMB-1):
+generative dark ambient that plays itself, fifteen worlds and forty pictures. Its worlds, choirs and engine stay its
+own; these six fit, written anew and credited in `LICENSING.md` when they land.
+
+### 17. SOUND MODE: SPEAKER or HEADPHONES
+
+HADAL-1 starts tuned for the FM-1's little speaker and opens up on headphones. For Arctic Scream a setting (SYSTEM):
+SPEAKER, a gentle shelf that takes away the lows the speaker cannot play (they only make it rattle and eat the
+headroom) and lifts the low mids a little so a drone still feels deep; HEADPHONES, as now, the whole range. The jack
+and USB never get the speaker's curve.
+
+### 18. MOTIF: a short tune that comes back, changed
+
+HADAL-1's motif returns now and then, a little different each time. For JIEHKKI: a few notes from the SCALE, born
+with the piece, coming back over the drone on one track every few minutes, each time a note moved, a step longer,
+transposed by the root's move; DRIFT how much it changes. Something in a long piece to recognise.
+
+### 19. Pictures that melt into each other
+
+HADAL-1's pictures melt into the next. For Arctic Scream: GOVVA's screensaver and JAHKI's seasons crossfade from one
+picture to the next (a dither dissolve over a few seconds, cell by cell, cheap on the 16-colour cells) instead of
+changing at once.
+
+### 20. SWELL: hold to build, let go to collapse
+
+HADAL-1's swell grows while a button is held and collapses when let go; the mod wheel (CC 1) does it too. For Arctic
+Scream's PERFORM layer (FX held): a SWELL trick, the level, SPACE's send and the filters rising together while held,
+falling back over a breath when let go; CC 1 the same by hand.
+
+### 21. Help on the screen, and a first-start guide
+
+HADAL-1 explains each control on screen as it is used, and shows a short guide at its first start. For Arctic Scream:
+a HELP setting (SYSTEM) that puts a short line under a knob's value as it turns ("BORGA: SLOW RANDOM WALKS"); and a
+few pages at the very first start (turn PRESETS, hold a key, LFO three times for JIEHKKI), any key turning them. The
+screen reader says them too.
+
+### 22. MIDI out with roles
+
+HADAL-1 sends what it plays out over USB, each part on its own channel. For Arctic Scream: JIEHKKI's four tracks
+(and the MOTIF) out on their tracks' channels while SEQ MIDI OUT is on, so another synth, a DAW or a MIDI-to-CV box
+can follow the piece; the season (JAHKI) as a CC.
