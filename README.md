@@ -31,6 +31,28 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
   - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
   - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
+- **New in 2.1:**
+  - **Jiekna** (ice), a tenth sound source: ice that sings when struck or bowed, a loop tuned to the note, from a
+    knock to an endless drone, a string or a hollow pipe, clean or brittle as glass.
+  - **JAHKI** (year; press LFO five times): the Arctic's year turning slowly under the music, through the Sami year's
+    eight seasons, from DALVI's polar night to GEASSI's midnight sun and CAKCA's autumn fog, each leaning the filters,
+    the reverb and SHIMMER a little. A year can take 8 minutes or 24 hours, or stand STILL.
+  - **ENV 2** (press ENV again): LOOP (the envelope breathing or pulsing while a note is held), ONSET (each note waits
+    up to 8 s: one chord comes in track by track), SPREAD and DETUNE (the notes spread across the stereo field).
+  - **CHAOS**, a new LFO shape: a strange attractor, smooth and never repeating.
+  - **MOTION:** hold REC and turn a knob; the move is recorded and plays by itself, over and over.
+  - **SWELL** (hold FX, press G3, or the mod wheel): the whole sound rises, and falls back when you let go.
+  - **JIEHKKI:** LENGTH up to 8 hours, START ALWAYS (a piece at every power-on), its dusk (the tracks going one by one),
+    a MOTIF of its own coming back changed, and its notes out over MIDI.
+  - **RUOHČAT:** the ice answers your notes from far off, and now and then holds its breath (the reverb's tail still).
+  - **A picture for every sound**, 38 of them, moving: the aurora breathes, snow drifts, water glitters. **GOVVA**, the
+    pictures as a screensaver, melting from one into the next.
+  - **EVOLVE**, a new PLAY MODE: the pattern changes a little each time round.
+  - **Two cores:** the reverb runs on the FM-1's second processor core, more room for the drones. A **CPU guard** lets
+    heavy sounds play fewer notes rather than stutter.
+  - **SYSTEM 4:** SOUND SPEAKER (a curve for the little speaker) and HELP (a knob turned says what it does); a short
+    guide at the very first start. **SPK OFF** on USB LEVEL: the speaker quiet while a computer records.
+  - PRESETS can be undone (EDIT + OCT−: the sound before you browsed). The keys light the piece's notes.
 - **New in 2.0: the drone machine.** The names are North Sami, checked in the dictionary at sanit.oahpa.no.
   - **JIEHKKI** (glacier; press LFO three times): set a LENGTH, 5 to 60 minutes or ENDLESS, and START. With nothing playing, the FM-1 plays a whole piece by itself, a note on each track from your SCALE, rising out of silence, moving as slowly as a glacier (DRIFT), and dying out at the end. Then it stops, the screen goes dark and it stays silent until you touch it. With DRIFT at 0 it is a sleep timer for your own drone.
   - **RUOHČAT** (to creak), on the same page: the ice around the drone, cracks, drips and a deep boom now and then, from one a minute to a storm.

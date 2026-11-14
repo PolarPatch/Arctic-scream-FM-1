@@ -189,12 +189,13 @@ C("01", "Getting around", "var(--ice)",
     ["PLAY", "Starts and stops all four sequences (following a MIDI clock: at its next pulse).", ""],
     ["REC", "Record on or off. On SONG: arms song recording.", ""],
     ["REC: hold ~1 s", "Clears the selected track's pattern (undoable).", ""],
+    ["REC held + a knob " + NEW, "MOTION: the knob's move is taken until you let go of REC, then plays by itself, over and over. Four lanes; REC + OCT− clears the track's.", "up to 2 min"],
     ["EDIT + OCT− / OCT+", "Undo / redo the last edit.", ""],
     ["SEL + OCT+", "The selected track's LATCH on or off, from any page (off lets go of its latched notes).", ""],
     ["Key lights", "Latched and arpeggiated notes stay lit, and their lights follow OCT− and OCT+.", ""],
     ["OCT− + OCT+", "Sets SYSTEM 2's CPU PEAK and USB REC DROPS to 0.", ""],
   ], ["Saving is automatic: stopped and silent, your work saves itself and comes back at power-on. Under a latched drone it saves after 30 s left alone; a slot or a sound you save is written at once (a short gap in the sound). Knobs speed up: slowly for fine steps, fast to sweep."]),
-  P("Buttons: tap and hold", "What each button opens", "", [], [], `<div class="btns"><div><b>HOME</b>HOME → MIXER 1 → MIXER 2. Hold: SYSTEM (then HOME: SYSTEM 2, SYSTEM 3).</div><div><b>EDIT</b>SOUND → SOURCE (FM: SOUND → FM ALGO → FM OP → SOURCE; Holvut: SOUND → LOOP → SOURCE).</div><div><b>ENV</b>ENV.</div><div><b>LFO</b>LFO → DRONE → JIEHKKI → RUOHČAT.</div><div><b>SEL</b>SCALE → CHORD. Hold and let go: chord mode on or off.</div><div><b>ARP</b>ARP. Hold: the arpeggiator on or off for the track.</div><div><b>SEQ</b>GRID → PATTERN SETTINGS. Hold + white keys: sequencer tools; hold + SELECT: pattern length.</div><div><b>SAVE</b>SOUNDS → PROJECTS. Hold + white keys 1–4: recall slots A–D, 5–8: save into them.</div><div><b>GLO</b>SONG. Hold + white keys 1–4: mute T1–T4, 5–8: solo them.</div><div><b>FX</b>TAPE → GRAIN → DELAY → SPACE → MASTER → DRIVE → AIR. Hold: PERFORM (+ black keys: GENERATE).</div></div>`)]),
+  P("Buttons: tap and hold", "What each button opens", "", [], [], `<div class="btns"><div><b>HOME</b>HOME → MIXER 1 → MIXER 2. Hold: SYSTEM (then HOME: SYSTEM 2, SYSTEM 3).</div><div><b>EDIT</b>SOUND → SOURCE (FM: SOUND → FM ALGO → FM OP → SOURCE; Holvut: SOUND → LOOP → SOURCE).</div><div><b>ENV</b>ENV → ENV 2.</div><div><b>LFO</b>LFO → DRONE → JIEHKKI → RUOHČAT → JAHKI.</div><div><b>SEL</b>SCALE → CHORD. Hold and let go: chord mode on or off.</div><div><b>ARP</b>ARP. Hold: the arpeggiator on or off for the track.</div><div><b>SEQ</b>GRID → PATTERN SETTINGS. Hold + white keys: sequencer tools; hold + SELECT: pattern length.</div><div><b>SAVE</b>SOUNDS → PROJECTS. Hold + white keys 1–4: recall slots A–D, 5–8: save into them.</div><div><b>GLO</b>SONG. Hold + white keys 1–4: mute T1–T4, 5–8: solo them.</div><div><b>FX</b>TAPE → GRAIN → DELAY → SPACE → MASTER → DRIVE → AIR. Hold: PERFORM (+ black keys: GENERATE).</div></div>`)]),
 
 C("02", "HOME and the mixers", "var(--aurora)",
   "Each track's wave glows on HOME as it plays, under a starry sky. Tap HOME again for the mixers: MIXER 1 draws each track as a curtain of standing ribbons, MIXER 2 as a ribbon across the stereo field.", [
@@ -218,7 +219,7 @@ C("02", "HOME and the mixers", "var(--aurora)",
 C("03", "Sources: EDIT", "var(--violet)",
   "EDIT opens the track's SOUND page, the source's four knobs, then SOURCE (a Holvut track has LOOP between them). Nine sources, each with its own picture.", [
   P("SOURCE", "Tap EDIT twice (Holvut: three times)", "source", K(
-    ["SOURCE", "Picks the track's source.", "VA, FM, SAMPLE, VOICE, WHEEL, PHYS, PHASE, Holvut, Biegga"],
+    ["SOURCE", "Picks the track's source.", "VA, FM, SAMPLE, VOICE, WHEEL, PHYS, PHASE, Holvut, Biegga, Jiekna"],
     ["LATCH", "Holds the notes: a key starts its note, the same key again stops it.", "OFF / ON"], ["", "", ""], ["", "", ""])),
   P("Holvut, the feedback voice", "EDIT, source Holvut", "holvut", K(
     ["FEEDBACK", "Wakes the loop. Below the threshold it sleeps (THE LOOP: ASLEEP); past ~2/3 it grows out of silence and howls by itself (HOWLING). Its last steps (120–127) overblow: the howl leaps up the overtones.", "0–100 %"],
@@ -281,7 +282,14 @@ C("03", "Sources: EDIT", "var(--violet)",
     ["TONE", "The rush under it: a far storm … snow hissing past.", "~150 Hz – ~10 kHz"],
     ["SNOW", "Grains of snow ticking on the ice.", "0–100 %"]),
     ["Biegga is North Sami (and Lule Sami) for wind. Noise sings at the note like wind in a gap, so a chord of Biegga is a chord the wind sings. About as light on the processor as VA.",
-     "The factory sound BIEGGA (TEXTURE) holds its note, gusts, and its storm rises over 4 bars."])]),
+     "The factory sound BIEGGA (TEXTURE) holds its note, gusts, and its storm rises over 4 bars."]),
+  P("Jiekna, the singing ice " + NEW, "EDIT, source Jiekna", "jiekna", K(
+    ["STRIKE", "A bow (soft noise all along) at the bottom, a strike (a burst at the start) at the top, both between.", "BOWED … STRUCK"],
+    ["RING", "How long it sings: a knock, seconds, and at the top ENDLESS, an endless drone of ice that never clips.", "0–100 %"],
+    ["HOLLOW", "Lower half a string (every harmonic), upper half a pipe (the odd ones, ice over water); darker to brighter in each.", "STRING … PIPE"],
+    ["BRITTLE", "Pulls the overtones apart: a clean string, glass, a bell, metal.", "0–100 %"]),
+    ["Jiekŋa is North Sami for ice. Noise is played into a loop tuned to the note: ice that sings when struck or bowed, glass rubbed at the rim. About as light as Biegga.",
+     "After Romain Guy's Adrift (a burst into a delay tuned to the note), written anew."])]),
 
 C("04", "DRONE: a sound that lives on its own", "var(--teal)",
   "Press LFO twice. DRONE makes a held sound move by itself, slowly, and never the same way twice. The knobs have North Sami names.", [
@@ -293,7 +301,7 @@ C("04", "DRONE: a sound that lives on its own", "var(--teal)",
     ["At 0 % nothing is added. The settings are saved with the sound; the seven Holvut presets start with BORGA on."]),
   P("JIEHKKI " + NEW, "Tap LFO three times", "jiehkki", K(
     ["LENGTH", "How long the piece plays.", "5, 10, 15, 25, 30, 60 MIN, ENDLESS"],
-    ["DRIFT", "How much moves: its own notes step through the scale, the root goes to its fourth or fifth and home, a track rests a while, the filters open over the first minutes and close as it dies out. 0: nothing moves, the piece only rises and dies out (a sleep timer).", "0–100 %"],
+    ["DRIFT", "How much moves (and, new in 2.1, how often its MOTIF comes back: a few notes of its own over the drone, a little changed each time): its own notes step through the scale, the root goes to its fourth or fifth and home, a track rests a while, the filters open over the first minutes and close as it dies out. 0: nothing moves, the piece only rises and dies out (a sleep timer).", "0–100 %"],
     ["RUOHČAT (to creak)", "The ice around the drone: cracks, drips and a deep boom now and then, from about one a minute to a storm. Plays whenever it is up.", "0–100 %"],
     ["START", "The piece. With nothing playing it plays its own notes, one a track from the SCALE, the tracks coming in one after another, heard from the first seconds; with notes playing it takes them and moves the mix.", "OFF / ON"]),
     ["Jiehkki is North Sami for glacier. Over its last fifth everything fades out; then the notes are let go, the sequencer stops, the screen goes dark and the FM-1 stays silent until you touch it.",
@@ -313,11 +321,16 @@ C("05", "ENV and LFO", "var(--amber)",
     ["DECAY", "How fast it falls to SUSTAIN.", "~10 ms – 10 s"],
     ["SUSTAIN", "The level it holds.", "0–100 %"],
     ["RELEASE", "How it dies away after the key.", "~10 ms – 20 s"])),
+  P("ENV 2 " + NEW, "Tap ENV again", "env", K(
+    ["LOOP", "While a note is held the envelope goes round: PULSE up over ATTACK and down over DECAY to almost nothing, BREATHE down to SUSTAIN and up again.", "OFF, PULSE, BREATHE"],
+    ["ONSET", "Each note waits this long first. Different on each track: one chord comes in track by track.", "0 – 8 s"],
+    ["SPREAD", "Each new note takes the next of four places in the stereo field: a chord opens up.", "0–100 %"],
+    ["DETUNE", "Those four places a little out of tune, up and down: a wide choir.", "0–100 %"])),
   P("LFO", "Tap LFO", "lfo", K(
     ["RATE", "How fast. It never restarts with a note, so drones keep breathing.", "60 s a cycle – 20 Hz"],
     ["DEPTH", "How much (0 = off).", "0–100"],
     ["DESTINATION", "What it moves. VOLUME swings around the track's VOLUME, so a track at 0 still sounds on its peaks: mute it with GLO + keys 1–4.", "PITCH, VOLUME, PAN, the source's four knobs, REV SEND, GRAIN SEND, CUTOFF"],
-    ["SHAPE", "Its shape.", "SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT"]))]),
+    ["SHAPE", "Its shape. CHAOS (new in 2.1): a strange attractor, smooth and never repeating, each track its own.", "SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT, CHAOS"]))]),
 
 C("06", "Scales, chords and the arpeggiator", "var(--pink)",
   "SEL opens SCALE and CHORD; hold SEL and let go for chord mode: one key, a whole chord. ARP opens the arpeggiator.", [
@@ -420,8 +433,8 @@ C("09", "Destroy: FX", "var(--plasma)",
 
 C("10", "Perform and GENERATE: hold FX", "var(--amber)",
   "Hold FX for a moment and PERFORM appears. Each trick lasts while you hold its white key; the sequencer keeps running, and you land back in time when you let go. The black keys start GENERATE.", [
-  P("PERFORM", "Hold FX + white keys", "perform", [], ["FREEZE is a toggle: tap it to hold the grain cloud, tap again to let go."],
-    keys([["F2", "FREEZE"], ["G2", "REV THROW"], ["A2", "ECHO THROW"], ["B2", "TAPE STOP"], ["C3", "REVERSE"], ["D3", "FILTER DOWN"], ["E3", "FILTER UP"], ["F3", "STUTTER"]])),
+  P("PERFORM", "Hold FX + white keys", "perform", [], ["FREEZE is a toggle: tap it to hold the grain cloud, tap again to let go.", "SWELL (G3, new in 2.1): held, the whole sound rises over ~4 s (louder, more SPACE, the filters opening); let go, it falls back. The mod wheel (CC 1) does it by hand."],
+    keys([["F2", "FREEZE"], ["G2", "REV THROW"], ["A2", "ECHO THROW"], ["B2", "TAPE STOP"], ["C3", "REVERSE"], ["D3", "FILTER DOWN"], ["E3", "FILTER UP"], ["F3", "STUTTER"], ["G3", "SWELL " + NEW]])),
   P("GENERATE", "Hold FX + black keys", "generate", [
     ["F#2 G#2 A#2 C#3", "Tapped: GENERATE on or off for T1–T4. The track plays by itself: random notes of the SCALE (chord mode: chords), on the tempo, resting now and then.", ""],
     ["D#3", "MODE. DRIFT: few long, soft notes. PULSE: a melody on eighths. STORM: dense sixteenths, wild volume.", "DRIFT / PULSE / STORM"],
@@ -448,9 +461,13 @@ C("11", "System: hold HOME", "var(--sky, #4fb3e8)",
     ["The processor load, NOW and PEAK, and USB REC DROPS: gaps in the sound sent to a computer. OCT− + OCT+ sets them to 0."]),
   P("SYSTEM 3", "Hold HOME, then HOME twice", "system3", K(
     ["LATCH", "FROM SOUND: a sound you load brings its own LATCH (the seven Holvut sounds latch). ALWAYS OFF: loading sets it off; EDIT's LATCH and SEL + OCT+ still switch it.", "FROM SOUND / ALWAYS OFF"],
-    ["USB LEVEL", "How loud a computer records the FM-1. 0 DB: the volume knob all the way up; higher makes quiet drones louder in the recording, a limiter keeps them from clipping.", "−12 … +24 DB"],
-    ["MOD " + NEW, "MOD OUT: each track's level (CC 102) and LFO (CC 103) out over USB 50 times a second, on the track's channel. For lights, motors, Max or another synth.", "OFF / ON"],
+    ["USB LEVEL", "How loud a computer records the FM-1. 0 DB: the volume knob all the way up; higher makes quiet drones louder in the recording, a limiter keeps them from clipping. Past +24 DB, the same with SPK OFF (new in 2.1): the speaker and the jack quiet while the computer takes the sound.", "−12 … +24 DB, SPK OFF"],
+    ["MOD", "MOD OUT: each track's level (CC 102) and LFO (CC 103) out over USB 50 times a second, on the track's channel; (2.1) JAHKI's season as CC 104 on T1's. For lights, motors, Max or another synth.", "OFF / ON"],
     ["", "", ""])),
+  P("SYSTEM 4 " + NEW, "Hold HOME, then HOME three times", "", K(
+    ["SOUND", "HEADPHONES: the whole range. SPEAKER: a curve for the little speaker, the deepest lows taken away, the low mids lifted. The speaker and the jack only, never the USB sound.", "HEADPHONES / SPEAKER"],
+    ["HELP", "A knob turned shows a short line under the picture saying what it does. The very first start shows a three-page guide.", "ON / OFF"],
+    ["", "", ""], ["", "", ""])),
   P("MIDI, USB audio and good to know", "", "", [
     ["MIDI in", "USB (the MIDI port is called <b>Arctic Scream</b> too), or the TRS jack with a TRS-to-DIN adapter (type A). Notes play the tracks, a CC its MIDI LEARN link; ALL NOTES OFF lets go of MIDI's notes; aftertouch pushes Holvut's FEEDBACK.", ""],
     ["USB audio", "Class compliant, no driver: the FM-1 shows up on the computer, phone or tablet as <b>Arctic Scream</b>, an audio input, 16-bit stereo at 44.1 or 48 kHz, the whole mix at SYSTEM 3's USB LEVEL (the volume knob sets the speaker, not the recording). Solo each track (GLO + keys 5–8) to record them one by one.", ""],

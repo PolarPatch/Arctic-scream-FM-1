@@ -69,7 +69,8 @@ P = lambda *ts: [(t, "probe") for t in ts]
 # JIEHKKI: LFO x 3, LENGTH 5 MIN (KNOB 1 from 15 MIN, 2 down), START (KNOB 4); a key after its end
 ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (6800, f"enc {K1} -1"), (6900, f"enc {K1} -1"),
       (7000, f"enc {K4} 1"), (330000, "keys 1"), (330300, "keys 0"), (331000, "keys 1"), (334000, "keys 0")]
-out, a, jk, notes = run("piece", ev + P(6900, 9000, 30000, 200000, 320000, 330500, 334000), 336000)
+out, a, jk, notes = run("piece", ev + P(6900, 9000, 30000, 200000, 240000, 270000, 285000, 300000, 320000, 330500,
+                                         334000), 336000)
 check("LENGTH 5 MIN, START: T1 at once, the others to come", [n.split(":")[0] for n in notes[9000]] == ["1"],
       notes[9000])
 check(".. heard from its first seconds", rms(a, 11, 13) > rms(a, 60, 70) * 0.25, (rms(a, 11, 13), rms(a, 60, 70)))
@@ -78,6 +79,14 @@ check("LENGTH 5 MIN, START: its own notes, one a track", jk[30000]["run"] == 1 a
 check(".. rising out of silence", rms(a, 7, 8) < rms(a, 60, 70) * 0.5, (rms(a, 7, 8), rms(a, 60, 70)))
 check(".. heard in its middle", rms(a, 150, 160) > 300, rms(a, 150, 160))
 check(".. dying out over its last minutes", rms(a, 290, 295) < rms(a, 200, 210) * 0.5, (rms(a, 290, 295), rms(a, 200, 210)))
+lit = {int(m.group(1)): int(m.group(2), 16) for m in re.finditer(r"^probe (\d+) .* lit ([0-9a-f]+)", out, re.M)}
+want = sum(1 << (int(n.split(":")[1]) - 41) for n in notes[30000] if 41 <= int(n.split(":")[1]) < 68)
+check("(2.2) the keys light the piece's own notes (every track's on the keys)", lit[30000] == want and want,
+      (hex(lit[30000]), notes[30000]))
+trk = lambda ms: sorted(n.split(":")[0] for n in notes[ms])
+check("(2.2) its dusk: the tracks go one by one, the highest first, T1 alone at the last",
+      trk(240000) == ["1", "2", "3", "4"] and trk(270000) == ["1", "2", "3"] and trk(285000) == ["1", "2"] and
+      trk(300000) == ["1"], [trk(m) for m in (240000, 270000, 285000, 300000)])
 check(".. silent at its end (5 min)", rms(a, 309, 328) < 3, rms(a, 309, 328))
 check(".. its notes let go, START OFF, the screen dark", not notes[320000] and jk[320000]["go"] == 0 and
       jk[320000]["ended"] == 1 and jk[320000]["scr"] == 1, (notes[320000], jk[320000]))
@@ -103,6 +112,14 @@ check("START with a note on: its own none, the note as it is", jk[15000]["own"] 
 ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}")] + [(6800 + 20 * i, f"enc {K3} 5") for i in range(20)]
 out, a, jk, notes = run("ruo", ev, 30000)
 check("RUOHCAT 100 %: the ice heard, nothing played", rms(a, 8, 30) > 100 and peak(a) < 32000, (rms(a, 8, 30), peak(a)))
+# (2.2) the ice holds its breath: RUOHCAT 100 %, a held chord into SPACE; SPACE held a while now and then, let go again
+ev = [(6000, "keys 145"), (6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}")] + \
+     [(6800 + 20 * i, f"enc {K3} 5") for i in range(20)]
+out, a, jk, notes = run("hold", ev + P(*range(8000, 120000, 500)), 120000)
+held = [t for t in sorted(jk) if jk[t]["hold"]]
+spans = [(t, u) for t, u in zip([held[0]] + [h for h, g in zip(held[1:], held) if h - g > 500], [g for h, g in zip(held[1:], held) if h - g > 500] + [held[-1]])] if held else []
+check("(2.2) RUOHCAT 100 %: SPACE held now and then (3 .. 10 s each), let go between",
+      2 <= len(spans) and all(2500 <= u - t <= 10500 for t, u in spans if u < 119000) and len(held) < len(jk) / 2, spans)
 
 
 def freq(a, t0, t1, lo, hi):                    # the strongest frequency between lo and hi Hz (interpolated)
@@ -156,6 +173,31 @@ out, a, jk, notes = run("load", P(3000), 3500, {"GRIMM_SAVE_IN": str(sv)})
 check("power-on: all of it as saved (version 9)", jk[3000]["bg"][0][0] == 84 and jk[3000]["len"] == 4 and
       jk[3000]["drift"] == 70 and jk[3000]["ruo"] == 20 and jk[3000]["tun"] == 1 and jk[3000]["go"] == 0, jk[3000])
 
+# (2.2) JAHKI (LFO x 5): YEAR 8 MIN (from 1 HOUR, 2 down), DEPTH 100 %: the seasons turn (a minute each), leaning
+ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (6800, f"btn {LFO}"), (7000, f"btn {LFO}"),
+      (7200, f"enc {K1} -2"), (7400, f"enc {K3} 100"), (136000, f"enc {K2} 3")]
+out, a, jk, notes = run("year", ev + P(6000, 9000, 40000, 70000, 100000, 135000, 137000), 145000, {"GRIMM_SAVE_OUT": str(OUT / "saves_year.bin")})
+check("(2.2) JAHKI: at power-on as never set: 1 HOUR, DALVI, DEPTH 0, nothing leaning",
+      jk[6000]["yr"] == 3 and jk[6000]["ys"] == 0 and jk[6000]["lean"] == 0 and jk[6000]["shq"] == 16 and jk[6000]["ycut"] == 0, jk[6000])
+check(".. YEAR 8 MIN, DEPTH 100 %: DALVI leans dark and long (SPACE + 14, the filters down)",
+      jk[9000]["yr"] == 1 and jk[9000]["ys"] == 0 and jk[9000]["lean"] >= 13 and jk[9000]["ycut"] < -2000, jk[9000])
+check(".. a minute a season: GIDDADALVI, then GIDDA (the leans between)", jk[70000]["ys"] == 1 and jk[135000]["ys"] == 2 and
+      jk[40000]["lean"] < jk[9000]["lean"], [(jk[t]["ys"], jk[t]["lean"], jk[t]["ycut"]) for t in (9000, 40000, 70000, 135000)])
+check(".. SEASON turned by hand: the year there (GIDDA, 3 on: CAKCAGEASSI, late summer: SHIMMER up)", jk[137000]["ys"] == 5 and jk[137000]["shq"] > 16,
+      jk[137000])
+out, a, jk, notes = run("year_on", P(3000), 3500, {"GRIMM_SAVE_IN": str(OUT / "saves_year.bin")})
+check(".. power-on: YEAR, DEPTH and the season turned to, as saved (version 10; the year moving on is no save)",
+      jk[3000]["yr"] == 1 and jk[3000]["yd"] == 100 and jk[3000]["ys"] == 5, jk[3000])
+
+# (2.2) START ALWAYS: saved with the project; at power-on the piece begins on its own (its own notes, rising)
+sv2 = OUT / "saves_always.bin"
+ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (7000, f"enc {K4} 2")]
+out, a, jk, notes = run("always", ev + P(9000), 50000, {"GRIMM_SAVE_OUT": str(sv2)})
+check("(2.2) START ALWAYS: it plays now", jk[9000]["go"] == 2 and jk[9000]["run"] == 1, jk[9000])
+out, a, jk, notes = run("always_on", P(2000, 40000), 41000, {"GRIMM_SAVE_IN": str(sv2)})
+check(".. power-on: START ALWAYS again, the piece begins on its own", jk[2000]["go"] == 2 and jk[40000]["run"] == 1 and
+      jk[40000]["own"] == 1 and len(notes[40000]) == 4 and rms(a, 30, 40) > 100, (jk[2000], jk[40000], notes[40000]))
+
 # a slot keeps its Biegga: GUST 84 saved into slot A (SAVE held + white key 5), GUST back down, A recalled (SAVE held +
 # white key 1)
 ev = BG + [(6800, f"btn {EDIT}"), (7000, f"enc {K1} 20"), (7400, f"down {SAVE}"), (8000, "keys 128"), (8200, "keys 0"),
@@ -176,6 +218,18 @@ out, a, jk, notes = run("aurora", ev + P(100000, 129000, 131000), 132000)
 check("GUOVSSAHAS: not before 2 min", jk[100000]["aur"] == 0, jk[100000])
 check("GUOVSSAHAS: after 2 min untouched, the aurora (lit)", jk[129000]["aur"] == 1 and jk[129000]["scr"] == 1, jk[129000])
 check("GUOVSSAHAS: a touch, back", jk[131000]["aur"] == 0 and jk[131000]["scr"] == 0, jk[131000])
+
+# (2.2) GOVVA: SCREEN OFF's very last; 1 min untouched: the moving picture (the screen lit); a knob back
+ev = [(6200, f"down {HOME}"), (6900, f"up {HOME}"), (7200, f"enc {K4} 6"), (70000, f"enc {K1} 1")]
+out, a, jk, notes = run("govva", ev + P(60000, 69000, 71000), 72000)
+check("(2.2) GOVVA: not before 1 min", jk[60000]["aur"] == 0, jk[60000])
+check(".. after 1 min untouched, the picture (lit)", jk[69000]["aur"] == 2 and jk[69000]["scr"] == 1, jk[69000])
+check(".. a knob turned, back", jk[71000]["aur"] == 0 and jk[71000]["scr"] == 0, jk[71000])
+# .. JAHKI on (DEPTH up), SCREEN OFF at GUOVSSAHAS: its seasons, never the aurora
+ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (6800, f"btn {LFO}"), (7000, f"btn {LFO}"),
+      (7200, f"enc {K3} 50"), (7600, f"down {HOME}"), (8300, f"up {HOME}"), (8600, f"enc {K4} 5")]
+out, a, jk, notes = run("govva_year", ev + P(130000), 131000)
+check(".. JAHKI on, GUOVSSAHAS set: the seasons instead of the aurora", jk[130000]["aur"] == 2 and jk[130000]["scr"] == 1, jk[130000])
 
 # RUOHCAT's page (LFO x 4) with a sample: a 1.5 s tone of 440 Hz into slot 1 (as tools/fm1_sample_upload.py sends it),
 # SAMPLE SLOT 1, SHARE 100 %, AMOUNT 100 %: the sample heard (440 Hz the loudest), nothing else of the ice
@@ -238,6 +292,179 @@ check("DICE: EDIT + OCT- undoes the last one (HUSH's part back)", pr[8600][1] ==
 check("ACCIDENT: EDIT + G4 moves T1's settings; EDIT + OCT- puts them back", pr[11500][2] != pr[8600][2] and
       pr[12600][2] == pr[8600][2], (pr[8600][2], pr[11500][2], pr[12600][2]))
 
+# (2.2) PRESETS undone: a whole browse is one undo, EDIT + OCT- brings back the sound before it (all of it)
+ev = [(6200, "probe"), (6400, "enc 6 1"), (6700, "enc 6 1"), (7000, "enc 6 1"), (7400, "probe"),
+      (7800, f"down {EDIT}"), (8000, f"btn {OCTD}"), (8200, f"up {EDIT}"), (8600, "probe")]
+out, a, jk, notes = run("presets_undo", ev, 9000)
+pr = probes(out)
+check("PRESETS: turned three times, then EDIT + OCT-: the sound before the browse back", pr[7400][2] != pr[6200][2] and
+      pr[8600][2] == pr[6200][2], (pr[6200][2], pr[7400][2], pr[8600][2]))
+
+# (2.2) USB LEVEL's SPK OFF (SYSTEM 3, KNOB 2 past +24 DB): while a computer takes the sound over USB, the speaker and
+# the jack quiet (no click: a ramp), the computer still gets it; after, the speaker back
+ev = [(5000, f"down {HOME}"), (5700, f"up {HOME}"), (6000, f"btn {HOME}"), (6300, f"btn {HOME}"), (6600, f"enc {K2} 7"),
+      (7000, f"keys {1 << 7}"), (8500, "probe"), (11500, "probe"), (13500, "probe"), (14000, "keys 0")]
+out, a, jk, notes = run("spk_off", ev, 14200, env={"GRIMM_USB_FEED": "1", "GRIMM_USB_REC": "9000,12000"})
+pk = {int(m.group(1)): int(m.group(2)) for m in re.finditer(r"^usbpk (\d+) (\d+)$", out, re.M)}
+b, d, f = rms(a, 7.8, 8.8), rms(a, 9.5, 11.8), rms(a, 12.6, 13.6)
+check("SPK OFF: the speaker quiet while the computer takes the sound, back after; USB has it",
+      b > 100 and d < 0.01 * b and f > 0.3 * b and pk.get(11500, 0) > 1000, (round(b), round(d), round(f), pk))
+
+# (2.2) LFO SHAPE CHAOS: a Lorenz attractor, smooth (no jump in a control step's worth), wide, both sides, never the
+# same turn twice
+ev = [(5000, f"btn {LFO}"), (5300, f"enc {K2} 100"), (5600, f"enc {K4} 7"), (5900, f"enc {K1} 20")] + \
+    [(6000 + 100 * i, "probe") for i in range(400)]
+out, a, jk, notes = run("chaos", ev, 46200)
+v = [jk[t]["lfa"] for t in sorted(jk)]
+step = max(abs(v[i + 1] - v[i]) for i in range(len(v) - 1))
+turns = [i for i in range(1, len(v) - 1) if v[i - 1] < v[i] >= v[i + 1] and v[i] > 4000]
+peaks = sorted({round(v[i] / 50) for i in turns})
+check("LFO CHAOS: wide, both sides, smooth, its turns' tops nearly all different",
+      jk[sorted(jk)[0]]["lsh"] == 7 and max(v) > 12000 and min(v) < -12000 and step < 16000 and len(turns) >= 3 and
+      len(peaks) >= 0.8 * len(turns), (max(v), min(v), step, len(turns), len(peaks)))
+
+# (2.2) ENV 2 (ENV twice): ONSET, a note's wait; LOOP PULSE, the envelope going round while the note is held; SPREAD,
+# the notes taking places in the stereo field (L and R apart), nothing of it at 0
+ENVB = 4
+def side(a, t0, t1):                            # the RMS of L - R from t0 to t1 s
+    x = a[2 * int(t0 * 44100):2 * int(t1 * 44100)]
+    d = [x[i] - x[i + 1] for i in range(0, len(x) - 1, 2)]
+    return math.sqrt(sum(v * v for v in d) / max(1, len(d)))
+ev = [(5000, f"btn {ENVB}"), (5300, f"btn {ENVB}"), (5600, f"enc {K2} 25"), (7000, f"keys {1 << 7}"), (10800, "keys 0")]
+out, a, jk, notes = run("onset", ev, 11000, env={})
+check("ENV 2 ONSET 2 s: silent for its wait, then the note", rms(a, 7.1, 8.8) < 30 and rms(a, 9.3, 10.5) > 150,
+      (round(rms(a, 7.1, 8.8)), round(rms(a, 9.3, 10.5))))
+ev = [(5000, f"btn {ENVB}"), (5300, f"btn {ENVB}"), (5600, f"enc {K2} 25"), (7000, f"keys {1 << 7}"), (7400, "keys 0")]
+out, a, jk, notes = run("onset_tap", ev, 12000)
+check("ENV 2 ONSET: a note let go while it waits still plays after the wait", rms(a, 7.1, 8.8) < 30 and
+      rms(a, 9.0, 10.0) > 60, (round(rms(a, 7.1, 8.8)), round(rms(a, 9.0, 10.0))))
+ev = [(5000, f"btn {ENVB}"), (5300, f"btn {ENVB}"), (5600, f"enc {K1} 1"), (6000, f"keys {1 << 7}")]
+out, a, jk, notes = run("loop", ev, 30000)
+w = [rms(a, 10 + 0.25 * i, 10.25 + 0.25 * i) for i in range(76)]
+check("ENV 2 LOOP PULSE: a held note goes round, down and up again, more than once",
+      max(w) > 3 * (min(w) + 1) and sum(1 for i in range(1, 75) if w[i - 1] > w[i] < w[i + 1] and w[i] < 0.4 * max(w)) >= 2,
+      [round(x) for x in w[::4]])
+ev = [(5000, f"btn {ENVB}"), (5300, f"btn {ENVB}"), (5600, f"enc {K3} 100"), (6000, f"keys {1 << 7 | 1 << 11 | 1 << 14}")]
+out, a, jk, notes = run("spread", ev, 10000)
+out0, a0, jk0, notes0 = run("spread0", [(6000, f"keys {1 << 7 | 1 << 11 | 1 << 14}")], 10000)
+check("ENV 2 SPREAD 100 %: three notes apart in the stereo field (more side than SPREAD 0's, its reverb's alone), as "
+      "loud (within 3 dB), never clipping",
+      side(a, 8, 9.5) > 1.2 * side(a0, 8, 9.5) and peak(a) < 32000 and
+      abs(20 * math.log10((rms(a, 8, 9.5) + 1) / (rms(a0, 8, 9.5) + 1))) < 3,
+      (round(side(a, 8, 9.5)), round(rms(a, 8, 9.5)), round(side(a0, 8, 9.5))))
+sv3 = OUT / "saves_env2.bin"
+ev = [(5000, f"btn {ENVB}"), (5300, f"btn {ENVB}"), (5600, f"enc {K1} 2"), (5900, f"enc {K2} 10"), (6200, f"enc {K3} 50"),
+      (6500, f"enc {K4} 30")]
+out, a, jk, notes = run("env2_save", ev + P(7000), 40000, {"GRIMM_SAVE_OUT": str(sv3)})
+out, a, jk2, notes = run("env2_load", P(3000), 3500, {"GRIMM_SAVE_IN": str(sv3)})
+e2 = lambda d: (d["el"], d["eo"], d["es"], d["ed"])
+check("ENV 2 saved with the project (version 11): at power-on as set (BREATHE, 0.8 s, 50 %, 30 %)",
+      e2(jk[7000]) == (2, 10, 50, 30) and e2(jk2[3000]) == (2, 10, 50, 30), (e2(jk[7000]), e2(jk2[3000])))
+# a slot keeps its ENV 2: SPREAD 40 into slot A, SPREAD to 0, A recalled: 40 again; a power-on: still in the slot
+ev = [(5000, f"btn {ENVB}"), (5300, f"btn {ENVB}"), (5600, f"enc {K3} 40"), (7400, f"down {SAVE}"), (8000, "keys 128"),
+      (8200, "keys 0"), (8400, f"up {SAVE}"), (9000, f"enc {K3} -40"), (9400, f"down {SAVE}"), (10000, "keys 1"),
+      (10200, "keys 0"), (10400, f"up {SAVE}")]
+sv4 = OUT / "saves_e2slot.bin"
+out, a, jk, notes = run("e2slot", ev + P(9300, 11000), 40000, {"GRIMM_SAVE_OUT": str(sv4)})
+ev = [(5000, f"down {SAVE}"), (5600, "keys 1"), (5800, "keys 0"), (6000, f"up {SAVE}")]
+out, a, jk2, notes = run("e2slot_on", P(4000) + ev + P(7000), 7500, {"GRIMM_SAVE_IN": str(sv4)})
+check("slot A: its ENV 2 recalled (SPREAD 40, after 0), and after a power-on",
+      jk[9300]["es"] == 0 and jk[11000]["es"] == 40 and jk2[7000]["es"] == 40, (jk[9300]["es"], jk[11000]["es"], jk2[7000]["es"]))
+
+# (2.2) the CPU guard: hot (host: GRIMM_CPU_HOT), a new note takes a release over instead of a free voice; cool, never
+ev = [(6000, f"keys {1 << 7}"), (6500, "keys 0"), (7000, f"keys {1 << 9}"), (7500, "keys 0"), (8000, f"keys {1 << 11}"),
+      (8500, "keys 0")]
+out, a, jk, notes = run("cpu_hot", ev + P(9000), 9500, {"GRIMM_CPU_HOT": "1"})
+out, a0, jk0, notes = run("cpu_cool", ev + P(9000), 9500)
+check("CPU guard: hot, new notes take a release over (no voice added); cool, never; heard either way",
+      jk[9000]["took"] >= 2 and jk0[9000]["took"] == 0 and rms(a, 8.0, 9.0) > 100, (jk[9000]["took"], jk0[9000]["took"], round(rms(a, 8, 9))))
+
+# (2.2) Jiekna, the tenth source (the singing ice): on T1 (EDIT twice: SOURCE, + 9), C3 struck: heard, in tune with VA's
+# C3, never clipping, its ring dying away with RING as set; RING up to the top: it sings on, held (no clip)
+ev = [(5000, f"btn {EDIT}"), (5300, f"btn {EDIT}"), (5600, f"enc {K1} 9"), (7000, f"keys {1 << 7}"), (12000, "keys 0")]
+out, a, jk, notes = run("jiekna", ev, 14000)
+out, av, jk, notes = run("jiekna_va", [(7000, f"keys {1 << 7}"), (12000, "keys 0")], 14000)
+if have_np:
+    fj, fv = freq(a, 7.3, 9.3, 110, 160), freq(av, 7.3, 9.3, 110, 160)   # (its fundamental: the strongest there)
+    check("Jiekna: heard, never clipping, C3 in tune with VA's (within 1.5 %)", rms(a, 7.2, 8) > 200 and peak(a) < 32000 and
+          abs(fj / fv - 1) < 0.015, (round(rms(a, 7.2, 8)), peak(a), round(fj, 1), round(fv, 1)))
+ev = [(5000, f"btn {EDIT}"), (5300, f"btn {EDIT}"), (5600, f"enc {K1} 9"), (5800, f"btn {EDIT}"), (6000, f"enc {K1} -90"),
+      (6300, f"enc {K2} 27"), (7000, f"keys {1 << 7}"), (25000, "keys 0")]
+out, a, jk, notes = run("jiekna_endless", ev, 26000)
+check("Jiekna RING at the top, bowed: it sings on by itself, held (no clip, no dying away)",
+      rms(a, 20, 24) > 0.5 * rms(a, 9, 13) and rms(a, 20, 24) > 200 and peak(a) < 32000,
+      (round(rms(a, 9, 13)), round(rms(a, 20, 24)), peak(a)))
+
+# (2.2) MOTION: REC held, HOME's CUTOFF turned up and down over ~3 s, REC let go: the move plays by itself, over and over
+# (REC not left on, the pattern not cleared); saved: at power-on it plays again; REC held + OCT-: gone
+RECB = 13
+ev = [(6000, f"down {RECB}")] + [(6100 + 100 * i, f"enc {K2} {-3 if i < 15 else 3}") for i in range(30)] + [(9200, f"up {RECB}")]
+sv5 = OUT / "saves_motion.bin"
+out, a, jk, notes = run("motion", ev + P(*range(9500, 16000, 100), 44000, 120000), 121000, {"GRIMM_SAVE_OUT": str(sv5)})
+c = [jk[t]["cut0"] for t in range(9500, 16000, 100)]
+check("MOTION: the move plays by itself, down and up, again (its length ~3 s); REC off, a lane", max(c) - min(c) > 25 and
+      jk[9500]["mo"] == 1 and "rec 0" in out.split("probe 9500")[1][:400], (min(c), max(c), c[::5], jk[9500]["mo"]))
+check(".. what it plays never makes a save of its own (the flash not written again past the first save)",
+      jk[120000]["sgen"] == jk[44000]["sgen"], (jk[44000]["sgen"], jk[120000]["sgen"]))
+low = [t for t, x in zip(range(9500, 16000, 100), c) if x == min(c)]
+check(".. it comes round about every 3 s", any(3000 <= b - a_ <= 3400 for a_ in low for b in low), low)
+out, a, jk2, notes = run("motion_on", P(*range(3000, 9000, 100)) + [(9500, f"down {RECB}"), (9700, f"btn {OCTD}"),
+                         (9900, f"up {RECB}")] + P(10500, 12000), 12500, {"GRIMM_SAVE_IN": str(sv5)})
+c2 = [jk2[t]["cut0"] for t in range(3000, 9000, 100)]
+check(".. power-on: it plays again; REC held + OCT-: gone, the knob still", max(c2) - min(c2) > 25 and jk2[3000]["mo"] == 1 and
+      jk2[10500]["mo"] == 0 and jk2[10500]["cut0"] == jk2[12000]["cut0"], (min(c2), max(c2), jk2[10500]["mo"]))
+
+# (2.2) the second core's way (host: GRIMM_CPU2): SPACE a block behind (5.8 ms), otherwise the same sound
+ev = [(6000, f"keys {1 << 7 | 1 << 14}"), (6500, "keys 0")]
+out, a1, jk, notes = run("cpu2_one", ev, 12000, plain=False)
+out, a2, jk, notes = run("cpu2_two", ev, 12000, {"GRIMM_CPU2": "1"}, plain=False)
+check("the second core's way: SPACE a block behind, its tail as loud (within 0.5 dB), never clipping",
+      abs(20 * math.log10((rms(a2, 8, 11) + 1) / (rms(a1, 8, 11) + 1))) < 0.5 and peak(a2) < 32000 and rms(a2, 8, 11) > 100,
+      (round(rms(a1, 8, 11)), round(rms(a2, 8, 11)), peak(a2)))
+
+# (2.2) the guide at the first start (host: GRIMM_GUIDE): three presses turn its pages and do nothing else; the fourth acts
+ev = [(6000, f"btn {LFO}"), (6500, f"btn {LFO}"), (7000, f"btn {LFO}"), (7500, "probe"), (8000, f"btn {LFO}"), (8500, "probe")]
+out, a, jk, notes = run("guide", ev, 9000, {"GRIMM_GUIDE": "1"})
+pg = {int(m.group(1)): int(m.group(2)) for m in re.finditer(r"^probe (\d+) .*? ui page (\d+)", out, re.M)}
+check("the guide: three presses only turn its pages; then LFO opens LFO", pg.get(7500) == 7 and pg.get(8500) == 3, pg)
+
+# (2.2) SWELL: FX held + the ninth white key (G3): the sound rises (louder, more SPACE, the filters open), let go it
+# falls back; the mod wheel (CC 1) the same by hand
+FXB = 2
+ev = [(6000, f"keys {1 << 7}"), (9000, f"down {FXB}"), (9300, f"keys {1 << 7 | 1 << 14}"), (14300, f"keys {1 << 7}"),
+      (14400, f"up {FXB}"), (18800, "keys 0")]
+out, a, jk, notes = run("swell", ev, 19000)
+b0, b1, b2 = rms(a, 8, 9), rms(a, 13.3, 14.3), rms(a, 17.5, 18.5)
+check("SWELL: held, the sound rises; let go, it falls back", b1 > 1.2 * b0 and b2 < 1.1 * b0, (round(b0), round(b1), round(b2)))
+
+# (2.2) MIDI out with roles: SEQ MIDI OUT on (SYSTEM 2), MOD OUT on (SYSTEM 3): JIEHKKI's own notes out on their tracks'
+# channels; JAHKI's season as CC 104 on T1's
+ev = [(3000, f"down {HOME}"), (3700, f"up {HOME}"), (3900, f"btn {HOME}"), (4100, f"enc {K2} 1"), (4300, f"btn {HOME}"),
+      (4500, f"enc {K3} 1"), (4700, f"btn {LFO}"), (4900, f"btn {LFO}"), (5100, f"btn {LFO}"), (5300, f"enc {K4} 1")]
+out, a, jk, notes = run("midi_roles", ev, 20000)
+mo = re.findall(r"MIDI out ([0-9A-F]{2}) (\d+) (\d+)", out)
+ons = {st for st, n, v in mo if st.startswith("9")}
+check("MIDI out with roles: JIEHKKI's notes on T1's and T2's channels; the season as CC 104",
+      {"90", "91"} <= ons and ("B0", "104", "0") in mo, (sorted(ons), [m for m in mo if m[1] == "104"]))
+
+# (2.2) MOTIF: JIEHKKI's own notes (15 MIN): a few notes of its own on T4, heard after its opening, then again a few
+# minutes on, a little changed (SEQ MIDI OUT on: read as T4's notes out)
+ev = [(3000, f"down {HOME}"), (3700, f"up {HOME}"), (3900, f"btn {HOME}"), (4100, f"enc {K2} 1"), (4300, f"btn {LFO}"),
+      (4500, f"btn {LFO}"), (4700, f"btn {LFO}"), (5100, f"enc {K4} 1")]
+out, a, jk, notes = run("motif", ev, 520000)
+t4 = [(int(t), int(n)) for t, n in re.findall(r"^\s*(\d+) ms  MIDI out 93 (\d+) 100$", out, re.M)]
+runs, cur = [], []
+for t, n in t4[1:]:                             # (the first: T4's own note coming in)
+    if cur and t - cur[-1][0] > 5000:
+        runs.append(cur)
+        cur = []
+    cur.append((t, n))
+if cur: runs.append(cur)
+m = [[n for t, n in r] for r in runs]
+check("MOTIF: a few notes over the drone, again minutes later, a little changed",
+      len(m) >= 2 and all(3 <= len(x) <= 5 for x in m[:2]) and m[0] != m[1] and runs[1][0][0] - runs[0][0][0] > 120000,
+      (m, [r[0][0] for r in runs]))
+
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, PRESETS' crossing over, DICE, ACCIDENT ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna, MOTION, the second core's way, the guide, SWELL, MIDI out roles, MOTIF ok")

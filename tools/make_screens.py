@@ -160,9 +160,13 @@ SHOTS = {
     "phase": lambda: src(S(), 1).hold("C3", "G3").w(1500),
     # (2.0) the drone machine
     "biegga": lambda: src(S(), -1).hold("C3", "G3").w(2500),
+    "jiekna": lambda: src(S(), -2).hold("C3", "G3").w(2500),   # (2.2: the singing ice)
+    "env2": lambda: S().tap(ENV, ENV).turn(K1, 2).turn(K2, 10).turn(K3, 60).turn(K4, 40).hold("C3", "G3").w(2500),
     "jiehkki": lambda: S().tap(LFO, LFO, LFO).turn(K3, 40).turn(K4, 1).w(40000),
     "ruohcat": lambda: sample(sample(S(), 0, "JOIK", 330, 3.0, 3500), 2, "ELV", 220, 1.5, 5000)
                        .tap(LFO, LFO, LFO, LFO).turn(K2, 5).turn(K3, 30).turn(K1, 100).w(9000),
+    # (2.2) the year: 2 HOURS, GEASSI (the midnight sun), DEPTH 80 %
+    "jahki": lambda: S().tap(LFO, LFO, LFO, LFO, LFO).turn(K1, 1).turn(K2, 4).turn(K3, 80).w(1500),
     "suokna": lambda: S().tap(SEL).turn(K3, 3).w(800),
     "aurora": lambda: S().keys("C3").down(HOME).w(900).up(HOME).turn(K4, 5).w(126000),
     "mono": lambda: S().down(HOME).w(900).up(HOME).turn(K1, 4).w(400).tap(EDIT).tap(HOME).keys("C3").keys("G3").w(2500),

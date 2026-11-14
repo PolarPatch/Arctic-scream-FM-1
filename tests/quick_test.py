@@ -18,7 +18,7 @@ from pathlib import Path
 EXE = sys.argv[1] if len(sys.argv) > 1 else "build/host/grimm"
 OUT = Path("build/host/quick")
 OUT.mkdir(parents=True, exist_ok=True)
-PG_HOME, PG_SYSTEM, PG_SYS2, PG_PROJECTS, PG_SYS3 = 7, 10, 11, 13, 28   # (Arctic Scream: DRONE is 25)
+PG_HOME, PG_SYSTEM, PG_SYS2, PG_PROJECTS, PG_SYS3, PG_SYS4 = 7, 10, 11, 13, 28, 35   # (Arctic Scream: DRONE is 25)
 bad = 0
 
 
@@ -60,14 +60,14 @@ def probes(*ts):
     return [(t, "probe") for t in ts]
 
 
-# SYSTEM 3: HOME held (SYSTEM), HOME, HOME; LATCH turned to ALWAYS OFF (saved: 172 B); HOME: SYSTEM again
+# SYSTEM 3: HOME held (SYSTEM), HOME, HOME; LATCH turned to ALWAYS OFF (saved: 173 B); HOME: SYSTEM again
 ev = [(300, "down 8"), (1000, "up 8"), (1200, "btn 8"), (1400, "btn 8"), (1600, "enc 2 1"), (4000, "btn 8")]
 pr, out = run("sys3", ev + probes(1100, 1300, 1500, 1700, 4100), 4200)
-check("HOME held, HOME, HOME: SYSTEM, SYSTEM 2, SYSTEM 3; HOME again: SYSTEM",
-      [pr[t]["page"] for t in (1100, 1300, 1500, 4100)] == [PG_SYSTEM, PG_SYS2, PG_SYS3, PG_SYSTEM],
+check("HOME held, HOME, HOME: SYSTEM, SYSTEM 2, SYSTEM 3; HOME again: (2.2) SYSTEM 4",
+      [pr[t]["page"] for t in (1100, 1300, 1500, 4100)] == [PG_SYSTEM, PG_SYS2, PG_SYS3, PG_SYS4],
       [pr[t]["page"] for t in (1100, 1300, 1500, 4100)])
-check("SYSTEM 3's LATCH: FROM SOUND as set out (version 4's settings, 171 B); turned to ALWAYS OFF, saved (172 B)",
-      pr[1500]["new"] == 0 and pr[1700]["new"] == 1 and "settings saved (172 B)" in out)
+check("SYSTEM 3's LATCH: FROM SOUND as set out (version 4's settings, 171 B); turned to ALWAYS OFF, saved (173 B)",
+      pr[1500]["new"] == 0 and pr[1700]["new"] == 1 and "settings saved (173 B)" in out)
 # (1.5.2) MOD OUT: OFF as 1.5.1's settings come; ON (SYSTEM 3, KNOB 3): CC 102 (LEVEL) and 103 (LFO) on T1's channel
 MODEV = [(300, "keys 129"), (2500, "keys 0")]
 _, out = run("mod_off", MODEV, 3000, settings("v4"))
@@ -76,7 +76,7 @@ _, out = run("mod_on", MODEV + [(100, "down 8"), (800, "up 8"), (900, "btn 8"), 
 lv = [int(m) for m in re.findall(r"MIDI out B0 102 (\d+)", out)]
 check("MOD OUT ON: LEVEL as CC 102 on channel 1, up while a key plays", bool(lv) and max(lv) >= 40, lv[:8])
 check("MOD OUT ON: LFO as CC 103", bool(re.search(r"MIDI out B0 103 \d+", out)))
-check("MOD OUT ON: saved with the settings (172 B)", "settings saved (172 B)" in out)
+check("MOD OUT ON: saved with the settings (172 B)", "settings saved (173 B)" in out)
 # a sound loaded (PRESETS: CRYPT PAD, saved with LATCH ON)
 PRESET = [(300, "enc 6 1")]
 pr, _ = run("snd_from", PRESET + probes(500), 600)

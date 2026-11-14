@@ -8,7 +8,7 @@ mkdir -p build/host
 python3 tools/gen_words.py firmware/words.tsv web/words firmware/gen/ann_words.h >/dev/null   # (1.5: the reader's words)
 MACHO=                                          # (macOS: Mach-O has no ".pool" section; the pool is plain .bss there)
 [ "$(uname -s)" = Darwin ] && MACHO="-Dsection(x)=used"
-cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DAPP_VER="\"${APP_VER:-2.0}\"" ${MACHO:+"$MACHO"} -Ifirmware/src -Ifirmware/gen -o build/host/grimm firmware/src/grimm.c
+cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DAPP_VER="\"${APP_VER:-2.1}\"" ${MACHO:+"$MACHO"} -Ifirmware/src -Ifirmware/gen -o build/host/grimm firmware/src/grimm.c
 GRIMM_MASTER=1022 build/host/grimm build/host/grimm   # (MASTER as web/test_web.mjs turns it: 1022, Q12 4080)
 python3 - <<'PY'
 from pathlib import Path
@@ -76,3 +76,5 @@ python3 tests/rc11_test.py build/host/grimm
 python3 tests/reader_test.py build/host/grimm
 # (1.5.2) PANEL OUT: the panel for an app, and nothing before an app asks (tests/panel_out_test.py)
 python3 tests/panel_out_test.py build/host/grimm
+# (2.2) the 38 factory sounds as they were (tests/sound_prints.py; a meant change: --golden)
+python3 tests/sound_prints.py

@@ -51,7 +51,7 @@ SDK_SHA256 = {
 PRODUCT = "FM-1_977"                # Arctic Scream 1.x: 977, every release (FM-1_9NN: the installers resume its loader; the hub's
                                     # other firmwares hold 950, 95x, 961, so not Dinghy's 9 + minor); Dinghy is 99N
 VERSION = None                      # APP_VER for release builds (else DEFAULT_VERSION)
-DEFAULT_VERSION = "2.0"
+DEFAULT_VERSION = "2.1"
 
 
 def toolchain():
@@ -164,11 +164,12 @@ def build_app():
     cmds = [("cc", "-c", FW / "crt0.S", "-o", OUT / "crt0.o"),
             ("cc", "-c", FW / "hal" / "fm1_vec.S", "-o", OUT / "fm1_vec.o"),
             ("cc", "-c", FW / "hal" / "fm1_isr.S", "-o", OUT / "fm1_isr.o"),
+            ("cc", "-c", FW / "hal" / "fm1_cpu1.S", "-o", OUT / "fm1_cpu1.o"),   # (2.2: the second core's entry, stacks)
             ("cc", *flags, "-c", FW / "src" / "grimm.c", "-o", OUT / "grimm.o")]
     tc_all(*cmds)
     elf = OUT / "grimm.elf"
     tc("pi32v2/bin/ld", "--gc-sections", "-e", "_start", "-T", FW / "app.ld", OUT / "crt0.o", OUT / "fm1_vec.o",
-       OUT / "fm1_isr.o", OUT / "grimm.o", "-o", elf)
+       OUT / "fm1_isr.o", OUT / "fm1_cpu1.o", OUT / "grimm.o", "-o", elf)
     for sect in ("text.bin", "data.bin", "ramtext.bin"):
         (OUT / sect).unlink(missing_ok=True)
     *_, syms, dis, rt = tc_all(("common/bin/objcopy", "-O", "binary", "-j", ".text", elf, OUT / "text.bin"),
@@ -205,7 +206,12 @@ def check(img, syms, dis, rt):
         errors.append(f"_start is not at {APP_XIP:#x}")
     if img[:4] != bytes.fromhex("04818000"):
         errors.append(f"image starts with {img[:4].hex()}, not the entry stub")
-    rt_calls = [ln for ln in rt.splitlines() if re.search(r"\bcall\b", ln)]
+    rt_calls, fn = [], ""
+    for ln in rt.splitlines():      # (2.2: the second core's loop calls its jobs in the flash: the flash is never off
+        mf = re.match(r"^([A-Za-z_.$][\w.$]*):\s*$", ln)   # while it has one, hal/fm1_cpu1.h; objdump's labels: "fn:")
+        fn = mf.group(1) if mf else fn
+        if re.search(r"\bcall\b", ln) and fn != "fm1_cpu1_main":
+            rt_calls.append(ln)
     if rt_calls:                    # RAM code runs with the flash off: no calls into XIP
         errors.append(f".ram_text contains calls: {rt_calls[:3]}")
     else:

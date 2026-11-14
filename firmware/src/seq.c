@@ -16,7 +16,7 @@
 #define SEQ_NPAT 1u                             /* patterns a track (song mode: more, later) */
 #define SEQ_NOFF 8u                             /* a track's sequenced notes sounding at once */
 #define SEQ_TICK_Q16 1806336000u                /* a tick at 1 BPM, in samples Q16: 60 x 44100 / 96 x 65536 */
-enum { SEQ_FWD, SEQ_BWD, SEQ_PONG, SEQ_RND, SEQ_NMODE };
+enum { SEQ_FWD, SEQ_BWD, SEQ_PONG, SEQ_RND, SEQ_EVO, SEQ_NMODE };   /* (2.1: SEQ_EVO, EVOLVE) */
 
 typedef struct {                                /* (bytes: each value fits one; V1.0's were 32 bits, the saves the same) */
     volatile uint8_t note, chance, ratchet, len;   /* note 0: OFF, else 1..127; CHANCE 0..100; RATCHET 1..4; LENGTH 1..64 */
@@ -46,8 +46,8 @@ static uint32_t seq_acc, seq_rng = 0x1234567u;
 /* DIVISION: ticks a step, and its name */
 static const uint8_t SEQ_DIV_T[8] = {96, 64, 48, 32, 24, 16, 12, 8};
 static const char *const SEQ_DIV_NAME[8] = {"1/4", "1/4T", "1/8", "1/8T", "1/16", "1/16T", "1/32", "1/32T"};
-static const char *const SEQ_MODE_NAME[SEQ_NMODE] = {"FORWARD", "BACKWARD", "PINGPONG", "RANDOM"};
-static const char *const SEQ_MODE_SHORT[SEQ_NMODE] = {"FWD", "BWD", "PONG", "RND"};
+static const char *const SEQ_MODE_NAME[SEQ_NMODE] = {"FORWARD", "BACKWARD", "PINGPONG", "RANDOM", "EVOLVE"};
+static const char *const SEQ_MODE_SHORT[SEQ_NMODE] = {"FWD", "BWD", "PONG", "RND", "EVO"};
 
 #define SEQ_BAR 384u                            /* a bar: 4 quarter notes of 96 ticks */
 static uint32_t seq_ticks;                      /* audio: ticks since PLAY (the bars) */
@@ -129,6 +129,29 @@ static void seq_fire(uint32_t t)
     S->r_left = r - 1u, S->r_note = note, S->r_next = sub, S->r_sub = sub, S->r_gate = gate, S->r_last = last;
     S->r_chord = (uint32_t)s->chord;
 }
+/* (2.1) EVOLVE (after Demake's, Sequencist's, whose patterns change as they play; written anew): forward, and each
+ * time the pattern begins again, now and then (3 times in 5) one of its notes moves a step or two of the SCALE up or
+ * down, written into the pattern, so a loop never comes round quite the same; a step's CHANCE now and then a little
+ * too (50 .. 100 %). It wanders, slowly, and stays between C1 and C7 */
+static void seq_evolve(seq_trk_t *S)            /* audio: the pattern begins again */
+{
+    seq_pat_t *P = &S->pat[clamp(S->cur, 0, SEQ_NPAT - 1)];
+    int32_t n = seq_steps(S), i, k, m;
+    seq_step_t *st;
+    if (seq_rnd() % 5u >= 3u) return;
+    for (k = 0; k < 8; k++) {                   /* (a step with a note, a few tries) */
+        i = (int32_t)(seq_rnd() % (uint32_t)n);
+        st = &P->st[i];
+        if (!st->note) continue;
+        m = sc_walk(st->note, (seq_rnd() & 1u ? 1 : -1) * (int32_t)(1u + (seq_rnd() & 1u)));
+#ifdef DINGHY_HOST
+        if (getenv("GRIMM_EVO_LOG")) printf("evolve: step %d %d -> %d\n", (int)i + 1, (int)st->note, (int)m);   /* (host tests) */
+#endif
+        if (m >= 24 && m <= 96) st->note = (uint8_t)m;
+        if (!(seq_rnd() & 3u)) st->chance = (uint8_t)clamp(st->chance + (seq_rnd() & 1u ? 10 : -10), 50, 100);
+        return;
+    }
+}
 static void seq_next(seq_trk_t *S)              /* audio: the next step, by PLAY MODE */
 {
     int32_t n = seq_steps(S), p = S->pos;
@@ -140,7 +163,10 @@ static void seq_next(seq_trk_t *S)              /* audio: the next step, by PLAY
         else if (p < 0) S->dir = 1, p = n > 1 ? 1 : 0;
         break;
     case SEQ_RND: p = (int32_t)(seq_rnd() % (uint32_t)n); break;
-    default: p = p + 1 < n ? p + 1 : 0; break;
+    default:
+        p = p + 1 < n ? p + 1 : 0;
+        if (!p && S->mode == SEQ_EVO) seq_evolve(S);   /* (2.1: EVOLVE, as it begins again) */
+        break;
     }
     S->pos = p;
 }

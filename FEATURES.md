@@ -22,7 +22,7 @@ feedback screams: slow, cold sounds that hum for minutes, and a voice that wakes
 ## At a glance
 
 - Four tracks, six voices shared between them.
-- Nine sound sources, among them **Holvut**, a feedback loop that howls by itself, and **Biegga**, the wind.
+- Ten sound sources, among them **Holvut**, a feedback loop that howls by itself, **Biegga**, the wind, and (2.1) **Jiekna**, the singing ice.
 - **DRONE**: a sound that lives on its own (BORGA, STOARBMA, GOHCCAT).
 - **JIEHKKI**: a whole piece the FM-1 plays by itself for 5 to 60 minutes (or ENDLESS), then dies out; **RUOHČAT**,
   the ice cracking around it.
@@ -59,6 +59,7 @@ EDIT opens SOUND (the source's four knobs), then SOURCE (the source and LATCH). 
 | PHASE | WAVE | WAVE2 | DCW | DETUNE | Phase distortion |
 | **Holvut** | FEEDBACK | BODY | DAMP | DRIVE | A feedback loop that howls (below) |
 | **Biegga** | GUST | HOWL | TONE | SNOW | The wind (2.0, below) |
+| **Jiekna** | STRIKE | RING | HOLLOW | BRITTLE | The singing ice (2.1, below) |
 
 **FM ALGO**: ALGO 1–32, FEEDBACK, OP (the operator, 1–6), FINE. **FM OP**: that operator's RATIO, LEVEL, ATTACK,
 DECAY.
@@ -91,6 +92,18 @@ scratch for the FM-1.
     own wakes and colours the howl. The slab shows the slot (`S2 45%`, or `EMPTY`).
 - The howl's pitch comes mostly from the loop itself, not the key, so OCT− and OCT+ do not move it by an octave.
   [DEVELOPER.md](DEVELOPER.md) describes a possible change.
+
+### Jiekna, the singing ice (2.1)
+
+*Jiekŋa* is North Sami for "ice" (Giellatekno's dictionaries; JIEKNA on the screen). Written for Arctic Scream after
+Romain Guy's Adrift (its resonators: a burst into a delay tuned to the note), none of its code.
+
+- Noise, a burst at the note's start (STRIKE) or a soft bow all along, into a loop of the note's period in the voice's
+  pool scratch; round the loop a first-order all-pass (BRITTLE: dispersion, glass to metal), a one-pole (the damping;
+  HOLLOW's brightness), the gain (RING: x 0.885 .. ~1.01 a turn, a soft knee holding it in over 1) and its sign
+  (HOLLOW's upper half: turned over, the odd harmonics, the line halved to keep the note), a DC blocker low enough
+  (~2.5 Hz) to keep it in tune.
+- Fixed point; within 1 % of VA's pitch across the keys (tests/drone_test.py).
 
 ### Biegga, the wind (2.0)
 
@@ -329,6 +342,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 | --- | --- | --- |
 | 1.0 | 2026-10-25 | The first release: HOWL (now Holvut), six screaming presets, the HORROR scale, runaway echo, keys an octave down, 46 arctic factory sounds, the new look, the web editor with sound tools and sequencer, the demo and cheat sheet |
 | 1.1 | 2026-10-26 | DRONE (BORGA, STOARBMA, GOHCCAT); HOWL renamed Holvut; moving northern lights on ENV, LFO, FX and the mixers; SUSTAIN 40 % by default; DRONE in the editor |
+| 2.1 | (in the making) | Jiekna (the singing ice, a tenth source), JAHKI (the year's eight Sami seasons leaning the filters, SPACE and SHIMMER), ENV 2 (LOOP, ONSET, SPREAD, DETUNE), LFO SHAPE CHAOS, MOTION (a knob's move recorded and looped), SWELL, JIEHKKI's LENGTH 2, 4, 8 hours, START ALWAYS, dusk, MOTIF and MIDI out, RUOHČAT's answers and held breath, a moving picture for every sound and GOVVA (the pictures as a screensaver, melting), PLAY MODE EVOLVE, the second core (SPACE there), the CPU guard, SYSTEM 4 (SOUND SPEAKER, HELP) and the first start's guide, USB LEVEL's SPK OFF, PRESETS undone, the keys as a display; project version 11, settings version 6; ideas after Demake, ZEN-1, Arcturus S6, PaperLagoon, DEEP FIELD, Adrift, SHRUB and HADAL-1 |
 | 2.0 | 2026-11-12 | The drone machine: JIEHKKI (a piece played by itself for LENGTH, then dying out; DRIFT; a sleep timer at DRIFT 0), RUOHČAT (ice cracks, drips, booms; its own page with your samples among them), ŠUOKŊA tunings (JUST, PYTHAG, HARMONIC), Biegga (the wind, a ninth source) and the factory sounds BIEGGA, RIDDU and POLAR STILL (FROST CHIME, STARLIGHT, ICE ORGAN, BASE CAMP, SNOW GLOBE, ICE PIANO and the other keys but SIGNAL FLARE gone: 38 factory sounds), GUOVSSAHAS (the aurora as a screen saver), PRESETS on a sounding drone blending into the next (crossfade, or the knobs gliding), ATTACK swelling in (a cube, not a straight line), MASTER louder (its turn^1.5, half way -9 dB; the output +3 dB); the web page's player takes your WAVs (a SAMPLES box beside it), its slots ~95 s each (the FM-1's 6.6 s), the editor cutting to whichever it talks to; DICE (SEQ held + G3 .. G4: a new part in one of eight moods, HUSH .. MACHINE) and ACCIDENT (EDIT held + E4 .. G4: two or three settings moved at random), ideas after KRIECHSTROM, COLOUR MONO (black and white, Bayer dots); MIDI in while the screen draws (LCD_IDLE); saves version 9; update tests |
 | 1.5.2 | 2026-11-10 | The update's own screen (UPDATE MODE, WRITING with a bar, DONE or FAILED); SYSTEM 3's MOD OUT (each track's level and LFO as CC 102, 103); PANEL OUT for apps (buttons, keys, knobs); INFO tells key 0's note and the octave; the browser demo in tune at 48 kHz; DELAY up to 2.6 s and more free memory (RAM 93.4 → 79.0 KB used); the stacks' depth in the CPU command |
 | 1.5.1 | 2026-11-08 | The newer FM-1s' flash chip (UC25HQ80): saves, the USB rescue and updates on it as on the first chip (P25Q80); on a newer unit with 1.5 or older, install through the chip's download mode once |

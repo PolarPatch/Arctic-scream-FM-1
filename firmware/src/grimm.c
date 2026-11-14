@@ -30,7 +30,7 @@
  *              (kept across sources; a source's own envelope runs inside it)
  *   LFO        LFO (the track's: RATE ~60 s a cycle .. ~20 Hz, free-running; DEPTH 0..100 %, 0 off; DESTINATION PITCH
  *              (+-1 octave), VOLUME, PAN, the source's four knobs by their names, REV SEND, GRAIN SEND: moved around the
- *              knob, the knob not; SHAPE SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT) (lfo.c) -> DRONE
+ *              knob, the knob not; SHAPE SINE, TRIANGLE, SAW UP, SAW DOWN, SQUARE, RANDOM, DRIFT, (2.2) CHAOS) (lfo.c) -> DRONE
               (Arctic Scream p0larpatch, after Jangada's: BORGA 0..100 %, four slow random walks on the sound and each
               voice's detune and breath; STOARBMA 0..100 %, the tension; GOHCCAT OFF, 1..32 bars, its rise on the
               tempo; LATCH as SOURCE's; the sound's, saved with it) (drone.c)
@@ -129,6 +129,14 @@ static void app_idle(void);
 #include "announce.c"                           /* (fm1-base's, MPL-2.0: fm1-reader's tools/sync_announce.sh) */
 #define PO_NAME "Arctic Scream " APP_VER        /* (1.5.2) PANEL OUT: the panel, for an app (docs/PANEL_OUT.md) */
 #include "panel_out.c"
+#ifdef FM1_LIVE_IN
+/* (Arctic Scream VIBE) sound in, on a host that has it (VIBE FM; never on the FM-1): the platform hands over this
+ * render's input, n frames, mono, Q15 at the engine's 44.1 kHz (live_take: through whatever the platform does to it
+ * first), and says where it goes: live_ex, the tracks (bit t) whose Holvut strings hear it in place of their sample
+ * (EXCITE the amount); live_g, its levels into the mix and the DLY, REV and GRAIN buses (Q15, live_mix) */
+static const int16_t *li_cur;                   /* audio: this render's input (0: none) */
+static uint32_t li_n;
+#endif
 #include "dsp.c"
 #include "wear.c"
 #include "samples.c"
@@ -166,7 +174,13 @@ static uint32_t cpu_over;                       /* audio: blocks in a row over t
 static int32_t tbuf[NT][VB], dbus[VB], rbus[VB], gbus[VB];   /* the tracks (mono); the DLY, REV and GRAIN buses */
 #include "master.c"                             /* MASTER (a filter on the whole sound), DRIVE (and a limiter) */
 static volatile uint32_t trk_mute, trk_solo;    /* main loop: GLO held + white keys 1..4, 5..8 (bit t: track t) */
-enum { PF_REV, PF_ECHO, PF_TAPE, PF_BACK, PF_FDOWN, PF_FUP, PF_STUT, NPF };   /* the FX layer's tricks: G3 .. F4 */
+enum { PF_REV, PF_ECHO, PF_TAPE, PF_BACK, PF_FDOWN, PF_FUP, PF_STUT, PF_SWELL, NPF };   /* the FX layer's tricks: G3 ..
+                                                 * F4; (2.2) SWELL the ninth white key */
+/* (2.2, after HADAL-1's swell, Polystellarflow's: written anew) SWELL: held (FX + the ninth white key, or the mod wheel,
+ * CC 1, by hand), the whole sound rises over ~4 s: the tracks a little louder, more into SPACE, their filters opening;
+ * let go, it falls back over ~1.5 s. The audio ISR's sw_e follows */
+static int32_t sw_e;                            /* audio: the swell now (Q15) */
+static volatile int32_t sw_cc;                  /* main loop: the mod wheel (0 .. 127) */
 static volatile uint32_t pf_held;               /* main loop: bit PF_: its key held (FX held + it; perform.c) */
 static void perform_render(int32_t *out, uint32_t n);
 static volatile uint32_t trk_quiet;             /* audio: the tracks silent (muted, or another soloed: mute_watch) */
@@ -213,6 +227,7 @@ static inline int32_t mulq15w(int32_t a, int32_t b)
 {
     return (a >> 15) * b + (int32_t)(((uint32_t)a & 0x7FFFu) * (uint32_t)b >> 15);
 }
+static int32_t mix_gs[NT];                      /* audio: (2.2) each track's side gain (SPREAD), the last block's */
 static int32_t mix_g[NT][5];                    /* audio: each track's gains (L, R, DLY, REV, GRAIN) as the last block
                                                  * ended: this block's ramps start there */
 static void mix_add(int32_t *o, uint32_t st, const int32_t *x, int32_t g0, int32_t g1, uint32_t n)   /* o[i st] +=
@@ -238,8 +253,21 @@ static void mix_add(int32_t *o, uint32_t st, const int32_t *x, int32_t g0, int32
  * MIXER 2's TYPE: LP (as V1.0, the same code), HP (open, bypassed: CUTOFF at the bottom), BP (never open), the
  * same SVF's outputs (dsp.c tsvf_any); POS: PRE (as V1.0: the sends hear it filtered) or POST (mix_tracks: the sends
  * hear the track before it, only its dry sound filtered) */
-#define JK_NLEN 7                               /* (2.0, jiehkki.c: JIEHKKI's LENGTHs; its knobs (store.c saves them); */
+enum { PC_CARD, PC_SKY, PC_OFF, NPC };          /* (2.1) SYSTEM 3's PICTURE: a sound's picture on HOME a moment while
+                                                 * PRESETS turns, or always as HOME's sky, or never (pictures.c) */
+static volatile int32_t pc_mode;                /* .. the project's (store.c's EXT: 2.0's, CARD) */
+static const char *const PC_NAME[NPC] = {"CARD", "SKY", "OFF"};
+#define JK_NLEN 10                              /* (2.0, jiehkki.c: JIEHKKI's LENGTHs; its knobs (store.c saves them); */
 static volatile int32_t jk_len, jk_drift, jk_ruo, jk_go;
+#define JK_ALWAYS 2                             /* (.. 2.2: START's ALWAYS, saved; a project loaded says it;) */
+static void jk_always(uint32_t on);
+#define YR_NS 8                                 /* (2.2, year.c: JAHKI's seasons; YEAR's lengths; its knobs, store.c */
+#define YR_NLEN 7                               /* saves them and where the year is: 1 HOUR, DALVI, 0 %, OFF;) */
+static volatile int32_t yr_len = 3, yr_season, yr_depth, yr_sky;
+static void yr_at(uint32_t pos8);
+static uint32_t yr_pos8(void);
+static void yr_keep(void);
+static int yr_on(void);                         /* (2.2) JAHKI in use: DEPTH up or SKY on (year.c) */
 #define RU_NSMP 6                               /* (.. the RUOHCAT page's SAMPLE: OFF, SLOT 1 .. 4, ALL; its knobs;) */
 static volatile int32_t ru_smp, ru_share, ru_vary;
 static volatile int32_t jk_cut[NT];             /* .. a track filter's move, << 8; */
@@ -252,7 +280,8 @@ static uint8_t tf_on[NT];
 static int32_t tf_tgt(uint32_t t)               /* the track filter's cutoff to glide to (<< 8): CUTOFF, its LFO, DRONE's
                                                  * (drone.c), WARP's (chaos.c), JIEHKKI's (jiehkki.c) */
 {
-    return clamp((lfo_move(t, LD_CUT, clamp(trk[t].cut, 0, 127), 127) << 8) + dr_cut[t] + ch_cut[t] + jk_cut[t], 0, 127 << 8);
+    return clamp((lfo_move(t, LD_CUT, clamp(trk[t].cut, 0, 127), 127) << 8) + dr_cut[t] + ch_cut[t] + jk_cut[t] + (sw_e * 3 >> 4),
+                 0, 127 << 8);                  /* (2.2: SWELL, up to 24 steps open) */
 }
 static int32_t tf_px[NT];                       /* audio: POS's share of the sends taken before the filter, 0 (PRE) ..
                                                  * TF_PX1 (POST): a switch crosses over in 8 blocks (~46 ms), no click */
@@ -263,18 +292,13 @@ static int tf_open(uint32_t t)                   /* the track filter bypassed no
     uint32_t ty = (uint32_t)clamp(trk[t].ftype, 0, NFTYPE - 1);
     return ty == FT_LP ? tgt >= 127 << 8 && cs >= (127 << 8) - 64 : ty == FT_HP && tgt <= 0 && cs <= 64;
 }
-static void trk_filter(uint32_t t, int32_t *x, uint32_t n)
+static int32_t tf_is[NT][2];                    /* audio: (2.2) the side signal's filter state (SPREAD: sbuf) */
+static int32_t tf_pass(int32_t *x, uint32_t n, int32_t cs, int32_t tgt, int32_t r, uint32_t ty, int32_t *ic)   /* the
+                                                 * filter over x from cutoff cs on; returns where cs is */
 {
-    int32_t tgt = tf_tgt(t), cs = tf_cs[t], ic1, ic2;
-    int32_t r = clamp(trk[t].res + dr_res[t] + ch_res[t], 0, 127) * 7 / 8;   /* (DRONE's on both: drone.c; WARP's) */
-    uint32_t ty = (uint32_t)clamp(trk[t].ftype, 0, NFTYPE - 1), i, j;
+    int32_t ic1 = ic[0], ic2 = ic[1];
+    uint32_t i, j;
     tsvf_t c;
-    if (tf_open(t)) {                           /* (open: as it is) */
-        tf_cs[t] = ty == FT_LP ? 127 << 8 : 0, tf_on[t] = 0;
-        return;
-    }
-    if (!tf_on[t]) tf_on[t] = 1, tf_ic[t][0] = 0, tf_ic[t][1] = ty == FT_LP ? x[0] >> 2 : 0;   /* (from bypassed: no step) */
-    ic1 = tf_ic[t][0], ic2 = tf_ic[t][1];
     if (ty == FT_LP) {
         for (i = 0; i < n; i += CTL) {
             cs += (tgt - cs) >> 3;
@@ -290,7 +314,23 @@ static void trk_filter(uint32_t t, int32_t *x, uint32_t n)
                 x[j] = soft_knee(tsvf_any(&c, k, ty, x[j] >> 2, &ic1, &ic2), 100000) << 2;
         }
     }
-    tf_cs[t] = cs, tf_ic[t][0] = ic1, tf_ic[t][1] = ic2;
+    ic[0] = ic1, ic[1] = ic2;
+    return cs;
+}
+static void trk_filter(uint32_t t, int32_t *x, uint32_t n)   /* (2.2: and the track's side signal, SPREAD's, the same) */
+{
+    int32_t tgt = tf_tgt(t), cs = tf_cs[t];
+    int32_t r = clamp(trk[t].res + dr_res[t] + ch_res[t], 0, 127) * 7 / 8;   /* (DRONE's on both: drone.c; WARP's) */
+    uint32_t ty = (uint32_t)clamp(trk[t].ftype, 0, NFTYPE - 1);
+    if (tf_open(t)) {                           /* (open: as it is) */
+        tf_cs[t] = ty == FT_LP ? 127 << 8 : 0, tf_on[t] = 0;
+        return;
+    }
+    if (!tf_on[t]) tf_on[t] = 1, tf_ic[t][0] = 0, tf_ic[t][1] = ty == FT_LP ? x[0] >> 2 : 0, tf_is[t][0] = tf_is[t][1] = 0;   /* (from
+                                                 * bypassed: no step) */
+    if (sb_used >> t & 1u) tf_pass(sbuf[t], n, cs, tgt, r, ty, tf_is[t]);
+    else tf_is[t][0] = tf_is[t][1] = 0;
+    tf_cs[t] = tf_pass(x, n, cs, tgt, r, ty, tf_ic[t]);
 }
 static void trk_peak(uint32_t t, const int32_t *x, uint32_t n)   /* its peak, roughly: HOME's candle */
 {
@@ -314,12 +354,18 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
         int32_t jg = jk_trk(t);                 /* (2.0: JIEHKKI's presence, jiehkki.c) */
         int32_t lv = (trk_quiet >> t & 1u) ? 0 : mulq15(lfo_move(t, LD_VOLUME, clamp(trk[t].level, 0, 127), 127) * 258, jg);   /* (a
                                                  * silent track: all its gains down, ramped) */
+        if (sw_e) lv = clamp(lv + mulq15(lv, sw_e) / 3, 0, 32767);   /* (2.2: SWELL, up to +2.5 dB) */
         int32_t pan = lfo_move(t, LD_PAN, clamp(trk[t].pan, 0, 127), 127), g[5];
         g[0] = mulq15(lv, pan <= 64 ? 32767 : (127 - pan) * 520);   /* PAN: the far side down, the near one full */
         g[1] = mulq15(lv, pan >= 64 ? 32767 : pan * 512);
+        if (trk[t].spread > 0) {                /* (2.2: SPREAD: the middle down as the side comes up, so a voice at a
+                                                 * side is no louder than one in the middle was: x 1 - 0.42 SPREAD) */
+            int32_t m = 32767 - clamp(trk[t].spread, 0, 100) * 138;
+            g[0] = mulq15(g[0], m), g[1] = mulq15(g[1], m);
+        }
         g[2] = mulq15(lv, pf_held >> PF_ECHO & 1u ? 127 * 258 : fx_send(t, clamp(trk[t].dly, 0, 127)));   /* the sends:
                                                  * after LEVEL (ECHO THROW, REV THROW held: full) */
-        g[3] = mulq15(lv, pf_held >> PF_REV & 1u ? 127 * 258 : fx_send(t, lfo_move(t, LD_REV, clamp(trk[t].rev + dr_rev[t], 0, 127), 127)));
+        g[3] = mulq15(lv, pf_held >> PF_REV & 1u ? 127 * 258 : fx_send(t, lfo_move(t, LD_REV, clamp(trk[t].rev + dr_rev[t] + (sw_e >> 9), 0, 127), 127)));   /* (2.2: SWELL, up to + 64) */
         g[4] = mulq15(lv, fx_send(t, lfo_move(t, LD_GRAIN, clamp(trk[t].grn, 0, 127), 127)));
         int32_t px0 = tf_px[t], pw = trk[t].fpos ? TF_PX1 : 0;
         int32_t px1 = !(used >> t & 1u) ? pw : px0 < pw ? (px0 + 32 < pw ? px0 + 32 : pw) : (px0 - 32 > pw ? px0 - 32 : pw);
@@ -354,9 +400,36 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
                 mix_add(gbus, 1u, x, mix_g[t][4], g[4], n);
             }
         }
+        if (sb_used >> t & 1u) {                /* (2.2: SPREAD's side: L + it, R - it, at the track's level) */
+            int32_t gs = lv * 19 / 32;          /* (a voice at one side: about as loud as in the middle, never louder) */
+            uint32_t i;
+            mix_add(out, 2u, sbuf[t], mix_gs[t], gs, n);
+            for (i = 0; i < n; i++) sbuf[t][i] = -sbuf[t][i];   /* (R: minus it; mulq15w takes no negative gain) */
+            mix_add(out + 1, 2u, sbuf[t], mix_gs[t], gs, n);
+            mix_gs[t] = gs;
+        } else mix_gs[t] = 0;
         for (k = 0; k < 5u; k++) mix_g[t][k] = g[k];
     }
 }
+
+#ifdef FM1_LIVE_IN
+static void live_mix(int32_t *out, uint32_t n)  /* audio: the input into the mix and the DLY, REV and GRAIN buses, at the
+                                                 * platform's levels (live_g), each ramped over the block */
+{
+    static int32_t x[VB], gm[4];
+    int32_t *bus[3] = {dbus, rbus, gbus};
+    uint32_t i, k;
+    if (!li_cur) {                              /* (no input: the levels back to 0, so it comes in ramped) */
+        gm[0] = gm[1] = gm[2] = gm[3] = 0;
+        return;
+    }
+    for (i = 0; i < n; i++) x[i] = li_cur[i];
+    mix_add(out, 2u, x, gm[0], live_g[0], n);
+    mix_add(out + 1, 2u, x, gm[0], live_g[0], n);
+    for (k = 0; k < 3u; k++) mix_add(bus[k], 1u, x, gm[1u + k], live_g[1u + k], n);
+    for (k = 0; k < 4u; k++) gm[k] = live_g[k];
+}
+#endif
 
 /* the output: 6 dB of headroom after every effect (the mix at half: six loud voices, four tracks fit), MASTER
  * (2.0: the knob's turn to the power 1.5: half way ~9 dB under the top, 3/4 ~4 dB; V2's was the knob squared and
@@ -367,8 +440,27 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
  * USB LEVEL moves it -12 .. +24 dB (USB_G, Q12: 4092 at 0 dB, MASTER's top) */
 #define USB_L0 2u                               /* USB LEVEL 0 dB (MASTER's top) */
 #define USB_LMAX 6u
+#define USB_KMAX 13u                            /* (2.2, after SHRUB's USB LEVEL, written anew) USB LEVEL's knob: 7 .. 13
+                                                 * the same levels, SPK OFF: the speaker and the jack quiet while a
+                                                 * computer takes the sound over USB (heard there, not twice) */
+#define usb_lv(v) ((uint32_t)(v) > USB_LMAX ? (uint32_t)(v) - USB_LMAX - 1u : (uint32_t)(v))   /* (its level, 0 .. 6) */
 static const int32_t USB_G[USB_LMAX + 1u] = {1027, 2051, 4092, 8165, 16291, 32505, 64856};
 static volatile uint8_t usb_lvl = USB_L0;       /* set.usb, for the audio (sys_sync) */
+static int32_t spk_g = 4096;                    /* (2.2) the speaker's and the jack's gain (Q12), ramped: SPK OFF */
+static volatile uint8_t spk_mode, help_on = 1;  /* (2.2) SYSTEM 4: SOUND SPEAKER; HELP (ui.c) */
+/* (2.2, after HADAL-1's SOUND MODE, Polystellarflow's: written anew) SOUND SPEAKER: the speaker and the jack (never the
+ * USB) through a curve for the FM-1's little speaker: the lows it cannot play taken away (a one-pole high-pass, ~110
+ * Hz: they only rattle it and eat the headroom), the low mids lifted a little (~200 .. 450 Hz, about +3 dB: a drone
+ * still deep). Shifts only; faded in and out over ~50 ms */
+static int32_t sm_hp[2], sm_x[2], sm_a[2], sm_b[2], sm_g;
+static inline int32_t spk_eq(int32_t x, uint32_t c)
+{
+    int32_t s = sm_hp[c] + x - sm_x[c], y;
+    sm_x[c] = x, sm_hp[c] = s - (s >> 6);       /* (high-pass: x (1 - 2^-6) a sample, ~110 Hz) */
+    sm_a[c] += (x - sm_a[c]) >> 5, sm_b[c] += (x - sm_b[c]) >> 4;   /* (~220 Hz, ~450 Hz: the band between) */
+    y = sm_hp[c] + ((sm_b[c] - sm_a[c]) >> 1);
+    return x + (((y - x) * sm_g) >> 12);        /* (sm_g: 0 .. 4096, the curve's share) */
+}
 #define OUT_LIM 32440                           /* (-0.09 dBFS) */
 static int32_t out_env;                         /* audio: the limiter's peak (its gain: OUT_LIM / it) */
 static uint32_t isqrt32(uint32_t v)             /* floor(sqrt(v)) */
@@ -414,12 +506,16 @@ static inline void out_lim(int32_t *l, int32_t *r, int32_t *env)
 }
 static void out_stage(int32_t *out, uint32_t n)
 {
-    int32_t g = out_gain(), env = out_env, ue = usb_env, ug = USB_G[usb_lvl <= USB_LMAX ? usb_lvl : USB_L0], u[64], se = side_env;
+    int32_t g = out_gain(), env = out_env, ue = usb_env, ug = USB_G[usb_lvl <= USB_KMAX ? usb_lv(usb_lvl) : USB_L0], u[64];
+    int32_t se = side_env, sg = spk_g, st;
     uint32_t i, rec = (uint32_t)usb_feeding();
+    st = rec && usb_lvl > USB_LMAX && usb_lvl <= USB_KMAX ? 0 : 4096;   /* (2.2: SPK OFF while the computer takes it) */
     for (i = 0; i < n; i++) {
         int32_t x = clamp(out[2u * i], -500000, 500000), y = clamp(out[2u * i + 1u], -500000, 500000);
         int32_t l = (x * g) >> 12, r = (y * g) >> 12;
         side_lim(&l, &r, &se);
+        if (sm_g != (spk_mode ? 4096 : 0)) sm_g += spk_mode ? 2 : -2;   /* (2.2: SOUND SPEAKER, ~50 ms) */
+        if (sm_g) l = spk_eq(l, 0), r = spk_eq(r, 1);
         out_lim(&l, &r, &env);
         if (rec) {                              /* (the USB recording: MASTER at its top, USB LEVEL's gain) */
             int32_t ul = (int32_t)(((int64_t)x * ug) >> 12), ur = (int32_t)(((int64_t)y * ug) >> 12);
@@ -428,11 +524,44 @@ static void out_stage(int32_t *out, uint32_t n)
             if ((i & 31u) == 31u || i + 1u == n)
                 usb_feed(u, (i & 31u) + 1u);
         }
+        if (sg != st) sg += sg < st ? 4 : -4;   /* (~23 ms: no click) */
+        if (sg < 4096) l = (l * sg) >> 12, r = (r * sg) >> 12;
         out[2u * i] = l, out[2u * i + 1u] = r;
     }
+    spk_g = sg;
     out_env = env;
     usb_env = ue;
     side_env = se;
+}
+
+/* (2.2) the second core (hal/fm1_cpu1.h, felucca-bsp's): SPACE, the reverb, runs there, a block behind: as a block
+ * begins, the second core renders the last block's REV bus into rv_c1 while this one renders the voices, the mix,
+ * GRAIN and DELAY; at SPACE's place this one waits for it and adds it in. 5.8 ms more on the reverb, never heard; no
+ * job outstanding outside the audio interrupt (the main loop's flash writes never meet one). A failure: it is held,
+ * and SPACE runs here as before (c1_ok 0). Off the FM-1: here, at once */
+#if !defined DINGHY_HOST && !defined GRIMM_WEB && !defined FM1_PLATFORM_FILE
+#define C1_ON() fm1_cpu1_on
+#define C1_GAVE() fm1_cpu1_gave_up            /* (why it is off: FM1_CPU1_*) */
+#define C1_RUN(f, a) fm1_cpu1_run(f, a)
+#define C1_WAIT() fm1_cpu1_wait()
+#else                                           /* (host: tests/host.c's c1_sim, GRIMM_CPU2=1; the browser, VIBE: none) */
+#ifndef DINGHY_HOST
+static const uint32_t c1_sim = 0;
+#endif
+static void (*c1_fn)(uint32_t);
+static uint32_t c1_arg;
+#define C1_ON() c1_sim
+#define C1_GAVE() 0u
+static int C1_RUN(void (*f)(uint32_t), uint32_t a) { c1_fn = f, c1_arg = a; return 1; }
+static int C1_WAIT(void) { if (c1_fn) c1_fn(c1_arg), c1_fn = 0; return 0; }
+#endif
+static int32_t rb_c1[VB], rv_c1[2u * VB];       /* the last block's REV bus; its reverb (the second core's) */
+static uint32_t c1_n, c1_go;                    /* its frames (0: none yet); a job handed over this block */
+static void c1_space(uint32_t n)                /* (the second core) */
+{
+    uint32_t i;
+    for (i = 0; i < 2u * n; i++) rv_c1[i] = 0;
+    hall_render(rb_c1, rv_c1, n);
 }
 
 static void app_audio(int32_t *out, uint32_t n)
@@ -442,12 +571,24 @@ static void app_audio(int32_t *out, uint32_t n)
     ck_e = rt_now(), ck_j = 0;                  /* (the MIDI clock: this block's time, clock.c) */
 #define CS_MARK(k) (t = fm1_ticks(), s = isr_in_audio, cs_sum[k] += t - tp - (s - sp), tp = t, sp = s)
     if (n > VB) n = VB;
+#ifdef FM1_LIVE_IN
+    li_cur = live_take(n), li_n = n;            /* (sound in: before the voices, Holvut's strings may hear it) */
+#endif
+    c1_go = C1_ON() && c1_n == n && C1_RUN(c1_space, n);   /* (2.2: the last block's SPACE, on the second core) */
+    {                                           /* (2.2) SWELL: up ~4 s, down ~1.5 s */
+        int32_t w = pf_held >> PF_SWELL & 1u ? 32767 : 0, c = clamp(sw_cc, 0, 127) * 258;
+        w = c > w ? c : w;
+        sw_e = w > sw_e ? (sw_e + 48 < w ? sw_e + 48 : w) : (sw_e - 128 > w ? sw_e - 128 : w);
+    }
     used = voices_render(tbuf, n);
     CS_MARK(CS_VOICES);
     for (i = 0; i < n; i++)
         dbus[i] = rbus[i] = gbus[i] = 0;
     mix_tracks(out, used, n);
     ru_render(out, rbus, n);                    /* (2.0) RUOHCAT: the ice around the drone (jiehkki.c) */
+#ifdef FM1_LIVE_IN
+    live_mix(out, n);                           /* (sound in: into the mix and the effects' buses) */
+#endif
     CS_MARK(CS_MIX);
     master_filter(out, n, MP_PRE);              /* MASTER, PRE FX: the tracks' dry mix */
     CS_MARK(CS_MASTER);
@@ -459,7 +600,15 @@ static void app_audio(int32_t *out, uint32_t n)
     CS_MARK(CS_GRAIN);
     tape_render(dbus, out, rbus, n);            /* DELAY: the DLY bus in; the echoes out, and into the REV bus */
     CS_MARK(CS_DELAY);
-    hall_render(rbus, out, n);                  /* SPACE: the REV bus in, the reverb out */
+    if (C1_ON() || c1_go) {                     /* (2.2) SPACE on the second core, a block behind */
+        if (c1_go && C1_WAIT()) c1_space(c1_n);   /* (given up just now: done here, this once) */
+        if (c1_n == n) for (i = 0; i < 2u * n; i++) out[i] += rv_c1[i];
+        for (i = 0; i < n; i++) rb_c1[i] = rbus[i];
+        c1_n = n;
+    } else {
+        if (c1_n) c1_n = 0;                     /* (gone: from now on here) */
+        hall_render(rbus, out, n);              /* SPACE: the REV bus in, the reverb out */
+    }
     CS_MARK(CS_SPACE);
     if (hw_bloom_on && n <= HW_RN)              /* (.. and now only what they added: the next render's BLOOM) */
         for (i = 0; i < n; i++) hw_ret[i] = ((out[2u * i] + out[2u * i + 1u]) >> 1) - hw_ret[i];
@@ -649,6 +798,15 @@ static int take_from(uint32_t t, int phys, int rel, uint32_t *v)   /* track t's 
         if (lat_trk[i] == t && (!phys || trk[t].eng == ENG_PHYS)) { *v = drop_at(i); return 1; }
     return 0;
 }
+/* (2.2, after SHRUB's, written anew) the CPU guard: the blocks running hot (the last ~0.5 s's average over 85 % of a
+ * block's time), a new note takes over the quietest release (a fade, then its attack: no click) before it adds a
+ * voice; the overload guard (shed_voice) stays the last resort */
+#ifdef DINGHY_HOST                              /* (host: GRIMM_CPU_HOT=1, tests/host.c's cpu_hot_force) */
+#define CPU_HOT() (cpu_hot_force || cpu_now > BUDGET_TICKS / 20u * 17u)
+#else
+#define CPU_HOT() (cpu_now > BUDGET_TICKS / 20u * 17u)
+#endif
+static volatile uint32_t cpu_took;              /* audio: notes that took a release over, hot (tests/probe.c) */
 static int pick_voice(uint32_t t, uint32_t note, uint32_t *v)
 {
     uint32_t w, u, most = 0, from = NT;
@@ -656,6 +814,13 @@ static int pick_voice(uint32_t t, uint32_t note, uint32_t *v)
     if (!phys) {
         for (w = 0; w < NV; w++)                /* (its own release of this note: it again) */
             if (!voice_latched(w) && !voice_idle(w) && vc[w].note == note && vc[w].trk == t) { *v = w; return 1; }
+        if (CPU_HOT()) {                        /* (2.2: hot: the quietest release, any track's, before an idle one) */
+            uint32_t best = NV;
+            int32_t lv = 0x7FFFFFFF;
+            for (w = 0; w < NV; w++)
+                if (vc[w].stage == ST_REL && !voice_latched(w) && voice_level(w) < lv) lv = voice_level(w), best = w;
+            if (best < NV) { *v = best, cpu_took++; return 1; }
+        }
         for (w = 0; w < NV; w++)
             if (!voice_latched(w) && voice_idle(w)) { *v = w; return 1; }
     }
@@ -949,6 +1114,19 @@ static void ctl_hook(void)
 }
 
 #include "perform.c"                            /* the FX layer: the tricks on the output (FX held + G3 .. F4) */
+/* (2.2) MOTION, a knob's move recorded and looped (motion.c): its lanes, here for the saves (the slots' stream's tail) */
+#define MO_N 4u                                 /* lanes */
+#define MO_PTS 256u                             /* a lane's points, over its length */
+typedef struct {
+    uint8_t on, pg, k, t, x, home;              /* playing; the knob (page, knob, track, its source or step, as a MIDI
+                                                 * LEARN link); its first value (0 .. 127: what the project saves) */
+    uint16_t len10;                             /* its length (10 ms) */
+    uint8_t v[MO_PTS];                          /* the move (0 .. 127 over the knob's range) */
+} mo_lane_t;
+static mo_lane_t mo[MO_N] __attribute__((section(".pool")));
+#define MO_ALL (MO_N * (uint32_t)sizeof(mo_lane_t))
+static uint32_t mo_dirty;                       /* the lanes changed: saved with the slots' stream */
+static void mo_home(int on);                    /* (motion.c: the knobs the lanes move at their first value, for a save) */
 #include "store.c"                              /* SOUNDS, the working project (autosave), slots A..D, undo (store.c) */
 
 /* main loop: SAVE's pages and its held layer, PRESETS, undo, the header's message for a moment */
@@ -997,11 +1175,15 @@ static struct {
     uint8_t latch;                              /* (SET_VER 3) SYSTEM 3's LATCH: 0 FROM SOUND (before: so), 1
                                                  * ALWAYS OFF */
     uint8_t usb;                                /* (Arctic Scream p0larpatch, SET_VER 4) SYSTEM 3's USB LEVEL: 0 .. 6,
-                                                 * -12 .. +24 dB; USB_L0 (0 dB) before */
+                                                 * -12 .. +24 dB; USB_L0 (0 dB) before; (2.2) 7 .. 13 the same, SPK
+                                                 * OFF (USB_KMAX) */
     uint8_t mod;                                /* (1.5.2, SET_VER 5) SYSTEM 3's MOD OUT: 0 OFF (before), 1 ON */
+    uint8_t sys4;                               /* (2.2, SET_VER 6) SYSTEM 4: bit 0 SOUND SPEAKER (0 HEADPHONES, before),
+                                                 * bit 1 HELP OFF (0 ON) */
 } set;
-#define SET_VER 5u
+#define SET_VER 6u
 static uint32_t set_dirty, set_t;               /* the settings changed, when */
+static volatile int32_t sy_snd, sy_help;       /* (2.2) SYSTEM 4's knobs: SOUND (1 SPEAKER), HELP (1 ON) */
 static volatile int32_t sy_col, sy_mch, sy_tune, sy_scr, sy_learn, sy_out, sy_fac, sy_clk, sy_latch, sy_usb, sy_mod;   /* SYSTEM's,
                                                  * SYSTEM 2's, SYSTEM 3's knobs (sy_fac: SAMPLES, 1 RESTORE: OCT+
                                                  * writes the factory ones) */
@@ -1009,10 +1191,14 @@ static uint32_t fac_at;                         /* RESTORE confirmed: when it wr
 static uint32_t learn_st;                       /* MIDI LEARN: 0 none; 1 TURN A KNOB; 2 MOVE A CC (learn_to: the knob) */
 static uint8_t learn_to[4];                     /* (the page, the knob, the track, x) */
 static uint32_t scr_dark, scr_woke, t_hand;     /* SCREEN OFF: dark; a touch woke it (this pass); the hands' last touch */
-#define NSCR 6
-static const uint16_t SCR_S[NSCR] = {0, 60, 300, 900, 1800, 120};   /* SCREEN OFF: NEVER, 1, 5, 15, 30 min (s); (2.0)
-                                                 * GUOVSSAHAS: the northern lights after 2 min (ui.c ui_aurora) */
-static uint32_t scr_aur;                        /* (2.0) the screen "dark" as GUOVSSAHAS: lit, the aurora on it */
+#define NSCR 7
+#define SCR_AUR 5u                              /* (SCREEN OFF's GUOVSSAHAS, GOVVA) */
+#define SCR_PIC 6u
+static const uint16_t SCR_S[NSCR] = {0, 60, 300, 900, 1800, 120, 60};   /* SCREEN OFF: NEVER, 1, 5, 15, 30 min (s); (2.0)
+                                                 * GUOVSSAHAS: the northern lights after 2 min (ui.c ui_aurora); (2.2)
+                                                 * GOVVA: the moving picture after 1 min (ui.c ui_govva) */
+static uint32_t scr_aur;                        /* (2.0) the screen "dark" as GUOVSSAHAS: lit, the aurora on it (2.2: 2,
+                                                 * GOVVA's picture) */
 static char *link_name(char *s, const uint8_t *L);
 static char hd_msg[24];                         /* (ui.c: in the header's place until hd_until) */
 static int32_t bat_lvl = -1;                    /* the battery's level (batt_poll; ui.c's header) */
@@ -1044,6 +1230,7 @@ static int32_t ch_last = -1;                    /* SEL's picture: the note last 
 /* ---- the screen: plain text, a row per value; only what changed is drawn */
 #define KEY0 41u                                /* key 0 = F2 (Arctic Scream p0larpatch: an octave down, for drones) */
 #include "gen.c"                                /* GENERATE (FX held + the black keys) */
+#include "year.c"                               /* (2.2) JAHKI: the year's eight seasons leaning the sound */
 #include "jiehkki.c"                            /* (2.0) JIEHKKI: a piece played on its own, LENGTH long; RUOHCAT */
 #define OCT_BOTH (1u << BTN_OCT_DOWN | 1u << BTN_OCT_UP)
 #define HOLD_MS 600u                            /* a button held this long: its hold function (HOME: SYSTEM) */
@@ -1091,7 +1278,7 @@ static char *put_ms(char *s, uint32_t q16)      /* a time, ms in Q16: "5 ms", "1
  * tap opens its first page, again the next (round); SYSTEM is HOME's, held */
 enum { PG_SOUND, PG_SOURCE, PG_ENV, PG_LFO, PG_SCALE, PG_CHORD, PG_SONG, PG_HOME, PG_MIX1, PG_MIX2, PG_SYSTEM,
        PG_SYS2, PG_SOUNDS, PG_PROJECTS, PG_ARP, PG_GRID, PG_PATTERN, PG_TAPE, PG_GRAIN, PG_DELAY, PG_SPACE, PG_PERFORM,
-       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, PG_RUOHCAT, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
+       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, PG_RUOHCAT, PG_JAHKI, PG_ENV2, PG_SYS4, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
                                                  * have; in their button's round by pg_key. TRACK: gone in step 25, its
                                                  * number kept: sys_load moves its links onto HOME) */
 typedef struct {
@@ -1136,14 +1323,19 @@ static const page_t PAGES[NPAGE] = {
                                                  * SOURCE's) */
     {"MASTER", BTN_FX, 1, 0, 1, {"CUTOFF", "RESONANCE", "TYPE", "POSITION"}},   /* (FX's 5th and 6th, master.c) */
     {"DRIVE", BTN_FX, 1, 0, 1, {"AMOUNT", "TYPE", "TONE", "MIX"}},
-    {"SYSTEM 3", BTN_HOME, 1, 0, 0, {"LATCH", "USB", "MOD", ""}},   /* (a NEW project's tracks' LATCH) */
+    {"SYSTEM 3", BTN_HOME, 1, 0, 0, {"LATCH", "USB", "MOD", "PICTURE"}},   /* (a NEW project's tracks' LATCH) */
     {"LOOP", BTN_EDIT, 1, 1, 1, {"GATE", "BLOOM", "LOWCUT", "EXCITE"}},   /* (1.4: a HOWL track's, after SOUND: its
                                                  * loop's GATE, BLOOM, LOWCUT and EXCITE, howl.c) */
     {"AIR", BTN_FX, 1, 0, 1, {"PING", "SHIMMR", "", ""}},
     {"JIEHKKI", BTN_LFO, 1, 0, 1, {"LENGTH", "DRIFT", "RUOHCAT", "START"}},   /* (2.0: LFO's third, after DRONE: a
                                                  * piece on its own, jiehkki.c; North Sami: a glacier, to creak) */
     {"RUOHCAT", BTN_LFO, 1, 0, 1, {"AMOUNT", "SAMPLE", "SHARE", "VARY"}},   /* (2.0: LFO's fourth: RUOHCAT with
-                                                 * your samples among its sounds, jiehkki.c) */   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
+                                                 * your samples among its sounds, jiehkki.c) */
+    {"JAHKI", BTN_LFO, 1, 0, 1, {"YEAR", "SEASON", "DEPTH", "SKY"}},   /* (2.2: LFO's fifth: the year, year.c) */
+    {"ENV 2", BTN_ENV, 1, 1, 1, {"LOOP", "ONSET", "SPREAD", "DETUNE"}},
+    {"SYSTEM 4", BTN_HOME, 1, 0, 0, {"SOUND", "HELP", "", ""}},   /* (2.2: after SYSTEM 3: the speaker's sound, the
+                                                 * help on the screen) */   /* (2.2: ENV's second: the envelope looping,
+                                                 * a note's wait, the voice steps, voices.c) */   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
                                                  * (tape.c), SPACE's SHIMMER (hall.c)) */
 };
 static uint32_t pg_key(uint32_t p)              /* its place in its button's round */
@@ -1168,8 +1360,8 @@ static uint32_t page = PG_HOME;
 static uint32_t next_page(uint32_t b)           /* button b tapped: its first page, or (on one of its) the next */
 {
     uint32_t p, first = NPAGE, nx = NPAGE, on = PAGES[page].btn == b && pg_on(page);
-    if (b == BTN_HOME && (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3))
-        return page == PG_SYSTEM ? PG_SYS2 : page == PG_SYS2 ? PG_SYS3 : PG_SYSTEM;
+    if (b == BTN_HOME && (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3 || page == PG_SYS4))
+        return page == PG_SYSTEM ? PG_SYS2 : page == PG_SYS2 ? PG_SYS3 : page == PG_SYS3 ? PG_SYS4 : PG_SYSTEM;
     for (p = 0; p < NPAGE; p++) {
         if (PAGES[p].btn != b || !pg_on(p)) continue;
         if (first == NPAGE || pg_key(p) < pg_key(first)) first = p;
@@ -1203,6 +1395,8 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_SOUND: return &trk[sel].p[sel_eng()][k];
     case PG_SOURCE: return k == 0u ? &trk[sel].eng : k == 1u ? &trk[sel].latch : 0;
     case PG_ENV: return &trk[sel].env[k];
+    case PG_ENV2: return k == 0u ? &trk[sel].e_loop : k == 1u ? &trk[sel].e_onset : k == 2u ? &trk[sel].spread :
+                         &trk[sel].detune;
     case PG_SONG: return k == 0u ? &song_sect : k == 1u ? &song_pat[clamp(song_sect, 0, SONG_N - 1)] :
                          k == 2u ? &song_rep[clamp(song_sect, 0, SONG_N - 1)] : &song_mode;
     case PG_LFO: return k == 0u ? &trk[sel].lfo_rate : k == 1u ? &trk[sel].lfo_depth : k == 2u ? &trk[sel].lfo_dest :
@@ -1232,11 +1426,13 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_PROJECTS: return k == 0u ? &pj_slot : k == 3u ? &pj_act : 0;   /* (CATEGORY, TYPE: "-") */
     case PG_SYSTEM: return k == 0u ? &sy_col : k == 1u ? &sy_mch : k == 2u ? &sy_tune : &sy_scr;
     case PG_SYS2: return k == 0u ? &sy_learn : k == 1u ? &sy_out : k == 2u ? &sy_fac : &sy_clk;
-    case PG_SYS3: return k == 0u ? &sy_latch : k == 1u ? &sy_usb : k == 2u ? &sy_mod : 0;
+    case PG_SYS3: return k == 0u ? &sy_latch : k == 1u ? &sy_usb : k == 2u ? &sy_mod : &pc_mode;
+    case PG_SYS4: return k == 0u ? &sy_snd : k == 1u ? &sy_help : 0;
     case PG_LOOP: return &trk[sel].hw_x[k & 3u];
     case PG_AIR: return k == 0u ? &dl_pp : k == 1u ? &rv_shim : 0;
     case PG_JIEHKKI: return k == 0u ? &jk_len : k == 1u ? &jk_drift : k == 2u ? &jk_ruo : &jk_go;
     case PG_RUOHCAT: return k == 0u ? &jk_ruo : k == 1u ? &ru_smp : k == 2u ? &ru_share : &ru_vary;
+    case PG_JAHKI: return k == 0u ? &yr_len : k == 1u ? &yr_season : k == 2u ? &yr_depth : &yr_sky;
     default: return 0;                          /* (not built yet: the knobs do nothing) */
     }
 }
@@ -1251,10 +1447,12 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_ARP ? (k == 0u ? NARPMODE - 1 : k == 1u ? NARPRATE - 1 : k == 2u ? 4 : 100) :
            pg == PG_LFO ? (k == 0u ? 127 : k == 1u ? 100 : k == 2u ? NLFODEST - 1 : NLFOSHAPE - 1) :
            pg == PG_DRONE ? (k < 2u ? 100 : k == 2u ? DR_NRISE - 1 : 1) :
-           pg == PG_JIEHKKI ? (k == 0u ? JK_NLEN - 1 : k == 3u ? 1 : 100) : pg == PG_RUOHCAT ? (k == 1u ? RU_NSMP - 1 : 100) :
+           pg == PG_JIEHKKI ? (k == 0u ? JK_NLEN - 1 : k == 3u ? JK_ALWAYS : 100) : pg == PG_RUOHCAT ? (k == 1u ? RU_NSMP - 1 : 100) :
+           pg == PG_JAHKI ? (k == 0u ? YR_NLEN - 1 : k == 1u ? YR_NS - 1 : k == 2u ? 100 : 1) :
+           pg == PG_ENV2 ? (k == 0u ? NELOOP - 1 : 100) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : NSCR - 1) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
-           pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_LMAX : 1) :
+           pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_KMAX : k == 3u ? NPC - 1 : 1) : pg == PG_SYS4 ? 1 :
            pg == PG_FMALGO ? (k == 0u ? 31 : k == 1u ? 7 : k == 2u ? 5 : 99) :
            pg == PG_FMOP ? (k ? 99 : 31) : pg == PG_MIX2 ? (k == 1u ? NFTYPE - 1 : k == 2u ? 1 : 127) :
            pg == PG_MASTER ? (k == 2u ? NFTYPE - 1 : k == 3u ? NMPOS - 1 : 127) :
@@ -1281,7 +1479,8 @@ static const char *lfo_dest_name(int32_t d)     /* DESTINATION: its name (a knob
     return d >= LD_K1 && d <= LD_K4 ? knob_name(PG_SOUND, (uint32_t)(d - LD_K1)) : LFO_DEST_NAME[d];
 }
 static const char *const COL_NAME[5] = {"ICE", "AURORA", "VIOLET", "PLASMA", "MONO"};   /* SYSTEM: COLOUR */
-static const char *const SCR_NAME[NSCR] = {"NEVER", "1 MIN", "5 MIN", "15 MIN", "30 MIN", "GUOVSSAHAS"};   /* SCREEN OFF */
+static const char *const SCR_NAME[NSCR] = {"NEVER", "1 MIN", "5 MIN", "15 MIN", "30 MIN", "GUOVSSAHAS",
+                                                 "GOVVA"};   /* SCREEN OFF */
 static const char *const LEARN_NAME[3] = {"OFF", "LEARN", "CLEAR ALL"};   /* SYSTEM 2: MIDI LEARN */
 static char *mch_text(char *s, int32_t v)       /* MIDI CHANNEL: "1-4" .. "13-16", "ALL > SEL", "CH 1 > SEL" .. */
 {
@@ -1320,12 +1519,14 @@ static char *tune_text(char *s, int32_t v)      /* TUNE: "+00", "-12" */
     s[1] = (char)('0' + v / 10 % 10), s[2] = (char)('0' + v % 10), s[3] = 0;
     return s + 3;
 }
-static char *usb_db(char *s, int32_t v, const char *sp)   /* USB LEVEL: "-12DB" .. "+24DB" (sp between); returns s */
+static char *usb_db(char *s, int32_t v, const char *sp)   /* USB LEVEL: "-12DB" .. "+24DB" (sp between), (2.2) " SPK
+                                                 * OFF" after it on 7 .. 13; returns s */
 {
-    int32_t d = (clamp(v, 0, (int32_t)USB_LMAX) - (int32_t)USB_L0) * 6;
+    int32_t u = clamp(v, 0, (int32_t)USB_KMAX), d = ((int32_t)usb_lv(u) - (int32_t)USB_L0) * 6;
     char *e = s;
     if (d) *e++ = d < 0 ? '-' : '+';
-    put_s(put_s(put_u(e, (uint32_t)(d < 0 ? -d : d)), sp), "DB");
+    e = put_s(put_s(put_u(e, (uint32_t)(d < 0 ? -d : d)), sp), "DB");
+    if (u > (int32_t)USB_LMAX) put_s(e, " SPK OFF");
     return s;
 }
 static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on page pg, as the screen shows it */
@@ -1389,11 +1590,30 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
     case PG_JIEHKKI:                            /* (2.0) LENGTH, DRIFT, RUOHCAT, START */
         if (k == 0u) put_s(s, JK_LEN_NAME[clamp(v, 0, JK_NLEN - 1)]);
         else if (k < 3u) put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
-        else put_s(s, v ? "ON" : "OFF");
+        else put_s(s, v >= JK_ALWAYS ? "ALWAYS" : v ? "ON" : "OFF");   /* (2.2: ALWAYS) */
+        return;
+    case PG_SYS4:                               /* (2.2) SOUND, HELP */
+        put_s(s, k == 0u ? (v ? "SPEAKER" : "HEADPHONES") : v ? "ON" : "OFF");
+        return;
+    case PG_SYS3:                               /* (2.1: its PICTURE; the others as the slabs say them, ui.c) */
+        if (k == 3u) { put_s(s, PC_NAME[clamp(v, 0, NPC - 1)]); return; }
+        if (k == 1u) { usb_db(s, v, " "); return; }
+        put_s(s, k == 2u ? (v ? "ON" : "OFF") : v ? "ALWAYS OFF" : "FROM SOUND");
+        return;
+    case PG_ENV2:                               /* (2.2) LOOP, ONSET, SPREAD, DETUNE */
+        if (k == 0u) put_s(s, EL_NAME[clamp(v, 0, NELOOP - 1)]);
+        else if (k == 1u) put_ms(s, (uint32_t)clamp(v, 0, 100) * 80u << 16);
+        else put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
         return;
     case PG_RUOHCAT:                            /* (2.0) AMOUNT, SAMPLE, SHARE, VARY */
         if (k == 1u) put_s(s, RU_SMP_NAME[clamp(v, 0, RU_NSMP - 1)]);
         else put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
+        return;
+    case PG_JAHKI:                              /* (2.2) YEAR, SEASON, DEPTH, SKY */
+        if (k == 0u) put_s(s, YR_LEN_NAME[clamp(v, 0, YR_NLEN - 1)]);
+        else if (k == 1u) put_s(s, YR_NAME[clamp(v, 0, YR_NS - 1)]);
+        else if (k == 2u) put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
+        else put_s(s, v ? "ON" : "OFF");
         return;
     case PG_MASTER:
         if (k == 0u) hz_text(s, v, mf_type);
@@ -1637,6 +1857,7 @@ static void pgl_load(const uint8_t *r, uint32_t t)   /* a sound into track t, PR
             pgl_on |= 1u << (t * NPARAM + k);
     pgl_t0[t] = fm1_ms;
 }
+#include "pictures.c"                           /* (2.1) a picture for every sound: HOME's card */
 static void presets_turn(int32_t d)
 {
     uint32_t c = (uint32_t)brw_cat[sel] % NCAT, tries;
@@ -1661,7 +1882,9 @@ static void presets_turn(int32_t d)
     brw_cat[sel] = (int32_t)c, brw_pos[sel] = pos, trk_nm[sel][0] = 0;
     snd_rec_name(r, m);
     hd_say(m);
+    pic_card(sel);                              /* (2.1) its picture on HOME a moment */
 }
+#include "help.c"                               /* (2.2) HELP: what a knob does, a line for a moment */
 #include "ui.c"                                 /* the screens (after the concept designs) */
 #include "reader.c"                             /* (1.5) the screen reader: what the screen shows, said */
 
@@ -1751,7 +1974,7 @@ static void learn_end(const char *m)
 static void learn_knob(uint32_t pg, uint32_t k) /* a knob turned while LEARN waits: the parameter (SYSTEM's, SAVE's,
                                                  * PERFORM's: none) */
 {
-    if (!learn_st || pg == PG_SYSTEM || pg == PG_SYS2 || pg == PG_SYS3 || PAGES[pg].btn == BTN_SAVE || pg == PG_PERFORM ||
+    if (!learn_st || pg == PG_SYSTEM || pg == PG_SYS2 || pg == PG_SYS3 || pg == PG_SYS4 || PAGES[pg].btn == BTN_SAVE || pg == PG_PERFORM ||
         !knob_param(pg, k))
         return;
     if (pg == PG_HOME && k == 0u) pg = PG_MIX1; /* (HOME's VOLUME: the track's LEVEL, as MIXER 1's) */
@@ -1819,9 +2042,11 @@ static void cc_apply(const uint8_t *L, uint32_t val)   /* a linked CC: its param
     seq[sel].cursor = cu, sel = s, fm_op = op;
     if (pg == PG_SONG && (k == 1u || k == 2u)) song_sect = ss;
 }
+#include "motion.c"                             /* (2.2) MOTION: a knob's move recorded and looped */
 static void midi_cc(uint32_t cc, uint32_t val)  /* a CC in (any channel) */
 {
     uint32_t i;
+    if (cc == 1u) sw_cc = (int32_t)val;         /* (2.2: the mod wheel: SWELL by hand; a link on CC 1 as well) */
     if (learn_st == 2u) { learn_cc(cc); return; }
     for (i = 0; i < set.nlk && i < NLINK; i++)
         if (set.lk[i][0] == cc) { cc_apply(set.lk[i], val); return; }
@@ -1915,7 +2140,8 @@ static void sys_sync(void)
     int8_t tn = (int8_t)clamp(sy_tune, -50, 50);
     uint8_t col = (uint8_t)clamp(sy_col, 0, 4), mch = (uint8_t)clamp(sy_mch, 0, MCH_MAX), scr = (uint8_t)clamp(sy_scr, 0, NSCR - 1);
     uint8_t out = (uint8_t)clamp(sy_out, 0, 1), clk = (uint8_t)clamp(sy_clk, 0, CK_N - 1), la = (uint8_t)clamp(sy_latch, 0, 1);
-    uint8_t ul = (uint8_t)clamp(sy_usb, 0, (int32_t)USB_LMAX), md = (uint8_t)clamp(sy_mod, 0, 1);
+    uint8_t ul = (uint8_t)clamp(sy_usb, 0, (int32_t)USB_KMAX), md = (uint8_t)clamp(sy_mod, 0, 1);
+    uint8_t s4 = (uint8_t)((sy_snd ? 1u : 0u) | (sy_help ? 0u : 2u));
     uint32_t n, t;
     if (mch != set.mch || (set.out && !out)) mo_flush = 1;
     if (mch != set.mch)
@@ -1926,15 +2152,16 @@ static void sys_sync(void)
                     midi_held[n] &= (uint8_t)~(0x11u << t);
                 }
     if (tn != set.tune || col != set.col || mch != set.mch || scr != set.scr || out != set.out || clk != set.clk ||
-        la != set.latch || ul != set.usb || md != set.mod) {
+        la != set.latch || ul != set.usb || md != set.mod || s4 != set.sys4) {
         set.tune = tn, set.col = col, set.mch = mch, set.scr = scr, set.out = out, set.clk = clk, set.latch = la;
-        set.usb = ul, set.mod = md;
+        set.usb = ul, set.mod = md, set.sys4 = s4;
         set_dirty = 1, set_t = fm1_ms;
     }
     ck_mode = set.clk, rt_usb_fast = set.clk == CK_USB;   /* (CLOCK: the audio ISR's, platform.c's) */
     ui_acc_user = UI_ACCENTS[set.col & 3u], cv_mono = set.col == 4u;   /* (MONO: ICE's accent, all of it black and white) */
     tune_f = (set.tune * 23666 + set.tune * set.tune * 7) / 10000;   /* (2^(c / 1200) - 1, x 4096) */
     mo_seq = set.out, snd_latch_off = set.latch, usb_lvl = set.usb;
+    spk_mode = set.sys4 & 1u, help_on = !(set.sys4 & 2u);   /* (2.2: SYSTEM 4) */
 }
 static void sys_load(void)                      /* the settings at power-on into SYSTEM's knobs (version 19's: the
                                                  * octave alone; steps 20..24's: no ver, their links to HOME's T1..T4
@@ -1942,33 +2169,38 @@ static void sys_load(void)                      /* the settings at power-on into
 {
     int8_t o = 0;
     uint32_t i;
-    set.usb = USB_L0, set.mod = 0;              /* (the older ones' below: no USB LEVEL, 0 dB; no MOD OUT, OFF) */
+    set.usb = USB_L0, set.mod = 0, set.sys4 = 0;   /* (the older ones' below: no USB LEVEL, 0 dB; no MOD OUT, OFF; no
+                                                 * SYSTEM 4: HEADPHONES, HELP ON) */
     if (!settings_load(&set, sizeof set))
         ;
-    else if (!settings_load(&set, sizeof set - 1u))   /* (SET_VER 4's, 1.5.1 and before: no MOD OUT) */
-        set.mod = 0;
-    else if (!settings_load(&set, sizeof set - 2u))   /* (SET_VER 3's: no USB LEVEL) */
-        set.usb = USB_L0, set.mod = 0;
-    else if (!settings_load(&set, sizeof set - 3u))   /* (V2's before SET_VER 3: no LATCH, OFF) */
-        set.latch = 0, set.usb = USB_L0, set.mod = 0;
-    else if (!settings_load(&set, sizeof set - 4u))   /* (V1.0's: no CLOCK, INT) */
-        set.clk = CK_INT, set.latch = 0, set.usb = USB_L0, set.mod = 0;
-    else if (!settings_load(&set, sizeof set - 5u))   /* (steps 20..24's: no version either) */
-        set.ver = 0, set.clk = CK_INT, set.latch = 0, set.usb = USB_L0, set.mod = 0;
+    else if (!settings_load(&set, sizeof set - 1u))   /* (SET_VER 5's, 2.0 and before: no SYSTEM 4) */
+        set.sys4 = 0;
+    else if (!settings_load(&set, sizeof set - 2u))   /* (SET_VER 4's, 1.5.1 and before: no MOD OUT) */
+        set.mod = 0, set.sys4 = 0;
+    else if (!settings_load(&set, sizeof set - 3u))   /* (SET_VER 3's: no USB LEVEL) */
+        set.usb = USB_L0, set.mod = 0, set.sys4 = 0;
+    else if (!settings_load(&set, sizeof set - 4u))   /* (V2's before SET_VER 3: no LATCH, OFF) */
+        set.latch = 0, set.usb = USB_L0, set.mod = 0, set.sys4 = 0;
+    else if (!settings_load(&set, sizeof set - 5u))   /* (V1.0's: no CLOCK, INT) */
+        set.clk = CK_INT, set.latch = 0, set.usb = USB_L0, set.mod = 0, set.sys4 = 0;
+    else if (!settings_load(&set, sizeof set - 6u))   /* (steps 20..24's: no version either) */
+        set.ver = 0, set.clk = CK_INT, set.latch = 0, set.usb = USB_L0, set.mod = 0, set.sys4 = 0;
     else {
         set.oct = settings_load(&o, 1) ? 0 : o;
         set.tune = 0, set.col = set.mch = set.scr = set.out = set.nlk = 0, set.ver = 0, set.clk = CK_INT, set.latch = 0;
-        set.usb = USB_L0, set.mod = 0;
+        set.usb = USB_L0, set.mod = 0, set.sys4 = 0;
     }
     if (set.mch > MCH_MAX) set.mch = 0;
     if (set.clk >= CK_N) set.clk = CK_INT;
     if (set.latch > 1u) set.latch = 0;
-    if (set.usb > USB_LMAX) set.usb = USB_L0;
+    if (set.usb > USB_KMAX) set.usb = USB_L0;   /* (2.2: 7 .. 13 SPK OFF; 2.1 and before read them as 0 dB) */
     if (set.mod > 1u) set.mod = 0;
+    if (set.sys4 > 3u) set.sys4 = 0;
     if (set.oct < -2 || set.oct > 2) set.oct = 0;
     if (set.nlk > NLINK) set.nlk = 0;
     sy_col = set.col, sy_mch = set.mch, sy_tune = set.tune, sy_scr = set.scr, sy_out = set.out, sy_clk = set.clk;
     sy_latch = set.latch, sy_usb = set.usb, sy_mod = set.mod;
+    sy_snd = set.sys4 & 1u, sy_help = !(set.sys4 & 2u);
     sys_sync();
     set_dirty = 0;
     if (!set.ver)                               /* (steps 20..24's; V1.0's are version 1: as they are) */
@@ -2285,6 +2517,7 @@ static void midi_in(void)
                 nq_note(NQ_OFF, m, 0, MIDI_ID(d1));
                 midi_held[d1] &= (uint8_t)~(0x11u << m);
             }
+        if (on) ru_heard(n);                    /* (2.1: the ice may answer it) */
         if (on && trk[t].latch)
             nq_note(NQ_TOGGLE, t, n, MIDI_ID(d1));
         else if (on) {
@@ -2302,15 +2535,18 @@ static void app_idle(void)
     idle_ok = 1;
 }
 
-static void app_main(void)
-{
-    uint32_t prev = 0, k, b_down = 0, b_used = 0, t_down[14] = {0}, rec = 0,
-             back_page = PG_HOME, pf_keys = 0, pf_back = PG_HOME, t_touch = 0, as_last = 0, as_next = 0, learn_was = 0,
-             fac_was = 0;
-    static const uint8_t WK[8] = {0, 2, 4, 6, 7, 9, 11, 12};   /* the white keys from F3: 1..4 recall A..D, 5..8 save them */
-    static const uint8_t WK2[8] = {14, 16, 18, 19, 21, 23, 24, 26};   /* (2.0) the next eight, G3 .. G4: DICE's moods; the
+/* the main loop's state, kept between app_step's calls (app_main's locals once; static, so a host that cannot run a
+ * loop that never returns, as VIBE FM, calls app_start once and app_step every millisecond) */
+static uint32_t prev, b_down, b_used, t_down[14], rec, back_page = PG_HOME, pf_keys, pf_back = PG_HOME, t_touch, as_last,
+                as_next, learn_was, fac_was;
+static const uint8_t WK[8] = {0, 2, 4, 6, 7, 9, 11, 12};   /* the white keys from F3: 1..4 recall A..D, 5..8 save them */
+static const uint8_t WK2[8] = {14, 16, 18, 19, 21, 23, 24, 26};   /* (2.0) the next eight, G3 .. G4: DICE's moods; the
                                                  * last three, E4 .. G4, ACCIDENT's (EDIT held) */
-    int8_t oct_before = 0;                      /* the octave before the last OCT press (undone if it was a reset) */
+static int8_t oct_before;                       /* the octave before the last OCT press (undone if it was a reset) */
+
+static void app_start(void)                     /* once, at power-on: the saves, the settings, the boot screen */
+{
+    uint32_t k;
     ima_init();                                 /* (samples.c: the decoder's tables, before samples_poll checks a slot) */
     seq_init();
     store_boot();                               /* the working project and the slots, as the FM-1 was left */
@@ -2318,6 +2554,12 @@ static void app_main(void)
     if (store_fresh && getenv("GRIMM_PLAIN")) store_fresh = 0;   /* (host tests: Arctic Scream's plain VA tracks, not ICE WRAITH) */
 #endif
     if (store_fresh) snd_default();             /* (nothing saved: ICE WRAITH) */
+#if !defined DINGHY_HOST && !defined GRIMM_WEB && !defined FM1_PLATFORM_FILE
+    if (store_fresh) gd_page = 1;               /* (2.2: the guide, the very first start) */
+#endif
+#ifdef DINGHY_HOST
+    if (getenv("GRIMM_GUIDE")) gd_page = 1;     /* (host: the guide, for its screens and its test) */
+#endif
     pj_slot = slot_cur;
     sys_load();                                 /* (the settings: the octave, SYSTEM's; the accent before the boot
                                                  * screen) */
@@ -2347,7 +2589,7 @@ static void app_main(void)
         if (snd_lost) put_s(put_u(put_s(q, ", "), snd_lost), " LOST");
         hd_until = 15000u;
     }
-#if !defined DINGHY_HOST && !defined GRIMM_WEB
+#if !defined DINGHY_HOST && !defined GRIMM_WEB && !defined FM1_PLATFORM_FILE
     if (hl_boot.kind == 1u) {                   /* the watchdog restarted it (the main loop stood 8 s; a fault shows
                                                  * the red crash screen instead): said for ~15 s (not when only
                                                  * the chip's flag is left from an earlier one: platform.c hl_boot) */
@@ -2359,458 +2601,487 @@ static void app_main(void)
         hd_until = 15000u;
     }
 #endif
+}
 
-    for (;;) {
-        uint32_t keys, down, up, rel, b, n, lit = 0, base = (uint32_t)(KEY0 + 12 * set.oct);
-        int32_t d;
-        platform_poll();
-        if (fm1_in.notes != prev || fm1_in.buttons) t_touch = t_hand = fm1_ms;   /* (the autosave waits for the hands
-                                                 * to rest; SCREEN OFF counts from their last touch) */
+static void app_step(void)                      /* one pass of the main loop: one millisecond (platform_poll) */
+{
+    uint32_t k, keys, down, up, rel, b, n, lit = 0, base = (uint32_t)(KEY0 + 12 * set.oct);
+    int32_t d;
+    platform_poll();
+    if (fm1_in.notes != prev || fm1_in.buttons) t_touch = t_hand = fm1_ms;   /* (the autosave waits for the hands
+                                             * to rest; SCREEN OFF counts from their last touch) */
 
-        if ((d = enc_take(ENC_ALGORITHM)) != 0) {   /* ALGORITHM: the track */
-            sel = (uint32_t)clamp((int32_t)sel + d, 0, NT - 1);
-            t_touch = fm1_ms;
+    if ((d = enc_take(ENC_ALGORITHM)) != 0) {   /* ALGORITHM: the track */
+        sel = (uint32_t)clamp((int32_t)sel + d, 0, NT - 1);
+        t_touch = fm1_ms;
+    }
+    if ((d = enc_take(ENC_SELECT)) != 0) {   /* SELECT: SEQ held, the track's STEPS; on SEQ's pages the cursor
+                                             * (the step); on HOME the tempo */
+        t_touch = fm1_ms;
+        if (b_down >> BTN_SEQ & 1u) {
+            undo_take(UK_LEN | sel, -1);
+            seq[sel].steps = clamp(seq[sel].steps + enc_accel(ENC_SELECT, d, SEQ_N - 1), 1, SEQ_N);
+            b_used |= 1u << BTN_SEQ;            /* (let go: no page change) */
+        } else if (PAGES[page].btn == BTN_SEQ)
+            seq[sel].cursor = clamp(seq[sel].cursor + enc_accel(ENC_SELECT, d, SEQ_N - 1), 0, SEQ_N - 1);
+        else if (page == PG_HOME && !ck_ext)   /* (a MIDI clock's tempo: not ours to turn) */
+            seq_bpm = clamp(seq_bpm + enc_accel(ENC_SELECT, d, 280), 20, 300);
+    }
+    if ((d = enc_take(ENC_PRESETS)) != 0) {   /* PRESETS: on SEQ's pages the tempo; elsewhere the saved sounds */
+        t_touch = fm1_ms;
+        if (PAGES[page].btn == BTN_SEQ) {
+            if (!ck_ext) seq_bpm = clamp(seq_bpm + enc_accel(ENC_PRESETS, d, 280), 20, 300);
         }
-        if ((d = enc_take(ENC_SELECT)) != 0) {   /* SELECT: SEQ held, the track's STEPS; on SEQ's pages the cursor
-                                                 * (the step); on HOME the tempo */
-            t_touch = fm1_ms;
-            if (b_down >> BTN_SEQ & 1u) {
-                undo_take(UK_LEN | sel, -1);
-                seq[sel].steps = clamp(seq[sel].steps + enc_accel(ENC_SELECT, d, SEQ_N - 1), 1, SEQ_N);
-                b_used |= 1u << BTN_SEQ;        /* (let go: no page change) */
-            } else if (PAGES[page].btn == BTN_SEQ)
-                seq[sel].cursor = clamp(seq[sel].cursor + enc_accel(ENC_SELECT, d, SEQ_N - 1), 0, SEQ_N - 1);
-            else if (page == PG_HOME && !ck_ext)   /* (a MIDI clock's tempo: not ours to turn) */
-                seq_bpm = clamp(seq_bpm + enc_accel(ENC_SELECT, d, 280), 20, 300);
-        }
-        if ((d = enc_take(ENC_PRESETS)) != 0) {   /* PRESETS: on SEQ's pages the tempo; elsewhere the saved sounds */
-            t_touch = fm1_ms;
-            if (PAGES[page].btn == BTN_SEQ) {
-                if (!ck_ext) seq_bpm = clamp(seq_bpm + enc_accel(ENC_PRESETS, d, 280), 20, 300);
-            }
-            else
-                presets_turn(d);
-        }
+        else
+            presets_turn(d);
+    }
 
-        b = fm1_input_edges(&rel);              /* buttons pressed / released since the last call (bit = button id) */
-        if (b | rel) t_touch = t_hand = fm1_ms;
-        if (scr_dark && b) scr_woke = 1, b = 0; /* (the screen dark: a press only wakes it; let go as ever) */
-        if ((b & OCT_BOTH) && (fm1_in.buttons & OCT_BOTH) == OCT_BOTH) {   /* OCT- and OCT+ held together: PEAK to 0 */
-            if ((b & OCT_BOTH) != OCT_BOTH) set.oct = oct_before;           /* (the first one's octave step undone) */
-            cpu_reset++;
-            hd_say("CPU PEAK RESET");         /* (CPU NOW, PEAK: SYSTEM 2) */
-        } else if ((b & (1u << BTN_OCT_DOWN)) && (b_down >> BTN_SEL & 1u)) {   /* SEL held + OCT-: the selected step's
-                                                 * locks cleared */
-            seq_step_t *st = &seq[sel].pat[clamp(seq[sel].cur, 0, SEQ_NPAT - 1)].st[clamp(seq[sel].cursor, 0, SEQ_N - 1)];
-            undo_take(UK_ONE | ++uk_n, -1);
-            st->lmask = 0;
-            b_used |= 1u << BTN_SEL;
-            hd_say("LOCKS CLEARED");
-        } else if ((b & (1u << BTN_OCT_UP)) && (b_down >> BTN_SEL & 1u)) {   /* SEL held + OCT+: the selected
-                                                 * track's LATCH on, off (off: its latched notes released) */
-            set_latch(!trk[sel].latch);
-            b_used |= 1u << BTN_SEL;
-            hd_say(trk[sel].latch ? "LATCH ON" : "LATCH OFF");
-        } else if ((b & OCT_BOTH) && (b_down >> BTN_EDIT & 1u)) {   /* EDIT held + OCT-: undo; + OCT+: redo */
-            if (b & (1u << BTN_OCT_DOWN)) hd_say(undo() ? "NOTHING TO UNDO" : "UNDO");
-            if (b & (1u << BTN_OCT_UP)) hd_say(redo() ? "NOTHING TO REDO" : "REDO");
-            b_used |= 1u << BTN_EDIT;           /* (let go: no page change) */
-        } else if ((b & (1u << BTN_OCT_DOWN)) && (learn_st || sy_learn == LEARN_CLEAR)) {   /* MIDI LEARN: OCT-
-                                                 * cancels (LEARN, CLEAR ALL) */
-            learn_end(sy_learn == LEARN_CLEAR ? "NOT CLEARED" : "LEARN CANCELLED");
-        } else if ((b & (1u << BTN_OCT_DOWN)) && page == PG_SYS2 && sy_fac) {   /* SAMPLES: OCT- keeps them */
+    b = fm1_input_edges(&rel);                  /* buttons pressed / released since the last call (bit = button id) */
+    if (b | rel) t_touch = t_hand = fm1_ms;
+    if (scr_dark && b) scr_woke = 1, b = 0;     /* (the screen dark: a press only wakes it; let go as ever) */
+    if (gd_take(b)) b = 0;                      /* (2.2: the guide: a press turns its page) */
+    if ((b & OCT_BOTH) && (fm1_in.buttons & OCT_BOTH) == OCT_BOTH) {   /* OCT- and OCT+ held together: PEAK to 0 */
+        if ((b & OCT_BOTH) != OCT_BOTH) set.oct = oct_before;           /* (the first one's octave step undone) */
+        cpu_reset++;
+        hd_say("CPU PEAK RESET");         /* (CPU NOW, PEAK: SYSTEM 2) */
+    } else if ((b & (1u << BTN_OCT_DOWN)) && (fm1_in.buttons >> BTN_REC & 1u) && page != PG_SONG && !song_rec) {   /* (2.2)
+                                             * REC held + OCT-: the selected track's MOTION lanes cleared (REC as
+                                             * it was, no pattern cleared) */
+        if (rec_hold) rec_hold = 0, rec = rec_was, rec_on = rec;
+        mo_clear(sel);
+    } else if ((b & (1u << BTN_OCT_DOWN)) && (b_down >> BTN_SEL & 1u)) {   /* SEL held + OCT-: the selected step's
+                                             * locks cleared */
+        seq_step_t *st = &seq[sel].pat[clamp(seq[sel].cur, 0, SEQ_NPAT - 1)].st[clamp(seq[sel].cursor, 0, SEQ_N - 1)];
+        undo_take(UK_ONE | ++uk_n, -1);
+        st->lmask = 0;
+        b_used |= 1u << BTN_SEL;
+        hd_say("LOCKS CLEARED");
+    } else if ((b & (1u << BTN_OCT_UP)) && (b_down >> BTN_SEL & 1u)) {   /* SEL held + OCT+: the selected
+                                             * track's LATCH on, off (off: its latched notes released) */
+        set_latch(!trk[sel].latch);
+        b_used |= 1u << BTN_SEL;
+        hd_say(trk[sel].latch ? "LATCH ON" : "LATCH OFF");
+    } else if ((b & OCT_BOTH) && (b_down >> BTN_EDIT & 1u)) {   /* EDIT held + OCT-: undo; + OCT+: redo */
+        if (b & (1u << BTN_OCT_DOWN)) hd_say(undo() ? "NOTHING TO UNDO" : "UNDO");
+        if (b & (1u << BTN_OCT_UP)) hd_say(redo() ? "NOTHING TO REDO" : "REDO");
+        b_used |= 1u << BTN_EDIT;               /* (let go: no page change) */
+    } else if ((b & (1u << BTN_OCT_DOWN)) && (learn_st || sy_learn == LEARN_CLEAR)) {   /* MIDI LEARN: OCT-
+                                             * cancels (LEARN, CLEAR ALL) */
+        learn_end(sy_learn == LEARN_CLEAR ? "NOT CLEARED" : "LEARN CANCELLED");
+    } else if ((b & (1u << BTN_OCT_DOWN)) && page == PG_SYS2 && sy_fac) {   /* SAMPLES: OCT- keeps them */
+        sy_fac = 0;
+        hd_say("SAMPLES KEPT");
+    } else if ((b & (1u << BTN_OCT_UP)) && page == PG_SYS2 && sy_fac) {   /* RESTORE: OCT+, when silent */
+        if (playing || !quiet()) hd_say("STOP AND SILENCE FIRST");
+        else {
             sy_fac = 0;
-            hd_say("SAMPLES KEPT");
-        } else if ((b & (1u << BTN_OCT_UP)) && page == PG_SYS2 && sy_fac) {   /* RESTORE: OCT+, when silent */
-            if (playing || !quiet()) hd_say("STOP AND SILENCE FIRST");
-            else {
-                sy_fac = 0;
-                hd_say("RESTORING SAMPLES"), hd_until = fm1_ms + 15000u;
-                fac_at = fm1_ms + 120u;         /* (the header shows it first: the flash then stands the screen) */
+            hd_say("RESTORING SAMPLES"), hd_until = fm1_ms + 15000u;
+            fac_at = fm1_ms + 120u;             /* (the header shows it first: the flash then stands the screen) */
+        }
+    } else if ((b & (1u << BTN_OCT_UP)) && page == PG_SYS2 && sy_learn == LEARN_CLEAR) {   /* CLEAR ALL: OCT+ */
+        set.nlk = 0;
+        set_dirty = 1, set_t = fm1_ms;
+        learn_end("ALL LINKS CLEARED");
+    } else if (PAGES[page].btn == BTN_SAVE) {   /* SAVE's menus: OCT+ confirms (the ACTION), OCT- backs out */
+        if (b & (1u << BTN_OCT_UP)) sv_do();
+        if (b & (1u << BTN_OCT_DOWN)) page = back_page;
+    } else {
+        if (b & (1u << BTN_OCT_DOWN)) { oct_before = set.oct; if (set.oct > -2) { set.oct--; set_dirty = 1; set_t = fm1_ms; } }
+        if (b & (1u << BTN_OCT_UP)) { oct_before = set.oct; if (set.oct < 2) { set.oct++; set_dirty = 1; set_t = fm1_ms; } }
+        if (b & OCT_BOTH) {                     /* (the octave in the header a moment: "OCTAVE +1") */
+            char *e = put_s(hd_msg, "OCTAVE ");
+            e[0] = set.oct < 0 ? '-' : '+', e[1] = (char)('0' + (set.oct < 0 ? -set.oct : set.oct)), e[2] = 0;
+            hd_until = fm1_ms + 1500u;
+        }
+    }
+    for (k = 0; k < 14u; k++)                   /* the pages: a button without a hold function on its press; one with,
+                                             * when let go (unless its hold was used) */
+        if ((b >> k & 1u) && (BTN_PAGES >> k & 1u)) {
+            if (BTN_HOLDS >> k & 1u) {
+                b_down |= 1u << k;
+                b_used &= ~(1u << k);
+                t_down[k] = fm1_ms;
+            } else
+                page = next_page(k);
+        }
+    ck_slot = (uint32_t)slot_cur & 3u;          /* (a MIDI clock's START plays the slot in use) */
+    if (ck_trans != ck_seen) ck_seen = ck_trans, playing = seq_on;   /* (its START / STOP: PLAY follows) */
+    if (song_end) song_end = 0, playing = 0;   /* (a SONG played out: stopped) */
+    if (b & (1u << BTN_PLAY)) {                 /* PLAY/STOP: all four tracks' sequences (a song: song.c) */
+        playing ^= 1u;
+        nq_put(playing ? NQ_PLAY : NQ_STOP, 0, (uint32_t)slot_cur & 3u);
+    }
+    if (b & (1u << BTN_REC)) {
+        if (page == PG_SONG || song_rec) {      /* the SONG page: song record armed (playing: from now), or ended */
+            if (song_rec) {
+                if (playing && song_rec == 2u) nq_note(NQ_SONG, 0, 0, 0);
+                else song_rec = 0;
+            } else {
+                undo_take(UK_SONG | ++uk_n, -1);   /* (undo: the chain as it was) */
+                undo_chain = 1;
+                song_rec = 1;
+                if (playing) nq_note(NQ_SONG, 0, (uint32_t)slot_cur & 3u, 1);
             }
-        } else if ((b & (1u << BTN_OCT_UP)) && page == PG_SYS2 && sy_learn == LEARN_CLEAR) {   /* CLEAR ALL: OCT+ */
-            set.nlk = 0;
-            set_dirty = 1, set_t = fm1_ms;
-            learn_end("ALL LINKS CLEARED");
-        } else if (PAGES[page].btn == BTN_SAVE) {   /* SAVE's menus: OCT+ confirms (the ACTION), OCT- backs out */
-            if (b & (1u << BTN_OCT_UP)) sv_do();
-            if (b & (1u << BTN_OCT_DOWN)) page = back_page;
-        } else {
-            if (b & (1u << BTN_OCT_DOWN)) { oct_before = set.oct; if (set.oct > -2) { set.oct--; set_dirty = 1; set_t = fm1_ms; } }
-            if (b & (1u << BTN_OCT_UP)) { oct_before = set.oct; if (set.oct < 2) { set.oct++; set_dirty = 1; set_t = fm1_ms; } }
-            if (b & OCT_BOTH) {                 /* (the octave in the header a moment: "OCTAVE +1") */
-                char *e = put_s(hd_msg, "OCTAVE ");
-                e[0] = set.oct < 0 ? '-' : '+', e[1] = (char)('0' + (set.oct < 0 ? -set.oct : set.oct)), e[2] = 0;
-                hd_until = fm1_ms + 1500u;
+        } else {                                /* REC: stopped, step record; playing, live record (held, see
+                                             * below) */
+            rec_hold = 1, rec_t = fm1_ms, rec_was = rec;
+            rec ^= 1u;
+            if (rec) undo_take(UK_ONE | ++uk_n, -1);   /* (undo: the recording pass) */
+        }
+    }
+    if (rel >> BTN_REC & 1u) rec_hold = 0;
+    if (rec_hold && fm1_ms - rec_t >= REC_CLEAR_MS) {   /* REC held ~1 s: the selected track's pattern
+                                             * cleared (undoable), REC as before the press */
+        rec_hold = 0, rec = rec_was;
+        seq_tool(0u, base);
+        put_s(put_u(put_s(hd_msg, "T"), sel + 1u), " CLEARED");
+    }
+    rec_on = rec;
+    glo_held = b_down >> BTN_GLO & 1u;          /* GLO held: mutes, solos on the keys */
+    if ((b_down >> BTN_HOME & 1u) && !(b_used >> BTN_HOME & 1u) && fm1_ms - t_down[BTN_HOME] >= HOLD_MS) {
+        page = PG_SYSTEM;                       /* HOME held: SYSTEM */
+        b_used |= 1u << BTN_HOME;
+    }
+    if ((rel >> BTN_SEL & 1u) && (b_down >> BTN_SEL & 1u) && !(b_used >> BTN_SEL & 1u) &&
+        fm1_ms - t_down[BTN_SEL] >= HOLD_MS) {   /* SEL held, let go: the track's chord mode (no page change; a knob
+                                             * turned, SEL + OCT- meanwhile: not) */
+        trk[sel].chord = !trk[sel].chord;
+        b_used |= 1u << BTN_SEL;
+        hd_say(trk[sel].chord ? "CHORD ON" : "CHORD OFF");
+    }
+    sel_held = b_down >> BTN_SEL & 1u;
+    if ((b_down >> BTN_ARP & 1u) && !(b_used >> BTN_ARP & 1u) && fm1_ms - t_down[BTN_ARP] >= HOLD_MS) {
+        trk[sel].arp = !trk[sel].arp;           /* ARP held: the track's arp (let go: no page change) */
+        b_used |= 1u << BTN_ARP;
+        hd_say(trk[sel].arp ? "ARP ON" : "ARP OFF");
+    }
+    arp_rec = rec && playing ? (int32_t)sel : -1;   /* (REC, playing: the arp's notes recorded) */
+    save_held = b_down >> BTN_SAVE & 1u;        /* SAVE held: its layer on the keys (slots A..D), their state shown */
+    if ((b_down >> BTN_FX & 1u) && page != PG_PERFORM && fm1_ms - t_down[BTN_FX] >= 300u) {
+        pf_back = page;                         /* FX held ~0.3 s: PERFORM (let go: back, no page change) */
+        page = PG_PERFORM;
+        b_used |= 1u << BTN_FX;
+    }
+
+    keys = fm1_in.notes;                        /* bit k: key k (0 = F3 .. 26 = G5) */
+    down = keys & ~prev;
+    up = prev & ~keys;
+    if (scr_dark && down) scr_woke = 1, down = 0;   /* (the screen dark: a key only wakes it) */
+    if (gd_take(down)) down = 0;                /* (2.2: the guide) */
+    prev = keys;
+    for (k = 0; k < 27u; k++) {
+        if ((up >> k & 1u) && (pf_keys >> k & 1u)) {   /* a trick's key let go: the trick off */
+            uint32_t w;
+            for (w = 1; w < 8u && WK[w] != k; w++)
+                ;
+            pf_keys &= ~(1u << k);
+            if (w < 8u) pf_held &= ~(1u << (w - 1u));
+            else if (k == WK2[0]) pf_held &= ~(1u << PF_SWELL);   /* (2.2: SWELL let go: it falls) */
+        }
+        if ((up >> k & 1u) && gen_bk(k) >= 0 && gen_bk(k) < 4 && (gen_kd >> gen_bk(k) & 1u)) {   /* a
+                                             * track's GENERATE key let go: on, off (unless another key came) */
+            uint32_t w = (uint32_t)gen_bk(k);
+            if (!(gen_ku >> w & 1u)) {
+                char m[24];
+                gen_on ^= 1u << w;
+                put_s(put_s(put_u(put_s(m, "T"), w + 1u), " GENERATE "), gen_on >> w & 1u ? GM_NAME[gen_md[w] % NGM] : "OFF");
+                hd_say(m);
+            }
+            gen_kd &= (uint8_t)~(1u << w), gen_ku &= (uint8_t)~(1u << w);
+        }
+        if (up >> k & 1u && key_held[k]) {      /* a held key let go: the voices it started released */
+            nq_note(NQ_OFF | NQ_ECHO, (key_held[k] >> 8) & 3u, 0, KEY_ID(k));
+            key_held[k] = 0;
+        }
+        if (!(down >> k & 1u)) continue;
+        gen_ku |= gen_kd;                       /* (a key pressed while a track's GENERATE key is held: that one
+                                             * not switched when let go) */
+        if (glo_held) {                         /* GLO held: white keys 1..4 mute T1..T4, 5..8 solo them (on, off) */
+            uint32_t w;
+            for (w = 0; w < 8u && WK[w] != k; w++)
+                ;
+            if (w < 4u) trk_mute ^= 1u << w;
+            else if (w < 8u) trk_solo ^= 1u << (w - 4u);
+            b_used |= 1u << BTN_GLO;
+            continue;
+        }
+        if (b_down >> BTN_SEQ & 1u) {           /* SEQ held + white keys 1..8: the sequencer's tools (no page change) */
+            uint32_t w;
+            for (w = 0; w < 8u && WK[w] != k; w++)
+                ;
+            if (w < 8u) {
+                seq_tool(w, base);
+                b_used |= 1u << BTN_SEQ;
+                continue;
+            }
+            for (w = 0; w < 8u && WK2[w] != k; w++)
+                ;
+            if (w < 8u) {                       /* (2.0) SEQ held + G3 .. G4: DICE */
+                dice(w, base);
+                b_used |= 1u << BTN_SEQ;
+                continue;
             }
         }
-        for (k = 0; k < 14u; k++)               /* the pages: a button without a hold function on its press; one with,
-                                                 * when let go (unless its hold was used) */
-            if ((b >> k & 1u) && (BTN_PAGES >> k & 1u)) {
-                if (BTN_HOLDS >> k & 1u) {
-                    b_down |= 1u << k;
-                    b_used &= ~(1u << k);
-                    t_down[k] = fm1_ms;
-                } else
-                    page = next_page(k);
-            }
-        ck_slot = (uint32_t)slot_cur & 3u;      /* (a MIDI clock's START plays the slot in use) */
-        if (ck_trans != ck_seen) ck_seen = ck_trans, playing = seq_on;   /* (its START / STOP: PLAY follows) */
-        if (song_end) song_end = 0, playing = 0;   /* (a SONG played out: stopped) */
-        if (b & (1u << BTN_PLAY)) {             /* PLAY/STOP: all four tracks' sequences (a song: song.c) */
-            playing ^= 1u;
-            nq_put(playing ? NQ_PLAY : NQ_STOP, 0, (uint32_t)slot_cur & 3u);
-        }
-        if (b & (1u << BTN_REC)) {
-            if (page == PG_SONG || song_rec) {  /* the SONG page: song record armed (playing: from now), or ended */
-                if (song_rec) {
-                    if (playing && song_rec == 2u) nq_note(NQ_SONG, 0, 0, 0);
-                    else song_rec = 0;
-                } else {
-                    undo_take(UK_SONG | ++uk_n, -1);   /* (undo: the chain as it was) */
-                    undo_chain = 1;
-                    song_rec = 1;
-                    if (playing) nq_note(NQ_SONG, 0, (uint32_t)slot_cur & 3u, 1);
-                }
-            } else {                            /* REC: stopped, step record; playing, live record (held, see
-                                                 * below) */
-                rec_hold = 1, rec_t = fm1_ms, rec_was = rec;
-                rec ^= 1u;
-                if (rec) undo_take(UK_ONE | ++uk_n, -1);   /* (undo: the recording pass) */
+        if (b_down >> BTN_EDIT & 1u) {          /* (2.0) EDIT held + E4, F4, G4: ACCIDENT, a little, more, wildly */
+            uint32_t w;
+            for (w = 5; w < 8u && WK2[w] != k; w++)
+                ;
+            if (w < 8u) {
+                accident(w - 5u);
+                b_used |= 1u << BTN_EDIT;
+                continue;
             }
         }
-        if (rel >> BTN_REC & 1u) rec_hold = 0;
-        if (rec_hold && fm1_ms - rec_t >= REC_CLEAR_MS) {   /* REC held ~1 s: the selected track's pattern
-                                                 * cleared (undoable), REC as before the press */
-            rec_hold = 0, rec = rec_was;
-            seq_tool(0u, base);
-            put_s(put_u(put_s(hd_msg, "T"), sel + 1u), " CLEARED");
+        if (save_held) {                        /* SAVE held: white keys 1..4 recall A..D, 5..8 save into them */
+            uint32_t w;
+            for (w = 0; w < 8u && WK[w] != k; w++)
+                ;
+            if (w < 4u) slot_do_recall(w);
+            else if (w < 8u) slot_do_save(w - 4u);
+            b_used |= 1u << BTN_SAVE;
+            continue;
         }
-        rec_on = rec;
-        glo_held = b_down >> BTN_GLO & 1u;      /* GLO held: mutes, solos on the keys */
-        if ((b_down >> BTN_HOME & 1u) && !(b_used >> BTN_HOME & 1u) && fm1_ms - t_down[BTN_HOME] >= HOLD_MS) {
-            page = PG_SYSTEM;                   /* HOME held: SYSTEM */
-            b_used |= 1u << BTN_HOME;
+        if ((b_down >> BTN_FX & 1u) && k != 0u) {   /* FX held + G3 .. F4: a trick, while its key is held */
+            uint32_t w;
+            for (w = 1; w < 8u && WK[w] != k; w++)
+                ;
+            if (w < 8u || k == WK2[0]) {        /* (2.2: the ninth, SWELL) */
+                pf_keys |= 1u << k;
+                pf_held |= 1u << (w < 8u ? w - 1u : PF_SWELL);
+                b_used |= 1u << BTN_FX;
+                continue;
+            }
         }
-        if ((rel >> BTN_SEL & 1u) && (b_down >> BTN_SEL & 1u) && !(b_used >> BTN_SEL & 1u) &&
-            fm1_ms - t_down[BTN_SEL] >= HOLD_MS) {   /* SEL held, let go: the track's chord mode (no page change; a knob
-                                                 * turned, SEL + OCT- meanwhile: not) */
-            trk[sel].chord = !trk[sel].chord;
-            b_used |= 1u << BTN_SEL;
-            hd_say(trk[sel].chord ? "CHORD ON" : "CHORD OFF");
-        }
-        sel_held = b_down >> BTN_SEL & 1u;
-        if ((b_down >> BTN_ARP & 1u) && !(b_used >> BTN_ARP & 1u) && fm1_ms - t_down[BTN_ARP] >= HOLD_MS) {
-            trk[sel].arp = !trk[sel].arp;       /* ARP held: the track's arp (let go: no page change) */
-            b_used |= 1u << BTN_ARP;
-            hd_say(trk[sel].arp ? "ARP ON" : "ARP OFF");
-        }
-        arp_rec = rec && playing ? (int32_t)sel : -1;   /* (REC, playing: the arp's notes recorded) */
-        save_held = b_down >> BTN_SAVE & 1u;    /* SAVE held: its layer on the keys (slots A..D), their state shown */
-        if ((b_down >> BTN_FX & 1u) && page != PG_PERFORM && fm1_ms - t_down[BTN_FX] >= 300u) {
-            pf_back = page;                     /* FX held ~0.3 s: PERFORM (let go: back, no page change) */
-            page = PG_PERFORM;
+        if ((b_down >> BTN_FX & 1u) && gen_bk(k) >= 0) {   /* FX held + GENERATE's keys (gen_key) */
+            int32_t w = gen_bk(k);
+            if (w < 4) gen_kd |= (uint8_t)(1u << w), gen_ku &= (uint8_t)~(1u << w);
+            else gen_key((uint32_t)w);
             b_used |= 1u << BTN_FX;
+            continue;
+        }
+        if ((b_down >> BTN_FX & 1u) && k == 0u) {   /* FX held + F3: FREEZE */
+            ge_freeze ^= 1u;
+            b_used |= 1u << BTN_FX;
+            continue;
+        }
+        n = sc_snap(base + k);                  /* (a SCALE: its nearest note) */
+        ch_last = (int32_t)n;
+        if (rec && !(playing && trk[sel].arp)) {   /* REC: the note into the track's sequence (stopped: the
+                                             * cursor's step, the cursor on; playing: the nearest step), heard while
+                                             * held (ARP on, playing: the arp's notes instead, arp.c) */
+            int32_t i = playing ? seq_nearest(sel) : seq[sel].cursor;
+            if (i >= 0) seq_write(sel, i, n, trk[sel].chord ? chord_step(sel) : 0u);   /* (chord mode: a chord
+                                             * step, its chord as it is now) */
+            if (!playing) seq[sel].cursor = (seq[sel].cursor + 1) % clamp(seq[sel].steps, 1, SEQ_N);
+        }
+        ru_heard(n);                            /* (2.1: the ice may answer it) */
+        if (trk[sel].latch && !rec)             /* (LATCH ON: that key's voices on, or off) */
+            nq_note(NQ_TOGGLE | NQ_ECHO | NQ_OCT(set.oct), sel, n, KEY_ID(k));
+        else {
+            nq_note(NQ_ON | NQ_ECHO | NQ_OCT(set.oct), sel, n, KEY_ID(k));
+            key_held[k] = (uint16_t)(0x8000u | sel << 8);
+        }
+    }
+    for (k = 0; k < 14u; k++)                   /* the buttons let go: their page (unless the hold was used) */
+        if ((rel >> k & 1u) && (b_down >> k & 1u)) {
+            if (!(b_used >> k & 1u)) {
+                if (k == BTN_SAVE && PAGES[page].btn != BTN_SAVE) back_page = page;   /* (OCT- comes back here) */
+                page = next_page(k);
+            }
+            if (k == BTN_FX && page == PG_PERFORM) page = pf_back;   /* (PERFORM: back where it was) */
+            b_down &= ~(1u << k);
         }
 
-        keys = fm1_in.notes;                    /* bit k: key k (0 = F3 .. 26 = G5) */
-        down = keys & ~prev;
-        up = prev & ~keys;
-        if (scr_dark && down) scr_woke = 1, down = 0;   /* (the screen dark: a key only wakes it) */
-        prev = keys;
-        for (k = 0; k < 27u; k++) {
-            if ((up >> k & 1u) && (pf_keys >> k & 1u)) {   /* a trick's key let go: the trick off */
-                uint32_t w;
-                for (w = 1; w < 8u && WK[w] != k; w++)
-                    ;
-                pf_keys &= ~(1u << k);
-                if (w < 8u) pf_held &= ~(1u << (w - 1u));
+    for (k = 0; k < 4u; k++)                    /* KNOB 1..4: the page's four (SEL held: SEQ's pages, the step's locks;
+                                             * SEL let go then: no chord mode) */
+        if ((d = enc_take(ENC_KNOB1 + k)) != 0) {
+            if ((b_down >> BTN_SEL & 1u) && PAGES[page].btn == BTN_SEQ) lock_turn(k, d);
+            else knob_turn(page, k, d), learn_knob(page, k), help_knob(page, k);   /* (LEARN: this one's parameter;
+                                             * 2.2, HELP: its line) */
+            if ((fm1_in.buttons >> BTN_REC & 1u) && page != PG_SONG && !song_rec) {   /* (2.2) REC held: MOTION, this knob's
+                                             * move (REC's own press undone, no pattern cleared) */
+                if (!mo_rec && rec_hold) rec_hold = 0, rec = rec_was, rec_on = rec;
+                mo_knob(page, k);
             }
-            if ((up >> k & 1u) && gen_bk(k) >= 0 && gen_bk(k) < 4 && (gen_kd >> gen_bk(k) & 1u)) {   /* a
-                                                 * track's GENERATE key let go: on, off (unless another key came) */
-                uint32_t w = (uint32_t)gen_bk(k);
-                if (!(gen_ku >> w & 1u)) {
-                    char m[24];
-                    gen_on ^= 1u << w;
-                    put_s(put_s(put_u(put_s(m, "T"), w + 1u), " GENERATE "), gen_on >> w & 1u ? GM_NAME[gen_md[w] % NGM] : "OFF");
-                    hd_say(m);
-                }
-                gen_kd &= (uint8_t)~(1u << w), gen_ku &= (uint8_t)~(1u << w);
-            }
-            if (up >> k & 1u && key_held[k]) {  /* a held key let go: the voices it started released */
-                nq_note(NQ_OFF | NQ_ECHO, (key_held[k] >> 8) & 3u, 0, KEY_ID(k));
-                key_held[k] = 0;
-            }
-            if (!(down >> k & 1u)) continue;
-            gen_ku |= gen_kd;                   /* (a key pressed while a track's GENERATE key is held: that one
-                                                 * not switched when let go) */
-            if (glo_held) {                     /* GLO held: white keys 1..4 mute T1..T4, 5..8 solo them (on, off) */
-                uint32_t w;
-                for (w = 0; w < 8u && WK[w] != k; w++)
-                    ;
-                if (w < 4u) trk_mute ^= 1u << w;
-                else if (w < 8u) trk_solo ^= 1u << (w - 4u);
-                b_used |= 1u << BTN_GLO;
-                continue;
-            }
-            if (b_down >> BTN_SEQ & 1u) {       /* SEQ held + white keys 1..8: the sequencer's tools (no page change) */
-                uint32_t w;
-                for (w = 0; w < 8u && WK[w] != k; w++)
-                    ;
-                if (w < 8u) {
-                    seq_tool(w, base);
-                    b_used |= 1u << BTN_SEQ;
-                    continue;
-                }
-                for (w = 0; w < 8u && WK2[w] != k; w++)
-                    ;
-                if (w < 8u) {                   /* (2.0) SEQ held + G3 .. G4: DICE */
-                    dice(w, base);
-                    b_used |= 1u << BTN_SEQ;
-                    continue;
-                }
-            }
-            if (b_down >> BTN_EDIT & 1u) {      /* (2.0) EDIT held + E4, F4, G4: ACCIDENT, a little, more, wildly */
-                uint32_t w;
-                for (w = 5; w < 8u && WK2[w] != k; w++)
-                    ;
-                if (w < 8u) {
-                    accident(w - 5u);
-                    b_used |= 1u << BTN_EDIT;
-                    continue;
-                }
-            }
-            if (save_held) {                    /* SAVE held: white keys 1..4 recall A..D, 5..8 save into them */
-                uint32_t w;
-                for (w = 0; w < 8u && WK[w] != k; w++)
-                    ;
-                if (w < 4u) slot_do_recall(w);
-                else if (w < 8u) slot_do_save(w - 4u);
-                b_used |= 1u << BTN_SAVE;
-                continue;
-            }
-            if ((b_down >> BTN_FX & 1u) && k != 0u) {   /* FX held + G3 .. F4: a trick, while its key is held */
-                uint32_t w;
-                for (w = 1; w < 8u && WK[w] != k; w++)
-                    ;
-                if (w < 8u) {
-                    pf_keys |= 1u << k;
-                    pf_held |= 1u << (w - 1u);
-                    b_used |= 1u << BTN_FX;
-                    continue;
-                }
-            }
-            if ((b_down >> BTN_FX & 1u) && gen_bk(k) >= 0) {   /* FX held + GENERATE's keys (gen_key) */
-                int32_t w = gen_bk(k);
-                if (w < 4) gen_kd |= (uint8_t)(1u << w), gen_ku &= (uint8_t)~(1u << w);
-                else gen_key((uint32_t)w);
-                b_used |= 1u << BTN_FX;
-                continue;
-            }
-            if ((b_down >> BTN_FX & 1u) && k == 0u) {   /* FX held + F3: FREEZE */
-                ge_freeze ^= 1u;
-                b_used |= 1u << BTN_FX;
-                continue;
-            }
-            n = sc_snap(base + k);              /* (a SCALE: its nearest note) */
-            ch_last = (int32_t)n;
-            if (rec && !(playing && trk[sel].arp)) {   /* REC: the note into the track's sequence (stopped: the
-                                                 * cursor's step, the cursor on; playing: the nearest step), heard while
-                                                 * held (ARP on, playing: the arp's notes instead, arp.c) */
-                int32_t i = playing ? seq_nearest(sel) : seq[sel].cursor;
-                if (i >= 0) seq_write(sel, i, n, trk[sel].chord ? chord_step(sel) : 0u);   /* (chord mode: a chord
-                                                 * step, its chord as it is now) */
-                if (!playing) seq[sel].cursor = (seq[sel].cursor + 1) % clamp(seq[sel].steps, 1, SEQ_N);
-            }
-            if (trk[sel].latch && !rec)         /* (LATCH ON: that key's voices on, or off) */
-                nq_note(NQ_TOGGLE | NQ_ECHO | NQ_OCT(set.oct), sel, n, KEY_ID(k));
-            else {
-                nq_note(NQ_ON | NQ_ECHO | NQ_OCT(set.oct), sel, n, KEY_ID(k));
-                key_held[k] = (uint16_t)(0x8000u | sel << 8);
-            }
+            if (page == PG_HOME) home_say(k);   /* (HOME: what it changed, in the header a moment) */
+            if (d > 0) fx_send_on(page);        /* (GRAIN, DELAY turned up, the track sending nothing: its send on) */
+            if (b_down >> BTN_SEL & 1u) b_used |= 1u << BTN_SEL;
+            t_touch = fm1_ms;
         }
-        for (k = 0; k < 14u; k++)               /* the buttons let go: their page (unless the hold was used) */
-            if ((rel >> k & 1u) && (b_down >> k & 1u)) {
-                if (!(b_used >> k & 1u)) {
-                    if (k == BTN_SAVE && PAGES[page].btn != BTN_SAVE) back_page = page;   /* (OCT- comes back here) */
-                    page = next_page(k);
-                }
-                if (k == BTN_FX && page == PG_PERFORM) page = pf_back;   /* (PERFORM: back where it was) */
-                b_down &= ~(1u << k);
-            }
 
-        for (k = 0; k < 4u; k++)                /* KNOB 1..4: the page's four (SEL held: SEQ's pages, the step's locks;
-                                                 * SEL let go then: no chord mode) */
-            if ((d = enc_take(ENC_KNOB1 + k)) != 0) {
-                if ((b_down >> BTN_SEL & 1u) && PAGES[page].btn == BTN_SEQ) lock_turn(k, d);
-                else knob_turn(page, k, d), learn_knob(page, k);   /* (LEARN: this one's parameter) */
-                if (page == PG_HOME) home_say(k);   /* (HOME: what it changed, in the header a moment) */
-                if (d > 0) fx_send_on(page);    /* (GRAIN, DELAY turned up, the track sending nothing: its send on) */
-                if (b_down >> BTN_SEL & 1u) b_used |= 1u << BTN_SEL;
-                t_touch = fm1_ms;
-            }
+    if (sy_learn == LEARN_ON && !learn_st) learn_st = 1;   /* MIDI LEARN: LEARN turned to: TURN A KNOB; */
+    if (sy_learn != LEARN_ON && learn_st) learn_st = 0;    /* turned away: no more */
+    if (sy_learn == LEARN_CLEAR && (page != PG_SYS2 || !learn_was)) {   /* CLEAR ALL: OCT+ (away: back to OFF) */
+        if (page != PG_SYS2) sy_learn = LEARN_OFF;
+        else hd_say("OCT+: CLEAR ALL LINKS");
+    }
+    learn_was = sy_learn == LEARN_CLEAR;
+    if (sy_fac && page != PG_SYS2) sy_fac = 0;   /* SAMPLES: away, back to KEEP; RESTORE turned to: said */
+    if (sy_fac && !fac_was) hd_say(SMP_FACT_N ? "OCT+: RESTORE SAMPLES" : "OCT+: CLEAR SAMPLES");
+    fac_was = sy_fac != 0;
+    if (fac_at && (int32_t)(fm1_ms - fac_at) >= 0) {   /* RESTORE: the four factory samples (~5 s) */
+        uint32_t s, rc = 0;
+        fac_at = 0;
+        for (s = 0; s < SMP_SLOTS && !rc; s++) rc = smp_factory(s);
+        hd_say(SMP_FACT_N ? rc ? "RESTORE FAILED" : "SAMPLES RESTORED" : rc ? "CLEAR FAILED" : "SAMPLES CLEARED");
+    }
+    sys_sync();
+    if ((page == PG_FMALGO || page == PG_FMOP) && sel_eng() != ENG_FM) page = PG_SOUND;   /* (not FM now: SOUND) */
+    if (page == PG_LOOP && sel_eng() != ENG_HOWL) page = PG_SOUND;   /* (not HOWL now: SOUND) */
 
-        if (sy_learn == LEARN_ON && !learn_st) learn_st = 1;   /* MIDI LEARN: LEARN turned to: TURN A KNOB; */
-        if (sy_learn != LEARN_ON && learn_st) learn_st = 0;    /* turned away: no more */
-        if (sy_learn == LEARN_CLEAR && (page != PG_SYS2 || !learn_was)) {   /* CLEAR ALL: OCT+ (away: back to OFF) */
-            if (page != PG_SYS2) sy_learn = LEARN_OFF;
-            else hd_say("OCT+: CLEAR ALL LINKS");
-        }
-        learn_was = sy_learn == LEARN_CLEAR;
-        if (sy_fac && page != PG_SYS2) sy_fac = 0;   /* SAMPLES: away, back to KEEP; RESTORE turned to: said */
-        if (sy_fac && !fac_was) hd_say(SMP_FACT_N ? "OCT+: RESTORE SAMPLES" : "OCT+: CLEAR SAMPLES");
-        fac_was = sy_fac != 0;
-        if (fac_at && (int32_t)(fm1_ms - fac_at) >= 0) {   /* RESTORE: the four factory samples (~5 s) */
-            uint32_t s, rc = 0;
-            fac_at = 0;
-            for (s = 0; s < SMP_SLOTS && !rc; s++) rc = smp_factory(s);
-            hd_say(SMP_FACT_N ? rc ? "RESTORE FAILED" : "SAMPLES RESTORED" : rc ? "CLEAR FAILED" : "SAMPLES CLEARED");
-        }
-        sys_sync();
-        if ((page == PG_FMALGO || page == PG_FMOP) && sel_eng() != ENG_FM) page = PG_SOUND;   /* (not FM now: SOUND) */
-        if (page == PG_LOOP && sel_eng() != ENG_HOWL) page = PG_SOUND;   /* (not HOWL now: SOUND) */
+    midi_in();                                  /* MIDI in (USB, the TRS jack): notes, CCs, pressure */
+    if (midi_touch) t_touch = fm1_ms, midi_touch = 0;
+    midi_out();                                 /* the notes out over USB-MIDI (the echoes from the audio ISR) */
+    mod_out();                                  /* (1.5.2) MOD OUT: the tracks' LEVEL and LFO as CC */
 
-        midi_in();                              /* MIDI in (USB, the TRS jack): notes, CCs, pressure */
-        if (midi_touch) t_touch = fm1_ms, midi_touch = 0;
-        midi_out();                             /* the notes out over USB-MIDI (the echoes from the audio ISR) */
-        mod_out();                              /* (1.5.2) MOD OUT: the tracks' LEVEL and LFO as CC */
+    base = (uint32_t)(KEY0 + 12 * set.oct);
+    for (k = 0; k < nlat && k < NV; k++) {      /* the selected track's notes, on the keys they came from: the
+                                             * physical key (never the note after SCALE or chord), a MIDI note's
+                                             * number as it came, a step's note */
+        uint32_t id = lat_id[k], o = lat_src[k] == SRC_SEQ ? lat_root[k] : id >= MIDI_ID(0) ? id - MIDI_ID(0) : 255u;
+        if (lat_trk[k] != sel || lat_src[k] == SRC_ARP) continue;   /* (the arp's: its keys, below) */
+        if (lat_src[k] == SRC_KEY && id < 27u) {   /* (1.4: on the key that plays it now: its octave's
+                                             * keys moved by OCT- / OCT+ since; off the keys: none lit) */
+            int32_t p = (int32_t)id + (lat_oct[k] ? 12 * ((int32_t)lat_oct[k] - 3 - set.oct) : 0);
+            if (p >= 0 && p < 27) lit |= 1u << p;
+        } else if (o >= base && o < base + 27u) lit |= 1u << (o - base);
+    }
+    for (k = 0; k < arp[sel].n && k < ARP_N; k++) {   /* ARP: the keys (MIDI notes) in its list */
+        uint32_t id = arp[sel].id[k], o = id >= MIDI_ID(0) ? id - MIDI_ID(0) : 255u, ao = arp[sel].oct[k];
+        int32_t p = (int32_t)id + (ao ? 12 * ((int32_t)ao - 3 - set.oct) : 0);   /* (1.4: as the notes' above) */
+        if (id < 27u) { if (p >= 0 && p < 27) lit |= 1u << p; }
+        else if (o >= base && o < base + 27u) lit |= 1u << (o - base);
+    }
+    lit |= kl_keys();                           /* (2.2) JIEHKKI's notes, RUOHCAT's flashes (a layer held: its own below) */
+    if (b_down >> BTN_SEQ & 1u)                 /* (SEQ held: the tools' eight keys lit; 2.0: DICE's eight too) */
+        for (k = 0; k < 8u; k++) lit |= 1u << WK[k] | 1u << WK2[k];
+    if (b_down >> BTN_EDIT & 1u)                /* (2.0: EDIT held: ACCIDENT's three) */
+        for (k = 5; k < 8u; k++) lit |= 1u << WK2[k];
+    if (glo_held)                               /* (GLO held: keys 1..4 lit for the tracks muted, 5..8 soloed) */
+        for (lit = 0, k = 0; k < 4u; k++) lit |= (trk_mute >> k & 1u) << WK[k] | (trk_solo >> k & 1u) << WK[4u + k];
+    if (save_held)                              /* (SAVE held: keys 1..4 lit for the slots used) */
+        for (lit = 0, k = 0; k < 4u; k++) lit |= (uint32_t)slot_used(k) << WK[k];
+    if (b_down >> BTN_FX & 1u) {                /* (FX held: the eight tricks' keys glow; one on: lit; V2: GENERATE's
+                                             * eight black keys glow, T1 .. T4's lit while they generate) */
+        for (k = 0; k < 8u; k++) lit |= (k ? pf_held >> (k - 1u) & 1u : ge_freeze & 1u) << WK[k];
+        lit |= (pf_held >> PF_SWELL & 1u) << WK2[0];   /* (2.2: SWELL) */
+        for (k = 0; k < 4u; k++) lit |= (gen_on >> k & 1u) << BK[k];
+    }
+    for (k = 0; k < 27u; k++) {
+        uint32_t wk, bk;
+        for (wk = 0; wk < 8u && WK[wk] != k; wk++)
+            ;
+        for (bk = 0; bk < 8u && BK[bk] != k; bk++)
+            ;
+        fm1_led_key(KEY_LED(k), lit >> k & 1u);
+        fm1_led_glow(KEY_LED(k), (wk < 8u || bk < 8u) && (b_down >> BTN_FX & 1u));
+    }
+    fm1_led_key(BTN_OCT_DOWN, set.oct < 0);
+    fm1_led_key(BTN_OCT_UP, set.oct > 0);
+    for (k = 0; k < 14u; k++)                   /* the button whose page is open */
+        if (BTN_PAGES >> k & 1u) fm1_led_key(k, PAGES[page].btn == k);
+    fm1_led_key(BTN_PLAY, playing);
+    fm1_led_key(BTN_REC, rec || song_rec);
 
-        base = (uint32_t)(KEY0 + 12 * set.oct);
-        for (k = 0; k < nlat && k < NV; k++) {  /* the selected track's notes, on the keys they came from: the
-                                                 * physical key (never the note after SCALE or chord), a MIDI note's
-                                                 * number as it came, a step's note */
-            uint32_t id = lat_id[k], o = lat_src[k] == SRC_SEQ ? lat_root[k] : id >= MIDI_ID(0) ? id - MIDI_ID(0) : 255u;
-            if (lat_trk[k] != sel || lat_src[k] == SRC_ARP) continue;   /* (the arp's: its keys, below) */
-            if (lat_src[k] == SRC_KEY && id < 27u) {   /* (1.4: on the key that plays it now: its octave's
-                                                 * keys moved by OCT- / OCT+ since; off the keys: none lit) */
-                int32_t p = (int32_t)id + (lat_oct[k] ? 12 * ((int32_t)lat_oct[k] - 3 - set.oct) : 0);
-                if (p >= 0 && p < 27) lit |= 1u << p;
-            } else if (o >= base && o < base + 27u) lit |= 1u << (o - base);
-        }
-        for (k = 0; k < arp[sel].n && k < ARP_N; k++) {   /* ARP: the keys (MIDI notes) in its list */
-            uint32_t id = arp[sel].id[k], o = id >= MIDI_ID(0) ? id - MIDI_ID(0) : 255u, ao = arp[sel].oct[k];
-            int32_t p = (int32_t)id + (ao ? 12 * ((int32_t)ao - 3 - set.oct) : 0);   /* (1.4: as the notes' above) */
-            if (id < 27u) { if (p >= 0 && p < 27) lit |= 1u << p; }
-            else if (o >= base && o < base + 27u) lit |= 1u << (o - base);
-        }
-        if (b_down >> BTN_SEQ & 1u)             /* (SEQ held: the tools' eight keys lit; 2.0: DICE's eight too) */
-            for (k = 0; k < 8u; k++) lit |= 1u << WK[k] | 1u << WK2[k];
-        if (b_down >> BTN_EDIT & 1u)            /* (2.0: EDIT held: ACCIDENT's three) */
-            for (k = 5; k < 8u; k++) lit |= 1u << WK2[k];
-        if (glo_held)                           /* (GLO held: keys 1..4 lit for the tracks muted, 5..8 soloed) */
-            for (lit = 0, k = 0; k < 4u; k++) lit |= (trk_mute >> k & 1u) << WK[k] | (trk_solo >> k & 1u) << WK[4u + k];
-        if (save_held)                          /* (SAVE held: keys 1..4 lit for the slots used) */
-            for (lit = 0, k = 0; k < 4u; k++) lit |= (uint32_t)slot_used(k) << WK[k];
-        if (b_down >> BTN_FX & 1u) {            /* (FX held: the eight tricks' keys glow; one on: lit; V2: GENERATE's
-                                                 * eight black keys glow, T1 .. T4's lit while they generate) */
-            for (k = 0; k < 8u; k++) lit |= (k ? pf_held >> (k - 1u) & 1u : ge_freeze & 1u) << WK[k];
-            for (k = 0; k < 4u; k++) lit |= (gen_on >> k & 1u) << BK[k];
-        }
-        for (k = 0; k < 27u; k++) {
-            uint32_t wk, bk;
-            for (wk = 0; wk < 8u && WK[wk] != k; wk++)
-                ;
-            for (bk = 0; bk < 8u && BK[bk] != k; bk++)
-                ;
-            fm1_led_key(KEY_LED(k), lit >> k & 1u);
-            fm1_led_glow(KEY_LED(k), (wk < 8u || bk < 8u) && (b_down >> BTN_FX & 1u));
-        }
-        fm1_led_key(BTN_OCT_DOWN, set.oct < 0);
-        fm1_led_key(BTN_OCT_UP, set.oct > 0);
-        for (k = 0; k < 14u; k++)               /* the button whose page is open */
-            if (BTN_PAGES >> k & 1u) fm1_led_key(k, PAGES[page].btn == k);
-        fm1_led_key(BTN_PLAY, playing);
-        fm1_led_key(BTN_REC, rec || song_rec);
-
-        jk_tick(fm1_ms, t_touch - t_hand < 0x80000000u ? t_touch : t_hand);   /* (2.0) JIEHKKI, RUOHCAT */
-        pgl_tick(fm1_ms);                       /* (2.0) PRESETS' glide */
-        if (jk_sleep) jk_sleep = 0, scr_dark = 1, scr_aur = 0, lcd_light(0);   /* (its piece over: dark till a touch) */
-        if (scr_woke) {                         /* SCREEN OFF: a touch woke it; no touch so long: dark (the panel keeps
-                                                 * its picture; nothing drawn meanwhile); GUOVSSAHAS: the aurora */
-            if (scr_aur) ui_force = 1;
-            scr_woke = scr_dark = scr_aur = 0;
-            lcd_light(1);
-        } else if (!scr_dark && set.scr && fm1_ms - t_hand >= SCR_S[set.scr % NSCR] * 1000u) {
-            scr_dark = 1;
-            if (set.scr == NSCR - 1u) scr_aur = 1;
-            else lcd_light(0);
-        }
-        batt_poll();
-        if (!scr_dark || scr_aur) {
-            idle_ok = 1;                        /* (2.0) MIDI in while the screen's DMA runs (app_idle) */
-            if (scr_aur) ui_aurora(fm1_ms);
-            else ui_update(set.oct);
-            idle_ok = 0;
-        }
-        if (midi_touch) t_touch = fm1_ms, midi_touch = 0;
+    jk_tick(fm1_ms, t_touch - t_hand < 0x80000000u ? t_touch : t_hand);   /* (2.0) JIEHKKI, RUOHCAT */
+    pgl_tick(fm1_ms);                           /* (2.0) PRESETS' glide */
+    if (jk_sleep) jk_sleep = 0, scr_dark = 1, scr_aur = 0, lcd_light(0);   /* (its piece over: dark till a touch) */
+    if (scr_woke) {                             /* SCREEN OFF: a touch woke it; no touch so long: dark (the panel keeps
+                                             * its picture; nothing drawn meanwhile); GUOVSSAHAS: the aurora */
+        if (scr_aur) ui_force = 1;
+        scr_woke = scr_dark = scr_aur = 0;
+        lcd_light(1);
+    } else if (!scr_dark && set.scr && fm1_ms - t_hand >= SCR_S[set.scr % NSCR] * 1000u) {
+        scr_dark = 1;
+        if (set.scr == SCR_PIC || (set.scr == SCR_AUR && yr_on())) scr_aur = 2;   /* (JAHKI on: its seasons, never
+                                                 * the aurora) */
+        else if (set.scr == SCR_AUR) scr_aur = 1;
+        else lcd_light(0);
+    }
+    batt_poll();
+    if (!scr_dark || scr_aur) {
+        idle_ok = 1;                            /* (2.0) MIDI in while the screen's DMA runs (app_idle) */
+        if (scr_aur == 2u) ui_govva(fm1_ms);
+        else if (scr_aur) ui_aurora(fm1_ms);
+        else ui_update(set.oct);
+        idle_ok = 0;
+    }
+    if (midi_touch) t_touch = fm1_ms, midi_touch = 0;
 #ifdef DINGHY_HOST
-        rd_host();                              /* (host mode: a reader listening, the words' dump) */
+    rd_host();                                  /* (host mode: a reader listening, the words' dump) */
 #endif
-        speak();                                /* (1.5) the screen reader: what changed, said */
-        ann_tick(fm1_ms);
-        if (po_on()) {                          /* (1.5.2) PANEL OUT: the panel as it is now, MASTER 0 .. 127 */
-            uint32_t m = (uint32_t)fm1_master() << 8, r = 0, q;
-            for (q = 1u << 20; q; q >>= 2)      /* (MASTER is squared, Q12: its square root, 0 .. 1023) */
-                if (m >= r + q) m -= r + q, r = (r >> 1) + q; else r >>= 1;
-            po_tick(fm1_ms, fm1_in.buttons, fm1_in.notes, set.oct, (uint32_t)(KEY0 + 12 * set.oct), (int32_t)(r >> 3));
-        }
-        {                                       /* (1.5) a screen reader's SysEx (F0 7D 53 52), (1.5.2) PANEL OUT's
-                                                 * (F0 7D 50 4F), before the editor's */
-            const uint8_t *fp;
-            uint32_t fn;
-            if (sysex_get(&fp, &fn) && (ann_frame(fp, fn, fm1_ms) || po_frame(fp, fn, fm1_ms))) sysex_done();
-        }
+    speak();                                    /* (1.5) the screen reader: what changed, said */
+    ann_tick(fm1_ms);
+    if (po_on()) {                              /* (1.5.2) PANEL OUT: the panel as it is now, MASTER 0 .. 127 */
+        uint32_t m = (uint32_t)fm1_master() << 8, r = 0, q;
+        for (q = 1u << 20; q; q >>= 2)          /* (MASTER is squared, Q12: its square root, 0 .. 1023) */
+            if (m >= r + q) m -= r + q, r = (r >> 1) + q; else r >>= 1;
+        po_tick(fm1_ms, fm1_in.buttons, fm1_in.notes, set.oct, (uint32_t)(KEY0 + 12 * set.oct), (int32_t)(r >> 3));
+    }
+    {                                           /* (1.5) a screen reader's SysEx (F0 7D 53 52), (1.5.2) PANEL OUT's
+                                             * (F0 7D 50 4F), before the editor's */
+        const uint8_t *fp;
+        uint32_t fn;
+        if (sysex_get(&fp, &fn) && (ann_frame(fp, fn, fm1_ms) || po_frame(fp, fn, fm1_ms))) sysex_done();
+    }
 #ifdef GRIMM_STRESS
-        stress_poll();
+    stress_poll();
 #endif
-        tapefx_poll();                          /* (TAPE: SATURATION's curve, when the knob has moved) */
-        samples_poll(quiet() && !playing);      /* an upload's frame (writes only while nothing sounds, never while
-                                                 * the sequencer plays), the slots' checks */
+    tapefx_poll();                              /* (TAPE: SATURATION's curve, when the knob has moved) */
+    samples_poll(quiet() && !playing);          /* an upload's frame (writes only while nothing sounds, never while
+                                             * the sequencer plays), the slots' checks */
 
-        {                                       /* (a save waits for silence: since when) */
-            uint32_t w = !playing && (as_wait || sv_pend >= 0) && !voices_silent();
-            if (w && !sv_wait) sv_said = fm1_ms;
-            sv_wait = w;
-        }
-        if (set_dirty && quiet() && !playing && fm1_ms - set_t > (usb_recording() ? SAVE_REST_REC_MS : 2000u)) {   /* 2 s
-                                                 * after the change, when silent (a computer recording from the USB
-                                                 * audio: a minute, SAVE_REST_REC_MS) */
-            settings_save(&set, sizeof set);
-            set_dirty = 0;
-        }
-        {                                       /* the overload guard let a voice go: said */
-            static uint32_t shed_seen;
-            if (shed_n != shed_seen) shed_seen = shed_n, hd_say("CPU FULL: NOTE DROPPED");
-        }
-        if (!playing && sv_pend >= 0) {         /* SOUNDS: a SAVE or CLEAR that waited for the stop */
-            sv_sound((uint32_t)sv_pend, sv_pend_slot, sv_pend_cat, sv_pend_trk);
-            sv_pend = -1;
-        }
-        /* the autosave: the sequencer standing, the hands at rest 2.5 s, at most every 20 s, if anything changed, no voice
-         * sounding (a release, a latched note: it waits, the header says so); a failed one: again in 3 s, the header
-         * says so */
-        if (playing) as_wait = 0;
-        if (!playing && !ed_open() && fm1_ms >= as_next &&
-            (as_force || (fm1_ms - t_touch >= (usb_recording() ? SAVE_REST_REC_MS : 2500u) &&
-                          (!as_last || fm1_ms - as_last >= 20000u)))) {   /* (an editor's PUT open: its bytes are in
-                                                 * st_img; a save asked for: now) */
-            uint32_t g = st_gen;
-            as_next = fm1_ms + 500u;
-            if (!voices_silent() && !as_force && fm1_ms - t_touch < AS_LOUD_MS)   /* (no flash while a voice sounds:
-                                                 * it waits, if there is anything; a drone: AS_LOUD_MS at rest) */
-                as_wait = (uint32_t)autosave_due();
-            else {
-                as_wait = 0;
-                if (autosave()) {
-                    as_err = 1;
-                    as_next = fm1_ms + 3000u;
-                } else {
-                    as_err = 0, as_force = 0;
-                    if (st_gen != g) as_last = fm1_ms ? fm1_ms : 1u;
-                }
+    {                                           /* (a save waits for silence: since when) */
+        uint32_t w = !playing && (as_wait || sv_pend >= 0) && !voices_silent();
+        if (w && !sv_wait) sv_said = fm1_ms;
+        sv_wait = w;
+    }
+    if (set_dirty && quiet() && !playing && fm1_ms - set_t > (usb_recording() ? SAVE_REST_REC_MS : 2000u)) {   /* 2 s
+                                             * after the change, when silent (a computer recording from the USB
+                                             * audio: a minute, SAVE_REST_REC_MS) */
+        settings_save(&set, sizeof set);
+        set_dirty = 0;
+    }
+    {                                           /* the overload guard let a voice go: said */
+        static uint32_t shed_seen;
+        if (shed_n != shed_seen) shed_seen = shed_n, hd_say("CPU FULL: NOTE DROPPED");
+    }
+    if (!playing && sv_pend >= 0) {             /* SOUNDS: a SAVE or CLEAR that waited for the stop */
+        sv_sound((uint32_t)sv_pend, sv_pend_slot, sv_pend_cat, sv_pend_trk);
+        sv_pend = -1;
+    }
+    mo_tick(fm1_in.buttons >> BTN_REC & 1u);            /* (2.2) MOTION: a move taken, the lanes played */
+    /* the autosave: the sequencer standing, the hands at rest 2.5 s, at most every 20 s, if anything changed, no voice
+     * sounding (a release, a latched note: it waits, the header says so); a failed one: again in 3 s, the header
+     * says so */
+    if (playing) as_wait = 0;
+    if (!playing && !ed_open() && fm1_ms >= as_next &&
+        (as_force || (fm1_ms - t_touch >= (usb_recording() ? SAVE_REST_REC_MS : 2500u) &&
+                      (!as_last || fm1_ms - as_last >= 20000u)))) {   /* (an editor's PUT open: its bytes are in
+                                             * st_img; a save asked for: now) */
+        uint32_t g = st_gen;
+        as_next = fm1_ms + 500u;
+        if (!voices_silent() && !as_force && fm1_ms - t_touch < AS_LOUD_MS)   /* (no flash while a voice sounds:
+                                             * it waits, if there is anything; a drone: AS_LOUD_MS at rest) */
+            as_wait = (uint32_t)autosave_due();
+        else {
+            as_wait = 0;
+            if (autosave()) {
+                as_err = 1;
+                as_next = fm1_ms + 3000u;
+            } else {
+                as_err = 0, as_force = 0;
+                if (st_gen != g) as_last = fm1_ms ? fm1_ms : 1u;
             }
         }
     }
+}
+
+static void app_main(void)
+{
+    app_start();
+    for (;;)
+        app_step();
 }
 
 #ifdef GRIMM_WEB

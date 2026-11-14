@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 PolarPatch
-// Arctic Scream p0larpatch: the demo page's five demos (A1-A5), as the editor's own frames (docs/EDITOR_PROTOCOL.md:
+// Arctic Scream p0larpatch: the demo page's six demos (A1-A6), as the editor's own frames (docs/EDITOR_PROTOCOL.md:
 // TRACK sets a track's sound, SEQ its sequence, the tempo, PLAY) and the keys to latch. The sounds are the factory's,
 // read from the firmware itself (web/dist/grimm.wasm, after web/build_web.sh), with DRONE turned up (III as it is), and MANDALORIA,
 // a sound of PolarPatch's own. The editor loads the same songs (song: the sounds, the sequences, the latched keys).
@@ -72,6 +72,11 @@ const DEMOS = [
     seqs: [[2, seq(2, ["-", "-", "-", "-", "C6*30", "-", "-", "-", "-", "-", "C#6*25", "-", "-", "-", "-", "-",
                        "-", "-", "G5*20", "-", "-", "-", "-", "-", "-", "-", "-", "F#5*25", "-", "-", "-", "-"])]],
     latch: [[0, ["C4"]], [1, ["A3"]]], play: true },
+  { id: "A6", name: "BIEGGA", sub: "the wind sings over a still tundra", tempo: 54,   /* (2.0: Biegga, RIDDU, POLAR STILL) */
+    tracks: [[0, "BIEGGA", { borga: 45 }], [1, "POLAR STILL", { borga: 30 }], [2, "RIDDU"]],
+    seqs: [[2, seq(1, ["G3/6*70", "-", "-", "-", "-", "-", "-", "-", "D4/4*50", "-", "-", "-", "-", "-", "-", "-",
+                       "A#3/6*60", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "F3/4*40", "-", "-", "-"])]],
+    latch: [[0, ["C3"]], [1, ["F2", "C3"]]], play: true },
 ];
 
 const out = [];

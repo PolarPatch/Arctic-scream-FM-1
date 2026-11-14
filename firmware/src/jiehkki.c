@@ -2,7 +2,7 @@
  * Copyright (C) 2026 PolarPatch */
 /* Arctic Scream 2.0's JIEHKKI page (LFO, tapped a third time; North Sami: a glacier, sanit.oahpa.no): a piece the
  * FM-1 plays on its own for as long as LENGTH says, moving as slowly as a glacier, then dying out.
- *   LENGTH     5, 10, 15, 25, 30, 60 MIN, ENDLESS: the piece's time
+ *   LENGTH     5, 10, 15, 25, 30, 60 MIN, (2.1) 2, 4, 8 HOURS (all night, to sleep by), ENDLESS: the piece's time
  *   DRIFT      0 .. 100 %: how much moves while it plays: the tracks' notes (its own; twice as often in its
  *              opening), their presence in the mix (a track rests a while, comes back), their filters (opening over
  *              the first minutes, closing as it dies out). 0: nothing moves, the piece only rises and dies out: a
@@ -10,7 +10,8 @@
  *   RUOHCAT    (to creak, crack: sanit.oahpa.no) 0 .. 100 %: the ice around the drone, a crack, a drip, a deep boom now
  *              and then, each its own, from far apart (1 %, a minute or so) to a storm of them (100 %); heard whenever
  *              it is up, the piece playing or not. 0: none
- *   START      OFF, ON: the piece. Turned ON with nothing sounding, it plays its own notes, one a track (from the
+ *   START      OFF, ON, (2.2) ALWAYS: the piece (ALWAYS: ON, and again at every power-on, the project saying so:
+ *              Arctic Scream plays as it wakes, a piece of its own each time, after Arcturus S6's drone at power-on). Turned ON with nothing sounding, it plays its own notes, one a track (from the
  *              SCALE: ROOT low on T1, its fifth, a third and a fifth or second over it; SCALE OFF: as NATURAL
  *              MINOR), the tracks coming in one after another as it rises out of silence (10 .. 30 s); with notes
  *              sounding, it takes them as they are (and moves the mix alone). At its end
@@ -20,7 +21,8 @@
  * The main loop decides (jk_tick, every JK_TICK ms): the notes go through nq (as a key's, the ids JK_ID ..), the
  * gains and the filters' moves through jk_og, jk_tg, jk_cut; the audio ISR ramps them (jk_out, mix_tracks, trk_filter)
  * and plays RUOHCAT's sounds (ru_render: noise through band-passes, a falling sine, a slow low one; into the mix and
- * the REV bus). LENGTH, DRIFT and RUOHCAT are the project's (store.c, version 9); START is not saved.
+ * the REV bus). LENGTH, DRIFT and RUOHCAT are the project's (store.c, version 9); START is not saved (2.2: ALWAYS is,
+ * EXT's byte 23's bit 4).
  *
  * The RUOHCAT page (LFO, tapped a fourth time): the ice's sounds with your own samples among them (a joik heard far off
  * over the drone, the wind, water):
@@ -30,12 +32,26 @@
  *   VARY       0 .. 100 %: 0, a sample whole, from its start, as recorded; up, from further in, shorter, now and then a
  *              fourth, a fifth or an octave down or up
  * A sample comes in over 20 ms and goes over its last 100 ms, panned, with a share into SPACE; two at most at once.
- * SAMPLE, SHARE and VARY are the project's too (store.c's EXT). */
+ * SAMPLE, SHARE and VARY are the project's too (store.c's EXT).
+ * (2.1) The ice answers (after ZEN-1's koi, aceyprime's, who play your note back when they find it; written anew):
+ * with RUOHCAT up, a note you play (a key, MIDI; not the sequencer's, not the piece's) comes back a few seconds later
+ * from far off in the ice, an octave up, a bell of ice: often or seldom as RUOHCAT is up, one at a time.
+ * (2.2) Its dusk (after PaperLagoon's sleep, hacha's, whose last minute is sparser, quieter, slower; written anew): as
+ * the piece dies out (jk_fo: its last fifth, 1 .. 8 min) it does not only fade: its notes move half as often, the mix
+ * stops changing, and its own tracks go one by one, the highest first (T4 a quarter into it, T3 at half, T2 at three
+ * quarters), each let go into SPACE's tail, till T1's low note is alone and fades into silence.
+ * (2.2) The ice holds its breath (after Arcturus S6's gated reverb freeze, Zeptosecond DSP's; written anew): with
+ * RUOHCAT up, now and then SPACE's tail is held still for 3 .. 10 s (SIZE's INF, hall.c's rv_hold: the knob as it is),
+ * the tracks playing on over it, then let go to die away as SIZE says: every ~90 s at 1 %, every ~20 s at 100 %.
+ * (2.2) The keys show it (after Arcturus S6's keys as a display, written anew): while nothing is held, the keys light
+ * JIEHKKI's own notes (every track's), and RUOHCAT's sounds flash across them: a crack, a few keys side by side; a
+ * drip, a high key; a boom, the lowest three; the ice's answer, the key of its note. kl_keys: grimm.c's lights. */
 
 #define JK_TICK 50u                             /* ms between the main loop's looks */
-#define JK_ENDLESS 6                            /* (JK_NLEN: grimm.c) */
-static const uint8_t JK_MIN[JK_NLEN] = {5, 10, 15, 25, 30, 60, 0};   /* LENGTH's minutes (0: ENDLESS) */
-static const char *const JK_LEN_NAME[JK_NLEN] = {"5 MIN", "10 MIN", "15 MIN", "25 MIN", "30 MIN", "60 MIN", "ENDLESS"};
+#define JK_ENDLESS 9                            /* (JK_NLEN: grimm.c; 2.0's 6: store.c reads it as this) */
+static const uint16_t JK_MIN[JK_NLEN] = {5, 10, 15, 25, 30, 60, 120, 240, 480, 0};   /* LENGTH's minutes (0: ENDLESS) */
+static const char *const JK_LEN_NAME[JK_NLEN] = {"5 MIN", "10 MIN", "15 MIN", "25 MIN", "30 MIN", "60 MIN", "2 HOURS",
+                                                 "4 HOURS", "8 HOURS", "ENDLESS"};
 #define JK_ID 202u                              /* its notes' origin (lat_id): JK_ID + 2 t + (0, 1) */
 static const uint8_t JK_LO[NT] = {33, 43, 45, 52}, JK_HI[NT] = {52, 62, 64, 76};   /* a track's notes' range */
 
@@ -50,6 +66,9 @@ static struct {
     uint8_t note[NT], id[NT], want[NT];         /* its own notes now (0: none), their ids; a note to come in (enter) */
     int32_t cut_t[NT], cut[NT];                 /* a filter's move: where it goes, where it is (<< 8) */
     uint32_t rng;
+    int32_t go_was;                             /* (2.2) START as last seen; done: the piece over, START left as it was
+                                                 * (ALWAYS) till it is turned or the FM-1 wakes again */
+    uint32_t done;
 } jk = {.rng = 0x2545F491u};
 static volatile uint32_t jk_sleep;              /* main loop: the piece is over, the screen to go dark (grimm.c) */
 
@@ -86,16 +105,70 @@ static uint32_t jk_left(uint32_t now)           /* ms left of the piece (ENDLESS
     return jk.run && L && e < L ? L - e : 0;
 }
 
+/* (2.2, after HADAL-1's MIDI out, Polystellarflow's: written anew) the piece's own notes out over USB-MIDI too, each
+ * track's on its channel (as its keys', MIDI CHANNEL), while SEQ MIDI OUT is on: another synth, a DAW or a MIDI-to-CV
+ * box can follow the piece. Kept in echo_on as the echoes are (a channel changed, SEQ MIDI OUT off: let go) */
+static void jk_mo(uint32_t on, uint32_t t, uint32_t n)
+{
+    uint32_t c = (set.mch < MCH_ALL ? set.mch : 0u) + (t & 3u);
+    if (c > 15u || n > 127u || !midi_room()) return;
+    if (on && mo_seq) midi_send(0x90u | c, n, 100u), echo_on[n] |= (uint16_t)(1u << c);
+    else if (!on && (echo_on[n] >> c & 1u)) midi_send(0x80u | c, n, 0u), echo_on[n] &= (uint16_t)~(1u << c);
+}
 static void jk_play(uint32_t t, int32_t n)      /* track t's own note to n (the new one on, then the old one let go) */
 {
     uint32_t id = JK_ID + 2u * t + (jk.id[t] == JK_ID + 2u * t);
     if (n == jk.note[t]) return;
-    if (n > 0) nq_note(NQ_ON, t, (uint32_t)n, id);
-    if (jk.note[t]) nq_note(NQ_OFF, t, jk.note[t], jk.id[t]);
+    if (n > 0) nq_note(NQ_ON, t, (uint32_t)n, id), jk_mo(1u, t, (uint32_t)n);
+    if (jk.note[t]) nq_note(NQ_OFF, t, jk.note[t], jk.id[t]), jk_mo(0u, t, jk.note[t]);
     jk.note[t] = (uint8_t)(n > 0 ? n : 0), jk.id[t] = (uint8_t)id;
+}
+/* (2.2, after HADAL-1's motif, Polystellarflow's: written anew) MOTIF: with its own notes, the piece is born with a few
+ * notes of its own (3 .. 5, the SCALE's, around two octaves over T1), heard now and then over the drone on T4's sound:
+ * the first after its opening, then every ~2 .. 6 minutes (DRIFT up: more often), each time a little changed (a note
+ * a step of the scale up or down, now and then one more or one less), slow, each note ~1.2 .. 2.4 s. Never in its
+ * dusk. Its notes out over MIDI as T4's (jk_mo) */
+static uint32_t jk_open(uint32_t L);           /* (below) */
+static uint32_t jk_dusk(uint32_t now);
+#define MF_ID 210u                              /* its notes' origin (lat_id): MF_ID, MF_ID + 1 in turn */
+#define MF_MAX 5u
+static struct { uint8_t n, i, note[MF_MAX], on, id; uint32_t next, t; } mf;
+static void mf_born(uint32_t now)               /* a piece of its own begins: its motif */
+{
+    uint32_t k;
+    int32_t b = jk_step(jk.note[0] + 24, 0);
+    mf.n = (uint8_t)(3u + jk_rnd(3u)), mf.i = 0, mf.on = 0;
+    for (k = 0; k < mf.n; k++) mf.note[k] = (uint8_t)clamp(jk_step(b, (int32_t)jk_rnd(7u) - 2), JK_LO[3], JK_HI[3]);
+    mf.next = now + jk_open(jk.len) + 20000u + jk_rnd(40000u);
+}
+static void mf_off(void)
+{
+    if (mf.on) nq_note(NQ_OFF, 3, mf.on, mf.id), jk_mo(0u, 3, mf.on), mf.on = 0;
+}
+static void mf_tick(uint32_t now)               /* (jk_tick) its notes, one after another, then a while till the next */
+{
+    if (!jk.own || jk_dusk(now)) { mf_off(), mf.i = 0; return; }
+    if (!mf.i) {
+        if ((int32_t)(now - mf.next) < 0) return;
+        mf.i = 1, mf.t = now;
+    }
+    if ((int32_t)(now - mf.t) < 0) return;
+    mf_off();
+    if (mf.i > mf.n) {                          /* (played: changed a little for the next time, then a while) */
+        uint32_t k = jk_rnd(mf.n), d = (uint32_t)clamp(jk_drift, 0, 100);
+        mf.note[k] = (uint8_t)clamp(jk_step(mf.note[k], jk_rnd(2u) ? 1 : -1), JK_LO[3], JK_HI[3]);
+        if (!jk_rnd(4u) && mf.n < MF_MAX) mf.note[mf.n] = mf.note[mf.n - 1u], mf.n++;
+        else if (!jk_rnd(5u) && mf.n > 3u) mf.n--;
+        mf.i = 0, mf.next = now + 360000u - d * 2400u + jk_rnd(60000u);
+        return;
+    }
+    mf.id = (uint8_t)(mf.id == MF_ID ? MF_ID + 1u : MF_ID), mf.on = mf.note[mf.i - 1u];
+    nq_note(NQ_ON, 3, mf.on, mf.id), jk_mo(1u, 3, mf.on);
+    mf.t = now + 1200u + jk_rnd(1200u), mf.i++;
 }
 static void jk_notes_off(void)
 {
+    mf_off(), mf.i = 0;
     uint32_t t;
     for (t = 0; t < NT; t++) jk_play(t, 0), jk.want[t] = 0;
 }
@@ -115,10 +188,21 @@ static void jk_calm(void)                       /* the mix as set: every gain up
     for (t = 0; t < NT; t++) jk_tg[t] = 32767, jk.cut_t[t] = 0;
 }
 
+static void jk_always(uint32_t on)              /* (2.2) a project loaded: START ALWAYS in it (or not) */
+{
+    if (on) jk_go = JK_ALWAYS, jk.done = 0;
+    else if (jk_go == JK_ALWAYS) jk_go = 1;    /* (one playing goes on, as any loaded project leaves it) */
+    jk.go_was = jk_go;
+}
 static void jk_start(uint32_t now)
 {
     int32_t r = clamp(sc_root, 0, 11), n1 = jk_fit(0, 36 + r);
     uint32_t t, gap;
+#ifndef DINGHY_HOST
+    jk.rng ^= fm1_ticks() | 1u;                 /* (2.2: each piece its own, from the clock at its start; the host's
+                                                 * tests: as before, the same each run) */
+    if (!jk.rng) jk.rng = 0x2545F491u;
+#endif
     jk.run = 1, jk.t0 = now, jk.len = jk_len_ms(), jk.ended = 0;
     jk.own = !tracks_latched() && !playing;     /* (nothing sounding: its own notes, out of silence) */
     gap = jk.len ? jk.len / 60u : 12000u;       /* (the tracks coming in: 5 .. 12 s apart) */
@@ -133,6 +217,7 @@ static void jk_start(uint32_t now)
         jk.want[2] = (uint8_t)jk_fit(2, jk_step(n1 + 12, 2));   /* (a third, an octave up) */
         jk.want[3] = (uint8_t)jk_fit(3, jk_step(n1 + 24, jk_rnd(2) ? 4 : 1));   /* (a fifth or second over it) */
         for (t = 1; t < NT; t++) jk.enter[t] = now + t * gap - gap / 4u + jk_rnd(gap / 2u);
+        mf_born(now);                           /* (2.2: its motif) */
     }
 }
 static void jk_stop(void)                       /* turned OFF: its notes out, the mix as set */
@@ -149,7 +234,9 @@ static void jk_end(uint32_t now)                /* LENGTH played out: silence ti
     for (t = 0; t < NT; t++) nq_put(NQ_RELEASE, t, 0);   /* (the latched notes, the arps) */
     if (playing) playing = 0, nq_put(NQ_STOP, 0, (uint32_t)slot_cur & 3u);
     gen_on = 0;
-    jk.run = 0, jk.ended = 1, jk.end_t = now, jk_go = 0;
+    jk.run = 0, jk.ended = 1, jk.end_t = now, jk.done = 1;
+    if (jk_go != JK_ALWAYS) jk_go = 0;          /* (2.2: ALWAYS stays, for the next power-on) */
+    jk.go_was = jk_go;
     jk_og = 0;
     jk_sleep = 1;
 }
@@ -186,18 +273,26 @@ static void jk_glide(uint32_t now)              /* the filters' moves glide to w
         }
     }
     for (t = 0; t < (int32_t)NT; t++) {
-        jk.cut[t] += (jk.cut_t[t] + mid * d * 256 / 160 - jk.cut[t]) / 64;
+        jk.cut[t] += (jk.cut_t[t] + mid * d * 256 / 160 + yr_cut - jk.cut[t]) / 64;   /* (2.2: the season's lean) */
         jk_cut[t] = jk.cut[t];
     }
+}
+static uint32_t jk_dusk(uint32_t now)           /* (2.2) how far into its dusk (its dying out): 0 .. 256 (0: not yet) */
+{
+    uint32_t e = now - jk.t0, L = jk.len, fo = jk_fo(L);
+    if (!jk.run || !L || e + fo <= L) return 0;
+    return e >= L ? 256u : 256u - (uint32_t)((uint64_t)(L - e) * 256u / fo);
 }
 static void jk_move(uint32_t now)               /* DRIFT: a note, a track's presence, the filters' targets */
 {
     int32_t d = clamp(jk_drift, 0, 100), t, n;
+    uint32_t dk = jk_dusk(now);
     if (!d) { jk_calm(); return; }
     if (jk.own && (int32_t)(now - jk.next_move) >= 0) {   /* (a note: every ~4 min at 1 %, ~25 s at 100 %; in
                                                  * its opening, twice as often) */
         uint32_t m = 240000u - (uint32_t)d * 2150u;
         if (now - jk.t0 < jk_open(jk.len)) m /= 2u;
+        if (dk) m *= 2u;                        /* (2.2: its dusk, half as often) */
         jk.next_move = now + m * 6u / 10u + jk_rnd(m * 8u / 10u);
         int32_t k;
         t = jk_rnd(6) ? 1 + (int32_t)jk_rnd(3) : 0;
@@ -219,7 +314,7 @@ static void jk_move(uint32_t now)               /* DRIFT: a note, a track's pres
             jk_play((uint32_t)t, n);
         }
     }
-    for (t = 0; t < (int32_t)NT; t++) {
+    for (t = 0; t < (int32_t)NT && !dk; t++) {   /* (2.2: in its dusk the mix stays as it is) */
         if ((int32_t)(now - jk.next_g[t]) >= 0) {   /* (a track's presence, its filter: every 40 .. 120 s) */
             int32_t g = 32767 - (int32_t)jk_rnd((uint32_t)d * 200u);
             jk.next_g[t] = now + 40000u + jk_rnd(80000u);
@@ -231,7 +326,7 @@ static void jk_move(uint32_t now)               /* DRIFT: a note, a track's pres
 }
 
 /* ---- RUOHCAT: the main loop picks an event's time and its sound, the audio plays it */
-enum { RU_CRACK, RU_DRIP, RU_BOOM, RU_SMP };
+enum { RU_CRACK, RU_DRIP, RU_BOOM, RU_SMP, RU_ANS };   /* (2.1, RU_ANS: the ice's answer) */
 typedef struct {
     uint8_t type, hits;                         /* RU_; a crack's sub-cracks to come */
     uint16_t gap;                               /* .. samples between them (at most) */
@@ -276,11 +371,58 @@ static int ru_pick(ru_ev_t *E)                  /* main loop: a sample event int
     return 1;
 }
 
+static uint32_t kl_until, kl_mask;              /* (2.2) a flash on the keys: till when, which (key 0 .. 26) */
+static void kl_flash(uint32_t type, uint32_t note)   /* (2.2) RUOHCAT's event of type on the keys (RU_ANS: its note) */
+{
+    uint32_t h = (ru_w + 1u) * 2654435761u >> 16, p, base = (uint32_t)(KEY0 + 12 * set.oct);
+    switch (type) {
+    case RU_CRACK: p = h % 24u, kl_mask = 7u << p, kl_until = fm1_ms + 140u; break;
+    case RU_DRIP: kl_mask = 1u << (20u + h % 7u), kl_until = fm1_ms + 90u; break;
+    case RU_BOOM: kl_mask = 7u, kl_until = fm1_ms + 420u; break;
+    case RU_ANS:
+        while (note < base) note += 12u;
+        while (note >= base + 27u) note -= 12u;
+        kl_mask = 1u << (note - base), kl_until = fm1_ms + 600u;
+        break;
+    default: return;
+    }
+}
+static uint32_t kl_keys(void)                   /* (2.2) the keys JIEHKKI and RUOHCAT light now (key 0 .. 26) */
+{
+    uint32_t m = 0, t, base = (uint32_t)(KEY0 + 12 * set.oct);
+    if (jk.run)
+        for (t = 0; t < NT; t++)
+            if (jk.note[t] >= base && jk.note[t] < base + 27u) m |= 1u << (jk.note[t] - base);
+    if ((int32_t)(kl_until - fm1_ms) > 0) m |= kl_mask;
+    return m;
+}
+
+static uint32_t ra_due, ra_note;                /* main loop: the ice's answer, when (0: none), its note */
+static void ru_heard(uint32_t n)                /* main loop: a note played by a hand (a key, MIDI): the ice may answer */
+{
+    int32_t d = clamp(jk_ruo, 0, 100);
+    if (!d || jk.ended || ra_due) return;       /* (RUOHCAT off, the piece over, an answer already coming) */
+    if (jk_rnd(100) >= (uint32_t)(25 + d * 6 / 10)) return;   /* (25 % of the notes at 1 %, 85 % at 100 %) */
+    ra_note = n, ra_due = fm1_ms + 1500u + jk_rnd(3500);
+    if (!ra_due) ra_due = 1u;
+}
+
 static void ru_tick(uint32_t now)
 {
     int32_t d = clamp(jk_ruo, 0, 100);
     uint32_t mean, r;
     ru_ev_t *E;
+    if (ra_due && (int32_t)(now - ra_due) >= 0) {   /* (2.1) the answer: the note an octave up, far off, into SPACE */
+        ra_due = 0;
+        if (d && !jk.ended) {
+            E = &ru_q[ru_w % 4u];
+            E->type = RU_ANS, E->inc = pitch_inc((uint32_t)clamp(((int32_t)ra_note + 12) * 16, 0, 2047));
+            E->amp = 2600 + (int32_t)jk_rnd(1800), E->pan = (int32_t)jk_rnd(32768), E->send = 26000;
+            ru_last = RU_ANS;
+            kl_flash(RU_ANS, ra_note + 12u);
+            ru_w = ru_w + 1u;
+        }
+    }
     if (!d || jk.ended) { ru_next = now + 2000u; return; }
     if ((int32_t)(now - ru_next) < 0) return;
     mean = 60000u >> (d / 16);                  /* (1 %: ~a minute apart; 50 %: ~8 s; 100 %: under 1 s) */
@@ -312,6 +454,7 @@ static void ru_tick(uint32_t now)
         break;
     }
     ru_last = E->type;
+    kl_flash(E->type, 0);
     ru_w = ru_w + 1u;
 }
 
@@ -321,7 +464,7 @@ static struct {
     uint16_t gap, cnt;
     uint8_t sh1, sh2;                           /* its envelopes' falls: e -= e >> sh a sample (2^sh samples) */
     int32_t e1, e2, amp, gl, gr, send, n1, n2, n3, n4, lp;   /* (e1, e2: Q23, amp << 8) */
-    uint32_t ph, inc, inc_lo;
+    uint32_t ph, inc, inc_lo, ph2;              /* (ph2: the answer's second partial) */
     tsvf_t f1, f2;
     int32_t k1, k2;
 } ru[RU_N];
@@ -398,6 +541,8 @@ static void ru_begin(const ru_ev_t *E)
         ru[i].k1 = 900, ru[i].k2 = 1800;
         tsvf_coef_k(&ru[i].f1, E->cut1, ru[i].k1), tsvf_coef_k(&ru[i].f2, E->cut2, ru[i].k2);
         ru[i].sh1 = (uint8_t)(8u + (E->gap > 1000u) + (E->gap > 1400u));   /* (a crack ~6 .. 23 ms) */
+    } else if (E->type == RU_ANS) {             /* (a bell of ice: its note, and a partial 2.75 x it that dies sooner) */
+        ru[i].inc_lo = (E->inc >> 2) * 11u, ru[i].ph2 = 0, ru[i].sh1 = 15, ru[i].sh2 = 13;   /* (~0.7 s, ~0.2 s) */
     } else if (E->type == RU_DRIP) {
         ru[i].inc_lo = E->inc / 2u + E->inc / 16u, ru[i].sh1 = 11;   /* (~46 ms) */
     } else {
@@ -427,6 +572,12 @@ static void ru_render(int32_t *out, int32_t *rev, uint32_t n)   /* audio: RUOHCA
                     ru[k].hits--, ru[k].cnt = (uint16_t)(ru[k].gap / 2u + (uint32_t)(noise32(&ru_rng) % ru[k].gap));
                     ru[k].e1 = (ru[k].amp * (8 + (int32_t)(noise32(&ru_rng) & 7u)) / 16) << 8;
                 }
+                break;
+            case RU_ANS:
+                y = mulq15(sine_i(ru[k].ph), ru[k].e1 >> 8) + (mulq15(sine_i(ru[k].ph2), ru[k].e2 >> 8) >> 2);
+                ru[k].ph += ru[k].inc, ru[k].ph2 += ru[k].inc_lo;
+                ru[k].e1 -= (ru[k].e1 >> ru[k].sh1) + (ru[k].e1 > 0);
+                ru[k].e2 -= (ru[k].e2 >> ru[k].sh2) + (ru[k].e2 > 0);
                 break;
             case RU_DRIP:
                 y = mulq15(sine_i(ru[k].ph), ru[k].e1 >> 8);
@@ -473,6 +624,20 @@ static int32_t jk_trk(uint32_t t)               /* audio, a block: track t's gai
 }
 
 /* main loop, each pass: the knob START, the piece, RUOHCAT; touched: a hand's (or a MIDI note's) last time */
+static uint32_t ih_next, ih_end;                /* (2.2) the ice's next held breath (0: none due), this one's end */
+static void ih_tick(uint32_t now)
+{
+    int32_t d = clamp(jk_ruo, 0, 100);
+    uint32_t m = 90000u - (uint32_t)d * 700u;
+    if (rv_hold) {
+        if ((int32_t)(now - ih_end) >= 0) rv_hold = 0, ih_next = now + m / 2u + jk_rnd(m);
+        return;
+    }
+    if (!d || jk.ended || rv_size >= RV_INF || rv_mix <= 0) { ih_next = 0; return; }   /* (off, over, INF by hand) */
+    if (ih_next && (int32_t)(now - ih_next) >= 0) rv_hold = 1, ih_end = now + 3000u + jk_rnd(7000u);
+    else if (!ih_next || ih_next - now > m * 3u / 2u) ih_next = now + m / 2u + jk_rnd(m);   /* (none due; RUOHCAT
+                                                 * turned up: sooner) */
+}
 static void jk_tick(uint32_t now, uint32_t touched)
 {
     if (jk.ended && (int32_t)(touched - jk.end_t) > 0) {   /* (over and silent: a hand wakes it) */
@@ -481,7 +646,8 @@ static void jk_tick(uint32_t now, uint32_t touched)
     }
     if (now - jk.tick < JK_TICK) return;
     jk.tick = now;
-    if (jk_go && !jk.run) jk_start(now);
+    if (jk_go != jk.go_was) jk.go_was = jk_go, jk.done = 0;   /* (2.2) START turned: a piece again */
+    if (jk_go && !jk.run && !jk.done) jk_start(now);
     else if (!jk_go && jk.run) jk_stop();
     if (jk.run) {
         uint32_t t;
@@ -489,9 +655,15 @@ static void jk_tick(uint32_t now, uint32_t touched)
         for (t = 1; t < NT; t++)                /* (its own tracks coming in) */
             if (jk.want[t] && (int32_t)(now - jk.enter[t]) >= 0) jk_play(t, jk.want[t]), jk.want[t] = 0;
         jk_og = jk_arc(now);
+        if (jk.own && jk_dusk(now))             /* (2.2) its dusk: its own tracks go, the highest first */
+            for (t = 1; t < NT; t++)
+                if (jk_dusk(now) >= 64u * (NT - t)) jk_play(t, 0), jk.want[t] = 0, jk_tg[t] = 32767;
         jk_move(now);
+        mf_tick(now);                           /* (2.2: its motif now and then) */
         if (jk.len && now - jk.t0 >= jk.len) jk_end(now);
     }
     jk_glide(now);
     ru_tick(now);
+    ih_tick(now);
+    yr_tick(now);                               /* (2.2) the year */
 }

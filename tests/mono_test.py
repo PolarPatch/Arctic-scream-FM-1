@@ -65,7 +65,7 @@ check("saved as MONO: HOME black and white", colours(fr[-1]) <= BW, len(colours(
 # saved as MONO, KNOB 1 back to ICE
 out, fr = run("back", [(6200, "down 8"), (6900, "up 8"), (7200, "enc 2 -4"), (8000, "btn 6")], 16000, col=4)
 check("MONO, back to ICE: the colours again", len(colours(fr[-1])) > 2, len(colours(fr[-1])))
-check("COLOUR turned: saved (172 B, once all is silent)", "settings saved (172 B)" in out)
+check("COLOUR turned: saved (172 B, once all is silent)", "settings saved (173 B)" in out)
 
 if fails:
     sys.exit(1)
