@@ -358,6 +358,11 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
         int32_t pan = lfo_move(t, LD_PAN, clamp(trk[t].pan, 0, 127), 127), g[5];
         g[0] = mulq15(lv, pan <= 64 ? 32767 : (127 - pan) * 520);   /* PAN: the far side down, the near one full */
         g[1] = mulq15(lv, pan >= 64 ? 32767 : pan * 512);
+        if (trk[t].spread > 0) {                /* (2.2: SPREAD: the middle down as the side comes up, so a voice at a
+                                                 * side is no louder than one in the middle was: x 1 - 0.42 SPREAD) */
+            int32_t m = 32767 - clamp(trk[t].spread, 0, 100) * 138;
+            g[0] = mulq15(g[0], m), g[1] = mulq15(g[1], m);
+        }
         g[2] = mulq15(lv, pf_held >> PF_ECHO & 1u ? 127 * 258 : fx_send(t, clamp(trk[t].dly, 0, 127)));   /* the sends:
                                                  * after LEVEL (ECHO THROW, REV THROW held: full) */
         g[3] = mulq15(lv, pf_held >> PF_REV & 1u ? 127 * 258 : fx_send(t, lfo_move(t, LD_REV, clamp(trk[t].rev + dr_rev[t] + (sw_e >> 9), 0, 127), 127)));   /* (2.2: SWELL, up to + 64) */
@@ -396,9 +401,11 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
             }
         }
         if (sb_used >> t & 1u) {                /* (2.2: SPREAD's side: L + it, R - it, at the track's level) */
-            int32_t gs = lv * 23 / 32;          /* (a voice at one side: about as loud as in the middle) */
+            int32_t gs = lv * 19 / 32;          /* (a voice at one side: about as loud as in the middle, never louder) */
+            uint32_t i;
             mix_add(out, 2u, sbuf[t], mix_gs[t], gs, n);
-            mix_add(out + 1, 2u, sbuf[t], -mix_gs[t], -gs, n);
+            for (i = 0; i < n; i++) sbuf[t][i] = -sbuf[t][i];   /* (R: minus it; mulq15w takes no negative gain) */
+            mix_add(out + 1, 2u, sbuf[t], mix_gs[t], gs, n);
             mix_gs[t] = gs;
         } else mix_gs[t] = 0;
         for (k = 0; k < 5u; k++) mix_g[t][k] = g[k];
