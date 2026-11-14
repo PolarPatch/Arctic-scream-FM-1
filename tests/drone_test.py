@@ -292,6 +292,14 @@ check("DICE: EDIT + OCT- undoes the last one (HUSH's part back)", pr[8600][1] ==
 check("ACCIDENT: EDIT + G4 moves T1's settings; EDIT + OCT- puts them back", pr[11500][2] != pr[8600][2] and
       pr[12600][2] == pr[8600][2], (pr[8600][2], pr[11500][2], pr[12600][2]))
 
+# (2.2) PRESETS undone: a whole browse is one undo, EDIT + OCT- brings back the sound before it (all of it)
+ev = [(6200, "probe"), (6400, "enc 6 1"), (6700, "enc 6 1"), (7000, "enc 6 1"), (7400, "probe"),
+      (7800, f"down {EDIT}"), (8000, f"btn {OCTD}"), (8200, f"up {EDIT}"), (8600, "probe")]
+out, a, jk, notes = run("presets_undo", ev, 9000)
+pr = probes(out)
+check("PRESETS: turned three times, then EDIT + OCT-: the sound before the browse back", pr[7400][2] != pr[6200][2] and
+      pr[8600][2] == pr[6200][2], (pr[6200][2], pr[7400][2], pr[8600][2]))
+
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo ok")

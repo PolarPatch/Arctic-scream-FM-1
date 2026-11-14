@@ -703,6 +703,9 @@ old notes fade out while the new ones rise with their own ATTACK, over 1.5–6 s
 knobs glide to the new values over 1.5 s. Turning a knob during the glide stops it for that knob. With all six voices
 busy, the change is quick as before.
 
+**Back to where you were:** a whole browse with PRESETS is one undo. Listen your way through the sounds, and if none
+was better, hold **EDIT** and press **OCT−**: the track's sound from before you started turning comes back, all of it.
+
 | Category | Sounds |
 |---|---|
 | DRONE | Permafrost, Deep Fjord, Cracking Ice, Arctic Hum, Solar Wind, Under the Ice |
