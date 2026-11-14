@@ -426,6 +426,15 @@ out, a, jk, notes = run("guide", ev, 9000, {"GRIMM_GUIDE": "1"})
 pg = {int(m.group(1)): int(m.group(2)) for m in re.finditer(r"^probe (\d+) .*? ui page (\d+)", out, re.M)}
 check("the guide: three presses only turn its pages; then LFO opens LFO", pg.get(7500) == 7 and pg.get(8500) == 3, pg)
 
+# (2.2) SWELL: FX held + the ninth white key (G3): the sound rises (louder, more SPACE, the filters open), let go it
+# falls back; the mod wheel (CC 1) the same by hand
+FXB = 2
+ev = [(6000, f"keys {1 << 7}"), (9000, f"down {FXB}"), (9300, f"keys {1 << 7 | 1 << 14}"), (14300, f"keys {1 << 7}"),
+      (14400, f"up {FXB}"), (18800, "keys 0")]
+out, a, jk, notes = run("swell", ev, 19000)
+b0, b1, b2 = rms(a, 8, 9), rms(a, 13.3, 14.3), rms(a, 17.5, 18.5)
+check("SWELL: held, the sound rises; let go, it falls back", b1 > 1.2 * b0 and b2 < 1.1 * b0, (round(b0), round(b1), round(b2)))
+
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna, MOTION, the second core's way, the guide ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna, MOTION, the second core's way, the guide, SWELL ok")

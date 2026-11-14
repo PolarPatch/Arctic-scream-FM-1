@@ -433,8 +433,8 @@ C("09", "Destroy: FX", "var(--plasma)",
 
 C("10", "Perform and GENERATE: hold FX", "var(--amber)",
   "Hold FX for a moment and PERFORM appears. Each trick lasts while you hold its white key; the sequencer keeps running, and you land back in time when you let go. The black keys start GENERATE.", [
-  P("PERFORM", "Hold FX + white keys", "perform", [], ["FREEZE is a toggle: tap it to hold the grain cloud, tap again to let go."],
-    keys([["F2", "FREEZE"], ["G2", "REV THROW"], ["A2", "ECHO THROW"], ["B2", "TAPE STOP"], ["C3", "REVERSE"], ["D3", "FILTER DOWN"], ["E3", "FILTER UP"], ["F3", "STUTTER"]])),
+  P("PERFORM", "Hold FX + white keys", "perform", [], ["FREEZE is a toggle: tap it to hold the grain cloud, tap again to let go.", "SWELL (G3, new in 2.2): held, the whole sound rises over ~4 s (louder, more SPACE, the filters opening); let go, it falls back. The mod wheel (CC 1) does it by hand."],
+    keys([["F2", "FREEZE"], ["G2", "REV THROW"], ["A2", "ECHO THROW"], ["B2", "TAPE STOP"], ["C3", "REVERSE"], ["D3", "FILTER DOWN"], ["E3", "FILTER UP"], ["F3", "STUTTER"], ["G3", "SWELL " + NEW]])),
   P("GENERATE", "Hold FX + black keys", "generate", [
     ["F#2 G#2 A#2 C#3", "Tapped: GENERATE on or off for T1–T4. The track plays by itself: random notes of the SCALE (chord mode: chords), on the tempo, resting now and then.", ""],
     ["D#3", "MODE. DRIFT: few long, soft notes. PULSE: a melody on eighths. STORM: dense sixteenths, wild volume.", "DRIFT / PULSE / STORM"],

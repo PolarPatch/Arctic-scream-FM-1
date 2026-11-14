@@ -174,7 +174,13 @@ static uint32_t cpu_over;                       /* audio: blocks in a row over t
 static int32_t tbuf[NT][VB], dbus[VB], rbus[VB], gbus[VB];   /* the tracks (mono); the DLY, REV and GRAIN buses */
 #include "master.c"                             /* MASTER (a filter on the whole sound), DRIVE (and a limiter) */
 static volatile uint32_t trk_mute, trk_solo;    /* main loop: GLO held + white keys 1..4, 5..8 (bit t: track t) */
-enum { PF_REV, PF_ECHO, PF_TAPE, PF_BACK, PF_FDOWN, PF_FUP, PF_STUT, NPF };   /* the FX layer's tricks: G3 .. F4 */
+enum { PF_REV, PF_ECHO, PF_TAPE, PF_BACK, PF_FDOWN, PF_FUP, PF_STUT, PF_SWELL, NPF };   /* the FX layer's tricks: G3 ..
+                                                 * F4; (2.2) SWELL the ninth white key */
+/* (2.2, after HADAL-1's swell, Polystellarflow's: written anew) SWELL: held (FX + the ninth white key, or the mod wheel,
+ * CC 1, by hand), the whole sound rises over ~4 s: the tracks a little louder, more into SPACE, their filters opening;
+ * let go, it falls back over ~1.5 s. The audio ISR's sw_e follows */
+static int32_t sw_e;                            /* audio: the swell now (Q15) */
+static volatile int32_t sw_cc;                  /* main loop: the mod wheel (0 .. 127) */
 static volatile uint32_t pf_held;               /* main loop: bit PF_: its key held (FX held + it; perform.c) */
 static void perform_render(int32_t *out, uint32_t n);
 static volatile uint32_t trk_quiet;             /* audio: the tracks silent (muted, or another soloed: mute_watch) */
@@ -274,7 +280,8 @@ static uint8_t tf_on[NT];
 static int32_t tf_tgt(uint32_t t)               /* the track filter's cutoff to glide to (<< 8): CUTOFF, its LFO, DRONE's
                                                  * (drone.c), WARP's (chaos.c), JIEHKKI's (jiehkki.c) */
 {
-    return clamp((lfo_move(t, LD_CUT, clamp(trk[t].cut, 0, 127), 127) << 8) + dr_cut[t] + ch_cut[t] + jk_cut[t], 0, 127 << 8);
+    return clamp((lfo_move(t, LD_CUT, clamp(trk[t].cut, 0, 127), 127) << 8) + dr_cut[t] + ch_cut[t] + jk_cut[t] + (sw_e * 3 >> 4),
+                 0, 127 << 8);                  /* (2.2: SWELL, up to 24 steps open) */
 }
 static int32_t tf_px[NT];                       /* audio: POS's share of the sends taken before the filter, 0 (PRE) ..
                                                  * TF_PX1 (POST): a switch crosses over in 8 blocks (~46 ms), no click */
@@ -347,12 +354,13 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
         int32_t jg = jk_trk(t);                 /* (2.0: JIEHKKI's presence, jiehkki.c) */
         int32_t lv = (trk_quiet >> t & 1u) ? 0 : mulq15(lfo_move(t, LD_VOLUME, clamp(trk[t].level, 0, 127), 127) * 258, jg);   /* (a
                                                  * silent track: all its gains down, ramped) */
+        if (sw_e) lv = clamp(lv + mulq15(lv, sw_e) / 3, 0, 32767);   /* (2.2: SWELL, up to +2.5 dB) */
         int32_t pan = lfo_move(t, LD_PAN, clamp(trk[t].pan, 0, 127), 127), g[5];
         g[0] = mulq15(lv, pan <= 64 ? 32767 : (127 - pan) * 520);   /* PAN: the far side down, the near one full */
         g[1] = mulq15(lv, pan >= 64 ? 32767 : pan * 512);
         g[2] = mulq15(lv, pf_held >> PF_ECHO & 1u ? 127 * 258 : fx_send(t, clamp(trk[t].dly, 0, 127)));   /* the sends:
                                                  * after LEVEL (ECHO THROW, REV THROW held: full) */
-        g[3] = mulq15(lv, pf_held >> PF_REV & 1u ? 127 * 258 : fx_send(t, lfo_move(t, LD_REV, clamp(trk[t].rev + dr_rev[t], 0, 127), 127)));
+        g[3] = mulq15(lv, pf_held >> PF_REV & 1u ? 127 * 258 : fx_send(t, lfo_move(t, LD_REV, clamp(trk[t].rev + dr_rev[t] + (sw_e >> 9), 0, 127), 127)));   /* (2.2: SWELL, up to + 64) */
         g[4] = mulq15(lv, fx_send(t, lfo_move(t, LD_GRAIN, clamp(trk[t].grn, 0, 127), 127)));
         int32_t px0 = tf_px[t], pw = trk[t].fpos ? TF_PX1 : 0;
         int32_t px1 = !(used >> t & 1u) ? pw : px0 < pw ? (px0 + 32 < pw ? px0 + 32 : pw) : (px0 - 32 > pw ? px0 - 32 : pw);
@@ -560,6 +568,11 @@ static void app_audio(int32_t *out, uint32_t n)
     li_cur = live_take(n), li_n = n;            /* (sound in: before the voices, Holvut's strings may hear it) */
 #endif
     c1_go = C1_ON() && c1_n == n && C1_RUN(c1_space, n);   /* (2.2: the last block's SPACE, on the second core) */
+    {                                           /* (2.2) SWELL: up ~4 s, down ~1.5 s */
+        int32_t w = pf_held >> PF_SWELL & 1u ? 32767 : 0, c = clamp(sw_cc, 0, 127) * 258;
+        w = c > w ? c : w;
+        sw_e = w > sw_e ? (sw_e + 48 < w ? sw_e + 48 : w) : (sw_e - 128 > w ? sw_e - 128 : w);
+    }
     used = voices_render(tbuf, n);
     CS_MARK(CS_VOICES);
     for (i = 0; i < n; i++)
@@ -2026,6 +2039,7 @@ static void cc_apply(const uint8_t *L, uint32_t val)   /* a linked CC: its param
 static void midi_cc(uint32_t cc, uint32_t val)  /* a CC in (any channel) */
 {
     uint32_t i;
+    if (cc == 1u) sw_cc = (int32_t)val;         /* (2.2: the mod wheel: SWELL by hand; a link on CC 1 as well) */
     if (learn_st == 2u) { learn_cc(cc); return; }
     for (i = 0; i < set.nlk && i < NLINK; i++)
         if (set.lk[i][0] == cc) { cc_apply(set.lk[i], val); return; }
@@ -2755,6 +2769,7 @@ static void app_step(void)                      /* one pass of the main loop: on
                 ;
             pf_keys &= ~(1u << k);
             if (w < 8u) pf_held &= ~(1u << (w - 1u));
+            else if (k == WK2[0]) pf_held &= ~(1u << PF_SWELL);   /* (2.2: SWELL let go: it falls) */
         }
         if ((up >> k & 1u) && gen_bk(k) >= 0 && gen_bk(k) < 4 && (gen_kd >> gen_bk(k) & 1u)) {   /* a
                                              * track's GENERATE key let go: on, off (unless another key came) */
@@ -2823,9 +2838,9 @@ static void app_step(void)                      /* one pass of the main loop: on
             uint32_t w;
             for (w = 1; w < 8u && WK[w] != k; w++)
                 ;
-            if (w < 8u) {
+            if (w < 8u || k == WK2[0]) {        /* (2.2: the ninth, SWELL) */
                 pf_keys |= 1u << k;
-                pf_held |= 1u << (w - 1u);
+                pf_held |= 1u << (w < 8u ? w - 1u : PF_SWELL);
                 b_used |= 1u << BTN_FX;
                 continue;
             }
@@ -2942,6 +2957,7 @@ static void app_step(void)                      /* one pass of the main loop: on
     if (b_down >> BTN_FX & 1u) {                /* (FX held: the eight tricks' keys glow; one on: lit; V2: GENERATE's
                                              * eight black keys glow, T1 .. T4's lit while they generate) */
         for (k = 0; k < 8u; k++) lit |= (k ? pf_held >> (k - 1u) & 1u : ge_freeze & 1u) << WK[k];
+        lit |= (pf_held >> PF_SWELL & 1u) << WK2[0];   /* (2.2: SWELL) */
         for (k = 0; k < 4u; k++) lit |= (gen_on >> k & 1u) << BK[k];
     }
     for (k = 0; k < 27u; k++) {

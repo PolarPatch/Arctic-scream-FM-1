@@ -634,6 +634,10 @@ and you land back in time when you let go.
 
 FREEZE is a toggle: tap it to hold the grain cloud, tap again to let go.
 
+**SWELL (new in 2.2): key 9** (G3, the ninth white key). While you hold it the whole sound rises over about four
+seconds: the tracks a little louder, more of them in SPACE, their filters opening. Let go and it falls back over a
+second and a half. The **mod wheel (CC 1)** of a MIDI keyboard does the same by hand, as far as you turn it.
+
 <br clear="right">
 
 ### GENERATE: hold FX + a black key
@@ -799,6 +803,7 @@ The eight Holvut sounds hold their notes (LATCH) and start with DRONE on.
 | EDIT | OCT− / OCT+ | Undo / redo |
 | FX | white keys 1–8 | PERFORM: FREEZE … STUTTER |
 | FX | black keys | GENERATE: T1–T4 on / off, MODE, OCTAVE, RANGE |
+| FX | G3 (key 9) | SWELL, held (2.2) |
 | SEL | (alone, let go) | Chord mode on / off |
 | SEL | a knob (sequencer pages) | Lock that value to the step |
 | SEL | OCT− (sequencer pages) | Clear the step's locks |
