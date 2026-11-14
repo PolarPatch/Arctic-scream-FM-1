@@ -98,7 +98,7 @@ enum { CAT_DRONE, CAT_PAD, CAT_BELL, CAT_ORGAN, CAT_KEYS, CAT_BASS, CAT_TEXTURE,
 static const char *const CAT_NAME[NCAT] = {"DRONE", "PAD", "BELL", "ORGAN", "KEYS", "BASS", "TEXTURE", "VOICE", "OTHER"};
 _Static_assert(NENG <= PK_ENG + 3u, "a save keeps every source's settings (the eighth, HOWL, at bytes 52..55; the ninth, "
                "Biegga, and (2.2) the tenth, Jiekna, in WORK's EXT and the slots' tail)");
-_Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4u * (SLOT_ALL + BG_SLOT + E2_SLOT) <= SLS_N * SLS_P &&
+_Static_assert(SND_N * SND_SIZE <= 4096u && OBJ_HDR + WORK_PK + 4u <= 4096u && 4u * (SLOT_ALL + BG_SLOT + E2_SLOT) + MO_ALL <= SLS_N * SLS_P &&
                SAVE_NSECT >= 3u + SLS_N, "the save sectors");
 
 /* the factory sounds: Arctic Scream p0larpatch's, records as the user's (no CRC: in the image, read-only), first in
@@ -784,8 +784,13 @@ static uint8_t *sls_byte(uint32_t b)            /* the slot byte at stream byte 
     b -= 4u * FM_ALL;
     if (b < 4u * BG_SLOT) return &slot_bg[b / BG_SLOT][b % BG_SLOT];   /* (2.0: the slots' Biegga) */
     b -= 4u * BG_SLOT;
-    return b < 4u * E2_SLOT ? &slot_e2[b / E2_SLOT][b % E2_SLOT] : 0;   /* (2.2: their ENV 2) */
+    if (b < 4u * E2_SLOT) return &slot_e2[b / E2_SLOT][b % E2_SLOT];   /* (2.2: their ENV 2) */
+    b -= 4u * E2_SLOT;
+    return b < MO_ALL ? (uint8_t *)mo + b : 0;  /* (2.2: the project's MOTION lanes, grimm.c) */
 }
+#define MO_AT (4u * (SLOT_PK + FM_ALL + BG_SLOT + E2_SLOT))   /* (2.2) the lanes' place in the stream */
+static uint32_t sls_mo(void) { return 1u << (MO_AT / SLS_P) | 1u << ((MO_AT + MO_ALL - 1u) / SLS_P); }   /* (their
+                                                 * sectors) */
 static uint32_t sls_bg(uint32_t k) { return (4u * (SLOT_PK + FM_ALL) + k * BG_SLOT) / SLS_P; }   /* (.. its sector) */
 static uint32_t sls_e2(uint32_t k) { return (4u * (SLOT_PK + FM_ALL + BG_SLOT) + k * E2_SLOT) / SLS_P; }
 static uint32_t sls_fm(uint32_t k) { return (4u * SLOT_PK + k * FM_ALL) / SLS_P; }   /* slot k's FM patches' sector */
@@ -829,26 +834,33 @@ static int slots_save(void)                     /* the slots changed, their sect
     uint32_t m = 0, k, n;
     for (k = 0; k < 4u; k++)
         if (slot_dirty >> k & 1u) m |= sls_of(k) | 1u << sls_fm(k) | 1u << sls_bg(k) | 1u << sls_e2(k);
+    if (mo_dirty) m |= sls_mo();
     for (n = 0; n < SLS_N; n++) {
         uint32_t i = slot_up ? ORD[slot_up == 3u ? 0 : 1][n] : n;
         if ((m >> i & 1u) && sls_write(i)) return -1;
     }
-    slot_dirty = 0, slot_up = 0;
+    slot_dirty = 0, slot_up = 0, mo_dirty = 0;
     return 0;
 }
 static int autosave(void)                       /* the working project and the slots, each if it changed: 0 ok */
 {
     int rc;
+    mo_home(1);                                 /* (2.2: what the lanes move, as each began: never a save of its own) */
     pk_work(st_img + OBJ_HDR);
     if (!obj_gen[OBJ_WORK] || st_crc(st_img + OBJ_HDR, WORK_PK) != obj_crc[OBJ_WORK])   /* (2.2: saved anyway: where */
         yr_keep(), pk_work(st_img + OBJ_HDR);   /* the year is now with it; never a save of its own) */
+    mo_home(0);
     if ((rc = obj_save(OBJ_WORK, WORK_PK)) != 0) return rc;
-    return slot_dirty ? slots_save() : 0;
+    return slot_dirty || mo_dirty ? slots_save() : 0;
 }
 static int autosave_due(void)                   /* the working project or the slots changed since saved (no flash) */
 {
+    int d;
+    mo_home(1);
     pk_work(st_img + OBJ_HDR);
-    return !obj_gen[OBJ_WORK] || st_crc(st_img + OBJ_HDR, WORK_PK) != obj_crc[OBJ_WORK] || slot_dirty;
+    mo_home(0);
+    d = !obj_gen[OBJ_WORK] || st_crc(st_img + OBJ_HDR, WORK_PK) != obj_crc[OBJ_WORK] || slot_dirty || mo_dirty;
+    return d;
 }
 static void slot_from(uint8_t *d, const uint8_t *q, uint32_t tn)   /* a slot saved before version 6 (its tracks tn B,
                                                  * steps of 3 B: what it has not as at power-on, no chords, no locks) */
@@ -877,6 +889,7 @@ static void store_boot(void)                    /* power-on: the newest good cop
     const uint16_t *vs;
     const uint8_t *w, *o;
     snd_upgrade();
+    for (k = 0; k < MO_ALL; k++) ((uint8_t *)mo)[k] = 0;   /* (2.2: no lanes till the stream says; the pool not cleared) */
     for (k = 0; k < NT; k++) fm_builtin(k, trk[k].p[ENG_FM][0]);   /* (nothing saved: the PATCHes as built) */
     w = obj_find(OBJ_WORK, &vs, 0);
     if (w) {
@@ -923,6 +936,10 @@ static void store_boot(void)                    /* power-on: the newest good cop
             slot_e2[k][b] = good >> sls_e2(k) & 1u ? save_flash(3u + sb / SLS_P)[OBJ_HDR + sb % SLS_P] : 0u;
         }
     }
+    for (k = 0; k < MO_ALL; k++)                /* (2.2) the MOTION lanes (saved before them, a sector bad: none) */
+        ((uint8_t *)mo)[k] = (good & sls_mo()) == sls_mo() ? save_flash(3u + (MO_AT + k) / SLS_P)[OBJ_HDR + (MO_AT + k) % SLS_P] : 0u;
+    for (k = 0; k < MO_N; k++)
+        if (mo[k].on && (mo[k].pg > 63u || mo[k].len10 < 20u)) mo[k].on = 0;   /* (a broken one: off; mo_ptr keeps the page in NPAGE) */
 }
 
 /* ---- the slots A..D */

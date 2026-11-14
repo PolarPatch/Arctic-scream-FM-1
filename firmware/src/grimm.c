@@ -1039,6 +1039,19 @@ static void ctl_hook(void)
 }
 
 #include "perform.c"                            /* the FX layer: the tricks on the output (FX held + G3 .. F4) */
+/* (2.2) MOTION, a knob's move recorded and looped (motion.c): its lanes, here for the saves (the slots' stream's tail) */
+#define MO_N 4u                                 /* lanes */
+#define MO_PTS 256u                             /* a lane's points, over its length */
+typedef struct {
+    uint8_t on, pg, k, t, x, home;              /* playing; the knob (page, knob, track, its source or step, as a MIDI
+                                                 * LEARN link); its first value (0 .. 127: what the project saves) */
+    uint16_t len10;                             /* its length (10 ms) */
+    uint8_t v[MO_PTS];                          /* the move (0 .. 127 over the knob's range) */
+} mo_lane_t;
+static mo_lane_t mo[MO_N] __attribute__((section(".pool")));
+#define MO_ALL (MO_N * (uint32_t)sizeof(mo_lane_t))
+static uint32_t mo_dirty;                       /* the lanes changed: saved with the slots' stream */
+static void mo_home(int on);                    /* (motion.c: the knobs the lanes move at their first value, for a save) */
 #include "store.c"                              /* SOUNDS, the working project (autosave), slots A..D, undo (store.c) */
 
 /* main loop: SAVE's pages and its held layer, PRESETS, undo, the header's message for a moment */
@@ -1944,6 +1957,7 @@ static void cc_apply(const uint8_t *L, uint32_t val)   /* a linked CC: its param
     seq[sel].cursor = cu, sel = s, fm_op = op;
     if (pg == PG_SONG && (k == 1u || k == 2u)) song_sect = ss;
 }
+#include "motion.c"                             /* (2.2) MOTION: a knob's move recorded and looped */
 static void midi_cc(uint32_t cc, uint32_t val)  /* a CC in (any channel) */
 {
     uint32_t i;
@@ -2530,6 +2544,11 @@ static void app_step(void)                      /* one pass of the main loop: on
         if ((b & OCT_BOTH) != OCT_BOTH) set.oct = oct_before;           /* (the first one's octave step undone) */
         cpu_reset++;
         hd_say("CPU PEAK RESET");         /* (CPU NOW, PEAK: SYSTEM 2) */
+    } else if ((b & (1u << BTN_OCT_DOWN)) && (fm1_in.buttons >> BTN_REC & 1u) && page != PG_SONG && !song_rec) {   /* (2.2)
+                                             * REC held + OCT-: the selected track's MOTION lanes cleared (REC as
+                                             * it was, no pattern cleared) */
+        if (rec_hold) rec_hold = 0, rec = rec_was, rec_on = rec;
+        mo_clear(sel);
     } else if ((b & (1u << BTN_OCT_DOWN)) && (b_down >> BTN_SEL & 1u)) {   /* SEL held + OCT-: the selected step's
                                              * locks cleared */
         seq_step_t *st = &seq[sel].pat[clamp(seq[sel].cur, 0, SEQ_NPAT - 1)].st[clamp(seq[sel].cursor, 0, SEQ_N - 1)];
@@ -2776,6 +2795,11 @@ static void app_step(void)                      /* one pass of the main loop: on
         if ((d = enc_take(ENC_KNOB1 + k)) != 0) {
             if ((b_down >> BTN_SEL & 1u) && PAGES[page].btn == BTN_SEQ) lock_turn(k, d);
             else knob_turn(page, k, d), learn_knob(page, k);   /* (LEARN: this one's parameter) */
+            if ((fm1_in.buttons >> BTN_REC & 1u) && page != PG_SONG && !song_rec) {   /* (2.2) REC held: MOTION, this knob's
+                                             * move (REC's own press undone, no pattern cleared) */
+                if (!mo_rec && rec_hold) rec_hold = 0, rec = rec_was, rec_on = rec;
+                mo_knob(page, k);
+            }
             if (page == PG_HOME) home_say(k);   /* (HOME: what it changed, in the header a moment) */
             if (d > 0) fx_send_on(page);        /* (GRAIN, DELAY turned up, the track sending nothing: its send on) */
             if (b_down >> BTN_SEL & 1u) b_used |= 1u << BTN_SEL;
@@ -2922,6 +2946,7 @@ static void app_step(void)                      /* one pass of the main loop: on
         sv_sound((uint32_t)sv_pend, sv_pend_slot, sv_pend_cat, sv_pend_trk);
         sv_pend = -1;
     }
+    mo_tick(fm1_in.buttons >> BTN_REC & 1u);            /* (2.2) MOTION: a move taken, the lanes played */
     /* the autosave: the sequencer standing, the hands at rest 2.5 s, at most every 20 s, if anything changed, no voice
      * sounding (a release, a latched note: it waits, the header says so); a failed one: again in 3 s, the header
      * says so */

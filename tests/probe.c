@@ -96,11 +96,12 @@ static void host_probe(void)
                                         (unsigned)vc[i].note, voice_latched(i));
     }
     printf("\n");
-    printf("jkprobe %u run %u ended %u own %u go %d len %d drift %d ruo %d tun %d og %d scr %u aur %u hold %u yr %d ys %d yd %d sky %d lean %d shq %d ycut %d cut %d lfa %d lsh %d el %d eo %d es %d ed %d took %d bg", fm1_ms,
+    printf("jkprobe %u run %u ended %u own %u go %d len %d drift %d ruo %d tun %d og %d scr %u aur %u hold %u yr %d ys %d yd %d sky %d lean %d shq %d ycut %d cut %d lfa %d lsh %d el %d eo %d es %d ed %d took %d cut0 %d mo %d sgen %d bg", fm1_ms,
            jk.run, jk.ended, jk.own, (int)jk_go, (int)jk_len, (int)jk_drift, (int)jk_ruo, (int)sc_tun, (int)jk_og, scr_dark,
            scr_aur, rv_hold, (int)yr_len, (int)yr_season, (int)yr_depth, (int)yr_sky, (int)rv_lean, (int)rv_shq, (int)yr_cut,
            (int)(abs(jk_cut[0]) + abs(jk_cut[1]) + abs(jk_cut[2]) + abs(jk_cut[3])), (int)lfo_amt[0], (int)trk[0].lfo_shape, (int)trk[0].e_loop, (int)trk[0].e_onset, (int)trk[0].spread,
-           (int)trk[0].detune, (int)cpu_took);   /* (2.2: T1's ENV 2; the CPU guard's) */   /* (2.2: T1's LFO, CHAOS) */                            /* (2.0: JIEHKKI, TUNING, the screen, the tracks' Biegga:
+           (int)trk[0].detune, (int)cpu_took, (int)trk[0].cut,
+           (int)(mo[0].on + mo[1].on + mo[2].on + mo[3].on), (int)st_gen);   /* (st_gen: the flash's writes) */   /* (2.2: T1's CUTOFF, the MOTION lanes playing) */   /* (2.2: T1's ENV 2; the CPU guard's) */   /* (2.2: T1's LFO, CHAOS) */                            /* (2.0: JIEHKKI, TUNING, the screen, the tracks' Biegga:
                                                  * tests/drone_test.py) */
     for (i = 0; i < NT; i++)
         printf(" %d,%d,%d,%d", (int)trk[i].p[ENG_BIEGGA][0], (int)trk[i].p[ENG_BIEGGA][1], (int)trk[i].p[ENG_BIEGGA][2],

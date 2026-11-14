@@ -492,6 +492,12 @@ Each track has its own **64-step** pattern; all four play together on one tempo 
 - **Stopped + REC:** each key fills a step and moves on. **Playing + REC:** notes land on the nearest step.
 - **Step locks:** hold **SEL** and turn a knob to lock that value to the step. **SEL + OCT−** clears them.
 - **Hold REC ~1 s:** clears the selected track's pattern (undoable).
+- **MOTION (new in 2.2): hold REC and turn a knob.** From that turn on, the knob's move is taken (up to two minutes)
+  until you let go of REC; then it plays by itself, over and over, as long as it took: a filter opening over a minute,
+  a reverb swelling, by hand, once. It runs whether the sequencer plays or not. Four lanes in all, any track's knobs;
+  a new move on a knob replaces its old one. **Hold REC + OCT−** clears the selected track's moves. The moves are
+  saved with the project (which keeps each knob where its move begins, so a playing move never wears the flash).
+  Not on SYSTEM, SAVE, PERFORM, the sequencer's, SONG's or SOURCE's pages, nor FM's PATCH, LATCH or START.
 - **Hold SEQ + a white key** (all undoable):
 
 | key 1 | key 2 | key 3 | key 4 | key 5 | key 6 | key 7 | key 8 |
@@ -790,6 +796,8 @@ The eight Holvut sounds hold their notes (LATCH) and start with DRONE on.
 | SEL | OCT+ | The track's LATCH on / off |
 | SEQ | white keys 1–8 | Sequencer tools |
 | SEQ | turn SELECT | Pattern length |
+| REC | turn a knob | MOTION: its move recorded, then looped (2.2) |
+| REC | OCT− | The track's MOTION cleared (2.2) |
 | SAVE | white keys 1–4 / 5–8 | Recall / save slots A–D |
 | GLO | white keys 1–4 / 5–8 | Mute / solo T1–T4 |
 | ARP | (alone) | Arpeggiator on / off |

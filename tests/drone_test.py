@@ -393,6 +393,25 @@ check("Jiekna RING at the top, bowed: it sings on by itself, held (no clip, no d
       rms(a, 20, 24) > 0.5 * rms(a, 9, 13) and rms(a, 20, 24) > 200 and peak(a) < 32000,
       (round(rms(a, 9, 13)), round(rms(a, 20, 24)), peak(a)))
 
+# (2.2) MOTION: REC held, HOME's CUTOFF turned up and down over ~3 s, REC let go: the move plays by itself, over and over
+# (REC not left on, the pattern not cleared); saved: at power-on it plays again; REC held + OCT-: gone
+RECB = 13
+ev = [(6000, f"down {RECB}")] + [(6100 + 100 * i, f"enc {K2} {-3 if i < 15 else 3}") for i in range(30)] + [(9200, f"up {RECB}")]
+sv5 = OUT / "saves_motion.bin"
+out, a, jk, notes = run("motion", ev + P(*range(9500, 16000, 100), 44000, 120000), 121000, {"GRIMM_SAVE_OUT": str(sv5)})
+c = [jk[t]["cut0"] for t in range(9500, 16000, 100)]
+check("MOTION: the move plays by itself, down and up, again (its length ~3 s); REC off, a lane", max(c) - min(c) > 25 and
+      jk[9500]["mo"] == 1 and "rec 0" in out.split("probe 9500")[1][:400], (min(c), max(c), c[::5], jk[9500]["mo"]))
+check(".. what it plays never makes a save of its own (the flash not written again past the first save)",
+      jk[120000]["sgen"] == jk[44000]["sgen"], (jk[44000]["sgen"], jk[120000]["sgen"]))
+low = [t for t, x in zip(range(9500, 16000, 100), c) if x == min(c)]
+check(".. it comes round about every 3 s", any(3000 <= b - a_ <= 3400 for a_ in low for b in low), low)
+out, a, jk2, notes = run("motion_on", P(*range(3000, 9000, 100)) + [(9500, f"down {RECB}"), (9700, f"btn {OCTD}"),
+                         (9900, f"up {RECB}")] + P(10500, 12000), 12500, {"GRIMM_SAVE_IN": str(sv5)})
+c2 = [jk2[t]["cut0"] for t in range(3000, 9000, 100)]
+check(".. power-on: it plays again; REC held + OCT-: gone, the knob still", max(c2) - min(c2) > 25 and jk2[3000]["mo"] == 1 and
+      jk2[10500]["mo"] == 0 and jk2[10500]["cut0"] == jk2[12000]["cut0"], (min(c2), max(c2), jk2[10500]["mo"]))
+
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna, MOTION ok")
