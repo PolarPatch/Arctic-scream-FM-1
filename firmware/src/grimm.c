@@ -1864,6 +1864,7 @@ static void presets_turn(int32_t d)
     hd_say(m);
     pic_card(sel);                              /* (2.1) its picture on HOME a moment */
 }
+#include "help.c"                               /* (2.2) HELP: what a knob does, a line for a moment */
 #include "ui.c"                                 /* the screens (after the concept designs) */
 #include "reader.c"                             /* (1.5) the screen reader: what the screen shows, said */
 
@@ -2532,6 +2533,12 @@ static void app_start(void)                     /* once, at power-on: the saves,
     if (store_fresh && getenv("GRIMM_PLAIN")) store_fresh = 0;   /* (host tests: Arctic Scream's plain VA tracks, not ICE WRAITH) */
 #endif
     if (store_fresh) snd_default();             /* (nothing saved: ICE WRAITH) */
+#if !defined DINGHY_HOST && !defined GRIMM_WEB && !defined FM1_PLATFORM_FILE
+    if (store_fresh) gd_page = 1;               /* (2.2: the guide, the very first start) */
+#endif
+#ifdef DINGHY_HOST
+    if (getenv("GRIMM_GUIDE")) gd_page = 1;     /* (host: the guide, for its screens and its test) */
+#endif
     pj_slot = slot_cur;
     sys_load();                                 /* (the settings: the octave, SYSTEM's; the accent before the boot
                                                  * screen) */
@@ -2611,6 +2618,7 @@ static void app_step(void)                      /* one pass of the main loop: on
     b = fm1_input_edges(&rel);                  /* buttons pressed / released since the last call (bit = button id) */
     if (b | rel) t_touch = t_hand = fm1_ms;
     if (scr_dark && b) scr_woke = 1, b = 0;     /* (the screen dark: a press only wakes it; let go as ever) */
+    if (gd_take(b)) b = 0;                      /* (2.2: the guide: a press turns its page) */
     if ((b & OCT_BOTH) && (fm1_in.buttons & OCT_BOTH) == OCT_BOTH) {   /* OCT- and OCT+ held together: PEAK to 0 */
         if ((b & OCT_BOTH) != OCT_BOTH) set.oct = oct_before;           /* (the first one's octave step undone) */
         cpu_reset++;
@@ -2738,6 +2746,7 @@ static void app_step(void)                      /* one pass of the main loop: on
     down = keys & ~prev;
     up = prev & ~keys;
     if (scr_dark && down) scr_woke = 1, down = 0;   /* (the screen dark: a key only wakes it) */
+    if (gd_take(down)) down = 0;                /* (2.2: the guide) */
     prev = keys;
     for (k = 0; k < 27u; k++) {
         if ((up >> k & 1u) && (pf_keys >> k & 1u)) {   /* a trick's key let go: the trick off */
@@ -2865,7 +2874,8 @@ static void app_step(void)                      /* one pass of the main loop: on
                                              * SEL let go then: no chord mode) */
         if ((d = enc_take(ENC_KNOB1 + k)) != 0) {
             if ((b_down >> BTN_SEL & 1u) && PAGES[page].btn == BTN_SEQ) lock_turn(k, d);
-            else knob_turn(page, k, d), learn_knob(page, k);   /* (LEARN: this one's parameter) */
+            else knob_turn(page, k, d), learn_knob(page, k), help_knob(page, k);   /* (LEARN: this one's parameter;
+                                             * 2.2, HELP: its line) */
             if ((fm1_in.buttons >> BTN_REC & 1u) && page != PG_SONG && !song_rec) {   /* (2.2) REC held: MOTION, this knob's
                                              * move (REC's own press undone, no pattern cleared) */
                 if (!mo_rec && rec_hold) rec_hold = 0, rec = rec_was, rec_on = rec;

@@ -2324,7 +2324,7 @@ static void pic_sys3(void)                      /* SYSTEM 3: LATCH, what it does
 
 static void pic_notbuilt(void) { ui_text(120 - 4 * 13, 96, "NOT BUILT YET", 1, UI_M); }
 
-static void ui_pic_draw(void)
+static void ui_pic_draw0(void)
 {
     switch (page) {
     case PG_HOME: pic_home(); return;
@@ -2375,6 +2375,24 @@ static void ui_pic_draw(void)
     default: pic_notbuilt(); return;
     }
 }
+static void pic_guide(void)                     /* (2.2) the guide at the first start (help.c) */
+{
+    uint32_t i, g = (gd_page - 1u) % GD_N;
+    char r[8];
+    put_s(put_u(put_s(r, ""), gd_page), "/3");
+    ui_caption("GUIDE", r);
+    for (i = 0; i < 6u; i++)
+        ui_text(PX0 + 108 - 4 * ui_len(GD_TXT[g][i]), 44 + (int32_t)i * 18, GD_TXT[g][i], 1, i == 5u ? ui_acc : UI_W);
+}
+static void ui_pic_draw(void)                   /* the page's picture; (2.2) HELP's line over its foot */
+{
+    if (gd_page) { pic_guide(); return; }       /* (2.2: the guide first) */
+    ui_pic_draw0();
+    if (help_up() && page != PG_HOME) {
+        ui_rect(PX0, 151, 216, 12, UI_D);
+        ui_text(PX0 + 108 - 4 * ui_len(hl_txt), 153, hl_txt, 1, UI_W);
+    }
+}
 
 /* what the picture shows: a hash of everything it is drawn from (a change: redrawn) */
 static uint32_t ui_pic_key(void)
@@ -2382,6 +2400,7 @@ static uint32_t ui_pic_key(void)
     uint32_t h = 2166136261u, k, t;
 #define UI_H(v) (h = (h ^ (uint32_t)(v)) * 16777619u)
     UI_H(page), UI_H(sel), UI_H(sel_eng()), UI_H(ge_freeze), UI_H(ui_acc);
+    UI_H(help_up() ? (uint32_t)(uintptr_t)hl_txt : 0u), UI_H(gd_page);   /* (2.2: HELP's line, on and off; the guide) */
     if (page == PG_HOME)                        /* (2.1: the card, on or off; SKY's picture; 2.2: JAHKI's) */
         UI_H(pic_card_on() ? pc_id + 1u : 0u), UI_H(pc_name[0]), UI_H(pc_mode == PC_SKY ? pic_of_track(sel) + 1u : 0u);
     for (k = 0; k < 4u; k++) {

@@ -464,6 +464,10 @@ C("11", "System: hold HOME", "var(--sky, #4fb3e8)",
     ["USB LEVEL", "How loud a computer records the FM-1. 0 DB: the volume knob all the way up; higher makes quiet drones louder in the recording, a limiter keeps them from clipping. Past +24 DB, the same with SPK OFF (new in 2.2): the speaker and the jack quiet while the computer takes the sound.", "−12 … +24 DB, SPK OFF"],
     ["MOD " + NEW, "MOD OUT: each track's level (CC 102) and LFO (CC 103) out over USB 50 times a second, on the track's channel. For lights, motors, Max or another synth.", "OFF / ON"],
     ["", "", ""])),
+  P("SYSTEM 4 " + NEW, "Hold HOME, then HOME three times", "", K(
+    ["SOUND", "HEADPHONES: the whole range. SPEAKER: a curve for the little speaker, the deepest lows taken away, the low mids lifted. The speaker and the jack only, never the USB sound.", "HEADPHONES / SPEAKER"],
+    ["HELP", "A knob turned shows a short line under the picture saying what it does. The very first start shows a three-page guide.", "ON / OFF"],
+    ["", "", ""], ["", "", ""])),
   P("MIDI, USB audio and good to know", "", "", [
     ["MIDI in", "USB (the MIDI port is called <b>Arctic Scream</b> too), or the TRS jack with a TRS-to-DIN adapter (type A). Notes play the tracks, a CC its MIDI LEARN link; ALL NOTES OFF lets go of MIDI's notes; aftertouch pushes Holvut's FEEDBACK.", ""],
     ["USB audio", "Class compliant, no driver: the FM-1 shows up on the computer, phone or tablet as <b>Arctic Scream</b>, an audio input, 16-bit stereo at 44.1 or 48 kHz, the whole mix at SYSTEM 3's USB LEVEL (the volume knob sets the speaker, not the recording). Solo each track (GLO + keys 5–8) to record them one by one.", ""],

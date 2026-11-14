@@ -420,6 +420,12 @@ check("the second core's way: SPACE a block behind, its tail as loud (within 0.5
       abs(20 * math.log10((rms(a2, 8, 11) + 1) / (rms(a1, 8, 11) + 1))) < 0.5 and peak(a2) < 32000 and rms(a2, 8, 11) > 100,
       (round(rms(a1, 8, 11)), round(rms(a2, 8, 11)), peak(a2)))
 
+# (2.2) the guide at the first start (host: GRIMM_GUIDE): three presses turn its pages and do nothing else; the fourth acts
+ev = [(6000, f"btn {LFO}"), (6500, f"btn {LFO}"), (7000, f"btn {LFO}"), (7500, "probe"), (8000, f"btn {LFO}"), (8500, "probe")]
+out, a, jk, notes = run("guide", ev, 9000, {"GRIMM_GUIDE": "1"})
+pg = {int(m.group(1)): int(m.group(2)) for m in re.finditer(r"^probe (\d+) .*? ui page (\d+)", out, re.M)}
+check("the guide: three presses only turn its pages; then LFO opens LFO", pg.get(7500) == 7 and pg.get(8500) == 3, pg)
+
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna, MOTION, the second core's way ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna, MOTION, the second core's way, the guide ok")
