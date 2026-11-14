@@ -347,6 +347,9 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
     fallback to one core if the second fails) and measured 28-54 % peaks while playing hard. This firmware uses one
     core. Moving the voices or the effects to the second core would be the biggest gain in headroom, and the biggest
     job: boot the core, share the buffers, and keep a fallback.
+    (2.2: done for SPACE. felucca-bsp's `fm1_cpu1` in `firmware/hal/`, started at power-on; the reverb runs there a
+    block behind, `grimm.c` `c1_space`; a failure holds it and SPACE runs on the first core again. Next candidates:
+    GRAIN, then half the voices; each needs its state touched by one core only.)
   - Its hardware notes also report that fm1-base's USB audio can splice whole 256-sample blocks. This firmware's own
     USB ring (1.3.1) is a different path, but it is worth a listen with a plain tone.
 - **64-bit multiplies beside 16-bit loads (fixed in 1.4).** felucca-bsp's `docs/CPU.md` (found through FRASIL, below)

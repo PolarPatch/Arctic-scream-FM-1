@@ -90,9 +90,16 @@ static void fm1_irq_enable_all(void)
 /* called from fm1_fatal_common (fm1_vec.S) with the saved frame:
  * f[0..15] r0..r15, f[16] reti, f[17] rete, f[18] retx, f[19] stub+6,
  * f[20] psr, f[21] icfg, f[22] usp, f[23] ssp, f[24] sp, f[25] interrupted rets */
+#if defined FM1_CPU1 && FM1_CPU1
+static int fm1_cpu1_fault_c(const uint32_t *f);   /* (2.2, fm1_cpu1.h: 1 = the second core's fault, handled: resume) */
+#endif
 void fm1_fault_c(uint32_t *f)
 {
     static volatile uint32_t in_fault;
+#if defined FM1_CPU1 && FM1_CPU1
+    if (fm1_cpu1_fault_c(f))                  /* (the second core's: it is held, CPU0 goes on, fm1_vec.S resumes) */
+        return;
+#endif
     uint32_t i, count = fm1_crash.magic == FM1_CRASH_MAGIC ? fm1_crash.count : 0;
     uint32_t early = fm1_crash.magic == FM1_CRASH_MAGIC ? fm1_crash.early : 0;
     fm1_irq_off();

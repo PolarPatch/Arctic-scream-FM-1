@@ -158,7 +158,7 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   check(meta.factory[36].name === "III" && iii.eng === 7 && iii.latch === 1 && iii.chordOn === 1 && iii.chord === 10 &&
         iii.voicing === 2 && iii.drone.borga === 65 && iii.drone.storm === 35 && iii.drone.rise === 4 &&
         iii.lfo.join() === "14,30,4,6", "editor: III, a Holvut CLUSTER (SPREAD), its DRONE, LATCH and LFO");
-  check(meta.factory.length === 38 && meta.engines.length === 9 && meta.fmAlg.length === 32, "editor: the page's names and tables from the firmware");
+  check(meta.factory.length === 38 && meta.engines.length === 10 && meta.fmAlg.length === 32, "editor: the page's names and tables from the firmware");
   const f2 = await cl.get(OBJ.FACT + 2, 64);
   check(eq([...f2], meta.factory[2].rec) && recordOk(f2), `editor: factory sound 3 (${meta.factory[2].name}) read as the page has it`);
   const b0 = await makeBackup(cl, info);

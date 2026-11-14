@@ -66,10 +66,13 @@ static void rt_out(uint32_t st, uint32_t due)   /* audio ISR: a realtime byte ou
                                                  * (VIBE FM: Arctic Scream VIBE's port/fm1_vibe.c) */
 #else
 #include <stdint.h>
+#define FM1_CPU1 1                              /* (2.2: the second core, hal/fm1_cpu1.h: before the first hal header) */
+#define FM1_CPU1_FALLBACK 1                     /* (a failure: one core from then on, never a restart) */
 #include "fm1_time.h"
 #include "fm1_sys.h"
 #include "fm1_irq.h"
 #include "fm1_guard.h"
+#include "fm1_cpu1.h"
 #include "fm1_input.h"
 #include "fm1_timer.h"
 #include "fm1_lcd_hw.h"
@@ -594,6 +597,15 @@ void fm1_cstart(void)
     lcd_fill(0, 0, 240, 240, C_BLACK);
     fm1_input_init();
     fm1_adc_init();
+    {                                           /* (2.2) the second core: started before the audio and the timers,
+                                                 * interrupts off (felucca-bsp's finding); a new build may try it again
+                                                 * where an older one gave it up */
+        const char *b = APP_VER __DATE__ __TIME__;
+        uint32_t h = 2166136261u;
+        while (*b) h = (h ^ (uint8_t)*b++) * 16777619u;
+        fm1_cpu1_bar_build(h);
+        (void)fm1_cpu1_start();
+    }
     fm1_audio_init(abuf, HALF_WORDS, isr_alnk0, 3);   /* (abuf is zero: .bss) */
     usb_start();
     uart_midi_init();                           /* (the TRS jack; before TIMER5: port H's RMW) */

@@ -503,6 +503,36 @@ static void out_stage(int32_t *out, uint32_t n)
     side_env = se;
 }
 
+/* (2.2) the second core (hal/fm1_cpu1.h, felucca-bsp's): SPACE, the reverb, runs there, a block behind: as a block
+ * begins, the second core renders the last block's REV bus into rv_c1 while this one renders the voices, the mix,
+ * GRAIN and DELAY; at SPACE's place this one waits for it and adds it in. 5.8 ms more on the reverb, never heard; no
+ * job outstanding outside the audio interrupt (the main loop's flash writes never meet one). A failure: it is held,
+ * and SPACE runs here as before (c1_ok 0). Off the FM-1: here, at once */
+#if !defined DINGHY_HOST && !defined GRIMM_WEB && !defined FM1_PLATFORM_FILE
+#define C1_ON() fm1_cpu1_on
+#define C1_GAVE() fm1_cpu1_gave_up            /* (why it is off: FM1_CPU1_*) */
+#define C1_RUN(f, a) fm1_cpu1_run(f, a)
+#define C1_WAIT() fm1_cpu1_wait()
+#else                                           /* (host: tests/host.c's c1_sim, GRIMM_CPU2=1; the browser, VIBE: none) */
+#ifndef DINGHY_HOST
+static const uint32_t c1_sim = 0;
+#endif
+static void (*c1_fn)(uint32_t);
+static uint32_t c1_arg;
+#define C1_ON() c1_sim
+#define C1_GAVE() 0u
+static int C1_RUN(void (*f)(uint32_t), uint32_t a) { c1_fn = f, c1_arg = a; return 1; }
+static int C1_WAIT(void) { if (c1_fn) c1_fn(c1_arg), c1_fn = 0; return 0; }
+#endif
+static int32_t rb_c1[VB], rv_c1[2u * VB];       /* the last block's REV bus; its reverb (the second core's) */
+static uint32_t c1_n, c1_go;                    /* its frames (0: none yet); a job handed over this block */
+static void c1_space(uint32_t n)                /* (the second core) */
+{
+    uint32_t i;
+    for (i = 0; i < 2u * n; i++) rv_c1[i] = 0;
+    hall_render(rb_c1, rv_c1, n);
+}
+
 static void app_audio(int32_t *out, uint32_t n)
 {
     static uint32_t sum, cnt, reset_seen, cs_sum[CS_N];
@@ -513,6 +543,7 @@ static void app_audio(int32_t *out, uint32_t n)
 #ifdef FM1_LIVE_IN
     li_cur = live_take(n), li_n = n;            /* (sound in: before the voices, Holvut's strings may hear it) */
 #endif
+    c1_go = C1_ON() && c1_n == n && C1_RUN(c1_space, n);   /* (2.2: the last block's SPACE, on the second core) */
     used = voices_render(tbuf, n);
     CS_MARK(CS_VOICES);
     for (i = 0; i < n; i++)
@@ -533,7 +564,15 @@ static void app_audio(int32_t *out, uint32_t n)
     CS_MARK(CS_GRAIN);
     tape_render(dbus, out, rbus, n);            /* DELAY: the DLY bus in; the echoes out, and into the REV bus */
     CS_MARK(CS_DELAY);
-    hall_render(rbus, out, n);                  /* SPACE: the REV bus in, the reverb out */
+    if (C1_ON() || c1_go) {                     /* (2.2) SPACE on the second core, a block behind */
+        if (c1_go && C1_WAIT()) c1_space(c1_n);   /* (given up just now: done here, this once) */
+        if (c1_n == n) for (i = 0; i < 2u * n; i++) out[i] += rv_c1[i];
+        for (i = 0; i < n; i++) rb_c1[i] = rbus[i];
+        c1_n = n;
+    } else {
+        if (c1_n) c1_n = 0;                     /* (gone: from now on here) */
+        hall_render(rbus, out, n);              /* SPACE: the REV bus in, the reverb out */
+    }
     CS_MARK(CS_SPACE);
     if (hw_bloom_on && n <= HW_RN)              /* (.. and now only what they added: the next render's BLOOM) */
         for (i = 0; i < n; i++) hw_ret[i] = ((out[2u * i] + out[2u * i + 1u]) >> 1) - hw_ret[i];

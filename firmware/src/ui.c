@@ -2241,7 +2241,8 @@ static void pic_system(void)
 static void sys2_cpu(void)                      /* SYSTEM 2's last row: CPU NOW, PEAK (OCT- + OCT+: PEAK to 0) */
 {
     char l[16], r[16];
-    put_s(put_x10(put_s(l, "CPU NOW "), pct10(cpu_now)), "%");
+    put_s(put_x10(put_s(l, C1_ON() ? "2C NOW " : C1_GAVE() ? "1C NOW " : "CPU NOW "), pct10(cpu_now)), "%");   /* (2.2: two
+                                                 * cores; one, the second given up) */
     put_s(put_x10(put_s(r, "PEAK "), pct10(cpu_peak)), "%");
     ui_rect(PX0, 144, 216, 15, UI_D);
     ui_text(PX0 + 6, 148, l, 1, UI_L);

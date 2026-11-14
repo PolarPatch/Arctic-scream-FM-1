@@ -412,6 +412,14 @@ c2 = [jk2[t]["cut0"] for t in range(3000, 9000, 100)]
 check(".. power-on: it plays again; REC held + OCT-: gone, the knob still", max(c2) - min(c2) > 25 and jk2[3000]["mo"] == 1 and
       jk2[10500]["mo"] == 0 and jk2[10500]["cut0"] == jk2[12000]["cut0"], (min(c2), max(c2), jk2[10500]["mo"]))
 
+# (2.2) the second core's way (host: GRIMM_CPU2): SPACE a block behind (5.8 ms), otherwise the same sound
+ev = [(6000, f"keys {1 << 7 | 1 << 14}"), (6500, "keys 0")]
+out, a1, jk, notes = run("cpu2_one", ev, 12000, plain=False)
+out, a2, jk, notes = run("cpu2_two", ev, 12000, {"GRIMM_CPU2": "1"}, plain=False)
+check("the second core's way: SPACE a block behind, its tail as loud (within 0.5 dB), never clipping",
+      abs(20 * math.log10((rms(a2, 8, 11) + 1) / (rms(a1, 8, 11) + 1))) < 0.5 and peak(a2) < 32000 and rms(a2, 8, 11) > 100,
+      (round(rms(a1, 8, 11)), round(rms(a2, 8, 11)), peak(a2)))
+
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna, MOTION ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna, MOTION, the second core's way ok")

@@ -18,6 +18,9 @@
 #pragma once
 #include <stdint.h>
 #include "fm1_cc.h"
+#if defined FM1_CPU1 && FM1_CPU1
+#include "fm1_cpu1_stop.h"                    /* (2.2: fm1_reboot holds the second core first) */
+#endif
 
 #define FM1_P33_CON (*(volatile uint32_t *)0x13E08u)
 #define FM1_P33_DAT (*(volatile uint32_t *)0x13E0Cu)
@@ -118,6 +121,9 @@ static void fm1_reset_reason(void)
 static void fm1_reboot(void)
 {
     __asm__ volatile("cli");
+#if defined FM1_CPU1 && FM1_CPU1
+    fm1_cpu1_stop();                            /* (2.2: the second core held first: never running into a restart) */
+#endif
     fm1_p33_or(FM1_P3_PR_PWR, 0x10);
     for (;;)
         ;

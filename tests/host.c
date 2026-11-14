@@ -163,6 +163,8 @@ static uint32_t stk_irq(void) { return 0u; }
 #define STK_IRQ_SZ 0u
 static uint32_t host_rec_from = 1, host_rec_to;   /* (GRIMM_USB_REC=FROM,TO: a computer reads the USB audio from FROM to TO ms) */
 static int usb_recording(void) { return fm1_ms >= host_rec_from && fm1_ms < host_rec_to; }
+static uint32_t c1_sim;                         /* (2.2: GRIMM_CPU2=1: grimm.c's SPACE as on the second core, a block
+                                                 * behind) */
 static uint32_t cpu_hot_force;                  /* (2.2: GRIMM_CPU_HOT=1: grimm.c's CPU guard as if the blocks ran hot) */
 static uint32_t host_feed;                      /* (2.2: GRIMM_USB_FEED=1: the computer takes the sound while it records) */
 static int32_t host_usb_pk;                     /* (the USB sound's peak since the last probe: "usbpk MS PEAK") */
@@ -585,7 +587,8 @@ int main(int argc, char **argv)
     }
     if (getenv("GRIMM_USB_REC")) sscanf(getenv("GRIMM_USB_REC"), "%u,%u", &host_rec_from, &host_rec_to);
     host_feed = getenv("GRIMM_USB_FEED") != 0;
-    cpu_hot_force = getenv("GRIMM_CPU_HOT") != 0;   /* (2.2: the CPU guard, as if the blocks ran hot) */
+    cpu_hot_force = getenv("GRIMM_CPU_HOT") != 0;
+    c1_sim = getenv("GRIMM_CPU2") != 0;         /* (2.2: the second core's way, a block behind) */
     if (getenv("GRIMM_SAVE_IN")) {              /* (tests/compat.c: the save sectors an older Arctic Scream wrote) */
         FILE *f = fopen(getenv("GRIMM_SAVE_IN"), "rb");
         (void)save_flash(0);
