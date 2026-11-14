@@ -168,3 +168,50 @@ Adrift plays a preset as you turn to it, and OCT+ keeps it, OCT- goes back to th
 was). Arctic Scream's PRESETS changes the sound at once (and since 2.0 glides there). An undo for it: after turning
 PRESETS, the sound before is kept; EDIT + OCT- (the undo that exists, DICE's and ACCIDENT's) brings it back, all of
 it. OCT- alone stays the octave. Nothing new to learn for those who never want it.
+
+## From SHRUB (noted 2026-11-14)
+
+[SHRUB](https://shrub.audio/) (Steve Duda, Xfer; closed source, all rights reserved): a stripped-down wavetable synth
+for the FM-1, its synth names its own. Nothing taken from it but ideas, written anew; no code, names or looks. Arctic
+Scream's own menus and screens stay as they are.
+
+### 11. CHAOS: movement that never repeats
+
+SHRUB offers two strange attractors (a Lorenz and a Rössler) as modulation sources: smooth, never-repeating wiggles,
+an X and a Y each. For drones the best kind of slow movement there is. In Arctic Scream: a CHAOS shape on LFO (its
+RATE the attractor's speed, its DEPTH as now), and a choice for DRONE's walks (BORGA: random walks, or CHAOS). Fixed
+point, a step of the equations a tick (control rate, not per sample): little CPU.
+
+### 12. Knob moves that loop (a motion recorder)
+
+SHRUB's REC records a knob as it is turned and plays the move back in a loop, a lane a knob, with the lane's length.
+For Arctic Scream: hold REC (or a combination of it) and turn a knob, the move kept and looped over the pattern's length
+(or longer: up to 64 bars, for a filter opening over minutes), a few lanes a track. Saved with the project; cleared
+from SEQ's tools. Arctic Scream's step locks stay what they are; this is the hand's own slow move, as recorded.
+
+### 13. Notes that spread themselves (voice steps)
+
+SHRUB gives each new note the next of up to eight steps, each with its own pan and fine tune, round and round: a
+chord spreads across the stereo field, every other note a hair apart. For Arctic Scream a SPREAD on the track (OFF,
+2..8 steps; pan width and detune), made for held chords and DRONE's choir. Beside BORGA's drifting voices, not instead.
+
+### 14. A CPU guard: a new note that would not fit takes a voice over softly
+
+SHRUB watches its CPU; when a new note would not fit, it takes over a sounding voice (no click) instead of the audio
+breaking up. Heavy sounds simply play fewer notes. For Arctic Scream: measure each block's time (as SYSTEM 2's CPU
+does), and over a margin, steal the quietest or oldest voice with a short fade. A safety net for the heavy layers
+(SHIMMER, GRAIN, four drones with RUOHCAT).
+
+### 15. USB LEVEL: the speaker off while a computer listens
+
+USB LEVEL (SYSTEM 3, 1.4) sets how loud the computer hears the FM-1. SHRUB adds a choice that quiets the speaker and
+the jack while USB plays, so the sound is not heard twice when monitoring through the computer. For Arctic Scream: a
+SPK OFF step on USB LEVEL (or a setting beside it).
+
+### 16. The second core: load balancing
+
+Both Adrift and SHRUB run on both of the chip's cores; ECHOFIELD renders half its grains on the second (see
+`DEVELOPER.md`, "The second core"). Arctic Scream uses one. For the big overhaul: share the load, the tracks split
+across the two cores (T1, T2 here; T3, T4 there) or the effects (SPACE, SHIMMER, GRAIN) moved over, the screen and
+the main loop never waiting on the audio. Its headroom pays for 8, 11 and 12. Boot the core, share the buffers safely,
+measure both (SYSTEM 2's CPU per core), and keep a fallback to one core if the second fails to start.
