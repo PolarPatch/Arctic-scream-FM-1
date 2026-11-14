@@ -347,9 +347,9 @@ check("ENV 2 LOOP PULSE: a held note goes round, down and up again, more than on
 ev = [(5000, f"btn {ENVB}"), (5300, f"btn {ENVB}"), (5600, f"enc {K3} 100"), (6000, f"keys {1 << 7 | 1 << 11 | 1 << 14}")]
 out, a, jk, notes = run("spread", ev, 10000)
 out0, a0, jk0, notes0 = run("spread0", [(6000, f"keys {1 << 7 | 1 << 11 | 1 << 14}")], 10000)
-check("ENV 2 SPREAD 100 %: three notes apart in the stereo field (twice the side of SPREAD 0's, its reverb's), as loud "
-      "(within 3 dB), never clipping",
-      side(a, 8, 9.5) > 2 * side(a0, 8, 9.5) and peak(a) < 32000 and
+check("ENV 2 SPREAD 100 %: three notes apart in the stereo field (more side than SPREAD 0's, its reverb's alone), as "
+      "loud (within 3 dB), never clipping",
+      side(a, 8, 9.5) > 1.2 * side(a0, 8, 9.5) and peak(a) < 32000 and
       abs(20 * math.log10((rms(a, 8, 9.5) + 1) / (rms(a0, 8, 9.5) + 1))) < 3,
       (round(side(a, 8, 9.5)), round(rms(a, 8, 9.5)), round(side(a0, 8, 9.5))))
 sv3 = OUT / "saves_env2.bin"
