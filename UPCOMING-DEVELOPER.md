@@ -166,5 +166,5 @@ the ENV page; saved with the sound.
 
 Adrift plays a preset as you turn to it, and OCT+ keeps it, OCT- goes back to the sound you had (all of it, as it
 was). Arctic Scream's PRESETS changes the sound at once (and since 2.0 glides there). An undo for it: after turning
-PRESETS, the sound before is kept for a while; OCT- (or EDIT + OCT-, the undo that exists) brings it back, as long as
-nothing else has been changed. Nothing new to learn for those who never want it.
+PRESETS, the sound before is kept; EDIT + OCT- (the undo that exists, DICE's and ACCIDENT's) brings it back, all of
+it. OCT- alone stays the octave. Nothing new to learn for those who never want it.
