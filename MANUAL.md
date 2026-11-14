@@ -201,7 +201,7 @@ the rim, a stone skimming the frozen lake, a frozen string.
 
 | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 |---|---|---|---|
-| STRIKE (BOW .. STRIKE) | RING | HOLLOW (STRING .. PIPE) | BRITTLE |
+| STRIKE (BOWED .. STRUCK) | RING | HOLLOW (STRING .. PIPE) | BRITTLE |
 
 - **STRIKE:** at the bottom a bow, soft noise all along the note; at the top a strike, a burst at its start that is
   gone in a few milliseconds; between them both.

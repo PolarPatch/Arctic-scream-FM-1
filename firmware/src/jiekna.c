@@ -89,7 +89,7 @@ static void jn_block(voice_t *v, const volatile int32_t *p, int32_t *mono, int32
 static void jn_text(const volatile int32_t *p, uint32_t k, char *s)
 {
     int32_t v = clamp(p[k], 0, 127);
-    if (k == 0u) { put_s(s, v < 20 ? "BOW" : v > 107 ? "STRIKE" : v < 64 ? "BOW + STRIKE" : "STRIKE + BOW"); return; }
+    if (k == 0u) { put_s(s, v < 20 ? "BOWED" : v > 107 ? "STRUCK" : v < 64 ? "BOWED, STRUCK" : "STRUCK, BOWED"); return; }
     if (k == 2u) { put_s(put_u(put_s(s, v >= 64 ? "PIPE " : "STRING "), (uint32_t)((v & 63) * 100 / 63)), "%"); return; }
     if (k == 1u && v >= 121) { put_s(s, "ENDLESS"); return; }
     put_s(put_u(s, (uint32_t)(v * 100 / 127)), "%");
