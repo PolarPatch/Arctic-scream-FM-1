@@ -188,6 +188,10 @@ static volatile uint32_t mod_pk[NT];            /* audio: (1.5.2) each track's p
 static volatile uint32_t vis_pk[NT], vis_lr[2]; /* audio: each track's peak (before LEVEL), the output's left and right,
                                                  * the highest since the main loop last took them (HOME's moving
                                                  * picture, ui.c; every 16th frame looked at) */
+#ifdef APP_DRAW_APART
+static volatile uint32_t vis_lv[NT];            /* (APP_DRAW_APART) audio: each track's peak, falling slowly (~0.2 s): what
+                                                 * a port draws from its other flow reads it, never takes it */
+#endif
 /* HOME's waves (ui.c): each track's sound as it plays (after its filter, before LEVEL), SC_N points a point every sc_dec
  * frames from a rising zero (so a steady wave stands still; none in SC_WAIT frames: from where it is). The main loop
  * sets sc_dec from the track's lowest note (about two cycles across) and SC_WANT; the audio fills it and says SC_READY */
@@ -338,7 +342,10 @@ static void trk_peak(uint32_t t, const int32_t *x, uint32_t n)   /* its peak, ro
     for (k = 0; k < n; k += 16u)
         if ((a = (uint32_t)(x[k] < 0 ? -x[k] : x[k])) > pk) pk = a;
     if (pk > vis_pk[t]) vis_pk[t] = pk;
-    if (pk > mod_pk[t]) mod_pk[t] = pk;         /* (1.5.2: MOD OUT's, taken by its own clock) */
+    if (pk > mod_pk[t]) mod_pk[t] = pk;
+#ifdef APP_DRAW_APART
+    vis_lv[t] = pk > vis_lv[t] ? pk : vis_lv[t] - (vis_lv[t] >> 5);
+#endif         /* (1.5.2: MOD OUT's, taken by its own clock) */
 }
 static int32_t fx_send(uint32_t t, int32_t s)   /* a send (0..127) times FX (0..200 %): x 258 its Q15 gain, to ~2x */
 {
