@@ -310,7 +310,7 @@ static char *fm_ratio_text(char *s, uint32_t i)   /* operator i's ratio, RATIO (
 }
 static void ui_slab_make(uint32_t k, slab_t *S)
 {
-    volatile int32_t *p = knob_param(page, k);
+    volatile int32_t *p = knob_look(page, k);
     const char *name = knob_name(page, k);
     int32_t v = p ? *p : 0, mx = knob_max(page, k), md = (int32_t)phys_model(trk[sel].p[ENG_PHYS]);
     uint32_t eng = sel_eng();
@@ -2404,7 +2404,7 @@ static uint32_t ui_pic_key(void)
     if (page == PG_HOME)                        /* (2.1: the card, on or off; SKY's picture; 2.2: JAHKI's) */
         UI_H(pic_card_on() ? pc_id + 1u : 0u), UI_H(pc_name[0]), UI_H(pc_mode == PC_SKY ? pic_of_track(sel) + 1u : 0u);
     for (k = 0; k < 4u; k++) {
-        volatile int32_t *p = knob_param(page, k);
+        volatile int32_t *p = knob_look(page, k);
         UI_H(p ? *p : -1);
     }
     for (t = 0; t < NT; t++)

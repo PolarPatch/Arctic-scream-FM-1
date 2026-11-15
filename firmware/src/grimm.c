@@ -1461,6 +1461,21 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     default: return 0;                          /* (not built yet: the knobs do nothing) */
     }
 }
+#ifdef APP_DRAW_APART
+static volatile int32_t *knob_look(uint32_t pg, uint32_t k)   /* (APP_DRAW_APART) knob_param, only to read: GRID's step
+                                                 * into a copy of its own, grid_v left to the sound's flow */
+{
+    static volatile int32_t grid_d[4];
+    if (pg == PG_GRID) {
+        seq_step_t *st = grid_step();
+        grid_d[0] = st->note, grid_d[1] = st->chance, grid_d[2] = st->ratchet, grid_d[3] = st->len;
+        return &grid_d[k & 3u];
+    }
+    return knob_param(pg, k);
+}
+#else
+#define knob_look knob_param
+#endif
 static const char *knob_name(uint32_t pg, uint32_t k) { return pg == PG_SOUND ? sel_engine()->knob[k] : PAGES[pg].knob[k]; }
 static int32_t knob_max(uint32_t pg, uint32_t k)
 {
@@ -1556,7 +1571,7 @@ static char *usb_db(char *s, int32_t v, const char *sp)   /* USB LEVEL: "-12DB" 
 }
 static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on page pg, as the screen shows it */
 {
-    volatile int32_t *p = knob_param(pg, k);
+    volatile int32_t *p = knob_look(pg, k);
     int32_t v = p ? *p : 0;
     uint32_t i;
     *s = 0;
