@@ -31,6 +31,10 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
   - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
   - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
+- **New in 2.1.1:**
+  - **No more glitch under a drone.** The automatic save waits for silence again, however long; before, it saved
+    anyway 30 s after you last touched anything, and the flash stopped the sound for a moment. A slot or a sound you
+    save by hand is still written at once, now fading out and back in instead of buzzing.
 - **New in 2.1:**
   - **Jiekna** (ice), a tenth sound source: ice that sings when struck or bowed, a loop tuned to the note, from a
     knock to an endless drone, a string or a hollow pipe, clean or brittle as glass.

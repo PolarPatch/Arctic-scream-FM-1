@@ -160,17 +160,15 @@ w2 = [t for t in sorted(pr) if t > 9400 and pr[t]["wait"]]
 check("PLAY, STOP: a new wait, said again (~2 s)", bool(w2) and pr[w2[0]]["said"] == 1 and
       not pr[min(14900, w2[0] + 2200)]["said"], w2[:1])
 
-# (1.4.1) a drone never falls silent: the autosave goes anyway after 30 s at rest, once; a slot saved (SAVE + key 5)
-# and a SOUNDS SAVE go at once, the drone sounding
+# (2.1.1) a drone never falls silent: the autosave waits for silence (1.4.1 .. 2.1: anyway after 30 s at rest, the
+# flash's stop a glitch); a slot saved (SAVE + key 5) and a SOUNDS SAVE go at once, the drone sounding
 def erases(out):
     return [int(ln.split()[0]) for ln in out.splitlines() if "flash sector" in ln and "erased (a save)" in ln]
 
 
 _, out = run("loud", ev[:6], 40000)
 e = erases(out)
-check("a drone, a knob turned: no save in the first 30 s at rest", not [t for t in e if 1200 < t < 31000], e)
-check("... then the autosave goes anyway, once", len([t for t in e if 31000 <= t < 33000]) >= 1 and
-      not [t for t in e if t >= 34000], e)
+check("a drone, a knob turned: no save while it sounds (40 s)", not [t for t in e if t > 1200], e)
 _, out = run("loud_slot", ev[:5] + [(3000, "down 9"), (3100, "keys 0x80"), (3200, "keys 0"), (3300, "up 9")], 6000)
 e = erases(out)
 check("a drone: SAVE + key 5 saves slot A at once", bool([t for t in e if 3100 <= t < 4500]), e)

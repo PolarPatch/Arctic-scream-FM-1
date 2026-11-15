@@ -49,10 +49,12 @@ Every track starts with **ICE WRAITH**, a Holvut sound that holds its notes: pre
   LATCH on or off from any page (off lets go of all its latched notes). The keys of latched and arpeggiated notes stay
   lit, and their lights follow OCT− and OCT+.
 - **Saving is automatic.** When the sequencer is stopped and everything is silent, your work saves itself, and it comes
-  back at power-on as you left it. A latched drone never goes silent: the header says `SAVES WHEN SILENT`, and once you
-  have left the FM-1 alone for 30 seconds it saves anyway (since 1.5), with a short gap in the sound.
+  back at power-on as you left it. A latched drone never goes silent: the header says `SAVES WHEN SILENT`, and it saves
+  when you let it fall quiet (since 2.1.1; before, it saved anyway after 30 seconds, with a glitch in the sound). To
+  keep a change under a drone that you will switch off, save a slot. Turning JIEHKKI's START to or from ALWAYS saves
+  at once.
 - **Saves you ask for happen at once** (since 1.5): a slot saved with SAVE + keys 5–8 or on PROJECTS, a sound saved on
-  SOUNDS. If something is sounding you hear a gap of about 50 ms. While the sequencer plays they wait for STOP.
+  SOUNDS. If something is sounding it fades out for a moment and back in. While the sequencer plays they wait for STOP.
 - **Undo:** hold **EDIT** and press **OCT−**; **OCT+** redoes.
 
 <br clear="right">
