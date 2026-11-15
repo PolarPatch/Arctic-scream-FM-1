@@ -2630,6 +2630,12 @@ static void app_start(void)                     /* once, at power-on: the saves,
 #endif
 }
 
+#ifdef APP_DRAW_APART                           /* (a port that draws the screen in a flow of its own, beside the sound:
+                                                 * Arctic Scream VIBE) app_step leaves the drawing to app_draw, and asks
+                                                 * for "everything again" by a count (one writer each side) */
+static volatile uint32_t ui_force_n;
+#endif
+
 static void app_step(void)                      /* one pass of the main loop: one millisecond (platform_poll) */
 {
     uint32_t k, keys, down, up, rel, b, n, lit = 0, base = (uint32_t)(KEY0 + 12 * set.oct);
@@ -3015,7 +3021,11 @@ static void app_step(void)                      /* one pass of the main loop: on
     if (jk_sleep) jk_sleep = 0, scr_dark = 1, scr_aur = 0, lcd_light(0);   /* (its piece over: dark till a touch) */
     if (scr_woke) {                             /* SCREEN OFF: a touch woke it; no touch so long: dark (the panel keeps
                                              * its picture; nothing drawn meanwhile); GUOVSSAHAS: the aurora */
+#ifdef APP_DRAW_APART
+        if (scr_aur) ui_force_n++;
+#else
         if (scr_aur) ui_force = 1;
+#endif
         scr_woke = scr_dark = scr_aur = 0;
         lcd_light(1);
     } else if (!scr_dark && set.scr && fm1_ms - t_hand >= SCR_S[set.scr % NSCR] * 1000u) {
@@ -3026,6 +3036,7 @@ static void app_step(void)                      /* one pass of the main loop: on
         else lcd_light(0);
     }
     batt_poll();
+#ifndef APP_DRAW_APART
     if (!scr_dark || scr_aur) {
         idle_ok = 1;                            /* (2.0) MIDI in while the screen's DMA runs (app_idle) */
         if (scr_aur == 2u) ui_govva(fm1_ms);
@@ -3033,6 +3044,7 @@ static void app_step(void)                      /* one pass of the main loop: on
         else ui_update(set.oct);
         idle_ok = 0;
     }
+#endif
     if (midi_touch) t_touch = fm1_ms, midi_touch = 0;
 #ifdef DINGHY_HOST
     rd_host();                                  /* (host mode: a reader listening, the words' dump) */
@@ -3108,6 +3120,21 @@ static void app_step(void)                      /* one pass of the main loop: on
         }
     }
 }
+
+#ifdef APP_DRAW_APART
+static void app_draw(void)                      /* the screen as app_step draws it on the FM-1, from the port's other flow:
+                                                 * it reads what the sound's flow writes, never writes it (no MIDI in
+                                                 * while it draws: idle_ok stays 0) */
+{
+    static uint32_t force_seen;
+    uint32_t aur = scr_aur;
+    if (ui_force_n != force_seen) force_seen = ui_force_n, ui_force = 1;
+    if (scr_dark && !aur) return;
+    if (aur == 2u) ui_govva(fm1_ms);
+    else if (aur) ui_aurora(fm1_ms);
+    else ui_update(set.oct);
+}
+#endif
 
 static void app_main(void)
 {
