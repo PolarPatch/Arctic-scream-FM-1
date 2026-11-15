@@ -447,6 +447,12 @@ static void live_mix(int32_t *out, uint32_t n)  /* audio: the input into the mix
 static const int32_t USB_G[USB_LMAX + 1u] = {1027, 2051, 4092, 8165, 16291, 32505, 64856};
 static volatile uint8_t usb_lvl = USB_L0;       /* set.usb, for the audio (sys_sync) */
 static int32_t spk_g = 4096;                    /* (2.2) the speaker's and the jack's gain (Q12), ramped: SPK OFF */
+/* (2.1.1) a flash step (an erase ~50 ms) stops the interrupts: the DMA plays its two halves over and over, a buzz in
+ * a drone (a rating heard it: "the audio glitches periodically", the autosave 30 s after a touch). Before it the
+ * sound fades out (~6 ms) and both halves are made silent; after it, in again (~45 ms): a short breath, no buzz.
+ * hush_n: saves going on (they nest); hush_z: silent frames rendered since */
+static volatile uint32_t hush_n, hush_z;
+static int32_t hush_g = 4096;
 static volatile uint8_t spk_mode, help_on = 1;  /* (2.2) SYSTEM 4: SOUND SPEAKER; HELP (ui.c) */
 /* (2.2, after HADAL-1's SOUND MODE, Polystellarflow's: written anew) SOUND SPEAKER: the speaker and the jack (never the
  * USB) through a curve for the FM-1's little speaker: the lows it cannot play taken away (a one-pole high-pass, ~110
@@ -507,7 +513,7 @@ static inline void out_lim(int32_t *l, int32_t *r, int32_t *env)
 static void out_stage(int32_t *out, uint32_t n)
 {
     int32_t g = out_gain(), env = out_env, ue = usb_env, ug = USB_G[usb_lvl <= USB_KMAX ? usb_lv(usb_lvl) : USB_L0], u[64];
-    int32_t se = side_env, sg = spk_g, st;
+    int32_t se = side_env, sg = spk_g, st, hg = hush_g, ht = hush_n ? 0 : 4096;
     uint32_t i, rec = (uint32_t)usb_feeding();
     st = rec && usb_lvl > USB_LMAX && usb_lvl <= USB_KMAX ? 0 : 4096;   /* (2.2: SPK OFF while the computer takes it) */
     for (i = 0; i < n; i++) {
@@ -517,8 +523,11 @@ static void out_stage(int32_t *out, uint32_t n)
         if (sm_g != (spk_mode ? 4096 : 0)) sm_g += spk_mode ? 2 : -2;   /* (2.2: SOUND SPEAKER, ~50 ms) */
         if (sm_g) l = spk_eq(l, 0), r = spk_eq(r, 1);
         out_lim(&l, &r, &env);
+        if (hg != ht) hg = ht ? (hg + 2 > 4096 ? 4096 : hg + 2) : (hg - 16 < 0 ? 0 : hg - 16);   /* (a save: hushed) */
+        if (hg < 4096) l = (l * hg) >> 12, r = (r * hg) >> 12;
         if (rec) {                              /* (the USB recording: MASTER at its top, USB LEVEL's gain) */
             int32_t ul = (int32_t)(((int64_t)x * ug) >> 12), ur = (int32_t)(((int64_t)y * ug) >> 12);
+            if (hg < 4096) ul = (int32_t)(((int64_t)ul * hg) >> 12), ur = (int32_t)(((int64_t)ur * hg) >> 12);
             out_lim(&ul, &ur, &ue);
             u[2u * (i & 31u)] = ul, u[2u * (i & 31u) + 1u] = ur;
             if ((i & 31u) == 31u || i + 1u == n)
@@ -529,9 +538,26 @@ static void out_stage(int32_t *out, uint32_t n)
         out[2u * i] = l, out[2u * i + 1u] = r;
     }
     spk_g = sg;
+    hush_g = hg;
+    hush_z = hg ? 0u : hush_z + n;
     out_env = env;
     usb_env = ue;
     side_env = se;
+}
+
+static void hush(int on)                        /* (2.1.1) around a flash step: on, the sound faded out and both
+                                                 * halves silent first (40 ms at most); off, it comes back */
+{
+    if (!on) { if (hush_n) hush_n--; return; }
+    if (hush_n++) return;
+#if !defined DINGHY_HOST && !defined GRIMM_WEB && !defined FM1_PLATFORM_FILE   /* (the FM-1's: its interrupt renders meanwhile) */
+    {
+        uint32_t t0 = fm1_ms;
+        hush_z = 0;
+        while (hush_z < 2u * HALF_FRAMES + 64u && fm1_ms - t0 < 40u)
+            fm1_wdt_feed();
+    }
+#endif
 }
 
 /* (2.2) the second core (hal/fm1_cpu1.h, felucca-bsp's): SPACE, the reverb, runs there, a block behind: as a block
@@ -3039,7 +3065,9 @@ static void app_step(void)                      /* one pass of the main loop: on
     if (set_dirty && quiet() && !playing && fm1_ms - set_t > (usb_recording() ? SAVE_REST_REC_MS : 2000u)) {   /* 2 s
                                              * after the change, when silent (a computer recording from the USB
                                              * audio: a minute, SAVE_REST_REC_MS) */
+        hush(1);
         settings_save(&set, sizeof set);
+        hush(0);
         set_dirty = 0;
     }
     {                                           /* the overload guard let a voice go: said */
@@ -3065,8 +3093,12 @@ static void app_step(void)                      /* one pass of the main loop: on
                                              * it waits, if there is anything; a drone: AS_LOUD_MS at rest) */
             as_wait = (uint32_t)autosave_due();
         else {
+            int rc;
             as_wait = 0;
-            if (autosave()) {
+            hush(1);
+            rc = autosave();
+            hush(0);
+            if (rc) {
                 as_err = 1;
                 as_next = fm1_ms + 3000u;
             } else {

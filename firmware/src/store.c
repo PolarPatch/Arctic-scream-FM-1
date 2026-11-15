@@ -196,9 +196,12 @@ static uint32_t st_rd32(const uint8_t *p) { return p[0] | (uint32_t)p[1] << 8 | 
 static void st_wr32(uint8_t *p, uint32_t v) { p[0] = (uint8_t)v, p[1] = (uint8_t)(v >> 8), p[2] = (uint8_t)(v >> 16), p[3] = (uint8_t)(v >> 24); }
 static int st_write(uint32_t s, const uint8_t *img)   /* sector s := img (4 KiB) */
 {
+    int rc;
     st_gen++;
-    if (save_flash_erase(s)) return -2;
-    return save_flash_write(s, 0, img, 4096u) ? -3 : 0;
+    hush(1);                                    /* (2.1.1: no buzz while the flash stops everything) */
+    rc = save_flash_erase(s) ? -2 : save_flash_write(s, 0, img, 4096u) ? -3 : 0;
+    hush(0);
+    return rc;
 }
 
 /* a track's CHORD in a byte (0: OFF, SCALE, CLOSE: as a save from before it): ON 0x80, VOICING << 4, CHORD TYPE */

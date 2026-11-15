@@ -137,7 +137,9 @@ static uint32_t ed_commit(uint32_t o)
         memcpy(set.lk, s.lk, sizeof set.lk);
         learn_st = 0, sy_learn = LEARN_OFF;
         set_dirty = 0;
-        if (settings_save(&set, sizeof set)) return ER_FLASH;
+        hush(1);                                /* (2.1.1: no buzz while the flash stops everything) */
+        if (settings_save(&set, sizeof set)) { hush(0); return ER_FLASH; }
+        hush(0);
         hd_say("EDITOR: SETTINGS SAVED");
         return ER_OK;
     }
