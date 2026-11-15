@@ -1238,9 +1238,8 @@ static uint32_t as_wait, sv_wait;               /* an autosave waits for the voi
 static uint32_t as_force;                       /* (1.4.1) a save asked for (a slot saved or erased): the autosave goes
                                                  * now, a voice sounding or not (a drone is never silent: the flash's
                                                  * ~50 ms gap in the sound, asked for) */
-#define AS_LOUD_MS 30000u                       /* (1.4.1) the hands at rest this long, a voice still sounding (a latched
-                                                 * drone): the autosave goes anyway, once (before, it waited for ever and a
-                                                 * power-off lost the work) */
+/* (2.1.1) the autosave waits for silence, however long (1.4.1 .. 2.1 went anyway under a drone after 30 s at rest: the
+ * flash's stop a glitch in it, "periodically"); a slot or a sound saved by hand: at once (as_force) */
 static uint32_t sv_said;                        /* when that wait began: the header says so SV_SAY_MS, then gives
                                                  * the page back (a drone: never silent); a new wait says it again */
 #define SV_SAY_MS 2000u
@@ -1974,6 +1973,8 @@ static void knob_step(uint32_t pg, uint32_t k, int32_t d)   /* KNOB k + 1 on pag
     else if (pg == PG_GRID && k == 0u && sc_scale > 0) *p = sc_walk(*p, d);   /* (a SCALE: its notes only) */
     else if (pg == PG_GRID && k == 0u && !*p && d > 0) *p = 60;   /* NOTE from OFF: C4, then on from there */
     else *p = clamp(*p + d, lo, hi);
+    if (pg == PG_JIEHKKI && k == 3u && (old >= JK_ALWAYS) != (*p >= JK_ALWAYS))
+        as_force = 1;                           /* (2.1.1: START ALWAYS on or off, saved at once: a piece never silent) */
     if (pg == PG_GRID) grid_put();              /* (the step: its bytes) */
     if (pg == PG_SOUNDS && k == 2u) sv_step(0);   /* (a new TYPE: SLOT onto its list) */
     if (pg == PG_SOUND && k == 0u && sel_eng() == ENG_FM && *p != old) fm_builtin(sel, *p);   /* (PATCH: the built-in one
@@ -3089,8 +3090,7 @@ static void app_step(void)                      /* one pass of the main loop: on
                                              * st_img; a save asked for: now) */
         uint32_t g = st_gen;
         as_next = fm1_ms + 500u;
-        if (!voices_silent() && !as_force && fm1_ms - t_touch < AS_LOUD_MS)   /* (no flash while a voice sounds:
-                                             * it waits, if there is anything; a drone: AS_LOUD_MS at rest) */
+        if (!voices_silent() && !as_force)   /* (no flash while a voice sounds: it waits, if there is anything) */
             as_wait = (uint32_t)autosave_due();
         else {
             int rc;
