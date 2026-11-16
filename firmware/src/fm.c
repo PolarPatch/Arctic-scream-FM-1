@@ -10,7 +10,7 @@
  * Arctic Scream's: each track its own patch (track_t's fm_alg, fm_fb, fmo: FM ALGO and FM OP edit it; PATCH loads a built-in one
  * into it: fm_builtin), laid over the built-in patch for what is not edited (the envelopes' levels and last rates, the
  * scaling, the pitch envelope, the LFO); edits while notes sound: RATIO retunes them, LEVEL and FEEDBACK glide (a
- * level a block, a feedback step a block, its history kept continuous), a new ALGO only for new notes (grimm.c
+ * level a block, a feedback step a block, its history kept continuous), a new ALGO only for new notes (arctic.c
  * restarts the track's: they fade). Four macros on KNOB 1..4, Arctic Scream's drone envelope over the patch (the operators stay keyed down while the
  * voice sounds: the patch's own envelopes shape the attack and the timbre), velocity
  * fixed (100), the engine interface of voices.c.
@@ -21,7 +21,7 @@
  * State: a note per voice (fm_note, as Felucca's per-part engine memory), per track the patch through the macros and
  * the LFO (once a control block: voices.c vblock). */
 #include "fm6_core.c"
-#include "grimm_fm.h"                           /* tools/gen_fm_patches.py: FM_NPATCH, FM_PATCH, FM_PATCH_NAME */
+#include "arctic_fm.h"                           /* tools/gen_fm_patches.py: FM_NPATCH, FM_PATCH, FM_PATCH_NAME */
 
 #define FM_LV 16000                             /* a carrier at full: ~8000 (Q15), as a VA voice */
 #define FM_VEL 100

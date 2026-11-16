@@ -7,13 +7,13 @@
     then STATE and MASTER's place
   - a button, a key: STATE as it changes; a knob: its steps (at most one message every 20 ms, none lost)
   - BYE: silent again; an app not heard from for 5 s: silent
-    python3 tests/panel_out_test.py build/host/grimm"""
+    python3 tests/panel_out_test.py build/host/arctic"""
 import re
 import subprocess
 import sys
 from pathlib import Path
 
-BIN = sys.argv[1] if len(sys.argv) > 1 else "build/host/grimm"
+BIN = sys.argv[1] if len(sys.argv) > 1 else "build/host/arctic"
 OUT = Path("build/paneltest")
 OUT.mkdir(parents=True, exist_ok=True)
 HELLO, BYE = "sysex 7D 50 4F 01 01", "sysex 7D 50 4F 02"

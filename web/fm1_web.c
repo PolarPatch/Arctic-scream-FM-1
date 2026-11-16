@@ -5,9 +5,9 @@
  * of hugelton/Felucca (Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments, GPL-3.0), which
  * follows X0X's, web/emu/x0x_web.c of charlesvestal/fm1-x0x (GPL-3.0). */
 /* Arctic Scream in a browser: a fake FM-1, as tests/host.c is one for a computer. platform.c includes this file instead of
- * the hardware when GRIMM_WEB is set; the app (firmware/src/grimm.c) runs unchanged on it.
+ * the hardware when ARCTIC_WEB is set; the app (firmware/src/arctic.c) runs unchanged on it.
  *
- *   web/build_web.sh   ->  web/dist/{index.html, panel.js, worklet.js, grimm.wasm}
+ *   web/build_web.sh   ->  web/dist/{index.html, panel.js, worklet.js, arctic.wasm}
  *
  * One call of platform_poll() is one millisecond of the device, as in host mode: the audio halves due by then
  * (app_audio, then the MASTER knob as platform.c applies it), into a ring the worklet drains. The app's main loop

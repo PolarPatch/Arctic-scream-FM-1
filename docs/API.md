@@ -1,6 +1,6 @@
 # The platform API (Dinghy's)
 
-Everything [platform.c](../firmware/src/platform.c) gives your app. One compilation unit: `grimm.c` includes
+Everything [platform.c](../firmware/src/platform.c) gives your app. One compilation unit: `arctic.c` includes
 `platform.c` first, so all of this is just there. Nothing here is a library you link against; read the source
 when in doubt, it is short.
 
@@ -171,7 +171,7 @@ Up to 256 bytes, kept with their length and a CRC32 in one 4 KiB flash sector (`
 change of size or a broken save reads as "nothing saved": start from your defaults then.
 
 **Save when nothing sounds.** Erasing the sector holds the interrupts off for tens of milliseconds: the sound
-drops out. `grimm.c` saves 2 s after the last change, once all voices are silent. Flash wears out after about
+drops out. `arctic.c` saves 2 s after the last change, once all voices are silent. Flash wears out after about
 100,000 erases of a sector: never save in a loop.
 
 ## Memory and flash

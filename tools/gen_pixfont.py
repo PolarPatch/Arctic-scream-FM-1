@@ -3,7 +3,7 @@
 # Copyright (C) 2026 GR!MM
 """Arctic Scream's screen font: Press Start 2P (assets/fonts/PressStart2P-Regular.ttf, SIL Open Font License 1.1, the Press
 Start 2P Project Authors; LICENSES/OFL-PressStart2P.txt) rasterised at its native 8 px grid into bitmaps, ASCII 32..126,
-8 x 8, a byte a row (bit 7 = the left pixel) -> firmware/gen/grimm_pixfont.h. Under the OFL a format conversion is a
+8 x 8, a byte a row (bit 7 = the left pixel) -> firmware/gen/arctic_pixfont.h. Under the OFL a format conversion is a
 Modified Version, so Arctic Scream calls it "pixfont", not by the font's Reserved Font Name.
 
   python3 tools/gen_pixfont.py          (needs Pillow)
@@ -14,7 +14,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
 TTF = ROOT / "assets" / "fonts" / "PressStart2P-Regular.ttf"
-OUT = ROOT / "firmware" / "gen" / "grimm_pixfont.h"
+OUT = ROOT / "firmware" / "gen" / "arctic_pixfont.h"
 
 
 def main():

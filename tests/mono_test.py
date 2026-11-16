@@ -4,13 +4,13 @@
 """Arctic Scream 2.0's MONO (SYSTEM: COLOUR's fifth) in host mode: turned to, the screen black and white alone; the
 setting saved; the settings saved with it, the boot screen and HOME black and white from the start; back to ICE,
 the colours again.
-    python3 tests/mono_test.py build/host/grimm"""
+    python3 tests/mono_test.py build/host/arctic"""
 import os
 import subprocess
 import sys
 from pathlib import Path
 
-BIN = sys.argv[1] if len(sys.argv) > 1 else "build/host/grimm"
+BIN = sys.argv[1] if len(sys.argv) > 1 else "build/host/arctic"
 OUT = Path("build/monotest")
 OUT.mkdir(parents=True, exist_ok=True)
 fails = 0
@@ -43,7 +43,7 @@ def run(name, ev, end, col=None):
         b = bytearray(172)
         b[2], b[167], b[170] = col, 5, 2
         (OUT / f"set_{name}.bin").write_bytes(bytes(b))
-        env["GRIMM_SETTINGS_IN"] = str(OUT / f"set_{name}.bin")
+        env["ARCTIC_SETTINGS_IN"] = str(OUT / f"set_{name}.bin")
     out = subprocess.run([BIN, str(OUT / name), str(s), "1"], capture_output=True, text=True, check=True,
                          env=env).stdout
     return out, sorted(OUT.glob(f"{name}-*.ppm"))

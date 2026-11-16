@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* FX's fifth and sixth pages, on the whole sound (grimm.c app_audio; the project's, store.c).
+/* FX's fifth and sixth pages, on the whole sound (arctic.c app_audio; the project's, store.c).
  *   MASTER: a filter, stereo: CUTOFF, RESONANCE, TYPE (LP / HP / BP: dsp.c's SVF and its outputs, as the tracks'),
  *     POSITION: PRE FX (the tracks' dry mix, before GRAIN's, DELAY's and SPACE's returns), POST REVERB (after them,
  *     before DRIVE and TAPE), END (after TAPE and PERFORM, the very last). The cutoff glides as the tracks' (~6 ms).

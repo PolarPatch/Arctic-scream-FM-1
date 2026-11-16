@@ -1,6 +1,6 @@
 # Building Arctic Scream
 
-Arctic Scream is one C program, `firmware/src/grimm.c` (it includes the other `.c` files), on the FM-1 platform of
+Arctic Scream is one C program, `firmware/src/arctic.c` (it includes the other `.c` files), on the FM-1 platform of
 [Felucca](https://github.com/hugelton/Felucca) as [SLOOP](https://github.com/isod89/sloop-fm1) and
 [Dinghy](https://github.com/zvenson/dinghy) carry it. The same file builds three ways: for the FM-1, for your
 computer (host mode: the screen as images, the sound as a WAV) and for the browser (the demo and the editor).
@@ -36,14 +36,14 @@ much RAM, a register touched outside `firmware/hal/`. [RULES.md](RULES.md) says 
 ## Host mode and the tests
 
 ```sh
-tests/run_host.sh                           # -> build/host/grimm.wav and screen PNGs
+tests/run_host.sh                           # -> build/host/arctic.wav and screen PNGs
 tests/stress.sh 1                           # the stress test (seeds 1, 2, 3), with address and undefined-behaviour checks
 ```
 
 ## The browser: demo and editor
 
 ```sh
-web/build_web.sh                            # -> web/dist/ (index.html: the demo, editor.html: the editor, grimm.wasm)
+web/build_web.sh                            # -> web/dist/ (index.html: the demo, editor.html: the editor, arctic.wasm)
 node web/test_web.mjs                       # after tests/run_host.sh: the browser build against host mode, the editor
 cd web/dist && python3 -m http.server 8000  # then open http://localhost:8000/ (or /editor.html)
 ```
@@ -53,7 +53,7 @@ cd web/dist && python3 -m http.server 8000  # then open http://localhost:8000/ (
 ## The factory samples
 
 None for now. The WAVs named in `tools/gen_samples.py` (`SAMPLES`, from `assets/samples/`) become
-`firmware/gen/grimm_samples.h` with `py tools/gen_samples.py`, encoded exactly as `tools/fm1_sample_upload.py` uploads a WAV.
+`firmware/gen/arctic_samples.h` with `py tools/gen_samples.py`, encoded exactly as `tools/fm1_sample_upload.py` uploads a WAV.
 
 ## More
 

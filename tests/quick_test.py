@@ -8,14 +8,14 @@ undoable; REC as before; a short press as ever), SAVES WHEN SILENT said ~2 s, th
 looping DAW: a note-on again before its off neither restarts the arp nor is ended by the earlier one's late off, ALL
 NOTES OFF lets go, and with CLOCK INT the clock's messages leave the arp's rate alone. Prints a line a check, exit 1
 on a failure.
-  python3 tests/quick_test.py [build/host/grimm]"""
+  python3 tests/quick_test.py [build/host/arctic]"""
 import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 
-EXE = sys.argv[1] if len(sys.argv) > 1 else "build/host/grimm"
+EXE = sys.argv[1] if len(sys.argv) > 1 else "build/host/arctic"
 OUT = Path("build/host/quick")
 OUT.mkdir(parents=True, exist_ok=True)
 PG_HOME, PG_SYSTEM, PG_SYS2, PG_PROJECTS, PG_SYS3, PG_SYS4 = 7, 10, 11, 13, 28, 35   # (Arctic Scream: DRONE is 25)
@@ -25,7 +25,7 @@ bad = 0
 def run(name, ev, end, env=None):
     path = OUT / f"{name}.txt"
     path.write_text("".join(f"{t} {s}\n" for t, s in sorted(ev, key=lambda e: e[0])) + f"{end} end\n")
-    env = dict(env or os.environ, GRIMM_PLAIN="1")   # (the plain VA tracks, not ICE WRAITH)
+    env = dict(env or os.environ, ARCTIC_PLAIN="1")   # (the plain VA tracks, not ICE WRAITH)
     out = subprocess.run([EXE, str(OUT / name), str(path)], capture_output=True, text=True, check=True,
                          env=env).stdout
     pr = {}
@@ -47,7 +47,7 @@ def settings(name, out=0, latch=0, usb=2):      # version 4's settings (171 B): 
     b[5], b[167], b[169], b[170] = out, 4, latch, usb
     f = OUT / f"set_{name}.bin"
     f.write_bytes(bytes(b))
-    return dict(os.environ, GRIMM_SETTINGS_IN=str(f))
+    return dict(os.environ, ARCTIC_SETTINGS_IN=str(f))
 
 
 def check(what, ok, detail=""):
@@ -103,7 +103,7 @@ for name, blob, want in (("v1", bytes(v1), 0), ("v2", bytes(v1[:167]) + bytes([2
                          ("v3", bytes(v1[:167]) + bytes([3, 2, 1]), 1), ("v3from", bytes(v1[:167]) + bytes([3, 2, 0]), 0)):
     f = OUT / f"settings_{name}.bin"
     f.write_bytes(blob)
-    pr, out = run(f"settings_{name}", probes(1000), 1100, dict(os.environ, GRIMM_SETTINGS_IN=str(f)))
+    pr, out = run(f"settings_{name}", probes(1000), 1100, dict(os.environ, ARCTIC_SETTINGS_IN=str(f)))
     check(f"settings {name} ({len(blob)} B): LATCH {'ALWAYS OFF' if want else 'FROM SOUND'}", pr[1000]["new"] == want,
           pr[1000]["new"])
 

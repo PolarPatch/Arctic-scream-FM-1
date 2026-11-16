@@ -2,15 +2,15 @@
  * Copyright (C) 2026 GR!MM */
 /* Saves across versions (host mode, tests/run_host.sh): a project as an older Arctic Scream saved it loads as it did there.
  * Environment, at the end of a host run (tests/host.c):
- *   GRIMM_FILL=1          a varied project into RAM (every step's values over their ranges, chord steps, locks, the
+ *   ARCTIC_FILL=1          a varied project into RAM (every step's values over their ranges, chord steps, locks, the
  *                         patterns' settings), into slots A..C, and saved (autosave), with two user sounds
- *   GRIMM_SAVE_OUT=file   the save sectors (6 x 4 KiB) into file
- *   GRIMM_STATE_OUT=file  what was loaded, as text: each step's values, the packed project, the slots, the settings
+ *   ARCTIC_SAVE_OUT=file   the save sectors (6 x 4 KiB) into file
+ *   ARCTIC_STATE_OUT=file  what was loaded, as text: each step's values, the packed project, the slots, the settings
  *                         (all but their version, which a newer Arctic Scream raises; then the bytes it adds) and the sounds
  *                         (hex)
- * and at the start, GRIMM_SAVE_IN=file: the save sectors from file (tests/host.c main).
+ * and at the start, ARCTIC_SAVE_IN=file: the save sectors from file (tests/host.c main).
  * tests/data/a1.2-saves.bin was made by Arctic Scream p0larpatch 1.2 (its saves as 1.2 makes them, after the v1.2 tag's
- * Holvut work) with this file and GRIMM_FILL; a1.2-state.txt is what it loaded from it. The same source works on both: the steps' fields are assigned, never pointed to. */
+ * Holvut work) with this file and ARCTIC_FILL; a1.2-state.txt is what it loaded from it. The same source works on both: the steps' fields are assigned, never pointed to. */
 static uint32_t cp_rng = 0x2468ACE1u;
 static uint32_t cp_r(uint32_t n)
 {
@@ -47,15 +47,15 @@ static void compat_exit(void)                   /* tests/host.c: at the end of t
     const char *e;
     FILE *f;
     uint32_t t, k;
-    if (getenv("GRIMM_FILL")) {
+    if (getenv("ARCTIC_FILL")) {
         for (k = 0; k < 3u; k++) compat_fill_seq(), slot_save(k);
         compat_fill_seq();
         snd_save(4, 0, 1), snd_save(9, 1, 6);
         autosave();
     }
-    if ((e = getenv("GRIMM_SAVE_OUT")) != 0 && (f = fopen(e, "wb")) != 0)
+    if ((e = getenv("ARCTIC_SAVE_OUT")) != 0 && (f = fopen(e, "wb")) != 0)
         fwrite(fake_save, 1, sizeof fake_save, f), fclose(f);
-    if ((e = getenv("GRIMM_STATE_OUT")) != 0 && (f = fopen(e, "w")) != 0) {
+    if ((e = getenv("ARCTIC_STATE_OUT")) != 0 && (f = fopen(e, "w")) != 0) {
         for (t = 0; t < NT; t++) {
             fprintf(f, "track %u steps %d div %d swing %d mode %d\n", t, (int)seq[t].steps, (int)seq[t].div,
                     (int)seq[t].swing, (int)seq[t].mode);

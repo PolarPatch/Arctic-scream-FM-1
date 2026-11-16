@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* The stress test's checks (tests/stress.sh): grimm.c includes this file only when GRIMM_STRESS is set (host mode, with
+/* The stress test's checks (tests/stress.sh): arctic.c includes this file only when ARCTIC_STRESS is set (host mode, with
  * address and undefined-behaviour checking), and calls stress_poll() every main loop pass (one millisecond). The script
  * (tests/stress_gen.py) says when everything has been let go (STRESS_CHECKS, a file: "T released", "T silent"), and
  * when to come back from the autosaved project as at power-on ("T boot": store_boot()), and when to stop whatever

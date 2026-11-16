@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 GR!MM
 """The factory samples: assets/samples/*.wav (up to four, SAMPLES below) as the four sample slots hold them, made exactly as tools/fm1_sample_upload.py uploads a WAV (its build(): 22050 Hz mono, IMA ADPCM, cut to 6.64 s
-with a 20 ms fade, the "GSMP" header), into firmware/gen/grimm_samples.h. samples.c writes one into a slot that is
+with a 20 ms fade, the "GSMP" header), into firmware/gen/arctic_samples.h. samples.c writes one into a slot that is
 erased at power-on, and all four on RESTORE (SYSTEM 2, the editor page).
 
   py tools/gen_samples.py          (needs nothing but Python 3; the same bytes every time)
@@ -39,7 +39,7 @@ def main():
         out.append("static const uint8_t *const SMP_FACT_HDR[SMP_FACT_N] = {" + ", ".join(f"SMP_FH{k}" for k in n) + "};")
         out.append("static const uint8_t *const SMP_FACT_DATA[SMP_FACT_N] = {" + ", ".join(f"SMP_FD{k}" for k in n) + "};")
         out.append("static const uint32_t SMP_FACT_LEN[SMP_FACT_N] = {" + ", ".join(f"sizeof SMP_FD{k}" for k in n) + "};")
-    path = ROOT / "firmware" / "gen" / "grimm_samples.h"
+    path = ROOT / "firmware" / "gen" / "arctic_samples.h"
     with open(path, "w", newline="\n") as f:
         f.write("\n".join(out) + "\n")
     print(f"{path.relative_to(ROOT)}: {path.stat().st_size} B")

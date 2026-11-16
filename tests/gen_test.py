@@ -14,13 +14,13 @@
   - a SAMPLE track's notes: up to the whole loop (its LENGTH), past the MODE's lengths; another source: the MODE's
   - GENERATE changes no setting: four tracks generating 60 s in each MODE, chord mode off and on: the tracks' settings
     (ENV, the sources' knobs, all of a track a project saves), the saved sounds and slots A..D the same, to the byte
-    python3 tests/gen_test.py build/host/grimm"""
+    python3 tests/gen_test.py build/host/arctic"""
 import os
 import subprocess
 import sys
 from pathlib import Path
 
-BIN = sys.argv[1] if len(sys.argv) > 1 else "build/host/grimm"
+BIN = sys.argv[1] if len(sys.argv) > 1 else "build/host/arctic"
 OUT = Path("build/gentest")
 OUT.mkdir(parents=True, exist_ok=True)
 SRC_SEQ, SRC_GEN = 1, 3
@@ -37,7 +37,7 @@ def check(what, ok, detail=""):
 def run(name, ev, end):
     (OUT / f"{name}.txt").write_text("".join(f"{t} {e}\n" for t, e in sorted(ev, key=lambda x: x[0])) + f"{end} end\n")
     out = subprocess.run([BIN, str(OUT / name), str(OUT / f"{name}.txt")], capture_output=True, text=True,
-                         env=dict(os.environ, GRIMM_PLAIN="1")).stdout   # (Arctic Scream: plain VA tracks)
+                         env=dict(os.environ, ARCTIC_PLAIN="1")).stdout   # (Arctic Scream: plain VA tracks)
     pr = {}
     for ln in out.splitlines():
         if ln.startswith("probe "):

@@ -5,7 +5,7 @@
 
 On the FM-1 a 32x32->64-bit multiply (`r5_r4 = r4 * r14 (s)`) inlined among 16-bit loads (`r5 = h[...]`) now and
 then leaves a register one bit off, and the firmware crashes (felucca-bsp docs/CPU.md). This disassembles
-build/grimm.elf (after ./build.sh) and lists each function where such a multiply is within WINDOW instructions of a
+build/arctic.elf (after ./build.sh) and lists each function where such a multiply is within WINDOW instructions of a
 16-bit load. The fix: dsp.c's mul64_sh (out of line), or the product split in two 32-bit ones (fm6_mulg).
 
   python3 tools/check_mul64.py [WINDOW]     (default 16; exit 1 if any is found)
@@ -26,9 +26,9 @@ LABEL = re.compile(r"^([A-Za-z_.$][\w.$]*):\s*$")
 
 def main():
     window = int(sys.argv[1]) if len(sys.argv) > 1 else 16
-    elf = build.SRC / "build" / "grimm.elf"
+    elf = build.SRC / "build" / "arctic.elf"
     if not elf.exists():
-        raise SystemExit("check_mul64: no build/grimm.elf (run ./build.sh first)")
+        raise SystemExit("check_mul64: no build/arctic.elf (run ./build.sh first)")
     syms = []
     for line in build.tc("common/bin/objdump", "-t", elf).splitlines():
         p = line.split()

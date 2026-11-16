@@ -6,7 +6,7 @@
  *   a new page, track or source    the page, the track and its source, then its four knobs (settles 200 ms)
  *   a knob turned                  its name and its value as the screen shows it (settles 120 ms)
  *   a list (SOUNDS, PROJECTS), SEQ's cursor    the row or the step, with its place ("5 of 64")
- *   the header's messages          hd_say (grimm.c): at once; a warning heard whole (ANN_KEEP)
+ *   the header's messages          hd_say (arctic.c): at once; a warning heard whole (ANN_KEEP)
  *   PLAY, STOP, REC; SAVES WHEN SILENT, MIDI LEARN's prompts, a save error
  *   WHERE (the reader asks)        all of it, the picture's caption and the header's right side too
  * The screen's own words; how to say them is the words file (firmware/words.tsv: "FDBK" feedback, "T#" track #),
@@ -206,7 +206,7 @@ keep:
 }
 
 #ifdef DINGHY_HOST
-/* host mode: GRIMM_LISTEN=1 a reader listening from the start (a HELLO every 2 s); GRIMM_SPEAKDUMP=1 every page, each
+/* host mode: ARCTIC_LISTEN=1 a reader listening from the start (a HELLO every 2 s); ARCTIC_SPEAKDUMP=1 every page, each
  * source's, its knobs through their range, the lists' rows: "KIND<tab>text" for fm1-reader's tools/audit.mjs
  * (tools/reader_audit.sh), then the program ends */
 static void rd_dump(void)
@@ -249,7 +249,7 @@ static void rd_host(void)
 {
     static uint32_t hello_t, init, listen, dump;
     static const uint8_t HELLO[5] = {0x7D, 0x53, 0x52, 1, 1};
-    if (!init) init = 1, listen = getenv("GRIMM_LISTEN") != 0, dump = getenv("GRIMM_SPEAKDUMP") != 0;
+    if (!init) init = 1, listen = getenv("ARCTIC_LISTEN") != 0, dump = getenv("ARCTIC_SPEAKDUMP") != 0;
     if (dump && fm1_ms > 6500u) { ann.on = 1; rd_dump(); }
     if (listen && (!hello_t || fm1_ms - hello_t >= 2000u)) hello_t = fm1_ms | 1u, ann_frame(HELLO, 5, fm1_ms);
 }

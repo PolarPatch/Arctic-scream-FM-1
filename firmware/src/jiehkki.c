@@ -45,10 +45,10 @@
  * the tracks playing on over it, then let go to die away as SIZE says: every ~90 s at 1 %, every ~20 s at 100 %.
  * (2.2) The keys show it (after Arcturus S6's keys as a display, written anew): while nothing is held, the keys light
  * JIEHKKI's own notes (every track's), and RUOHCAT's sounds flash across them: a crack, a few keys side by side; a
- * drip, a high key; a boom, the lowest three; the ice's answer, the key of its note. kl_keys: grimm.c's lights. */
+ * drip, a high key; a boom, the lowest three; the ice's answer, the key of its note. kl_keys: arctic.c's lights. */
 
 #define JK_TICK 50u                             /* ms between the main loop's looks */
-#define JK_ENDLESS 9                            /* (JK_NLEN: grimm.c; 2.0's 6: store.c reads it as this) */
+#define JK_ENDLESS 9                            /* (JK_NLEN: arctic.c; 2.0's 6: store.c reads it as this) */
 static const uint16_t JK_MIN[JK_NLEN] = {5, 10, 15, 25, 30, 60, 120, 240, 480, 0};   /* LENGTH's minutes (0: ENDLESS) */
 static const char *const JK_LEN_NAME[JK_NLEN] = {"5 MIN", "10 MIN", "15 MIN", "25 MIN", "30 MIN", "60 MIN", "2 HOURS",
                                                  "4 HOURS", "8 HOURS", "ENDLESS"};
@@ -70,7 +70,7 @@ static struct {
                                                  * (ALWAYS) till it is turned or the FM-1 wakes again */
     uint32_t done;
 } jk = {.rng = 0x2545F491u};
-static volatile uint32_t jk_sleep;              /* main loop: the piece is over, the screen to go dark (grimm.c) */
+static volatile uint32_t jk_sleep;              /* main loop: the piece is over, the screen to go dark (arctic.c) */
 
 static uint32_t jk_rnd(uint32_t n)
 {

@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 GR!MM
-"""the gain staging in host mode (tests/host.c; GRIMM_MASTER: the MASTER knob, 0 .. 1023):
+"""the gain staging in host mode (tests/host.c; ARCTIC_MASTER: the MASTER knob, 0 .. 1023):
   - every factory sound at LEVEL 100 (T1, the default FX): a note, a chord (chord mode on), two chord keys: no sample
     reaches full scale (the limiter, just under it) with MASTER all the way up, at 3/4 or low
   - four tracks together (four mixes, chord mode off and on, DLY sends up): the same
   - SPACE's and DELAY's lines never past their soft knee, SPACE's pre-delay never clipped (the buses 6 dB lower in)
   - MASTER (2.0): the knob's turn to the power 1.5, half way ~9 dB under the top; at the top as loud as before (a note)
-    python3 tests/level_test.py build/host/grimm"""
+    python3 tests/level_test.py build/host/arctic"""
 import array
 import os
 import subprocess
 import sys
 from pathlib import Path
 
-BIN = sys.argv[1] if len(sys.argv) > 1 else "build/host/grimm"
+BIN = sys.argv[1] if len(sys.argv) > 1 else "build/host/arctic"
 OUT = Path("build/leveltest")
 OUT.mkdir(parents=True, exist_ok=True)
 LIM, FULL = 32440, 32767
@@ -31,7 +31,7 @@ def check(what, ok, detail=""):
 def run(name, ev, end, master=1023):
     (OUT / f"{name}.txt").write_text("".join(f"{t} {e}\n" for t, e in sorted(ev, key=lambda x: x[0])) + f"{end} end\n")
     out = subprocess.run([BIN, str(OUT / name), str(OUT / f"{name}.txt")], capture_output=True, text=True,
-                         env=dict(os.environ, GRIMM_MASTER=str(master))).stdout
+                         env=dict(os.environ, ARCTIC_MASTER=str(master))).stdout
     pr = {}
     for ln in out.splitlines():
         if ln.startswith("probe "):
@@ -111,7 +111,7 @@ for m in MASTERS:
 import math
 
 
-def gain(k):                                    # (grimm.c out_gain, as the FM-1 counts it)
+def gain(k):                                    # (arctic.c out_gain, as the FM-1 counts it)
     q = math.isqrt(min(4092, k * k >> 8) << 12)
     return q * math.isqrt(q << 12) >> 12
 

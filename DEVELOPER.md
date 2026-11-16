@@ -20,13 +20,13 @@ What Arctic Scream p0larpatch is made of, where it lives in the code, and how to
 ## The platform in short
 
 - The FM-1 is a JieLi AC79 with no FPU, so **all firmware code is integer-only**.
-- Unity build: `firmware/src/grimm.c` includes every other `.c` file.
+- Unity build: `firmware/src/arctic.c` includes every other `.c` file.
 - RAM is tight: about 2 KB of the 96 KB main RAM is free. The bigger buffers live in the `.pool` section (~43 KB
   free there).
-- The same `grimm.c` runs in three places:
+- The same `arctic.c` runs in three places:
   - on the FM-1;
   - as a host program (`-DDINGHY_HOST`) for tests and screenshots;
-  - as WebAssembly (`-DGRIMM_WEB`, `web/fm1_web.c`) for the demo and the editor.
+  - as WebAssembly (`-DARCTIC_WEB`, `web/fm1_web.c`) for the demo and the editor.
 
 ## What changed, by area
 
@@ -86,7 +86,7 @@ What Arctic Scream p0larpatch is made of, where it lives in the code, and how to
   - The six Holvut sounds start with DRONE on: BORGA 50–75 %, STOARBMA 0, GOHCCAT 8 bars (`FSNDD`).
   - The 46 factory sounds have arctic names.
 - **Default sound:** ICE WRAITH (`SND_DEFAULT`), on all four tracks at the first boot and after NEW (`snd_default()`
-  in `grimm.c`).
+  in `arctic.c`).
 - **HORROR scale** and **runaway echo:** DELAY feedback goes up to 150 %.
 - **Keys:** an octave down, the first white key F2. The track defaults are darker. The knobs on HOME, EDIT and LFO all
   change the sound audibly from the start.
@@ -171,7 +171,7 @@ What Arctic Scream p0larpatch is made of, where it lives in the code, and how to
     **8** (ours; 7 is 1.0–1.2); the page enum keeps DRONE at 25, then MASTER 26, DRIVE 27, SYSTEM 3 28 (MIDI LEARN's
     links); DRIVE's gain is `drv_gain` (DRONE has a `dr_gain`); DRIVE's level table is made for our quieter mix
     (`tools/gen_drive_levels.py`, RMS 1000–4000).
-  - The inherited tests run with `GRIMM_PLAIN=1` (host mode: plain VA tracks, not ICE WRAITH) and our
+  - The inherited tests run with `ARCTIC_PLAIN=1` (host mode: plain VA tracks, not ICE WRAITH) and our
     keys an octave down; `tests/compat.c`'s saves are Arctic Scream 1.2's (`tests/data/a1.2-*`).
 
 ### The screen reader (1.5)
@@ -198,9 +198,9 @@ What Arctic Scream p0larpatch is made of, where it lives in the code, and how to
 ```sh
 # host build: screens and sound; PNGs with Pillow (not sips: test_web compares them)
 cc -O2 -Wall -Wno-unused-function '-Dsection(x)=used' -DDINGHY_HOST -DAPP_VER='"1.3"' -Ifirmware/src -Ifirmware/gen \
-   -o build/host/grimm firmware/src/grimm.c
-build/host/grimm build/host/grimm        # (or: tests/run_host.sh)
-build/host/grimm OUT script.txt FPS      # script mode: "3100 keys 0x80", "3500 btn 6", "5000 enc 2 -45", "end"
+   -o build/host/arctic firmware/src/arctic.c
+build/host/arctic build/host/arctic        # (or: tests/run_host.sh)
+build/host/arctic OUT script.txt FPS      # script mode: "3100 keys 0x80", "3500 btn 6", "5000 enc 2 -45", "end"
 
 # web: the demo, the editor, the cheat sheet into web/dist, then the tests (wasm against host mode, the editor's core)
 source ~/emsdk/emsdk_env.sh; bash web/build_web.sh
@@ -214,7 +214,7 @@ sh tools/reader_audit.sh                  # --spoken: every message as it will b
 
 # stress test, seeds 1-3: each must print STRESS OK (see tests/stress.sh for the build line)
 python3 tests/stress_gen.py 1 build/stress/script.txt build/stress/checks.txt
-STRESS_CHECKS=build/stress/checks.txt build/stress/grimm build/stress/s build/stress/script.txt
+STRESS_CHECKS=build/stress/checks.txt build/stress/arctic build/stress/s build/stress/script.txt
 
 # the real firmware (JieLi toolchain; on macOS through Docker, linux/amd64)
 ./build.sh                                # -> build/arctic-scream.fwsc; checks RAM, pool and the image size
@@ -316,7 +316,7 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
     DRONE's BORGA; its pad scale 2 (0, 5, 6, 9, 10, 12, 13) is close to HORROR.
 - **USB audio per track (asked for in issue #1, 2026-11-03).** Record each track on its own channels over USB.
   - The idea: 10 channels, each track's own stereo pair (after its filter, LEVEL and PAN, from `mix_tracks` in
-    `grimm.c`) plus the master pair. The stems are dry: ECHO, REVERB, GRAIN and the master stage are shared and come
+    `arctic.c`) plus the master pair. The stems are dry: ECHO, REVERB, GRAIN and the master stage are shared and come
     after the mix. The master pair stays the full mix.
   - Bandwidth fits: 10 ch x 2 B x 49 samples = 980 B a frame at 48 kHz, under full speed's 1023.
   - Open questions:
@@ -340,7 +340,7 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
   integers (no code copied; credited in the sources): PING-PONG and SHIMMER (FX's AIR page) and the side limiter on the
   output. Two more are bigger and wait:
   - **The FPU.** Its DESIGN.md says the chip (pi32v2, 360 MHz) has a single-precision FPU, and its whole engine is
-    float (FRASIL's too, below). This firmware has assumed no FPU and no libgcc from the start (`grimm.c`'s rules, `tools/build.py` builds
+    float (FRASIL's too, below). This firmware has assumed no FPU and no libgcc from the start (`arctic.c`'s rules, `tools/build.py` builds
     without float flags). Test it first: a small float loop built with the toolchain's FPU flags, timed on the FM-1
     against the integer version. If it holds, new effects could be written in float.
   - **The second core.** ECHOFIELD renders half its grains on the chip's second core (fm1-base's `cpu2`, with a
@@ -348,7 +348,7 @@ python3 tools/fm1_install.py build/arctic-scream.fwsc --yes
     core. Moving the voices or the effects to the second core would be the biggest gain in headroom, and the biggest
     job: boot the core, share the buffers, and keep a fallback.
     (2.2: done for SPACE. felucca-bsp's `fm1_cpu1` in `firmware/hal/`, started at power-on; the reverb runs there a
-    block behind, `grimm.c` `c1_space`; a failure holds it and SPACE runs on the first core again. Next candidates:
+    block behind, `arctic.c` `c1_space`; a failure holds it and SPACE runs on the first core again. Next candidates:
     GRAIN, then half the voices; each needs its state touched by one core only.)
   - Its hardware notes also report that fm1-base's USB audio can splice whole 256-sample blocks. This firmware's own
     USB ring (1.3.1) is a different path, but it is worth a listen with a plain tone.

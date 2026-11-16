@@ -13,7 +13,7 @@
  *   ~10 ms .. ~10 s, SUSTAIN 0 .. 100 %, RELEASE ~10 ms .. ~20 s; the times exponential in the knob) and a ~10 ms
  *   fade for a voice handed to another note (no click); an engine's own envelope (FM's DECAY, a PHYS strike) runs
  *   inside it;
- *   voices_render: every sounding voice into its track's buffer (mono, 44.1 kHz), for grimm.c's mixer.
+ *   voices_render: every sounding voice into its track's buffer (mono, 44.1 kHz), for arctic.c's mixer.
  * Another engine: its begin, block and text functions and its names in an engine_t (as analog.c's VA_ENGINE, fm.c's
  * FM_ENGINE), an ENG_ and an entry in ENGINES; a track then plays it by its eng. A voice keeps the engine it began with;
  * a track's engine changing hands its sounding notes over through the fade (env_tick). */
@@ -64,7 +64,7 @@ typedef struct {
     volatile int32_t lfo_rate, lfo_depth, lfo_dest, lfo_shape;   /* LFO: RATE 0..127, DEPTH 0..100 %, DESTINATION,
                                                  * SHAPE (lfo.c) */
     volatile int32_t cut, res, fx;              /* TRACK: the track filter's CUTOFF (127: open, bypassed), RESONANCE;
-                                                 * FX: its sends 0..200 % (100: as MIXER 1 sets them) (grimm.c) */
+                                                 * FX: its sends 0..200 % (100: as MIXER 1 sets them) (arctic.c) */
     volatile int32_t fm_alg, fm_fb, fmo[6][5];  /* FM: the track's own patch (FM ALGO, FM OP): ALGO 0..31, FEEDBACK
                                                  * 0..7; an operator's (OP1 first) RATIO 0..31, FINE, LEVEL, ATTACK,
                                                  * DECAY 0..99 (fm.c; a built-in PATCH's: fm_builtin) */
@@ -187,7 +187,7 @@ static const engine_t *const ENGINES[NENG] = {&VA_ENGINE, &FM_ENGINE, &SAMPLE_EN
  * GEN_ATK's k - 1), asked with the note (gen_vel, gen_atk: the next note_on's), taken as it begins */
 static uint8_t vc_vel[NV], vc_atk[NV], vc_wvel[NV], vc_watk[NV], gen_vel, gen_atk;
 static uint8_t gen_lo, gen_hi;                  /* the next note_on's range, GENERATE's (0 0: none): its chord's
-                                                 * notes past it folded in by octaves (grimm.c note_on) */
+                                                 * notes past it folded in by octaves (arctic.c note_on) */
 static const int32_t GEN_ATK[8] = {2434783, 608696, 202899, 81159, 40580, 20290, 10145, 4870};   /* ATTACK steps
                                                  * (Q24 a control step): 5, 20, 60, 150, 300, 600, 1200, 2500 ms */
 
@@ -376,7 +376,7 @@ static int32_t env_tick(voice_t *v)
  * the tracks that sound (bit t), whose buffers it zeroed first; the others' are left as they were */
 #define VB 256u
 static int32_t sbuf[NT][VB];                    /* audio: (2.2) the tracks' side signals (SPREAD) */
-static void ctl_hook(void);                     /* grimm.c: a control block's notes (the main loop's asks, the
+static void ctl_hook(void);                     /* arctic.c: a control block's notes (the main loop's asks, the
                                                  * sequencer), before the voices */
 static uint32_t voices_render(int32_t (*tb)[VB], uint32_t n)
 {

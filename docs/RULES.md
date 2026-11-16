@@ -37,7 +37,7 @@ runs late the sound crackles; when it never ends the watchdog resets the FM-1.
   room.
 - No flash, no screen, no `platform_poll()`, no waiting in it.
 - Share with the main loop through `volatile` variables, one writer each. A 32-bit store is atomic; a struct
-  is not: write the parts in an order that is safe to see half-done (grimm.c sets the pitch before the gate).
+  is not: write the parts in an order that is safe to see half-done (arctic.c sets the pitch before the gate).
 
 ## The main loop
 
@@ -48,7 +48,7 @@ runs late the sound crackles; when it never ends the watchdog resets the FM-1.
 ## When it crashes
 
 A fault shows a red screen with three numbers: the vector, the **PC** (where it happened) and the return
-address. Look the PC up in `build/grimm.dis` (the disassembly the build writes). Then it restarts.
+address. Look the PC up in `build/arctic.dis` (the disassembly the build writes). Then it restarts.
 
 If it crashes during boot, twice, the FM-1 starts in the USB rescue by itself, where the updater still works:
 install a fixed build. You can always force the rescue: hold **OCT-** while switching on.

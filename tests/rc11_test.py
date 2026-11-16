@@ -3,16 +3,16 @@
 # Copyright (C) 2026 GR!MM
 """the fix for the flicker and the hole in the USB recording (host mode, tests/host.c). A flash step (an
 autosave, the settings' save) stops the key scan, the LEDs and the USB audio for ~50 ms: while a computer reads the USB
-audio (host mode: GRIMM_USB_REC=FROM,TO) they wait for the hands to rest a minute, not 2.5 s (the settings' 2 s). Not reading:
+audio (host mode: ARCTIC_USB_REC=FROM,TO) they wait for the hands to rest a minute, not 2.5 s (the settings' 2 s). Not reading:
 as before. The reading ends: they go at once. Nothing is lost: it is saved, later.
-    python3 tests/rc11_test.py build/host/grimm"""
+    python3 tests/rc11_test.py build/host/arctic"""
 import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 
-BIN = sys.argv[1] if len(sys.argv) > 1 else "build/host/grimm"
+BIN = sys.argv[1] if len(sys.argv) > 1 else "build/host/arctic"
 OUT = Path("build/rc11test")
 OUT.mkdir(parents=True, exist_ok=True)
 bad = 0
@@ -29,7 +29,7 @@ def run(name, ev, end, rec=None):
     path = OUT / f"{name}.txt"
     path.write_text("".join(f"{t} {e}\n" for t, e in sorted(ev, key=lambda q: q[0])) + f"{end} end\n")
     out = subprocess.run([BIN, str(OUT / name), str(path)], capture_output=True, text=True, check=True,
-                         env=dict(os.environ, **({"GRIMM_USB_REC": rec} if rec else {}))).stdout
+                         env=dict(os.environ, **({"ARCTIC_USB_REC": rec} if rec else {}))).stdout
     erased = [int(m.group(1)) for m in re.finditer(r"^\s*(\d+) ms  flash sector \d+ erased", out, re.M)]
     sets = [int(m.group(1)) for m in re.finditer(r"^\s*(\d+) ms  settings saved", out, re.M)]
     return erased, sets

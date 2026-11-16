@@ -557,7 +557,7 @@ static void hush(int on)                        /* (2.1.1) around a flash step: 
 {
     if (!on) { if (hush_n) hush_n--; return; }
     if (hush_n++) return;
-#if !defined DINGHY_HOST && !defined GRIMM_WEB && !defined FM1_PLATFORM_FILE   /* (the FM-1's: its interrupt renders meanwhile) */
+#if !defined DINGHY_HOST && !defined ARCTIC_WEB && !defined FM1_PLATFORM_FILE   /* (the FM-1's: its interrupt renders meanwhile) */
     {
         uint32_t t0 = fm1_ms;
         hush_z = 0;
@@ -572,12 +572,12 @@ static void hush(int on)                        /* (2.1.1) around a flash step: 
  * GRAIN and DELAY; at SPACE's place this one waits for it and adds it in. 5.8 ms more on the reverb, never heard; no
  * job outstanding outside the audio interrupt (the main loop's flash writes never meet one). A failure: it is held,
  * and SPACE runs here as before (c1_ok 0). Off the FM-1: here, at once */
-#if !defined DINGHY_HOST && !defined GRIMM_WEB && !defined FM1_PLATFORM_FILE
+#if !defined DINGHY_HOST && !defined ARCTIC_WEB && !defined FM1_PLATFORM_FILE
 #define C1_ON() fm1_cpu1_on
 #define C1_GAVE() fm1_cpu1_gave_up            /* (why it is off: FM1_CPU1_*) */
 #define C1_RUN(f, a) fm1_cpu1_run(f, a)
 #define C1_WAIT() fm1_cpu1_wait()
-#else                                           /* (host: tests/host.c's c1_sim, GRIMM_CPU2=1; the browser, VIBE: none) */
+#else                                           /* (host: tests/host.c's c1_sim, ARCTIC_CPU2=1; the browser, VIBE: none) */
 #ifndef DINGHY_HOST
 static const uint32_t c1_sim = 0;
 #endif
@@ -834,7 +834,7 @@ static int take_from(uint32_t t, int phys, int rel, uint32_t *v)   /* track t's 
 /* (2.2, after SHRUB's, written anew) the CPU guard: the blocks running hot (the last ~0.5 s's average over 85 % of a
  * block's time), a new note takes over the quietest release (a fade, then its attack: no click) before it adds a
  * voice; the overload guard (shed_voice) stays the last resort */
-#ifdef DINGHY_HOST                              /* (host: GRIMM_CPU_HOT=1, tests/host.c's cpu_hot_force) */
+#ifdef DINGHY_HOST                              /* (host: ARCTIC_CPU_HOT=1, tests/host.c's cpu_hot_force) */
 #define CPU_HOT() (cpu_hot_force || cpu_now > BUDGET_TICKS / 20u * 17u)
 #else
 #define CPU_HOT() (cpu_now > BUDGET_TICKS / 20u * 17u)
@@ -2501,7 +2501,7 @@ static void batt_poll(void)
 }
 
 #include "editor.c"                             /* the editor's mailbox: sounds, slots, settings over SysEx */
-#ifdef GRIMM_STRESS
+#ifdef ARCTIC_STRESS
 #include "../../tests/stress_check.c"             /* (tests/stress.sh: the stress test's checks, host mode) */
 #endif
 #ifdef DINGHY_HOST
@@ -2600,14 +2600,14 @@ static void app_start(void)                     /* once, at power-on: the saves,
     seq_init();
     store_boot();                               /* the working project and the slots, as the FM-1 was left */
 #ifdef DINGHY_HOST
-    if (store_fresh && getenv("GRIMM_PLAIN")) store_fresh = 0;   /* (host tests: Arctic Scream's plain VA tracks, not ICE WRAITH) */
+    if (store_fresh && getenv("ARCTIC_PLAIN")) store_fresh = 0;   /* (host tests: Arctic Scream's plain VA tracks, not ICE WRAITH) */
 #endif
     if (store_fresh) snd_default();             /* (nothing saved: ICE WRAITH) */
-#if !defined DINGHY_HOST && !defined GRIMM_WEB && !defined FM1_PLATFORM_FILE
+#if !defined DINGHY_HOST && !defined ARCTIC_WEB && !defined FM1_PLATFORM_FILE
     if (store_fresh) gd_page = 1;               /* (2.2: the guide, the very first start) */
 #endif
 #ifdef DINGHY_HOST
-    if (getenv("GRIMM_GUIDE")) gd_page = 1;     /* (host: the guide, for its screens and its test) */
+    if (getenv("ARCTIC_GUIDE")) gd_page = 1;     /* (host: the guide, for its screens and its test) */
 #endif
     pj_slot = slot_cur;
     sys_load();                                 /* (the settings: the octave, SYSTEM's; the accent before the boot
@@ -2638,7 +2638,7 @@ static void app_start(void)                     /* once, at power-on: the saves,
         if (snd_lost) put_s(put_u(put_s(q, ", "), snd_lost), " LOST");
         hd_until = 15000u;
     }
-#if !defined DINGHY_HOST && !defined GRIMM_WEB && !defined FM1_PLATFORM_FILE
+#if !defined DINGHY_HOST && !defined ARCTIC_WEB && !defined FM1_PLATFORM_FILE
     if (hl_boot.kind == 1u) {                   /* the watchdog restarted it (the main loop stood 8 s; a fault shows
                                                  * the red crash screen instead): said for ~15 s (not when only
                                                  * the chip's flag is left from an earlier one: platform.c hl_boot) */
@@ -3085,7 +3085,7 @@ static void app_step(void)                      /* one pass of the main loop: on
         uint32_t fn;
         if (sysex_get(&fp, &fn) && (ann_frame(fp, fn, fm1_ms) || po_frame(fp, fn, fm1_ms))) sysex_done();
     }
-#ifdef GRIMM_STRESS
+#ifdef ARCTIC_STRESS
     stress_poll();
 #endif
     tapefx_poll();                              /* (TAPE: SATURATION's curve, when the knob has moved) */
@@ -3165,6 +3165,6 @@ static void app_main(void)
         app_step();
 }
 
-#ifdef GRIMM_WEB
+#ifdef ARCTIC_WEB
 #include "../../web/editor_web.c"                 /* (the browser build only: what the editor page asks of it) */
 #endif
