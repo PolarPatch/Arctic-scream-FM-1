@@ -7,7 +7,7 @@
  *   and its number in it (the name: "DRONE 03"); saved before step 24 (128 slots of 32 B): made 64 of 64 B once at power-on, the first 64
  *   where they were, those past them into empty slots (snd_moved; no room: snd_lost). SND_FACTORY: the 40 factory sounds (in the image, read-only, their own
  *   names), first in PRESETS' lists; SAVE > SOUNDS lists, saves and clears the user's only
- *   the working project, saved by itself (autosave: grimm.c), in two objects, each in a pair of sectors written in
+ *   the working project, saved by itself (autosave: arctic.c), in two objects, each in a pair of sectors written in
  *   turn (a cut save leaves the other copy):
  *     WORK  (sectors 1, 2): the four tracks (their source, every source's settings, ENV, LATCH, CHORD, ARP, LFO, LEVEL,
  *           the sends, PAN, the track filter's TYPE and POS), the effects, the tempo, the SCALE, the four sequences,
@@ -16,7 +16,7 @@
  *   the slots A..D (each the four tracks, their sequences and step locks, their FM patches; tempo and effects are
  *   global): one copy, a stream over sectors 3, 4 and 5 (each its own header and CRC; the FM patches after the four
  *   slots, where it was zeros before step 24: zeros, the PATCH as built). Saving a slot rewrites the sectors it lives in
- *   only, each read back; a sector that fails its CRC at power-on: the slots in it empty (slot_lost: grimm.c says
+ *   only, each read back; a sector that fails its CRC at power-on: the slots in it empty (slot_lost: arctic.c says
  *   SLOT DATA LOST), the others and the working project as they were.
  *   At power-on the newest good copy of the working project loads: the FM-1 comes back as it was left. Version 6 (a
  *   step 4 B: its chord; the step locks); an older copy loads too (OBJ_VERS: 5, steps of 3 B, no locks; 4, before the
@@ -25,10 +25,10 @@
  *   their newest copy and are written in the stream (sector 5 first, then the older copy's, then the newer's: a cut
  *   in between leaves an old copy to load from again).
  *   undo / redo: one level, a snapshot of the tracks and sequences (and a slot, if the action changed one) taken before
- *   an action (grimm.c says which), restored on undo, the state before the undo kept for redo
+ *   an action (arctic.c says which), restored on undo, the state before the undo kept for redo
  * Each record ends in its CRC-32: an erased sector, a cut save or another version is no record. A write erases a
  * sector (~50 ms of the audio stopped), then writes it a 256-byte page at a time: only while no voice sounds
- * (grimm.c). Main loop only (slot_apply_isr: the audio ISR, a recall at the bar). */
+ * (arctic.c). Main loop only (slot_apply_isr: the audio ISR, a recall at the bar). */
 
 #define SND_N 64u                               /* sound slots: sector 0, 64 B each (128 of 32 B before step 24) */
 #define SND_SIZE 64u
@@ -370,7 +370,7 @@ static int snd_save(uint32_t i, uint32_t t, uint32_t cat)   /* track t's sound i
 }
 static int snd_clear(uint32_t i) { return snd_put(i, 0); }
 static uint8_t snd_latch_off;                   /* SYSTEM 3's LATCH ALWAYS OFF: a sound loaded sets the track's
-                                                 * LATCH OFF (grimm.c's sys_sync) */
+                                                 * LATCH OFF (arctic.c's sys_sync) */
 static void snd_apply(const uint8_t *r, uint32_t t)   /* a sound record into track t (a new source: its notes go over) */
 {
     uint32_t k, e = r[3] < NENG ? r[3] : 0u, la;
@@ -471,7 +471,7 @@ static void trk_def(uint8_t *q, uint32_t n)     /* a track's bytes from n on (a 
     for (k = 0; k < 4u; k++) d[52 + k] = (uint8_t)T0.p[ENG_HOWL][k];   /* (HOWL as at power-on) */
     for (k = n < 44u ? 44u : n; k < TRK_PK; k++) q[k] = d[k];
 }
-static void restart_track(uint32_t t);          /* (grimm.c: the audio ISR's NQ_RESTART, */
+static void restart_track(uint32_t t);          /* (arctic.c: the audio ISR's NQ_RESTART, */
 static void release_keys(uint32_t t);           /* NQ_RELEASE) */
 static const uint8_t *uk_track(const uint8_t *q0, uint32_t t, int isr, uint32_t n)   /* isr: from the audio ISR (no
                                                  * asks); n: its size (an older version's: shorter) */
@@ -789,7 +789,7 @@ static uint8_t *sls_byte(uint32_t b)            /* the slot byte at stream byte 
     b -= 4u * BG_SLOT;
     if (b < 4u * E2_SLOT) return &slot_e2[b / E2_SLOT][b % E2_SLOT];   /* (2.2: their ENV 2) */
     b -= 4u * E2_SLOT;
-    return b < MO_ALL ? (uint8_t *)mo + b : 0;  /* (2.2: the project's MOTION lanes, grimm.c) */
+    return b < MO_ALL ? (uint8_t *)mo + b : 0;  /* (2.2: the project's MOTION lanes, arctic.c) */
 }
 #define MO_AT (4u * (SLOT_PK + FM_ALL + BG_SLOT + E2_SLOT))   /* (2.2) the lanes' place in the stream */
 static uint32_t sls_mo(void) { return 1u << (MO_AT / SLS_P) | 1u << ((MO_AT + MO_ALL - 1u) / SLS_P); }   /* (their
@@ -1018,7 +1018,7 @@ static uint8_t undo_b[UNDO_SZ] __attribute__((section(".pool")));   /* (both in 
                                                  * redo too) */
 static uint8_t redo_b[UNDO_SZ] __attribute__((section(".pool")));
 static uint32_t undo_ok, redo_ok, undo_key;
-static uint32_t undo_chain;                     /* the snapshot is a song record's (grimm.c sets it after undo_take):
+static uint32_t undo_chain;                     /* the snapshot is a song record's (arctic.c sets it after undo_take):
                                                  * undo, redo bring the chain back too */
 static void snap(uint8_t *b, int32_t slot)      /* (slot -1: none) */
 {

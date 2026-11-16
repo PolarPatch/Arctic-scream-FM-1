@@ -4,16 +4,16 @@
 """the MIDI in host mode (tests/run_host.sh): the clock in from USB and the TRS jack at 60, 120 and 240 BPM for
 5 minutes each (the tempo shown, no drift: 4 ticks a pulse, exactly), START / STOP / CONTINUE, the clock lost (the
 FM-1's own tempo, playing on), the other source's clock and the tempo knobs ignored, the clock out (CLOCK INT+OUT:
-evenly spaced, START and STOP), INT ignoring it all, and MIDI CHANNEL's CH n > SEL. Each a script for build/host/grimm
+evenly spaced, START and STOP), INT ignoring it all, and MIDI CHANNEL's CH n > SEL. Each a script for build/host/arctic
 (tests/host.c: "clock", "trs", "probe"); prints a line a check, exit 1 on a failure.
-  python3 tests/clock_test.py [build/host/grimm]"""
+  python3 tests/clock_test.py [build/host/arctic]"""
 import os
 import re
 import subprocess
 import sys
 from pathlib import Path
 
-EXE = sys.argv[1] if len(sys.argv) > 1 else "build/host/grimm"
+EXE = sys.argv[1] if len(sys.argv) > 1 else "build/host/arctic"
 OUT = Path("build/host/clock")
 OUT.mkdir(parents=True, exist_ok=True)
 CLOCK = {"INT": 0, "OUT": 1, "USB": 2, "TRS": 3}
@@ -105,7 +105,7 @@ def clock_out():                                # INT+OUT at 120: evenly spaced 
           33000 <= fc[0] <= 33020, f"FA {fa} FC {fc}")
     # (V2.0's clock out on the timer: the audio ISR 0 .. 100 us late, its clock 44118 Hz, not 44100: the pulses still
     # exactly 60e6 / BPM ticks apart, the remainder carried; a new tempo glides there, never past it)
-    env = dict(os.environ, GRIMM_CLOCK_LOG="1", GRIMM_ISR_JITTER="100", GRIMM_AUDIO_HZ="44118")
+    env = dict(os.environ, ARCTIC_CLOCK_LOG="1", ARCTIC_ISR_JITTER="100", ARCTIC_AUDIO_HZ="44118")
     HOME = [(1600, "btn 6"), (1700, "btn 8")]   # (EDIT, then HOME: HOME, where SELECT is the tempo)
     for bpm, turn in ((120, None), (133, "enc 0 13")):
         _, out = run(f"out{bpm}", clock_setting("OUT") + HOME + ([(1800, turn)] if turn else []), 20000, env)
@@ -152,7 +152,7 @@ def settings():                                 # V1.0's settings (168 B, versio
                                  ("v2mch", bytes(v1[:3]) + bytes([20]) + bytes(v1[4:167]) + bytes([2, 3]), 20, 3)):
         f = OUT / f"settings_{name}.bin"
         f.write_bytes(blob)
-        pr, _ = run(f"settings_{name}", [(1000, "probe")], 1100, dict(os.environ, GRIMM_SETTINGS_IN=str(f)))
+        pr, _ = run(f"settings_{name}", [(1000, "probe")], 1100, dict(os.environ, ARCTIC_SETTINGS_IN=str(f)))
         p = pr[1000]
         check(f"settings {name} ({len(blob)} B): MIDI CHANNEL, the links as saved, CLOCK "
               f"{['INT', 'INT+OUT', 'USB', 'TRS'][clk]}", p["mch"] == mch and p["clk"] == clk and p["links"] == 1,

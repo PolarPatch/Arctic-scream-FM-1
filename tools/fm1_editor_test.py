@@ -12,7 +12,7 @@ the settings and the four sample slots to a file, write it all back, read it aga
   py tools\\fm1_editor_test.py --record FILE       the FM-1's own frames (requests and replies) for web/test_web.mjs
 
 Writing needs the FM-1 stopped and silent (no note, no release, no DELAY or SPACE tail). The backup file is JSON:
-{"format": "grimm-backup", "version": 1, "proto", "fmt", "firmware", "objects": [{"id", "len", "crc", "data"
+{"format": "arctic-backup", "version": 1, "proto", "fmt", "firmware", "objects": [{"id", "len", "crc", "data"
 (base64)}], "samples": [4 x null (empty) or {"slot", "name", "len", "crc", "data" (base64: the slot's header,
 data)}]}. "samples" came later: a backup without it (from an older version) restores and leaves the sample slots as
 they are; with it, a restore makes the four slots as in the file (an empty one emptied; one already so: not written
@@ -157,7 +157,7 @@ def backup(link, inf):
     print("\r  read: settings, slots A-D, " + f"{inf['sounds']} sounds" +
           (", the sample slots" if smp is not None else " (not the samples: this Arctic Scream cannot read them back)") +
           f"; replies missed and asked again: {missed}" + "".join(f"\n    ({m})" for m in missed_at))
-    b = dict(format="grimm-backup", version=1, proto=inf["proto"], fmt=inf["fmt"], firmware=inf["firmware"],
+    b = dict(format="arctic-backup", version=1, proto=inf["proto"], fmt=inf["fmt"], firmware=inf["firmware"],
              date=time.strftime("%Y-%m-%d %H:%M:%S"), objects=objs)
     if smp is not None:
         b["samples"] = [d and dict(slot=k + 1, name=printable(d[8:16].rstrip(b"\0")), len=len(d), crc=zlib.crc32(d),
@@ -173,7 +173,7 @@ def sample_ok(d):                               # a slot's bytes: its header goo
 
 def load(path, inf):
     b = json.loads(Path(path).read_text())
-    if b.get("format") != "grimm-backup" or b.get("version") != 1:
+    if b.get("format") not in ("arctic-backup", "grimm-backup") or b.get("version") != 1:
         sys.exit(f"{path}: not an Arctic Scream backup")
     if b.get("fmt") != inf["fmt"]:
         sys.exit(f"{path}: object format {b.get('fmt')}, the FM-1's is {inf['fmt']}")
@@ -316,7 +316,7 @@ def record(link, inf, path):
             track(link, 0, t)
     link.req = req
     with open(path, "w", newline="\n") as f:    # (LF: the file goes into the repository)
-        json.dump(dict(format="grimm-frames", firmware=inf["firmware"], proto=inf["proto"],
+        json.dump(dict(format="arctic-frames", firmware=inf["firmware"], proto=inf["proto"],
                        date=time.strftime("%Y-%m-%d %H:%M:%S"), frames=log), f, indent=1)
         f.write("\n")
     print(f"  {len(log)} requests and their replies: {path}")
@@ -349,7 +349,7 @@ def main():
         return record(link, inf, a.record)
     t0 = time.time()
     b = backup(link, inf)
-    path = a.backup or Path(f"grimm-backup-{time.strftime('%Y%m%d-%H%M%S')}.json")
+    path = a.backup or Path(f"arctic-backup-{time.strftime('%Y%m%d-%H%M%S')}.json")
     path.write_text(json.dumps(b, indent=1))
     print(f"  backup: {path} ({time.time() - t0:.1f} s)")
     if a.backup:

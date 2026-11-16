@@ -8,7 +8,7 @@
  *   control block (32 samples) at a time: a note starts and stops within 0.73 ms of its time
  *   SWING: every other step later, by up to half a step
  *   PLAY MODE: FORWARD, BACKWARD, PINGPONG, RANDOM
- * Sequenced notes play through the track's source and ENV, as the keys' notes (grimm.c note_on, note_off: SRC_SEQ);
+ * Sequenced notes play through the track's source and ENV, as the keys' notes (arctic.c note_on, note_off: SRC_SEQ);
  * LATCH does not touch them. A track keeps SEQ_NPAT patterns (one now: song mode adds more). Nothing is saved yet.
  * The main loop edits the steps and the settings, starts and stops it (NQ_PLAY, NQ_STOP); the audio ISR plays it. */
 
@@ -145,7 +145,7 @@ static void seq_evolve(seq_trk_t *S)            /* audio: the pattern begins aga
         if (!st->note) continue;
         m = sc_walk(st->note, (seq_rnd() & 1u ? 1 : -1) * (int32_t)(1u + (seq_rnd() & 1u)));
 #ifdef DINGHY_HOST
-        if (getenv("GRIMM_EVO_LOG")) printf("evolve: step %d %d -> %d\n", (int)i + 1, (int)st->note, (int)m);   /* (host tests) */
+        if (getenv("ARCTIC_EVO_LOG")) printf("evolve: step %d %d -> %d\n", (int)i + 1, (int)st->note, (int)m);   /* (host tests) */
 #endif
         if (m >= 24 && m <= 96) st->note = (uint8_t)m;
         if (!(seq_rnd() & 3u)) st->chance = (uint8_t)clamp(st->chance + (seq_rnd() & 1u ? 10 : -10), 50, 100);

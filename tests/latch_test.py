@@ -8,13 +8,13 @@
   PHYS (at most 4 voices): a latched note stays while a release's voice is there to take
   REC held, ALL NOTES OFF, a MIDI note-on again (the arp's fix): latching as in 1.0
 Prints a line a check (a sound's: only when it fails), exit 1 on a failure.
-  python3 tests/latch_test.py [build/host/grimm]"""
+  python3 tests/latch_test.py [build/host/arctic]"""
 import os
 import subprocess
 import sys
 from pathlib import Path
 
-EXE = sys.argv[1] if len(sys.argv) > 1 else "build/host/grimm"
+EXE = sys.argv[1] if len(sys.argv) > 1 else "build/host/arctic"
 OUT = Path("build/host/latch")
 OUT.mkdir(parents=True, exist_ok=True)
 ENG_FM, ENG_PHYS, ENG_HOWL = 1, 5, 7
@@ -28,7 +28,7 @@ def settings(latch):
     b[167], b[169], b[170] = 4, latch, 2
     f = OUT / f"set{latch}.bin"
     f.write_bytes(bytes(b))
-    return dict(os.environ, GRIMM_SETTINGS_IN=str(f), GRIMM_PLAIN="1")   # (Arctic Scream: plain VA tracks)
+    return dict(os.environ, ARCTIC_SETTINGS_IN=str(f), ARCTIC_PLAIN="1")   # (Arctic Scream: plain VA tracks)
 
 
 def run(name, ev, end, env):
@@ -96,10 +96,10 @@ for s in (0, 1):
     check(f"{NAME[s]}: a slot recalled brings its tracks' LATCH (ON); keys latch, let go", p[1200]["latch"] == 0 and
           p[1900]["latch"] == 1 and p[2300]["notes"] and not p[2700]["notes"],
           {t: (p[t]["latch"], p[t]["notes"]) for t in sorted(p)})
-    env = dict(ENV[s], GRIMM_SAVE_OUT=str(OUT / f"pj{s}.bin"))
+    env = dict(ENV[s], ARCTIC_SAVE_OUT=str(OUT / f"pj{s}.bin"))
     run(f"pj{s}", SEL_OCT(300), 6000, env)                                                 # (the autosave keeps it)
     p = run(f"pjl{s}", [(1000, "probe")] + tap(1100, C4) + [(1400, "probe")], 1500,
-            dict(ENV[s], GRIMM_SAVE_IN=str(OUT / f"pj{s}.bin")))
+            dict(ENV[s], ARCTIC_SAVE_IN=str(OUT / f"pj{s}.bin")))
     check(f"{NAME[s]}: the project saved, loaded: its LATCH ON, a key latches", p[1000]["latch"] == 1 and
           p[1400]["notes"], {t: (p[t]["latch"], p[t]["notes"]) for t in sorted(p)})
 

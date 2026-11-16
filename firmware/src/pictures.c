@@ -67,7 +67,7 @@ static void pic_card(uint32_t t)                /* main loop (PRESETS turned): H
     pc_id = pic_of_track(t);
     trk_sname(t, pc_name);
 #ifdef DINGHY_HOST
-    if (getenv("GRIMM_PIC")) pc_id = (uint32_t)atoi(getenv("GRIMM_PIC")) % NPIC;   /* (host: a picture to film) */
+    if (getenv("ARCTIC_PIC")) pc_id = (uint32_t)atoi(getenv("ARCTIC_PIC")) % NPIC;   /* (host: a picture to film) */
 #endif
     pc_until = fm1_ms + PC_CARD_MS;
 }

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 GR!MM */
-/* the MIDI clock: SYSTEM 2's CLOCK (grimm.c includes this file after the sequencer and the arp).
+/* the MIDI clock: SYSTEM 2's CLOCK (arctic.c includes this file after the sequencer and the arp).
  *   INT      the FM-1's own tempo (SELECT / PRESETS on HOME); the clock and START / STOP from outside ignored
  *   INT+OUT  the same, and its clock out over USB (the jack has no output): F8 24 a beat, also while stopped (the
  *            other gear knows the tempo before PLAY): PLAY starts at the next pulse, FA and that pulse (the downbeat)

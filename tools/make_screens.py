@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 PolarPatch
 """Arctic Scream p0larpatch: the manual's screens (docs/manual/screens/*.png), taken from the firmware itself.
-Each screen is a short run of tests/host.c (the same firmware/src/grimm.c the FM-1 runs): a script presses the
+Each screen is a short run of tests/host.c (the same firmware/src/arctic.c the FM-1 runs): a script presses the
 buttons, turns the knobs and plays the keys, and the screen as it is at the end is saved, 240 x 240 drawn 4 x.
 Run from the repository (Pillow needed):  python3 tools/make_screens.py [name ...]"""
 import os
@@ -14,7 +14,7 @@ from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "docs", "manual", "screens")
-HOST = os.path.join(ROOT, "build", "screens", "grimm")
+HOST = os.path.join(ROOT, "build", "screens", "arctic")
 
 # the panel's ids (firmware/src/platform.c)
 OCTD, OCTU, FX, SEL, ENV, LFO, EDIT, GLO, HOME, SAVE, ARP, SEQ, PLAY, REC = range(14)
@@ -176,7 +176,7 @@ SHOTS = {
 def build():
     os.makedirs(os.path.dirname(HOST), exist_ok=True)
     subprocess.run(["cc", "-O2", "-w", "-DDINGHY_HOST", "-DAPP_VER=\"2.0\"", "-Dsection(x)=used",
-                    "-Ifirmware/src", "-Ifirmware/gen", "-o", HOST, "firmware/src/grimm.c"], cwd=ROOT, check=True)
+                    "-Ifirmware/src", "-Ifirmware/gen", "-o", HOST, "firmware/src/arctic.c"], cwd=ROOT, check=True)
 
 
 def shot(name, s):

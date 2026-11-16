@@ -59,7 +59,7 @@ static int32_t mo_val(const mo_lane_t *L, uint32_t v, volatile int32_t **pp)   /
     return mn + ((int32_t)v * (mx - mn) + 63) / 127;
 }
 
-#if !defined DINGHY_HOST && !defined GRIMM_WEB && !defined FM1_PLATFORM_FILE
+#if !defined DINGHY_HOST && !defined ARCTIC_WEB && !defined FM1_PLATFORM_FILE
 #define MO_HOLD() irq_save()                    /* (on the FM-1: the audio waits the few us of a save's packing) */
 #define MO_LET(f) irq_restore(f)
 #else

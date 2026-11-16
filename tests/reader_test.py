@@ -7,13 +7,13 @@
   - a page changed: its name, track, source, place and knobs; a knob turned: its name and value
   - PLAY and STOP; a warning (an empty slot loaded) heard whole (ANN_KEEP); a list's row with its place
   - BYE: silent again; a reader not heard from for 5 s: silent
-    python3 tests/reader_test.py build/host/grimm"""
+    python3 tests/reader_test.py build/host/arctic"""
 import re
 import subprocess
 import sys
 from pathlib import Path
 
-BIN = sys.argv[1] if len(sys.argv) > 1 else "build/host/grimm"
+BIN = sys.argv[1] if len(sys.argv) > 1 else "build/host/arctic"
 OUT = Path("build/readertest")
 OUT.mkdir(parents=True, exist_ok=True)
 fails = 0

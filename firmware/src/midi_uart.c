@@ -5,9 +5,9 @@
  * RX DMA into a 128-byte ring, polled from the TIMER5 ISR (no UART IRQ).
  * Felucca's (hugelton/Felucca firmware/src/midi_uart.c, RX verified on hardware) as SLOOP has it (isod89/sloop-fm1,
  * with the fix below). Built only with FELUCCA_UART=1. Channel messages go into midi_in_q next to
- * USB, as USB-MIDI packets (cable 0, CIN = status >> 4), so grimm.c routes them by
+ * USB, as USB-MIDI packets (cable 0, CIN = status >> 4), so arctic.c routes them by
  * channel as it does USB (MIDI CHANNEL); Arctic Scream: the clock and START / CONTINUE / STOP (F8 FA FB FC) into
- * platform.c's realtime ring, with their time and the jack as their source (rt_in: grimm.c's CLOCK TRS);
+ * platform.c's realtime ring, with their time and the jack as their source (rt_in: arctic.c's CLOCK TRS);
  * other realtime, system common and SysEx are dropped (no SysEx from the jack).
  *
  * The ring is read by content, not by the DMA count: every slot the parser has

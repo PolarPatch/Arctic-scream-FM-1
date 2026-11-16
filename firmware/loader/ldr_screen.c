@@ -8,7 +8,7 @@
  * Everything here is in the loader's RAM image: the app area may be half written, so nothing is read from it. Drawn
  * before USB starts (USB is polled: the panel's init would leave the host's enumeration unanswered), then only the
  * lines that change. */
-#include "grimm_pixfont.h"
+#include "arctic_pixfont.h"
 
 #define LS_BG 0x0022u                   /* the start screen's night, #000410 */
 #define LS_INK 0xFFFFu

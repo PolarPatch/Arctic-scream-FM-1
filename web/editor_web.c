@@ -4,7 +4,7 @@
  * (web_meta: the sources and their knobs, the categories, the chords, the LFO's names, the FM patches as built and the
  * algorithms' wiring, the factory sounds; as JSON), a value in words (web_knob_text, web_env_text, web_lfo_text),
  * and web_panic, which lets every note go (the sounds reach the tracks as on the FM-1: editor.c's TRACK).
- * Included at the end of firmware/src/grimm.c in the web build only (GRIMM_WEB); the FM-1 never has it. */
+ * Included at the end of firmware/src/arctic.c in the web build only (ARCTIC_WEB); the FM-1 never has it. */
 
 static char wm[32768];
 static uint32_t wm_n;

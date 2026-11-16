@@ -2,13 +2,13 @@
 // Copyright (C) 2026 PolarPatch
 // Arctic Scream p0larpatch: the demo page's six demos (A1-A6), as the editor's own frames (docs/EDITOR_PROTOCOL.md:
 // TRACK sets a track's sound, SEQ its sequence, the tempo, PLAY) and the keys to latch. The sounds are the factory's,
-// read from the firmware itself (web/dist/grimm.wasm, after web/build_web.sh), with DRONE turned up (III as it is), and MANDALORIA,
+// read from the firmware itself (web/dist/arctic.wasm, after web/build_web.sh), with DRONE turned up (III as it is), and MANDALORIA,
 // a sound of PolarPatch's own. The editor loads the same songs (song: the sounds, the sequences, the latched keys).
 //   node web/gen_demos.mjs            -> web/demos.json (the page's), build/demos/*.txt (tests/host.c scripts: hear them)
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { VirtualFM1, HEAD, pack7, parseSound, buildRecord, buildSeq, emptyStep } from "./editor_core.js";
 
-const vf = await VirtualFM1.create(readFileSync("web/dist/grimm.wasm"));
+const vf = await VirtualFM1.create(readFileSync("web/dist/arctic.wasm"));
 const meta = vf.meta();
 const fact = (name) => {
   const f = meta.factory.find((x) => x.name === name);

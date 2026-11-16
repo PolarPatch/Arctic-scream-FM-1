@@ -31,7 +31,7 @@
  * that is erased (every byte 0xFF: it holds nothing, not even another firmware's data) gets its own; a slot that
  * holds anything is never touched there. RESTORE (SYSTEM 2's SAMPLES, the editor's FACTORY) writes all four.
  * Arctic Scream p0larpatch: none for now (SMP_FACT_N 0): power-on leaves the slots be, RESTORE empties all four (CLEAR). */
-#include "grimm_samples.h"
+#include "arctic_samples.h"
 
 #define SMP_SLOTS 4u
 #ifndef SMP_SLOT_SIZE                           /* (2.0: the browser's own, web/fm1_web.c: 1 MiB, ~95 s) */

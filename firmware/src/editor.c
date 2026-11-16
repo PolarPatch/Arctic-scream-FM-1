@@ -16,7 +16,7 @@
  *           on (0 STOP; as PLAY/STOP)
  *                              -> op, t, sel, rc, the tempo (lo, hi), playing, track t's step playing + 1 (0: none)
  *                                 (READ: then pack7 track t's sequence; Arctic Scream p0larpatch, protocol 3)
- *   25 CPU                     -> the budget, NOW, PEAK, then NOW split by stage (grimm.c cpu_stage), u35 fm1_ticks
+ *   25 CPU                     -> the budget, NOW, PEAK, then NOW split by stage (arctic.c cpu_stage), u35 fm1_ticks
  *                                 (1.5.2) then the stacks' deepest and sizes, bytes (platform.c stk_used)
  *                              each (the command 24, here 25: a diagnostic, tools/fm1_cpu.py; no protocol number
  *                              of its own)
@@ -33,7 +33,7 @@
  * A PUT's bytes gather in store.c's sector image (st_img: free between saves; a reply is made in its last KiB); it
  * commits only when the sequencer stands and nothing sounds, its CRC, size, format and contents checked, through
  * store.c's saves (each written sector read back); refused, nothing changes. While a PUT is open (15 s after its last
- * DATA) the autosave waits (grimm.c: ed_open). Main loop only (samples_poll). */
+ * DATA) the autosave waits (arctic.c: ed_open). Main loop only (samples_poll). */
 
 #define ED_PROTO 3u                             /* this protocol's version (INFO; 2: TRACK, 3: SEQ) */
 #define ED_FMT 2u                               /* the objects' format: sounds of 64 B, slots of SLOT_ALL, settings

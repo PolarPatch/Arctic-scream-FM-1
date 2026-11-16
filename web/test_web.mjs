@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 GR!MM
-// The browser build against host mode: runs web/dist/grimm.wasm as web/worklet.js does (Asyncify), one millisecond at
+// The browser build against host mode: runs web/dist/arctic.wasm as web/worklet.js does (Asyncify), one millisecond at
 // a time, with tests/host.c's script, and compares with what tests/run_host.sh made:
 //   - the sound, sample for sample (the app applies MASTER, fm1_master: tests/run_host.sh renders at the
 //     knob's 1022, as here);
-//   - the screen at 2500, 3500, 6000 and 15500 ms, pixel for pixel (build/host/grimm-*.png), all but the CPU row: it shows the
+//   - the screen at 2500, 3500, 6000 and 15500 ms, pixel for pixel (build/host/arctic-*.png), all but the CPU row: it shows the
 //     longest app_audio() as this computer's clock measured it (fm1_ticks), which is not the same twice;
 //   - the settings: not saved (nothing changes the octave), as host mode;
 //   - the editor page's core (web/editor_core.js) against a fake FM-1, the wasm's own editor.c (the "virtual FM-1"):
@@ -24,7 +24,7 @@ import { Client, VirtualFM1, LiveSender, MidiTransport, findFM1, OBJ, parseSound
          SEQ_DIV } from "./editor_core.js";
 
 let ex, data, size, started = false, rewinding = false;
-const { instance } = await WebAssembly.instantiate(readFileSync("web/dist/grimm.wasm"), {
+const { instance } = await WebAssembly.instantiate(readFileSync("web/dist/arctic.wasm"), {
   env: {
     web_yield() {
       if (rewinding) { ex.asyncify_stop_rewind(); rewinding = false; return; }
@@ -94,7 +94,7 @@ for (;;) {
 const check = (ok, what) => { console.log((ok ? "  ok    " : "  FAIL  ") + what); if (!ok) fail++; };
 
 // the sound
-const wav = readFileSync("build/host/grimm.wav"), host = new Int16Array(wav.buffer, wav.byteOffset + 44, (wav.length - 44) / 2);
+const wav = readFileSync("build/host/arctic.wav"), host = new Int16Array(wav.buffer, wav.byteOffset + 44, (wav.length - 44) / 2);
 let diff = 0, first = -1, peak = 0;
 for (let i = 0; i < Math.max(host.length, sound.length); i++) {
   const want = host[i] ?? 0;
@@ -127,7 +127,7 @@ function png(path) {                               // 8-bit RGB, not interlaced 
   return { w, px };
 }
 for (const t of SHOTS) {
-  const { w, px } = png(`build/host/grimm-${t}.png`), fb = screens[t];
+  const { w, px } = png(`build/host/arctic-${t}.png`), fb = screens[t];
   let bad = 0;
   for (let y = 0; y < 240; y++)
     for (let x = 0; x < 240; x++) {
@@ -136,7 +136,7 @@ for (const t of SHOTS) {
       const rgb = [Math.floor((c >> 11) * 255 / 31), Math.floor((c >> 5 & 63) * 255 / 63), Math.floor((c & 31) * 255 / 31)];
       if (rgb[0] !== px[o] || rgb[1] !== px[o + 1] || rgb[2] !== px[o + 2]) bad++;
     }
-  check(bad === 0, `screen at ${t} ms: pixel for pixel as build/host/grimm-${t}.png, the CPU row aside` + (bad ? ` (${bad} differ)` : ""));
+  check(bad === 0, `screen at ${t} ms: pixel for pixel as build/host/arctic-${t}.png, the CPU row aside` + (bad ? ` (${bad} differ)` : ""));
 }
 
 // the settings
@@ -144,7 +144,7 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
 // the editor
 {
   const eq = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
-  const vf = await VirtualFM1.create(readFileSync("web/dist/grimm.wasm"));
+  const vf = await VirtualFM1.create(readFileSync("web/dist/arctic.wasm"));
   vf.warmUp();
   const cl = new Client(vf), info = await cl.info(), meta = vf.meta();
   check(info.proto === 3 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 173 && info.factory === 38,

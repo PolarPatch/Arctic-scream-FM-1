@@ -3,7 +3,7 @@
 /* the GENERATE: a track plays random notes of the SCALE (its chord in chord mode, as a key's) on the tempo, the
  * sequencer's clock or a MIDI clock (arp.c's arp_tick, a tick of each track: gen_tick), with rests, lengths, a volume
  * and an attack of their own each note (voices.c: gen_vel, gen_atk), within its own range (gen_lo, gen_hi: its chord's
- * notes past it folded in by octaves, grimm.c note_on). FX held + the black keys (grimm.c): F#2 G#2 A#2 C#3 tapped
+ * notes past it folded in by octaves, arctic.c note_on). FX held + the black keys (arctic.c): F#2 G#2 A#2 C#3 tapped
  * (let go, nothing else pressed meanwhile): T1 .. T4 on, off; D#3 MODE, F#3 G#3 its OCTAVE down, up, A#3 its RANGE:
  * the tracks' black keys held, theirs; none, all four's. Each track's own:
  *   MODE   DRIFT: a few notes, long (2 .. 8 beats), soft, slow attacks (ambient); PULSE: a melody walking the scale on
@@ -11,7 +11,7 @@
  *   OCTAVE its notes from C3 + 12 x it (-3 .. +3: C0 .. C6), the keyboard's OCT not at all
  *   RANGE  1, 2 or 3 octaves up from there
  * A SAMPLE track's notes: lengths from the MODE's shortest up to the whole loop (its LENGTH; gen_smp). Two tracks
- * generating or more: each its share of the voices, a new note replacing its own track's oldest (grimm.c gen_share).
+ * generating or more: each its share of the voices, a new note replacing its own track's oldest (arctic.c gen_share).
  * While a track generates its pattern plays on unheard (its steps, ratchets and locks not played: seq.c), so it comes
  * back in time when it stops; GENERATE never writes into it. Its notes take the track's voices as a key's do (the
  * voice rule: none taken from another track). Nothing saved: at power-on all off, DRIFT, OCTAVE 0, RANGE 2. The main

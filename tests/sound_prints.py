@@ -7,7 +7,7 @@ is hashed and compared with tests/sound_prints.txt. A change to the engine that 
 a change meant to alter one is taken in with --golden (and said in the commit). The VIBE's engine is this one: the
 same prints there.
 
-    tests/sound_prints.py [--golden]          (needs build/host/grimm: tests/run_host.sh builds it)
+    tests/sound_prints.py [--golden]          (needs build/host/arctic: tests/run_host.sh builds it)
 """
 import hashlib
 import os
@@ -32,8 +32,8 @@ def main():
     script.append("%d end" % (T0 + N * STEP))
     sp = os.path.join(OUT, "prints.txt")
     open(sp, "w").write("\n".join(script) + "\n")
-    env = dict(os.environ, GRIMM_MASTER="1022")
-    subprocess.run([os.path.join(ROOT, "build", "host", "grimm"), os.path.join(OUT, "p"), sp], env=env, check=True,
+    env = dict(os.environ, ARCTIC_MASTER="1022")
+    subprocess.run([os.path.join(ROOT, "build", "host", "arctic"), os.path.join(OUT, "p"), sp], env=env, check=True,
                    stdout=subprocess.DEVNULL)
     w = wave.open(os.path.join(OUT, "p.wav"))
     rate, ch, frames = w.getframerate(), w.getnchannels(), w.readframes(w.getnframes())

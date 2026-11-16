@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 GR!MM
-"""The stress test's device check (tests/stress.sh): on the FM-1 grimm.c, platform.c, usb.c and the rest are one file,
+"""The stress test's device check (tests/stress.sh): on the FM-1 arctic.c, platform.c, usb.c and the rest are one file,
 and C quietly makes two file-scope variables of the same name and type one variable (Arctic Scream's key-echo ring and usb.c's
 MIDI-out ring once shared mo_w / mo_r: the main loop chased itself, the watchdog restarted the FM-1). Host mode has no
 usb.c, so only the device build shows it: the toolchain's preprocessor makes the device's file, gcc lists every name
@@ -20,7 +20,7 @@ if not os.path.exists(clang):
 os.makedirs("build/stress", exist_ok=True)
 pre = "build/stress/device.i"
 subprocess.run([clang, "-target", "pi32v2", "-E", "-Os", "-fno-builtin", "-Ifirmware/hal", "-Ifirmware/src",
-                "-Ifirmware/gen", '-DFELUCCA_ID="FM-1_977"', '-DAPP_VER="0.0"', "firmware/src/grimm.c", "-o", pre],
+                "-Ifirmware/gen", '-DFELUCCA_ID="FM-1_977"', '-DAPP_VER="0.0"', "firmware/src/arctic.c", "-o", pre],
                check=True)
 out = subprocess.run(["gcc", "-fsyntax-only", "-m32", "-w", "-Wredundant-decls", "-x", "c", pre],
                      capture_output=True, text=True).stderr

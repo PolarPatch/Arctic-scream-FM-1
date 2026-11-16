@@ -6,7 +6,7 @@ sends unfiltered), MASTER (a filter at PRE FX, POST REVERB, END; open: as withou
 TYPEs, its limiter; AMOUNT 0: as without it, to the byte), and their saves (a V1.0 project: LP PRE, MASTER open, DRIVE
 off; V2's: as set). A held saw chord on T1 through each; the sound measured: its level (RMS), its highs (the RMS of
 its slope) and its lows (the RMS of a 64-frame average). Prints a line a check, exit 1 on a failure.
-  python3 tests/fx_test.py [build/host/grimm]"""
+  python3 tests/fx_test.py [build/host/arctic]"""
 import array
 import os
 import subprocess
@@ -14,7 +14,7 @@ import sys
 import wave
 from pathlib import Path
 
-EXE = sys.argv[1] if len(sys.argv) > 1 else "build/host/grimm"
+EXE = sys.argv[1] if len(sys.argv) > 1 else "build/host/arctic"
 OUT = Path("build/host/fx")
 OUT.mkdir(parents=True, exist_ok=True)
 CHORD = 0x880                                   # (two keys, an octave apart: T1's VA saw)
@@ -26,7 +26,7 @@ def run(name, ev, end=4200, env=None):
     ev = [(1000, f"keys {CHORD:#x}")] + ev + [(end - 100, "probe")]                 # no event: the host reads keys)
     path = OUT / f"{name}.txt"
     path.write_text("".join(f"{t} {s}\n" for t, s in sorted(ev, key=lambda e: e[0])) + f"{end} end\n")
-    env = dict(env or os.environ, GRIMM_PLAIN="1")   # (the plain VA tracks, not ICE WRAITH)
+    env = dict(env or os.environ, ARCTIC_PLAIN="1")   # (the plain VA tracks, not ICE WRAITH)
     out = subprocess.run([EXE, str(OUT / name), str(path)], capture_output=True, text=True, check=True,
                          env=env).stdout
     w = wave.open(str(OUT / f"{name}.wav"))
@@ -141,12 +141,12 @@ SAVE = MIX2 + [(400, "enc 3 2"), (420, "enc 4 1")] + FX(5) + [(1200, "enc 2 -60"
                                                              (1550, "enc 3 3"), (1600, "enc 4 -27"), (1650, "enc 5 -60"),
                                                              (1700, "keys 0"), (1720, "btn 2"), (1750, "enc 2 90"),
                                                              (1780, "enc 3 33")]   # (1.4: AIR)
-_, p1, _ = run("save", SAVE, 9000, dict(os.environ, GRIMM_SAVE_OUT=str(OUT / "saves.bin")))
-_, p2, _ = run("load", [(1050, "keys 0")], 1500, dict(os.environ, GRIMM_SAVE_IN=str(OUT / "saves.bin")))
+_, p1, _ = run("save", SAVE, 9000, dict(os.environ, ARCTIC_SAVE_OUT=str(OUT / "saves.bin")))
+_, p2, _ = run("load", [(1050, "keys 0")], 1500, dict(os.environ, ARCTIC_SAVE_IN=str(OUT / "saves.bin")))
 want = "fx mf 67,40,1,0 dr 50,3,100,67 ft 6 0 0 0 air 90,33"
 check("saved and loaded: MASTER, DRIVE, the track filter, (1.4) AIR as set", want in p1 and want in p2,
       f"set: {p1.split(' fx ')[-1]}; loaded: {p2.split(' fx ')[-1]}")
-_, p3, _ = run("v10", [(1050, "keys 0")], 1500, dict(os.environ, GRIMM_SAVE_IN="tests/data/a1.2-saves.bin"))
+_, p3, _ = run("v10", [(1050, "keys 0")], 1500, dict(os.environ, ARCTIC_SAVE_IN="tests/data/a1.2-saves.bin"))
 check("an Arctic Scream 1.2 project: LP PRE, MASTER open (END), DRIVE off, AIR off",
       "fx mf 127,0,0,2 dr 0,0,127,127 ft 0 0 0 0 air 0,0" in p3,
       p3.split(" fx ")[-1])

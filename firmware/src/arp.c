@@ -10,7 +10,7 @@
  *   the clock: the sequencer's when it plays (its steps on the sequencer's grid), else the tempo's, from the first note
  *   held (that note at once)
  *   REC on and the sequencer playing: the selected track's arp notes are live-recorded into its sequence
- * Its notes: grimm.c note_on / note_off as SRC_ARP (their origin: the note), the track's source and ENV, no chord of
+ * Its notes: arctic.c note_on / note_off as SRC_ARP (their origin: the note), the track's source and ENV, no chord of
  * their own. Audio ISR; the main loop reads the list (the screen, the keys' lights). */
 
 enum { ARP_UP, ARP_DOWN, ARP_UPDN, ARP_RND, ARP_PLAYED, ARP_CHORD, NARPMODE };

@@ -16,7 +16,8 @@ const BLACK = [1, 3, 5, 8, 10, 13, 15, 17, 20, 22, 25];
 const BLACK_AFTER = [0, 1, 2, 4, 5, 7, 8, 9, 11, 12, 14];  // the white key each black one follows
 const NOTE = ["F", "F♯", "G", "G♯", "A", "A♯", "B", "C", "C♯", "D", "D♯", "E"];
 const keyName = (k) => NOTE[k % 12] + (2 + Math.floor((k + 5) / 12));   // (key 0 = F2: KEY0, an octave down)
-const STORE = "grimm-web-settings";
+const STORE = "arctic-web-settings";
+const stored = (k) => localStorage.getItem(k) ?? localStorage.getItem(k.replace("arctic", "grimm"));   // (the older pages' key)
 
 let node = null, btnMask = 0, keyMask = 0, latched = 0, master = 700;
 const send = (m) => { if (node) node.port.postMessage(m); };
@@ -304,7 +305,7 @@ function drawLights([litB, litK]) {
 // ------------------------------------------------------------------ the settings, kept in this browser
 function loadSettings() {
   try {
-    const a = JSON.parse(localStorage.getItem(STORE) || "null");
+    const a = JSON.parse(stored(STORE) || "null");
     return Array.isArray(a) ? Uint8Array.from(a.slice(0, 256)) : null;
   } catch { return null; }
 }
@@ -315,10 +316,10 @@ function saveSettings(u8) {
 // ------------------------------------------------------------------ Web MIDI in (channel messages), from the input chosen
 // under the panel: ALL INPUTS, one of them (kept by its name: ids change between sessions), or OFF; and from the channel
 // chosen beside it (CH): ALL, or one of 1..16
-const status = $("status"), midiSel = $("midi-in"), chSel = $("midi-ch"), MIDI_KEY = "grimm.midiIn", CH_KEY = "grimm.midiCh";
+const status = $("status"), midiSel = $("midi-in"), chSel = $("midi-ch"), MIDI_KEY = "arctic.midiIn", CH_KEY = "arctic.midiCh";
 let midiWant = "ALL", midiCh = 0;                          // "ALL", "OFF" or an input's name (as chosen and kept); 0 ALL
-try { midiWant = localStorage.getItem(MIDI_KEY) || "ALL"; } catch { /* (no storage: all inputs) */ }
-try { midiCh = Math.max(0, Math.min(16, parseInt(localStorage.getItem(CH_KEY), 10) || 0)); } catch { /* (all channels) */ }
+try { midiWant = stored(MIDI_KEY) || "ALL"; } catch { /* (no storage: all inputs) */ }
+try { midiCh = Math.max(0, Math.min(16, parseInt(stored(CH_KEY), 10) || 0)); } catch { /* (all channels) */ }
 chSel.replaceChildren(new Option("ALL", "0"), ...Array.from({ length: 16 }, (_, k) => new Option(String(k + 1), String(k + 1))));
 chSel.value = String(midiCh);
 function onMidi(e) {
@@ -369,9 +370,9 @@ async function switchOn() {
   try {
     const ac = new AudioContext({ sampleRate: 44100, latencyHint: "interactive" });
     const [wasm] = await Promise.all([
-      fetch("grimm.wasm").then((r) => { if (!r.ok) throw new Error(`grimm.wasm: ${r.status}`); return r.arrayBuffer(); }),
+      fetch("arctic.wasm").then((r) => { if (!r.ok) throw new Error(`arctic.wasm: ${r.status}`); return r.arrayBuffer(); }),
       ac.audioWorklet.addModule("worklet.js")]);
-    node = new AudioWorkletNode(ac, "grimm", { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] });
+    node = new AudioWorkletNode(ac, "arctic", { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] });
     node.connect(ac.destination);
     let warned = false;
     await new Promise((res, rej) => {

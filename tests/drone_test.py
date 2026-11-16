@@ -11,7 +11,7 @@
   - Biegga (the ninth source): heard, not clipping; its knobs, JIEHKKI's and TUNING saved with the project (version 9)
     and loaded at power-on; a slot keeps its Biegga; a project from 1.2 loads with them as at power-on
   - GUOVSSAHAS (SCREEN OFF's last): after 2 min untouched the aurora (the screen lit), a touch back
-    python3 tests/drone_test.py build/host/grimm"""
+    python3 tests/drone_test.py build/host/arctic"""
 import math
 import os
 import re
@@ -21,7 +21,7 @@ import sys
 import wave
 from pathlib import Path
 
-BIN = sys.argv[1] if len(sys.argv) > 1 else "build/host/grimm"
+BIN = sys.argv[1] if len(sys.argv) > 1 else "build/host/arctic"
 OUT = Path("build/dronetest")
 OUT.mkdir(parents=True, exist_ok=True)
 fails = 0
@@ -38,7 +38,7 @@ def check(name, ok, info=""):
 def run(name, ev, end, env=None, plain=True):     # (plain: Arctic Scream's VA tracks; else the factory's, ICE WRAITH)
     s = OUT / f"{name}.txt"
     s.write_text("".join(f"{t} {l}\n" for t, l in sorted(ev, key=lambda e: e[0])) + f"{end} end\n")
-    e = dict(os.environ, GRIMM_PLAIN="1") if plain else dict(os.environ)
+    e = dict(os.environ, ARCTIC_PLAIN="1") if plain else dict(os.environ)
     e.update(env or {})
     out = subprocess.run([BIN, str(OUT / name), str(s)], capture_output=True, text=True, check=True, env=e).stdout
     w = wave.open(str(OUT / f"{name}.wav"))
@@ -166,17 +166,17 @@ check("Biegga: its knobs as at power-on (GUST, HOWL, TONE 64, SNOW 16)", jk[9000
 sv = OUT / "saves.bin"
 ev = BG + [(6800, f"btn {EDIT}"), (7000, f"enc {K1} 20"), (7400, f"btn {LFO}"), (7600, f"btn {LFO}"), (7800, f"btn {LFO}"),
            (8000, f"enc {K1} 2"), (8200, f"enc {K2} 30"), (8400, f"enc {K3} 20"), (8600, f"btn {SEL}"), (8800, f"enc {K3} 1")]
-out, a, jk, notes = run("save", ev + P(9500), 40000, {"GRIMM_SAVE_OUT": str(sv)})
+out, a, jk, notes = run("save", ev + P(9500), 40000, {"ARCTIC_SAVE_OUT": str(sv)})
 check("set: Biegga GUST 84, LENGTH 30 MIN, DRIFT 70, RUOHCAT 20, TUNING JUST", jk[9500]["bg"][0][0] == 84 and
       jk[9500]["len"] == 4 and jk[9500]["drift"] == 70 and jk[9500]["ruo"] == 20 and jk[9500]["tun"] == 1, jk[9500])
-out, a, jk, notes = run("load", P(3000), 3500, {"GRIMM_SAVE_IN": str(sv)})
+out, a, jk, notes = run("load", P(3000), 3500, {"ARCTIC_SAVE_IN": str(sv)})
 check("power-on: all of it as saved (version 9)", jk[3000]["bg"][0][0] == 84 and jk[3000]["len"] == 4 and
       jk[3000]["drift"] == 70 and jk[3000]["ruo"] == 20 and jk[3000]["tun"] == 1 and jk[3000]["go"] == 0, jk[3000])
 
 # (2.2) JAHKI (LFO x 5): YEAR 8 MIN (from 1 HOUR, 2 down), DEPTH 100 %: the seasons turn (a minute each), leaning
 ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (6800, f"btn {LFO}"), (7000, f"btn {LFO}"),
       (7200, f"enc {K1} -2"), (7400, f"enc {K3} 100"), (136000, f"enc {K2} 3")]
-out, a, jk, notes = run("year", ev + P(6000, 9000, 40000, 70000, 100000, 135000, 137000), 145000, {"GRIMM_SAVE_OUT": str(OUT / "saves_year.bin")})
+out, a, jk, notes = run("year", ev + P(6000, 9000, 40000, 70000, 100000, 135000, 137000), 145000, {"ARCTIC_SAVE_OUT": str(OUT / "saves_year.bin")})
 check("(2.2) JAHKI: at power-on as never set: 1 HOUR, DALVI, DEPTH 0, nothing leaning",
       jk[6000]["yr"] == 3 and jk[6000]["ys"] == 0 and jk[6000]["lean"] == 0 and jk[6000]["shq"] == 16 and jk[6000]["ycut"] == 0, jk[6000])
 check(".. YEAR 8 MIN, DEPTH 100 %: DALVI leans dark and long (SPACE + 14, the filters down)",
@@ -185,16 +185,16 @@ check(".. a minute a season: GIDDADALVI, then GIDDA (the leans between)", jk[700
       jk[40000]["lean"] < jk[9000]["lean"], [(jk[t]["ys"], jk[t]["lean"], jk[t]["ycut"]) for t in (9000, 40000, 70000, 135000)])
 check(".. SEASON turned by hand: the year there (GIDDA, 3 on: CAKCAGEASSI, late summer: SHIMMER up)", jk[137000]["ys"] == 5 and jk[137000]["shq"] > 16,
       jk[137000])
-out, a, jk, notes = run("year_on", P(3000), 3500, {"GRIMM_SAVE_IN": str(OUT / "saves_year.bin")})
+out, a, jk, notes = run("year_on", P(3000), 3500, {"ARCTIC_SAVE_IN": str(OUT / "saves_year.bin")})
 check(".. power-on: YEAR, DEPTH and the season turned to, as saved (version 10; the year moving on is no save)",
       jk[3000]["yr"] == 1 and jk[3000]["yd"] == 100 and jk[3000]["ys"] == 5, jk[3000])
 
 # (2.2) START ALWAYS: saved with the project; at power-on the piece begins on its own (its own notes, rising)
 sv2 = OUT / "saves_always.bin"
 ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (7000, f"enc {K4} 2")]
-out, a, jk, notes = run("always", ev + P(9000), 50000, {"GRIMM_SAVE_OUT": str(sv2)})
+out, a, jk, notes = run("always", ev + P(9000), 50000, {"ARCTIC_SAVE_OUT": str(sv2)})
 check("(2.2) START ALWAYS: it plays now", jk[9000]["go"] == 2 and jk[9000]["run"] == 1, jk[9000])
-out, a, jk, notes = run("always_on", P(2000, 40000), 41000, {"GRIMM_SAVE_IN": str(sv2)})
+out, a, jk, notes = run("always_on", P(2000, 40000), 41000, {"ARCTIC_SAVE_IN": str(sv2)})
 check(".. power-on: START ALWAYS again, the piece begins on its own", jk[2000]["go"] == 2 and jk[40000]["run"] == 1 and
       jk[40000]["own"] == 1 and len(notes[40000]) == 4 and rms(a, 30, 40) > 100, (jk[2000], jk[40000], notes[40000]))
 
@@ -208,7 +208,7 @@ check("slot A: its Biegga recalled (GUST 84, after 44)", jk[9300]["bg"][0][0] ==
       (jk[9300]["bg"][0], jk[11000]["bg"][0]))
 
 # 1.2's project: as at power-on
-out, a, jk, notes = run("old", P(3000), 3500, {"GRIMM_SAVE_IN": "tests/data/a1.2-saves.bin"})
+out, a, jk, notes = run("old", P(3000), 3500, {"ARCTIC_SAVE_IN": "tests/data/a1.2-saves.bin"})
 check("Arctic Scream 1.2's project: Biegga, JIEHKKI, TUNING as at power-on", jk[3000]["bg"][0] == [64, 64, 64, 16] and
       jk[3000]["len"] == 2 and jk[3000]["drift"] == 40 and jk[3000]["ruo"] == 0 and jk[3000]["tun"] == 0, jk[3000])
 
@@ -304,7 +304,7 @@ check("PRESETS: turned three times, then EDIT + OCT-: the sound before the brows
 # the jack quiet (no click: a ramp), the computer still gets it; after, the speaker back
 ev = [(5000, f"down {HOME}"), (5700, f"up {HOME}"), (6000, f"btn {HOME}"), (6300, f"btn {HOME}"), (6600, f"enc {K2} 7"),
       (7000, f"keys {1 << 7}"), (8500, "probe"), (11500, "probe"), (13500, "probe"), (14000, "keys 0")]
-out, a, jk, notes = run("spk_off", ev, 14200, env={"GRIMM_USB_FEED": "1", "GRIMM_USB_REC": "9000,12000"})
+out, a, jk, notes = run("spk_off", ev, 14200, env={"ARCTIC_USB_FEED": "1", "ARCTIC_USB_REC": "9000,12000"})
 pk = {int(m.group(1)): int(m.group(2)) for m in re.finditer(r"^usbpk (\d+) (\d+)$", out, re.M)}
 b, d, f = rms(a, 7.8, 8.8), rms(a, 9.5, 11.8), rms(a, 12.6, 13.6)
 check("SPK OFF: the speaker quiet while the computer takes the sound, back after; USB has it",
@@ -355,8 +355,8 @@ check("ENV 2 SPREAD 100 %: three notes apart in the stereo field (more side than
 sv3 = OUT / "saves_env2.bin"
 ev = [(5000, f"btn {ENVB}"), (5300, f"btn {ENVB}"), (5600, f"enc {K1} 2"), (5900, f"enc {K2} 10"), (6200, f"enc {K3} 50"),
       (6500, f"enc {K4} 30")]
-out, a, jk, notes = run("env2_save", ev + P(7000), 40000, {"GRIMM_SAVE_OUT": str(sv3)})
-out, a, jk2, notes = run("env2_load", P(3000), 3500, {"GRIMM_SAVE_IN": str(sv3)})
+out, a, jk, notes = run("env2_save", ev + P(7000), 40000, {"ARCTIC_SAVE_OUT": str(sv3)})
+out, a, jk2, notes = run("env2_load", P(3000), 3500, {"ARCTIC_SAVE_IN": str(sv3)})
 e2 = lambda d: (d["el"], d["eo"], d["es"], d["ed"])
 check("ENV 2 saved with the project (version 11): at power-on as set (BREATHE, 0.8 s, 50 %, 30 %)",
       e2(jk[7000]) == (2, 10, 50, 30) and e2(jk2[3000]) == (2, 10, 50, 30), (e2(jk[7000]), e2(jk2[3000])))
@@ -365,16 +365,16 @@ ev = [(5000, f"btn {ENVB}"), (5300, f"btn {ENVB}"), (5600, f"enc {K3} 40"), (740
       (8200, "keys 0"), (8400, f"up {SAVE}"), (9000, f"enc {K3} -40"), (9400, f"down {SAVE}"), (10000, "keys 1"),
       (10200, "keys 0"), (10400, f"up {SAVE}")]
 sv4 = OUT / "saves_e2slot.bin"
-out, a, jk, notes = run("e2slot", ev + P(9300, 11000), 40000, {"GRIMM_SAVE_OUT": str(sv4)})
+out, a, jk, notes = run("e2slot", ev + P(9300, 11000), 40000, {"ARCTIC_SAVE_OUT": str(sv4)})
 ev = [(5000, f"down {SAVE}"), (5600, "keys 1"), (5800, "keys 0"), (6000, f"up {SAVE}")]
-out, a, jk2, notes = run("e2slot_on", P(4000) + ev + P(7000), 7500, {"GRIMM_SAVE_IN": str(sv4)})
+out, a, jk2, notes = run("e2slot_on", P(4000) + ev + P(7000), 7500, {"ARCTIC_SAVE_IN": str(sv4)})
 check("slot A: its ENV 2 recalled (SPREAD 40, after 0), and after a power-on",
       jk[9300]["es"] == 0 and jk[11000]["es"] == 40 and jk2[7000]["es"] == 40, (jk[9300]["es"], jk[11000]["es"], jk2[7000]["es"]))
 
-# (2.2) the CPU guard: hot (host: GRIMM_CPU_HOT), a new note takes a release over instead of a free voice; cool, never
+# (2.2) the CPU guard: hot (host: ARCTIC_CPU_HOT), a new note takes a release over instead of a free voice; cool, never
 ev = [(6000, f"keys {1 << 7}"), (6500, "keys 0"), (7000, f"keys {1 << 9}"), (7500, "keys 0"), (8000, f"keys {1 << 11}"),
       (8500, "keys 0")]
-out, a, jk, notes = run("cpu_hot", ev + P(9000), 9500, {"GRIMM_CPU_HOT": "1"})
+out, a, jk, notes = run("cpu_hot", ev + P(9000), 9500, {"ARCTIC_CPU_HOT": "1"})
 out, a0, jk0, notes = run("cpu_cool", ev + P(9000), 9500)
 check("CPU guard: hot, new notes take a release over (no voice added); cool, never; heard either way",
       jk[9000]["took"] >= 2 and jk0[9000]["took"] == 0 and rms(a, 8.0, 9.0) > 100, (jk[9000]["took"], jk0[9000]["took"], round(rms(a, 8, 9))))
@@ -400,7 +400,7 @@ check("Jiekna RING at the top, bowed: it sings on by itself, held (no clip, no d
 RECB = 13
 ev = [(6000, f"down {RECB}")] + [(6100 + 100 * i, f"enc {K2} {-3 if i < 15 else 3}") for i in range(30)] + [(9200, f"up {RECB}")]
 sv5 = OUT / "saves_motion.bin"
-out, a, jk, notes = run("motion", ev + P(*range(9500, 16000, 100), 44000, 120000), 121000, {"GRIMM_SAVE_OUT": str(sv5)})
+out, a, jk, notes = run("motion", ev + P(*range(9500, 16000, 100), 44000, 120000), 121000, {"ARCTIC_SAVE_OUT": str(sv5)})
 c = [jk[t]["cut0"] for t in range(9500, 16000, 100)]
 check("MOTION: the move plays by itself, down and up, again (its length ~3 s); REC off, a lane", max(c) - min(c) > 25 and
       jk[9500]["mo"] == 1 and "rec 0" in out.split("probe 9500")[1][:400], (min(c), max(c), c[::5], jk[9500]["mo"]))
@@ -409,22 +409,22 @@ check(".. what it plays never makes a save of its own (the flash not written aga
 low = [t for t, x in zip(range(9500, 16000, 100), c) if x == min(c)]
 check(".. it comes round about every 3 s", any(3000 <= b - a_ <= 3400 for a_ in low for b in low), low)
 out, a, jk2, notes = run("motion_on", P(*range(3000, 9000, 100)) + [(9500, f"down {RECB}"), (9700, f"btn {OCTD}"),
-                         (9900, f"up {RECB}")] + P(10500, 12000), 12500, {"GRIMM_SAVE_IN": str(sv5)})
+                         (9900, f"up {RECB}")] + P(10500, 12000), 12500, {"ARCTIC_SAVE_IN": str(sv5)})
 c2 = [jk2[t]["cut0"] for t in range(3000, 9000, 100)]
 check(".. power-on: it plays again; REC held + OCT-: gone, the knob still", max(c2) - min(c2) > 25 and jk2[3000]["mo"] == 1 and
       jk2[10500]["mo"] == 0 and jk2[10500]["cut0"] == jk2[12000]["cut0"], (min(c2), max(c2), jk2[10500]["mo"]))
 
-# (2.2) the second core's way (host: GRIMM_CPU2): SPACE a block behind (5.8 ms), otherwise the same sound
+# (2.2) the second core's way (host: ARCTIC_CPU2): SPACE a block behind (5.8 ms), otherwise the same sound
 ev = [(6000, f"keys {1 << 7 | 1 << 14}"), (6500, "keys 0")]
 out, a1, jk, notes = run("cpu2_one", ev, 12000, plain=False)
-out, a2, jk, notes = run("cpu2_two", ev, 12000, {"GRIMM_CPU2": "1"}, plain=False)
+out, a2, jk, notes = run("cpu2_two", ev, 12000, {"ARCTIC_CPU2": "1"}, plain=False)
 check("the second core's way: SPACE a block behind, its tail as loud (within 0.5 dB), never clipping",
       abs(20 * math.log10((rms(a2, 8, 11) + 1) / (rms(a1, 8, 11) + 1))) < 0.5 and peak(a2) < 32000 and rms(a2, 8, 11) > 100,
       (round(rms(a1, 8, 11)), round(rms(a2, 8, 11)), peak(a2)))
 
-# (2.2) the guide at the first start (host: GRIMM_GUIDE): three presses turn its pages and do nothing else; the fourth acts
+# (2.2) the guide at the first start (host: ARCTIC_GUIDE): three presses turn its pages and do nothing else; the fourth acts
 ev = [(6000, f"btn {LFO}"), (6500, f"btn {LFO}"), (7000, f"btn {LFO}"), (7500, "probe"), (8000, f"btn {LFO}"), (8500, "probe")]
-out, a, jk, notes = run("guide", ev, 9000, {"GRIMM_GUIDE": "1"})
+out, a, jk, notes = run("guide", ev, 9000, {"ARCTIC_GUIDE": "1"})
 pg = {int(m.group(1)): int(m.group(2)) for m in re.finditer(r"^probe (\d+) .*? ui page (\d+)", out, re.M)}
 check("the guide: three presses only turn its pages; then LFO opens LFO", pg.get(7500) == 7 and pg.get(8500) == 3, pg)
 

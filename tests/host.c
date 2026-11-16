@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* GR!MM changes (file names): Copyright (C) 2026 GR!MM */
-/* A fake FM-1 on a computer: the app (firmware/src/grimm.c) runs unchanged on it. platform.c includes
+/* A fake FM-1 on a computer: the app (firmware/src/arctic.c) runs unchanged on it. platform.c includes
  * this file instead of the hardware when DINGHY_HOST is set. A script presses keys over time; out come
  * the screen (PPM, at the times SHOT asks) and the sound (WAV, as the FM-1 sends it over USB). fm1_ticks() is this
  * computer's clock: the longest app_audio() goes out at the end, as a share of its 5.8 ms (the FM-1's is its own).
  *
  *   mkdir -p build/host
- *   cc -O2 -Wall -DDINGHY_HOST -Ifirmware/src -Ifirmware/gen -o build/host/grimm firmware/src/grimm.c
- *   build/host/grimm build/host/grimm        (-> build/host/grimm.wav, build/host/grimm-<ms>.ppm)
- *   build/host/grimm OUT script.txt [FPS]    (your own script; with FPS: OUT-NNNNN.ppm, a frame every 1/FPS s:
+ *   cc -O2 -Wall -DDINGHY_HOST -Ifirmware/src -Ifirmware/gen -o build/host/arctic firmware/src/arctic.c
+ *   build/host/arctic build/host/arctic        (-> build/host/arctic.wav, build/host/arctic-<ms>.ppm)
+ *   build/host/arctic OUT script.txt [FPS]    (your own script; with FPS: OUT-NNNNN.ppm, a frame every 1/FPS s:
  *                                             a film of your firmware, e.g. ffmpeg -r 30 -i OUT-%05d.ppm ...)
  *
  * Change SCRIPT below to try your own app. */
@@ -104,14 +104,14 @@ static int midi_get(uint8_t *st, uint8_t *d1, uint8_t *d2)
     mq_r++;
     return 1;
 }
-#ifdef GRIMM_STRESS
+#ifdef ARCTIC_STRESS
 static void stress_midi_out(uint32_t st, uint32_t d1);   /* (tests/stress_check.c: what is on out there) */
 static void midi_send(uint32_t st, uint32_t d1, uint32_t d2) { (void)d2; stress_midi_out(st, d1); }
 #else
 static void midi_send(uint32_t st, uint32_t d1, uint32_t d2) { printf("%6u ms  MIDI out %02X %u %u\n", fm1_ms, st, d1, d2); }
 #endif
 static uint32_t midi_room(void) { return 64u; }
-#ifdef GRIMM_STRESS                             /* (the stress test: a battery going round its levels, 4 s a step) */
+#ifdef ARCTIC_STRESS                             /* (the stress test: a battery going round its levels, 4 s a step) */
 static int32_t batt_raw(void) { return 500 + (int32_t)((fm1_ms / 4000u * 13u) % 110u); }
 static int usb_powered(void) { return (fm1_ms / 60000u) % 3u == 2u; }
 #else                                           /* (no battery here: no icon) */
@@ -161,12 +161,12 @@ static uint32_t stk_main(void) { return 0u; }   /* (1.5.2: the stacks are measur
 static uint32_t stk_irq(void) { return 0u; }
 #define STK_MAIN_SZ 0u
 #define STK_IRQ_SZ 0u
-static uint32_t host_rec_from = 1, host_rec_to;   /* (GRIMM_USB_REC=FROM,TO: a computer reads the USB audio from FROM to TO ms) */
+static uint32_t host_rec_from = 1, host_rec_to;   /* (ARCTIC_USB_REC=FROM,TO: a computer reads the USB audio from FROM to TO ms) */
 static int usb_recording(void) { return fm1_ms >= host_rec_from && fm1_ms < host_rec_to; }
-static uint32_t c1_sim;                         /* (2.2: GRIMM_CPU2=1: grimm.c's SPACE as on the second core, a block
+static uint32_t c1_sim;                         /* (2.2: ARCTIC_CPU2=1: arctic.c's SPACE as on the second core, a block
                                                  * behind) */
-static uint32_t cpu_hot_force;                  /* (2.2: GRIMM_CPU_HOT=1: grimm.c's CPU guard as if the blocks ran hot) */
-static uint32_t host_feed;                      /* (2.2: GRIMM_USB_FEED=1: the computer takes the sound while it records) */
+static uint32_t cpu_hot_force;                  /* (2.2: ARCTIC_CPU_HOT=1: arctic.c's CPU guard as if the blocks ran hot) */
+static uint32_t host_feed;                      /* (2.2: ARCTIC_USB_FEED=1: the computer takes the sound while it records) */
 static int32_t host_usb_pk;                     /* (the USB sound's peak since the last probe: "usbpk MS PEAK") */
 static int usb_feeding(void) { return host_feed && usb_recording(); }   /* (no USB audio ring here: its peak only) */
 static void usb_feed(const int32_t *x, uint32_t n)
@@ -185,7 +185,7 @@ static int save_flash_write(uint32_t i, uint32_t off, const void *p, uint32_t n)
     for (k = 0; k < n; k++) fake_save[i][off + k] &= s[k];
     return 0;
 }
-#ifdef GRIMM_STRESS                             /* (the stress test: a frame put in host_sx as from USB; the replies) */
+#ifdef ARCTIC_STRESS                             /* (the stress test: a frame put in host_sx as from USB; the replies) */
 static uint8_t host_sx[640];
 static uint32_t host_sx_n, host_sx_ready;
 static void stress_sysex_out(const uint8_t *p, uint32_t n);
@@ -209,7 +209,7 @@ static int sysex_get(const uint8_t **p, uint32_t *n)
 static void sysex_done(void) { host_sx_n = 0; }
 static int sysex_send(const uint8_t *p, uint32_t n) { (void)p; (void)n; return 0; }
 #endif
-/* (Arctic Scream 1.5) the screen reader's frames (announce.c): a SAY printed ("said: ..."), and with GRIMM_SAID_LOG
+/* (Arctic Scream 1.5) the screen reader's frames (announce.c): a SAY printed ("said: ..."), and with ARCTIC_SAID_LOG
  * appended to that file as "MSG<tab>text" ("WARN" with ANN_KEEP), for fm1-reader's tools/audit.mjs */
 static int ann_wire_send(const uint8_t *p, uint32_t n)
 {
@@ -218,7 +218,7 @@ static int ann_wire_send(const uint8_t *p, uint32_t n)
     if (n < 7u) return 0;
     if (p[4] == 16u) {
         printf("%6u ms  said%s: %.*s\n", fm1_ms, p[5] & 2u ? " (keep)" : "", (int)(n - 7u), (const char *)p + 6);
-        if (!opened) opened = 1, log = getenv("GRIMM_SAID_LOG") ? fopen(getenv("GRIMM_SAID_LOG"), "a") : 0;
+        if (!opened) opened = 1, log = getenv("ARCTIC_SAID_LOG") ? fopen(getenv("ARCTIC_SAID_LOG"), "a") : 0;
         if (log) fprintf(log, "%s\t%.*s\n", p[5] & 2u ? "WARN" : "MSG", (int)(n - 7u), (const char *)p + 6), fflush(log);
     } else if (p[4] == 1u)
         printf("%6u ms  reader HELLO: %.*s\n", fm1_ms, (int)(n - 7u), (const char *)p + 6);
@@ -237,7 +237,7 @@ static int po_wire_send(const uint8_t *p, uint32_t n)
 
 static void app_audio(int32_t *out, uint32_t n);
 static int32_t host_master = 4092;              /* the MASTER knob as the app reads it (fm1_master, Q12): all
-                                                 * the way up, as the USB audio always was here; GRIMM_MASTER: the knob
+                                                 * the way up, as the USB audio always was here; ARCTIC_MASTER: the knob
                                                  * 0 .. 1023 (squared, as platform.c) */
 static int32_t fm1_master(void) { return host_master; }
 static void app_main(void);
@@ -339,7 +339,7 @@ static void read_script(const char *path)
     script_n = n;
 }
 
-static const char *host_out = "build/host/grimm";
+static const char *host_out = "build/host/arctic";
 static int16_t *wav;
 static uint32_t wav_n;
 
@@ -436,9 +436,9 @@ static void host_matrix(void)
 static uint64_t host_frames;                    /* frames rendered: an audio block's time is its first frame's, as on the
                                                  * FM-1 (its ISR comes on the DMA), not the millisecond it is made in */
 static int host_in_audio;
-static uint32_t host_jit, host_jit_rng = 1u;   /* GRIMM_ISR_JITTER (us): the audio ISR starts late by 0 .. it, as the
+static uint32_t host_jit, host_jit_rng = 1u;   /* ARCTIC_ISR_JITTER (us): the audio ISR starts late by 0 .. it, as the
                                                  * FM-1's can (the timer's ISR outranks it), its time read so */
-static uint32_t host_hz = FS;                   /* GRIMM_AUDIO_HZ: the audio's true rate against the timer's 24 MHz (an
+static uint32_t host_hz = FS;                   /* ARCTIC_AUDIO_HZ: the audio's true rate against the timer's 24 MHz (an
                                                  * FM-1's may not be 44100 to the hertz) */
 static uint32_t rt_now(void)
 {
@@ -447,7 +447,7 @@ static uint32_t rt_now(void)
         host_jit_rng = host_jit_rng * 1103515245u + 12345u, j = (host_jit_rng >> 8) % (host_jit * 24u);
     return (uint32_t)(host_in_audio ? host_frames * 24000000u / host_hz : (uint64_t)fm1_ms * 24000u) + j;
 }
-static int host_clock_log;                      /* GRIMM_CLOCK_LOG: each pulse out, its time (ticks), a line */
+static int host_clock_log;                      /* ARCTIC_CLOCK_LOG: each pulse out, its time (ticks), a line */
 static struct { uint64_t t0, k; uint32_t bpm10, end, src; } hg;   /* the pulses: from t0 (ticks), the next, the tempo */
 static struct { uint32_t n, last, lo, hi; } ho;   /* pulses out: how many; the last's time; their intervals (ticks) */
 static void host_clock(void)                    /* each millisecond: the pulses due in, the FM-1's out */
@@ -485,7 +485,7 @@ static void platform_poll(void)                 /* one call = one millisecond */
     }
     while (step < script_n && script[step].t <= fm1_ms) {
         if (script[step].sxn) {
-#ifndef GRIMM_STRESS
+#ifndef ARCTIC_STRESS
             host_sx = script[step].sx, host_sx_n = script[step].sxn;
 #endif
         } else if (script[step].kind == HK_CLOCK) {
@@ -537,11 +537,11 @@ static void platform_poll(void)                 /* one call = one millisecond */
             static uint32_t sum, cnt;
             if (dt > host_cpu_max) host_cpu_max = dt;
             sum += dt;
-            if (++cnt == 86u) { host_cpu_now = sum / 86u; sum = cnt = 0; }   /* as grimm.c's NOW: ~0.5 s */
+            if (++cnt == 86u) { host_cpu_now = sum / 86u; sum = cnt = 0; }   /* as arctic.c's NOW: ~0.5 s */
         }
         wav = realloc(wav, (wav_n + HALF_FRAMES) * 4u);
         for (i = 0; i < 2u * HALF_FRAMES; i++) {
-            int32_t v = blk[i];                 /* (USB audio: the MASTER knob in it, GRIMM_MASTER) */
+            int32_t v = blk[i];                 /* (USB audio: the MASTER knob in it, ARCTIC_MASTER) */
             wav[2u * wav_n + i] = (int16_t)(v > 32767 ? 32767 : v < -32767 ? -32767 : v);
         }
         wav_n += HALF_FRAMES;
@@ -570,29 +570,29 @@ int main(int argc, char **argv)
     if (argc > 2) read_script(argv[2]);
     if (argc > 3) frame_fps = (uint32_t)atoi(argv[3]);
     memset(fake_flash, 0xFF, sizeof fake_flash);   /* (erased: the factory samples go in at boot) */
-    host_jit = getenv("GRIMM_ISR_JITTER") ? (uint32_t)atoi(getenv("GRIMM_ISR_JITTER")) : 0u;
-    host_clock_log = getenv("GRIMM_CLOCK_LOG") != 0;
-    if (getenv("GRIMM_MASTER")) {
-        int32_t k = atoi(getenv("GRIMM_MASTER"));
+    host_jit = getenv("ARCTIC_ISR_JITTER") ? (uint32_t)atoi(getenv("ARCTIC_ISR_JITTER")) : 0u;
+    host_clock_log = getenv("ARCTIC_CLOCK_LOG") != 0;
+    if (getenv("ARCTIC_MASTER")) {
+        int32_t k = atoi(getenv("ARCTIC_MASTER"));
         k = k < 0 ? 0 : k > 1023 ? 1023 : k;
         host_master = (k * k) >> 8;
     }
-    if (getenv("GRIMM_AUDIO_HZ")) host_hz = (uint32_t)atoi(getenv("GRIMM_AUDIO_HZ"));
-    if (getenv("GRIMM_SETTINGS_IN")) {          /* (tests/clock_test.py: the settings an older Arctic Scream saved, as stored) */
-        FILE *f = fopen(getenv("GRIMM_SETTINGS_IN"), "rb");
+    if (getenv("ARCTIC_AUDIO_HZ")) host_hz = (uint32_t)atoi(getenv("ARCTIC_AUDIO_HZ"));
+    if (getenv("ARCTIC_SETTINGS_IN")) {          /* (tests/clock_test.py: the settings an older Arctic Scream saved, as stored) */
+        FILE *f = fopen(getenv("ARCTIC_SETTINGS_IN"), "rb");
         size_t n = f ? fread(host_store + 4, 1, 256, f) : 0;
-        if (!f || !n) { perror("GRIMM_SETTINGS_IN"); exit(1); }
+        if (!f || !n) { perror("ARCTIC_SETTINGS_IN"); exit(1); }
         fclose(f);
         host_store[0] = 1, host_store[1] = (uint8_t)n, host_store[2] = (uint8_t)(n >> 8);
     }
-    if (getenv("GRIMM_USB_REC")) sscanf(getenv("GRIMM_USB_REC"), "%u,%u", &host_rec_from, &host_rec_to);
-    host_feed = getenv("GRIMM_USB_FEED") != 0;
-    cpu_hot_force = getenv("GRIMM_CPU_HOT") != 0;
-    c1_sim = getenv("GRIMM_CPU2") != 0;         /* (2.2: the second core's way, a block behind) */
-    if (getenv("GRIMM_SAVE_IN")) {              /* (tests/compat.c: the save sectors an older Arctic Scream wrote) */
-        FILE *f = fopen(getenv("GRIMM_SAVE_IN"), "rb");
+    if (getenv("ARCTIC_USB_REC")) sscanf(getenv("ARCTIC_USB_REC"), "%u,%u", &host_rec_from, &host_rec_to);
+    host_feed = getenv("ARCTIC_USB_FEED") != 0;
+    cpu_hot_force = getenv("ARCTIC_CPU_HOT") != 0;
+    c1_sim = getenv("ARCTIC_CPU2") != 0;         /* (2.2: the second core's way, a block behind) */
+    if (getenv("ARCTIC_SAVE_IN")) {              /* (tests/compat.c: the save sectors an older Arctic Scream wrote) */
+        FILE *f = fopen(getenv("ARCTIC_SAVE_IN"), "rb");
         (void)save_flash(0);
-        if (!f || fread(fake_save, 1, sizeof fake_save, f) != sizeof fake_save) { perror("GRIMM_SAVE_IN"); exit(1); }
+        if (!f || fread(fake_save, 1, sizeof fake_save, f) != sizeof fake_save) { perror("ARCTIC_SAVE_IN"); exit(1); }
         fclose(f);
     }
     app_main();

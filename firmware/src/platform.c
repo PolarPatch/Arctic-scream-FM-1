@@ -15,7 +15,7 @@
  *   settings            one 4 KiB flash sector with a CRC (settings_load / settings_save)
  *   crash screen        the PC of a fault, then a reboot
  *
- * The app (grimm.c) includes this file first and supplies:
+ * The app (arctic.c) includes this file first and supplies:
  *   static void app_audio(int32_t *out, uint32_t n)   audio ISR: n stereo frames, L R L R, Q15 (+-32767), out is zero
  *   static void app_main(void)                        never returns; calls platform_poll() often (every few ms)
  */
@@ -29,7 +29,7 @@ enum { ENC_SELECT = 0, ENC_ALGORITHM = 1, ENC_KNOB1 = 2, ENC_KNOB2 = 3, ENC_KNOB
 static volatile uint32_t isr_in_audio;          /* the timer ISR's fm1_ticks inside the audio ISR, summed (
                                                  * the CPU meter's SCAN; on a computer 0) */
 /* MIDI realtime, the clock and START / CONTINUE / STOP. In from USB (usb.c) and the TRS jack (midi_uart.c),
- * each with its time (rt_now: 24 a us) and its source: the timer ISR writes, the audio ISR reads (grimm.c clk_ctl, a
+ * each with its time (rt_now: 24 a us) and its source: the timer ISR writes, the audio ISR reads (arctic.c clk_ctl, a
  * control block at a time, at the messages' time). Out (USB): the audio ISR's clock (CLOCK INT+OUT), each with the
  * time its sound plays; the timer ISR sends it then (rt_flush; on a computer: logged) */
 enum { RT_USB, RT_TRS };
@@ -57,12 +57,12 @@ static void rt_out(uint32_t st, uint32_t due)   /* audio ISR: a realtime byte ou
     ro_w = w + 1u;
 }
 
-#if defined GRIMM_WEB
+#if defined ARCTIC_WEB
 #include "../../web/fm1_web.c"                 /* in a browser: a fake FM-1 (web/fm1_web.c) */
 #elif defined DINGHY_HOST
 #include "../../tests/host.c"                  /* on a computer: a fake FM-1 (tests/host.c) */
 #elif defined FM1_PLATFORM_FILE
-#include FM1_PLATFORM_FILE                      /* another host's fake FM-1, named by the file that includes grimm.c
+#include FM1_PLATFORM_FILE                      /* another host's fake FM-1, named by the file that includes arctic.c
                                                  * (VIBE FM: Arctic Scream VIBE's port/fm1_vibe.c) */
 #else
 #include <stdint.h>

@@ -2,7 +2,7 @@
  * Copyright (C) 2026 GR!MM */
 /* Arctic Scream's screens, after the concept designs (docs/ui-concept, the .dc.html files, drawn there at 2x: here every size and place
  * halved). Plain pixels, five greys and one accent, the pixfont (Press Start 2P at its 8 px grid, SIL OFL 1.1:
- * firmware/gen/grimm_pixfont.h, tools/gen_pixfont.py) at 8 px and, for values and big numbers, 16 px.
+ * firmware/gen/arctic_pixfont.h, tools/gen_pixfont.py) at 8 px and, for values and big numbers, 16 px.
  *   the frame, every page: the header (the top 24 px: an accent block with the button, a dark bar with the page and the
  *   track on the left and the page's number or a state on the right); the picture (24 .. 164: that page's pixel art,
  *   on a grid of 54 x 30 cells of 4 px from (12, 40), a caption line at y 31); four slabs (165 .. 236), one a knob:
@@ -13,7 +13,7 @@
  * Drawn in regions (the header, the picture, each slab) into the canvas, a strip at a time (gfx.c: 240 x 64), and only
  * when what they show changes; the picture at most every UI_PIC_MS while a knob turns. Main loop only. */
 
-#include "grimm_pixfont.h"
+#include "arctic_pixfont.h"
 
 #define UI_K RGB(0x06, 0x04, 0x10)              /* the palette, arctic night (after PolarPatch BlueWatch's cyberpunk theme):
                                                  * black (the background), */
@@ -630,7 +630,7 @@ static void ui_glow_v(int32_t y0, int32_t dy, const int32_t *x, uint32_t n, uint
 }
 
 /* ---- HOME's moving picture (Main), a frame every UI_ANIM_MS while it is shown and the screen lit, from the main loop:
- * the arctic sky over four tracks, each its wave as it sounds (grimm.c's sc_buf: a capture from a rising zero, about two
+ * the arctic sky over four tracks, each its wave as it sounds (arctic.c's sc_buf: a capture from a rising zero, about two
  * cycles of its lowest note), in its colour, glowing; each new capture blended into the one drawn (~0.45), so a wave
  * drifts instead of jumping; a silent track's wave sinks back to a line. Muted, LEVEL 0: grey.
  *   stars: the sky's pixels, a few at a time brighten to light and fade back; more of them the louder it is */
@@ -2639,7 +2639,7 @@ static void ui_update(int32_t oct)
 /* ---- (2.2) GOVVA (North Sami: a picture, satni.uit.no), SCREEN OFF's last: after a minute untouched the whole screen
  * is the picture, moving (pictures.c's pic_anim_rows): JAHKI's season's while JAHKI is on (DEPTH up or SKY on; then
  * GUOVSSAHAS too shows the seasons, never the aurora), else the selected track's sound's; 2 x 2 pixels a cell, in the middle, black round it. Nothing over it, no text. A frame every UI_GOVVA_MS
- * (~11 a second: far lighter than GUOVSSAHAS, the music first); the first touch only wakes the screen (grimm.c). */
+ * (~11 a second: far lighter than GUOVSSAHAS, the music first); the first touch only wakes the screen (arctic.c). */
 #define UI_GOVVA_MS 90u
 #define GV_X ((240 - 2 * (int32_t)PIC_W) / 2)
 #define GV_Y ((240 - 2 * (int32_t)PIC_H) / 2)
@@ -2705,7 +2705,7 @@ static void ui_govva(uint32_t now)
  * height up the rays: HV), blurred (a box of 11 x 11: the sums across in a ring of 11 rows, their sums down run along
  * the screen) and shaded row by row: the night sky, the stars, the curtains' bands of colour, the strands of the
  * brightest rays, then the light over it all. All of it in cv_px (CV_MAX), the strip's canvas first. Main loop; the
- * first touch only wakes the screen (grimm.c). MONO: its dots, as every screen's */
+ * first touch only wakes the screen (arctic.c). MONO: its dots, as every screen's */
 #include "aurora_tables.h"
 #define UI_AUR_MS 33u                           /* (a frame at most every 33 ms: pixelfx's 30 a second) */
 #define AU_R 4u                                 /* a strip's rows */

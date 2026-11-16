@@ -32,7 +32,7 @@
  *   EXCITE     the track's sample (the SAMPLE source's SLOT, START and LENGTH, as recorded, looped) fed into the
  *              string: the howl grows out of a voice, a choir, drums; OFF: the noise alone wakes it
  * State: howl_t (howl.h) in the voice's PHYS slot; BODY's line in the voice's pool scratch (voices.c vx_pool, shared with
- * SAMPLE's windows); hw_press: the tracks' MIDI pressure (grimm.c, the MIDI in). */
+ * SAMPLE's windows); hw_press: the tracks' MIDI pressure (arctic.c, the MIDI in). */
 
 #define HW_KICK 2205u                           /* a note's burst: 50 ms */
 #define HW_NOISE 28                             /* the breath: >> this of the noise (~-90 dB) */
@@ -41,7 +41,7 @@ _Static_assert(HW_BL <= VX_POOL, "BODY's line fits in a voice's pool scratch");
 static uint8_t hw_press[NT];                    /* a track's MIDI pressure, 0 .. 127 (the main loop writes it) */
 #define HW_RN 256u                              /* (the render's frames: VB) */
 static int32_t hw_ret[HW_RN] __attribute__((section(".pool")));   /* BLOOM: the effects' return, mono, the last render's
-                                                 * (grimm.c app_audio) */
+                                                 * (arctic.c app_audio) */
 static uint8_t hw_bloom_on;                     /* (a HOWL track's BLOOM is up: app_audio keeps hw_ret) */
 typedef struct {                                /* EXCITE: a track's sample, read on as recorded (22.05 kHz, each sample
                                                  * twice), shared by the track's HOWL voices: CTL frames a control step */
