@@ -280,3 +280,22 @@ KB, the voices' scratch `vx_pool` 48 KB, GRAIN's `ge_buf` 44 KB, the screen `cv_
 When it gets tight (the user's choice): DELAY's line at half the sample rate (22 kHz, still 2.6 s; the echoes a little
 darker, above ~10 kHz gone): 58 KB of the pool back. Not now. The moving pictures cost ~6 KB of flash and ~70 B of
 RAM (the pictures themselves are there as stills anyway): kept.
+
+## From Tekstuur and fm1-base (noted 2026-11-16)
+
+### 23. The screen mirrored to a phone or tablet (fm1-base's protocol)
+
+The FM-1's screen is tiny. fm1-base (Charles Vestal, MPL-2.0, `../fm1-base` to read) mirrors any app's screen over
+USB-MIDI (`device/mirror.c`, `mirror = true`), and its firmwares (Tekstuur, CTL-1 and more) all speak the same protocol.
+Arctic Scream speaks it too, so POLAR SIGNAL's iPhone/iPad app (`../polar-signal/MIRROR-DEVELOPER.md`) shows every one
+of them with one decoder: SysEx in the update framing, cmd 0x50 on/off/refresh (a keep-alive within 6 s), 0x51 run-length
+RGB565 rectangles, 0x52 fills, 0x53 the panel's state and lights, 0x54 the panel played from the host. Written anew from
+the protocol, credited in `LICENSING.md`. Here the screen is `cv_px` (dirty rows are known), so the rows that changed go
+out from the main loop, never the audio ISR, after the notes and clock in the USB ring. Bluetooth MIDI (and the mirror
+over it) waits: fm1-base's BLE stack (Henri David's, from Optimist) is a far bigger step.
+
+### 24. EVOLVE: a point that blends the four tracks and wanders (after Tekstuur)
+
+Tekstuur's vector point mixes its four layers (a corner one layer, the middle all) and Evolve moves it by itself. Here:
+the four tracks' levels from one point that drifts slowly (DRONE-like rates, minutes), so the mix keeps finding new
+blends. Not built.
