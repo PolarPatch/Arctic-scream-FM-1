@@ -2390,7 +2390,7 @@ static void ui_pic_draw(void)                   /* the page's picture; (2.2) HEL
     ui_pic_draw0();
     if (help_up() && page != PG_HOME) {
         ui_rect(PX0, 151, 216, 12, UI_D);
-        ui_text(PX0 + 108 - 4 * ui_len(hl_txt), 153, hl_txt, 1, UI_W);
+        ui_text(PX0 + 108 - 4 * ui_len(hl_txt), 153, hl_txt, 1, hl_warn ? BW_PINK : UI_W);
     }
 }
 

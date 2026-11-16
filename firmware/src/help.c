@@ -5,8 +5,11 @@
  * in the small font); a knob without one says nothing. The SOUND page's by its source. ui.c draws it (ui_help_bar). */
 
 #define HL_MS 2500u                             /* how long a line stays */
+#define HISS_WARN 48                            /* TAPE's HISS from here: a warning, HELP on or off (~ -46 dB rms of
+                                                 * noise, and more once DRIVE, GRAIN, DELAY and SPACE pile it up) */
 static uint32_t hl_until;                       /* the line shown till then */
 static const char *hl_txt;
+static uint8_t hl_warn;                         /* the line is a warning (drawn in pink) */
 
 static const char *const HELP_TXT[NPAGE][4] = {
     [PG_ENV] = {"HOW EACH NOTE STARTS", "HOW FAST IT FALLS", "THE LEVEL IT HOLDS", "HOW IT DIES AWAY"},
@@ -40,10 +43,14 @@ static const char *help_sound(uint32_t e, uint32_t k)   /* the SOUND page's, by 
 static void help_knob(uint32_t pg, uint32_t k)  /* knob k + 1 turned on page pg: its line, if HELP is on */
 {
     const char *t;
+    if (pg == PG_TAPE && k == 3u && tf_hiss >= HISS_WARN) {   /* (a wall of noise: said even with HELP off) */
+        hl_txt = "HISS HIGH: A WALL OF NOISE", hl_warn = 1, hl_until = fm1_ms + HL_MS;
+        return;
+    }
     if (!help_on || pg >= NPAGE || k > 3u) return;
     t = pg == PG_SOUND ? help_sound(sel_eng(), k) : HELP_TXT[pg][k];
     if (!t) return;
-    hl_txt = t, hl_until = fm1_ms + HL_MS;
+    hl_txt = t, hl_warn = 0, hl_until = fm1_ms + HL_MS;
 }
 /* (2.2) the guide at the very first start (after HADAL-1's first steps, written anew): three pages, any key or button
  * the next, the last one gone. On the FM-1 only (the host's tests, the browser and VIBE have none: VIBE its welcome) */
