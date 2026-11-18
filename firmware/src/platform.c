@@ -78,6 +78,7 @@ static void rt_out(uint32_t st, uint32_t due)   /* audio ISR: a realtime byte ou
 #include "fm1_lcd_hw.h"
 #include "fm1_audio.h"
 #include "fm1_adc.h"
+#include "fm1_jack.h"
 #ifdef ARCTIC_PRESS_TEST
 #include "fm1_press.h"
 #endif
@@ -472,6 +473,7 @@ static void platform_poll(void)
     int32_t a;
     fm1_wdt_feed();
     usb_retry(fm1_ms);
+    fm1_jack_poll(fm1_ms);
     {                                           /* (the battery divider ~100 times a second: a supply that sags) */
         static uint32_t bt;
         if (fm1_ms - bt >= 10u) {
@@ -606,6 +608,7 @@ void fm1_cstart(void)
     lcd_fill(0, 0, 240, 240, C_BLACK);
     fm1_input_init();
     fm1_adc_init();
+    fm1_jack_init();                            /* (the headphone jack: SOUND AUTO) */
     {                                           /* (2.2) the second core: started before the audio and the timers,
                                                  * interrupts off (felucca-bsp's finding); a new build may try it again
                                                  * where an older one gave it up */

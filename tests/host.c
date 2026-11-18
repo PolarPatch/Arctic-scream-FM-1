@@ -242,6 +242,8 @@ static int32_t host_master = 4092;              /* the MASTER knob as the app re
                                                  * the way up, as the USB audio always was here; ARCTIC_MASTER: the knob
                                                  * 0 .. 1023 (squared, as platform.c) */
 static int32_t fm1_master(void) { return host_master; }
+static volatile int8_t fm1_jack = -1;           /* the headphone jack (SOUND AUTO): not read (the whole range, as before);
+                                                 * the script's "jack 1" headphones in, "jack 0" nothing plugged */
 static void app_main(void);
 
 /* the script: at t ms, keys down (bit k = key k, 0 = F3), a button edge, a MIDI message, an encoder turned. A script
@@ -252,7 +254,7 @@ static void app_main(void);
  * BPMx10 0: none from T), "T probe" (the clock's and the sequencer's state out: tests/probe.c) */
 typedef struct { uint32_t t, keys; int btn; uint8_t st, d1, d2; int enc, steps, kind, src; uint32_t a, b;
                  const uint8_t *sx; uint32_t sxn; } host_ev_t;
-enum { HK_PLAIN, HK_CLOCK, HK_PROBE };          /* (kind) */
+enum { HK_PLAIN, HK_CLOCK, HK_PROBE, HK_JACK };          /* (kind) */
 static void host_probe(void);                   /* (tests/probe.c) */
 #define CHORD1 (1u << 7 | 1u << 11 | 1u << 14)                  /* C E G (C4 .. G4 at OCTAVE +0) */
 #define CHORD2 (1u << 2 | 1u << 5 | 1u << 9)                   /* G Bb D (G3 .. D4) */
@@ -333,6 +335,7 @@ static void read_script(const char *path)
             sscanf(line, "%*u %*s %7s %u %u", s, &e.a, &e.b);
             e.kind = HK_CLOCK, e.src = s[0] == 't';
         } else if (!strcmp(what, "probe")) e.kind = HK_PROBE;
+        else if (!strcmp(what, "jack")) { sscanf(line, "%*u %*s %u", &e.a); e.kind = HK_JACK; }
         else continue;
         ev[n++] = e;
     }
@@ -493,6 +496,8 @@ static void platform_poll(void)                 /* one call = one millisecond */
         } else if (script[step].kind == HK_CLOCK) {
             hg.t0 = (uint64_t)script[step].t * 24000u, hg.k = 0, hg.bpm10 = script[step].a;
             hg.end = script[step].t + script[step].b, hg.src = (uint32_t)script[step].src;
+        } else if (script[step].kind == HK_JACK) {
+            fm1_jack = (int8_t)(script[step].a != 0);
         } else if (script[step].kind == HK_PROBE) {
             host_probe();
             if (host_feed) printf("usbpk %u %d\n", fm1_ms, (int)host_usb_pk), host_usb_pk = 0;

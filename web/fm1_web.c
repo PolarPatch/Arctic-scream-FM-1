@@ -280,6 +280,7 @@ EXPORT void web_buttons(uint32_t mask)
     fm1_in.buttons = mask;
 }
 EXPORT void web_enc(uint32_t e, int32_t n) { if (e < 7u) web_enc_steps[e] += n; }
+static volatile int8_t fm1_jack = -1;           /* (the browser: a computer's output, as headphones: SOUND AUTO) */
 static int32_t fm1_master(void) { return web_master_q12; }   /* (the app's output stage asks) */
 EXPORT void web_master(uint32_t v) { web_knob = (int32_t)(v > 1023u ? 1023u : v); }
 EXPORT void web_midi(uint32_t st, uint32_t d1, uint32_t d2)

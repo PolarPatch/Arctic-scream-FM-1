@@ -64,6 +64,8 @@ python3 tests/drone_test.py build/host/arctic
 python3 tests/latch_test.py build/host/arctic
 # GENERATE (FX held + the black keys): in the SCALE, the pattern unheard and unchanged (tests/gen_test.py)
 python3 tests/gen_test.py build/host/arctic
+# (2.1.2) SOUND AUTO: the headphone jack says speaker or headphones (tests/jack_test.py)
+python3 tests/jack_test.py build/host/arctic
 # the gain staging: no clip at any MASTER, SPACE and DELAY under their knee (tests/level_test.py)
 python3 tests/level_test.py build/host/arctic
 # the USB audio ring (firmware/src/uac_ring.h) in time: no dropout at any CPU load

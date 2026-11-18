@@ -366,8 +366,8 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         put_s(S->val, k == 2u ? (v ? SMP_FACT_N ? "RESTORE" : "CLEAR" : "KEEP") : k ? (v ? "ON" : "OFF") :
               v == LEARN_CLEAR ? "CLEAR" : LEARN_NAME[clamp(v, 0, 2)]);
         return;
-    case PG_SYS4:                               /* (2.2) SOUND: "PHONES", "SPKR"; HELP: ON, OFF */
-        put_s(S->val, k == 0u ? (v ? "SPKR" : "PHONES") : v ? "ON" : "OFF");
+    case PG_SYS4:                               /* (2.2) SOUND: (2.1.2) "AUTO", "PHONES", "SPKR"; HELP: ON, OFF */
+        put_s(S->val, k == 0u ? (v == 2 ? "SPKR" : v ? "PHONES" : "AUTO") : v ? "ON" : "OFF");
         return;
     case PG_SYS3:                               /* LATCH: FROM SOUND, ALWAYS OFF; USB LEVEL: -12DB .. +24DB;
                                                  * (1.5.2) MOD OUT: OFF, ON */
@@ -2300,8 +2300,8 @@ static void sys3_row(int32_t y, const char *l, const char *v)
 static void pic_sys4(void)                      /* (2.2) SYSTEM 4: SOUND (the speaker's curve), HELP */
 {
     ui_caption("SOUND, HELP", 0);
-    sys3_row(40, "SOUND", spk_mode ? "SPEAKER" : "HEADPHONES");
-    ui_text(PX0 + 6, 57, spk_mode ? "LOWS OFF, LOW MIDS UP" : "THE WHOLE RANGE", 1, UI_M);
+    sys3_row(40, "SOUND", spk_mode == 2u ? "SPEAKER" : spk_mode ? "HEADPHONES" : SPK_ON() ? "AUTO: SPEAKER" : "AUTO: PHONES");
+    ui_text(PX0 + 6, 57, SPK_ON() ? "LOWS OFF, LOW MIDS UP" : "THE WHOLE RANGE", 1, UI_M);
     ui_text(PX0 + 6, 68, "USB AS EVER", 1, UI_M);
     sys3_row(82, "HELP", help_on ? "ON" : "OFF");
     ui_text(PX0 + 6, 99, help_on ? "A KNOB TURNED SAYS WHAT IT DOES" : "NO HELP LINES", 1, UI_M);
@@ -2443,7 +2443,7 @@ static uint32_t ui_pic_key(void)
             UI_H(tracks_latched()), UI_H(playing);
     if (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3 || page == PG_SYS4) {   /* the settings, the links */
         UI_H(set.col), UI_H(set.mch), UI_H(set.tune), UI_H(set.scr), UI_H(set.out), UI_H(set.nlk), UI_H(set.latch), UI_H(set.usb);
-        UI_H(set.sys4);
+        UI_H(set.sys4), UI_H(SPK_ON());          /* (2.1.2: AUTO's speaker or headphones, as the jack says) */
         for (k = 0; k < NLINK * 5u; k++) UI_H(set.lk[k / 5u][k % 5u]);
     }
     if (PAGES[page].btn == BTN_SEQ) {           /* the pattern, its settings, the cursor, the step playing */

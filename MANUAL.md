@@ -691,7 +691,7 @@ FM-1, not the project.
 | SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA, MONO) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF |
 | SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES | CLOCK (INT, I+OUT, USB, TRS) |
 | SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB, and each with SPK OFF) | MOD OUT (OFF, ON) | PICTURE (CARD, SKY, OFF) |
-| SYSTEM 4 (new in 2.1) | SOUND (HEADPHONES, SPEAKER) | HELP (ON, OFF) | | |
+| SYSTEM 4 (new in 2.1) | SOUND (AUTO, HEADPHONES, SPEAKER) | HELP (ON, OFF) | | |
 
 - **COLOUR:** pick the one that matches your FM-1. **MONO** (new in 2.0) turns the whole screen black and white, the
   greys as a fine pattern of dots, as on an old one-bit screen. The header stays clean so the sound's name reads.
@@ -730,9 +730,11 @@ FM-1, not the project.
 - **PICTURE** (SYSTEM 3, new in 2.1): `CARD`, a sound's picture on HOME a moment while PRESETS turns; `SKY`, the
   selected track's picture as HOME's sky, dimmed under the waves; `OFF`. Saved with the project.
 - **SYSTEM 4** (new in 2.1: **HOME once more** after SYSTEM 3):
-  - **SOUND:** `HEADPHONES` (the whole range, as before) or `SPEAKER`, a curve for the FM-1's little speaker: the
-    deepest lows it cannot play taken away (they only make it rattle and eat the loudness), the low mids lifted a little
-    so a drone still sounds deep. It shapes the speaker and the headphone jack, never the USB sound.
+  - **SOUND:** `SPEAKER` is a curve for the FM-1's little speaker: the deepest lows it cannot play taken away (they
+    only make it rattle and eat the loudness), the low mids lifted a little so a drone still sounds deep. `HEADPHONES`
+    is the whole range. `AUTO` (new in 2.1.2, the start) lets the headphone jack decide: the speaker's curve with
+    nothing plugged in, the whole range as soon as headphones or a cable go in. The page shows which one AUTO picked.
+    It shapes the speaker and the headphone jack, never the USB sound.
   - **HELP:** `ON` (the start) shows a short line under the picture for a moment when you turn a knob, saying what it
     does ("EACH NOTE WAITS THIS LONG"). `OFF` for none.
 - **The guide (new in 2.1):** the very first time Arctic Scream starts, three short pages show the first steps. Any key

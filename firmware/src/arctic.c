@@ -482,7 +482,10 @@ static int32_t spk_g = 4096;                    /* (2.2) the speaker's and the j
  * hush_n: saves going on (they nest); hush_z: silent frames rendered since */
 static volatile uint32_t hush_n, hush_z;
 static int32_t hush_g = 4096;
-static volatile uint8_t spk_mode, help_on = 1;  /* (2.2) SYSTEM 4: SOUND SPEAKER; HELP (ui.c) */
+static volatile uint8_t spk_mode, help_on = 1;  /* (2.2) SYSTEM 4: SOUND (0 AUTO, 1 HEADPHONES, 2 SPEAKER); HELP (ui.c) */
+/* (2.1.2) SOUND AUTO: the jack says (fm1_jack.h, after ZENITH-1's): the speaker's curve with nothing plugged in, the
+ * whole range with headphones (and before the jack is read, and in the browser) */
+#define SPK_ON() (spk_mode == 2u || (!spk_mode && fm1_jack == 0))
 /* (2.2, after HADAL-1's SOUND MODE, Polystellarflow's: written anew) SOUND SPEAKER: the speaker and the jack (never the
  * USB) through a curve for the FM-1's little speaker: the lows it cannot play taken away (a one-pole high-pass, ~110
  * Hz: they only rattle it and eat the headroom), the low mids lifted a little (~200 .. 450 Hz, about +3 dB: a drone
@@ -543,13 +546,13 @@ static void out_stage(int32_t *out, uint32_t n)
 {
     int32_t g = out_gain(), env = out_env, ue = usb_env, ug = USB_G[usb_lvl <= USB_KMAX ? usb_lv(usb_lvl) : USB_L0], u[64];
     int32_t se = side_env, sg = spk_g, st, hg = hush_g, ht = hush_n ? 0 : 4096;
-    uint32_t i, rec = (uint32_t)usb_feeding();
+    uint32_t i, rec = (uint32_t)usb_feeding(), spk = SPK_ON();
     st = rec && usb_lvl > USB_LMAX && usb_lvl <= USB_KMAX ? 0 : 4096;   /* (2.2: SPK OFF while the computer takes it) */
     for (i = 0; i < n; i++) {
         int32_t x = clamp(out[2u * i], -500000, 500000), y = clamp(out[2u * i + 1u], -500000, 500000);
         int32_t l = (x * g) >> 12, r = (y * g) >> 12;
         side_lim(&l, &r, &se);
-        if (sm_g != (spk_mode ? 4096 : 0)) sm_g += spk_mode ? 2 : -2;   /* (2.2: SOUND SPEAKER, ~50 ms) */
+        if (sm_g != (spk ? 4096 : 0)) sm_g += spk ? 2 : -2;   /* (2.2: SOUND SPEAKER, ~50 ms) */
         if (sm_g) l = spk_eq(l, 0), r = spk_eq(r, 1);
         out_lim(&l, &r, &env);
         if (hg != ht) hg = ht ? (hg + 2 > 4096 ? 4096 : hg + 2) : (hg - 16 < 0 ? 0 : hg - 16);   /* (a save: hushed) */
@@ -1213,12 +1216,13 @@ static struct {
                                                  * -12 .. +24 dB; USB_L0 (0 dB) before; (2.2) 7 .. 13 the same, SPK
                                                  * OFF (USB_KMAX) */
     uint8_t mod;                                /* (1.5.2, SET_VER 5) SYSTEM 3's MOD OUT: 0 OFF (before), 1 ON */
-    uint8_t sys4;                               /* (2.2, SET_VER 6) SYSTEM 4: bit 0 SOUND SPEAKER (0 HEADPHONES, before),
-                                                 * bit 1 HELP OFF (0 ON) */
+    uint8_t sys4;                               /* (2.2, SET_VER 6) SYSTEM 4: bit 0 SOUND SPEAKER, bit 1 HELP OFF (0 ON),
+                                                 * (2.1.2) bit 2 SOUND HEADPHONES; neither: AUTO (2.2's HEADPHONES, before) */
 } set;
 #define SET_VER 6u
 static uint32_t set_dirty, set_t;               /* the settings changed, when */
-static volatile int32_t sy_snd, sy_help;       /* (2.2) SYSTEM 4's knobs: SOUND (1 SPEAKER), HELP (1 ON) */
+static volatile int32_t sy_snd, sy_help;       /* (2.2) SYSTEM 4's knobs: SOUND (0 AUTO, 1 HEADPHONES, 2 SPEAKER), HELP (1 ON) */
+#define SYS4_SND(s4) ((s4) & 1u ? 2 : (s4) & 4u ? 1 : 0)   /* (sys4's SOUND as the knob's) */
 static volatile int32_t sy_col, sy_mch, sy_tune, sy_scr, sy_learn, sy_out, sy_fac, sy_clk, sy_latch, sy_usb, sy_mod;   /* SYSTEM's,
                                                  * SYSTEM 2's, SYSTEM 3's knobs (sy_fac: SAMPLES, 1 RESTORE: OCT+
                                                  * writes the factory ones) */
@@ -1501,7 +1505,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_ENV2 ? (k == 0u ? NELOOP - 1 : 100) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : NSCR - 1) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
-           pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_KMAX : k == 3u ? NPC - 1 : 1) : pg == PG_SYS4 ? 1 :
+           pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_KMAX : k == 3u ? NPC - 1 : 1) : pg == PG_SYS4 ? (k ? 1 : 2) :
            pg == PG_FMALGO ? (k == 0u ? 31 : k == 1u ? 7 : k == 2u ? 5 : 99) :
            pg == PG_FMOP ? (k ? 99 : 31) : pg == PG_MIX2 ? (k == 1u ? NFTYPE - 1 : k == 2u ? 1 : 127) :
            pg == PG_MASTER ? (k == 2u ? NFTYPE - 1 : k == 3u ? NMPOS - 1 : 127) :
@@ -1642,7 +1646,7 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
         else put_s(s, v >= JK_ALWAYS ? "ALWAYS" : v ? "ON" : "OFF");   /* (2.2: ALWAYS) */
         return;
     case PG_SYS4:                               /* (2.2) SOUND, HELP */
-        put_s(s, k == 0u ? (v ? "SPEAKER" : "HEADPHONES") : v ? "ON" : "OFF");
+        put_s(s, k == 0u ? (v == 2 ? "SPEAKER" : v ? "HEADPHONES" : "AUTO") : v ? "ON" : "OFF");
         return;
     case PG_SYS3:                               /* (2.1: its PICTURE; the others as the slabs say them, ui.c) */
         if (k == 3u) { put_s(s, PC_NAME[clamp(v, 0, NPC - 1)]); return; }
@@ -2192,7 +2196,7 @@ static void sys_sync(void)
     uint8_t col = (uint8_t)clamp(sy_col, 0, 4), mch = (uint8_t)clamp(sy_mch, 0, MCH_MAX), scr = (uint8_t)clamp(sy_scr, 0, NSCR - 1);
     uint8_t out = (uint8_t)clamp(sy_out, 0, 1), clk = (uint8_t)clamp(sy_clk, 0, CK_N - 1), la = (uint8_t)clamp(sy_latch, 0, 1);
     uint8_t ul = (uint8_t)clamp(sy_usb, 0, (int32_t)USB_KMAX), md = (uint8_t)clamp(sy_mod, 0, 1);
-    uint8_t s4 = (uint8_t)((sy_snd ? 1u : 0u) | (sy_help ? 0u : 2u));
+    uint8_t s4 = (uint8_t)((sy_snd == 2 ? 1u : sy_snd == 1 ? 4u : 0u) | (sy_help ? 0u : 2u));
     uint32_t n, t;
     if (mch != set.mch || (set.out && !out)) mo_flush = 1;
     if (mch != set.mch)
@@ -2212,7 +2216,7 @@ static void sys_sync(void)
     ui_acc_user = UI_ACCENTS[set.col & 3u], cv_mono = set.col == 4u;   /* (MONO: ICE's accent, all of it black and white) */
     tune_f = (set.tune * 23666 + set.tune * set.tune * 7) / 10000;   /* (2^(c / 1200) - 1, x 4096) */
     mo_seq = set.out, snd_latch_off = set.latch, usb_lvl = set.usb;
-    spk_mode = set.sys4 & 1u, help_on = !(set.sys4 & 2u);   /* (2.2: SYSTEM 4) */
+    spk_mode = (uint8_t)SYS4_SND(set.sys4), help_on = !(set.sys4 & 2u);   /* (2.2: SYSTEM 4) */
 }
 static void sys_load(void)                      /* the settings at power-on into SYSTEM's knobs (version 19's: the
                                                  * octave alone; steps 20..24's: no ver, their links to HOME's T1..T4
@@ -2246,12 +2250,12 @@ static void sys_load(void)                      /* the settings at power-on into
     if (set.latch > 1u) set.latch = 0;
     if (set.usb > USB_KMAX) set.usb = USB_L0;   /* (2.2: 7 .. 13 SPK OFF; 2.1 and before read them as 0 dB) */
     if (set.mod > 1u) set.mod = 0;
-    if (set.sys4 > 3u) set.sys4 = 0;
+    if (set.sys4 > 7u || (set.sys4 & 5u) == 5u) set.sys4 = 0;
     if (set.oct < -2 || set.oct > 2) set.oct = 0;
     if (set.nlk > NLINK) set.nlk = 0;
     sy_col = set.col, sy_mch = set.mch, sy_tune = set.tune, sy_scr = set.scr, sy_out = set.out, sy_clk = set.clk;
     sy_latch = set.latch, sy_usb = set.usb, sy_mod = set.mod;
-    sy_snd = set.sys4 & 1u, sy_help = !(set.sys4 & 2u);
+    sy_snd = SYS4_SND(set.sys4), sy_help = !(set.sys4 & 2u);
     sys_sync();
     set_dirty = 0;
     if (!set.ver)                               /* (steps 20..24's; V1.0's are version 1: as they are) */
