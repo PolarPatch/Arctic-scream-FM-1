@@ -714,8 +714,9 @@ static uint8_t midi_held[128];                  /* .. the tracks a MIDI note hol
 static uint16_t echo_on[128];                   /* main loop: the notes on out there over USB-MIDI (bit: the channel),
                                                  * sent and not yet off */
 
-enum { NQ_ON, NQ_OFF, NQ_TOGGLE, NQ_RELEASE, NQ_RESTART, NQ_PLAY, NQ_STOP, NQ_SONG };   /* (PLAY, SONG: the slot in
-                                                 * use as the note; SONG: song record starts (id 1) or ends (0)) */
+enum { NQ_ON, NQ_OFF, NQ_TOGGLE, NQ_RELEASE, NQ_RESTART, NQ_PLAY, NQ_STOP, NQ_SONG, NQ_SHON, NQ_SHOFF };   /* (PLAY,
+                                                 * SONG: the slot in use as the note; SONG: song record starts (id 1)
+                                                 * or ends (0); 2.1.2: SHON, SHOFF, a ONE-SHOT's note, shot.c) */
 #define NQ_LEN 64u
 #define NQ_ECHO 0x80u                           /* (with a command: echo it over USB-MIDI) */
 static volatile uint32_t nq[NQ_LEN];            /* an ask in one word (one store: never seen half-written): the
@@ -1144,6 +1145,14 @@ static void ctl_hook(void)
             if (ck_ext || ck_mode == CK_OUT) ck_slot = note & 3u, ck.go = 1, ck.cont = 0;
             else seq_start(note & 3u);
             break;
+        case NQ_SHON:                           /* (2.1.2) a ONE-SHOT's note: its velocity, the note alone, as
+                                                 * GENERATE's notes take voices (shot.c) */
+            gen_vel = id_vel[id], gen_atk = 1;  /* (the quickest attack: a gesture's notes speak at once, whatever
+                                                 * the track's ATTACK) */
+            note_on(t, id, note, SRC_GEN, 0, 0);
+            gen_vel = gen_atk = 0;
+            break;
+        case NQ_SHOFF: note_off(t, id, SRC_GEN, 0); break;
         case NQ_SONG:                           /* song record, playing: from now, or ended */
             if (id) song_rec_begin(note & 3u);
             else song_stop();
@@ -1946,6 +1955,7 @@ static void presets_turn(int32_t d)
     hd_say(m);
     pic_card(sel);                              /* (2.1) its picture on HOME a moment */
 }
+#include "shot.c"                               /* (2.1.2) ONE-SHOTS: GLO held + the keys it leaves free */
 #include "help.c"                               /* (2.2) HELP: what a knob does, a line for a moment */
 #include "ui.c"                                 /* the screens (after the concept designs) */
 #include "reader.c"                             /* (1.5) the screen reader: what the screen shows, said */
@@ -2695,6 +2705,7 @@ static void app_step(void)                      /* one pass of the main loop: on
     int32_t d;
     platform_poll();
     tch_tracks();
+    shot_poll(fm1_ms);                          /* (2.1.2: ONE-SHOTS) */
     if (fm1_in.notes != prev || fm1_in.buttons) t_touch = t_hand = fm1_ms;   /* (the autosave waits for the hands
                                              * to rest; SCREEN OFF counts from their last touch) */
 
@@ -2890,6 +2901,7 @@ static void app_step(void)                      /* one pass of the main loop: on
                 ;
             if (w < 4u) trk_mute ^= 1u << w;
             else if (w < 8u) trk_solo ^= 1u << (w - 4u);
+            else shot_key(k);                   /* (2.1.2: the other keys, ONE-SHOTS) */
             b_used |= 1u << BTN_GLO;
             continue;
         }
@@ -3046,8 +3058,11 @@ static void app_step(void)                      /* one pass of the main loop: on
         for (k = 0; k < 8u; k++) lit |= 1u << WK[k] | 1u << WK2[k];
     if (b_down >> BTN_EDIT & 1u)                /* (2.0: EDIT held: ACCIDENT's three) */
         for (k = 5; k < 8u; k++) lit |= 1u << WK2[k];
-    if (glo_held)                               /* (GLO held: keys 1..4 lit for the tracks muted, 5..8 soloed) */
+    if (glo_held) {                             /* (GLO held: keys 1..4 lit for the tracks muted, 5..8 soloed; 2.1.2:
+                                             * the ONE-SHOT playing) */
         for (lit = 0, k = 0; k < 4u; k++) lit |= (trk_mute >> k & 1u) << WK[k] | (trk_solo >> k & 1u) << WK[4u + k];
+        if (sh_now >= 0) lit |= 1u << SHOT_KEY[sh_now];
+    }
     if (save_held)                              /* (SAVE held: keys 1..4 lit for the slots used) */
         for (lit = 0, k = 0; k < 4u; k++) lit |= (uint32_t)slot_used(k) << WK[k];
     if (b_down >> BTN_FX & 1u) {                /* (FX held: the eight tricks' keys glow; one on: lit; V2: GENERATE's
@@ -3063,7 +3078,8 @@ static void app_step(void)                      /* one pass of the main loop: on
         for (bk = 0; bk < 8u && BK[bk] != k; bk++)
             ;
         fm1_led_key(KEY_LED(k), lit >> k & 1u);
-        fm1_led_glow(KEY_LED(k), (wk < 8u || bk < 8u) && (b_down >> BTN_FX & 1u));
+        fm1_led_glow(KEY_LED(k), ((wk < 8u || bk < 8u) && (b_down >> BTN_FX & 1u)) || (glo_held && wk == 8u));   /* (2.1.2:
+                                             * GLO held, the ONE-SHOTS' keys glow) */
     }
     fm1_led_key(BTN_OCT_DOWN, set.oct < 0);
     fm1_led_key(BTN_OCT_UP, set.oct > 0);

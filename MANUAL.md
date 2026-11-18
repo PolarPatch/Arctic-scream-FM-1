@@ -573,6 +573,17 @@ Name them in the [editor](#14--the-editor-and-the-demo) (up to 10 characters).
 - **MODE:** OFF (PLAY loops the slot), SONG (once), SONG LOOP.
 - **Record a song:** on SONG press **REC**, then **PLAY**, and switch slots with SAVE + keys 1–4.
 - **Hold GLO + keys 1–4** mutes T1–T4, **keys 5–8** solos them.
+- **ONE-SHOTS** (new in 2.1.2): hold **GLO** and press any of the other 19 keys, the five black keys among white keys
+  1–8 and every key above white key 8. A short musical gesture plays once over whatever is going on, then fades by
+  itself: 1 to 8 seconds. While GLO is held these keys glow, and the one playing is lit. It plays on the selected
+  track with that track's own sound, in the SCALE from its ROOT (MINOR PENTATONIC when SCALE is OFF), around C4, and
+  OCT moves it. On a SAMPLE track it plays your sample. Its notes speak at once, whatever the track's ATTACK, and each
+  has a velocity of its own. One plays at a time: a new one takes the old one's place. From the lowest key up:
+  SNOWFALL (soft high notes drifting down), STRUM (down from high, then again softer), RISE, CASCADE, ARP (up and
+  down the triad at the tempo), RAINDROPS, ECHO NOTE (one note echoing in time), FIFTHS, TWINKLE, UNFOLD (the triad a
+  note at a time, ringing on), GLIMMER (the triad, then higher, and higher), CALL AND REPLY, METEOR (a streak up three
+  octaves), BOUNCE (a note bouncing like a ball), TRILL (slowing down), LULLABY, PEAL (bells changing their order),
+  HARP and CHIMES.
 
 <br clear="right">
 

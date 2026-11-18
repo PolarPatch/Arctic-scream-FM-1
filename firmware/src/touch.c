@@ -45,8 +45,8 @@ static volatile struct {                        /* the ISR's */
 } tt_k[TT_NA];
 static volatile struct { uint16_t base16, peak; uint8_t n, down; } tt_p[7];   /* the top row's probe */
 static volatile uint8_t tch_mode;               /* TOUCH: TCH_ (main loop; sys_sync) */
-static volatile uint8_t id_vel[160];            /* a note's velocity as a voice's level (tch_gain), by its origin id:
-                                                 * KEY_ID 0 .. 26, MIDI_ID 32 .. 159 (the main loop writes it before
+static volatile uint8_t id_vel[256];            /* a note's velocity as a voice's level (tch_gain), by its origin id:
+                                                 * KEY_ID 0 .. 26, MIDI_ID 32 .. 159, (shot.c) 208 .. 223 (the main loop writes it before
                                                  * the ask; key_ask takes it) */
 static uint32_t tch_shown, tch_wait;            /* main loop: the keys tch_keys shows down; those waiting */
 static uint32_t tch_t0[27];
@@ -179,7 +179,7 @@ static uint32_t tch_keys(uint32_t raw, uint32_t ms)
     return show;
 }
 /* a velocity as a voice's level (vc_vel's: x / 256, 0 full): 24 dB from 127 to 1 */
-static uint8_t tch_gain(uint32_t vel)
+static uint8_t vel_gain(uint32_t vel)
 {
     static const uint8_t VG[128] = {16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 20, 20, 21, 21, 21, 22, 22, 23, 23, 24,
         25, 25, 26, 26, 27, 27, 28, 29, 29, 30, 31, 31, 32, 33, 33, 34, 35, 36, 36, 37, 38, 39, 40, 41, 41, 42, 43, 44,
@@ -187,8 +187,9 @@ static uint8_t tch_gain(uint32_t vel)
         84, 86, 87, 89, 91, 93, 95, 98, 100, 102, 104, 106, 109, 111, 114, 116, 119, 121, 124, 127, 130, 133, 136, 139,
         142, 145, 148, 151, 155, 158, 162, 165, 169, 173, 176, 180, 184, 188, 192, 197, 201, 206, 210, 215, 220, 224,
         229, 235, 240, 245, 250, 0};
-    return tch_mode == TCH_OFF ? 0u : VG[vel > 127u ? 127u : vel];
+    return VG[vel > 127u ? 127u : vel];
 }
+static uint8_t tch_gain(uint32_t vel) { return tch_mode == TCH_OFF ? 0u : vel_gain(vel); }   /* (TOUCH off: full) */
 /* every main-loop pass: each held key's pressure, every 5 ms */
 static void tch_update(uint32_t ms)
 {
