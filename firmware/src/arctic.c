@@ -2658,11 +2658,40 @@ static void app_start(void)                     /* once, at power-on: the saves,
 static volatile uint32_t ui_force_n;
 #endif
 
+#if defined ARCTIC_PRESS_TEST && !defined DINGHY_HOST && !defined ARCTIC_WEB && !defined FM1_PLATFORM_FILE
+static void press_show(void)                    /* (a test, hal/fm1_press.h) the header: the key held last (1 = F3),
+                                                 * its reading now and the lowest since it went down (lower: harder) */
+{
+    static int16_t lo[27];
+    static uint32_t last, t, was;
+    uint32_t k, now = fm1_in.notes;
+    int32_t v;
+    char *e;
+    for (k = 0; k < 27u; k++) {
+        v = fm1_press_raw[k];
+        if (v < 0) lo[k] = 1024;
+        else if (v < lo[k]) lo[k] = (int16_t)v;
+        if ((now & ~was) >> k & 1u) last = k;   /* (the key just gone down) */
+    }
+    was = now;
+    if (fm1_ms - t < 100u || !(now >> last & 1u)) return;
+    t = fm1_ms;
+    v = fm1_press_raw[last];
+    e = put_u(put_s(hd_msg, "KEY "), last + 1u);
+    if (last >= 20u) e = put_s(e, " NO PRESSURE");
+    else if (v < 0) e = put_s(e, " ...");
+    else e = put_u(put_s(put_u(put_s(e, " "), (uint32_t)v), " LO "), (uint32_t)lo[last]);
+    hd_until = fm1_ms + 400u;
+}
+#endif
 static void app_step(void)                      /* one pass of the main loop: one millisecond (platform_poll) */
 {
     uint32_t k, keys, down, up, rel, b, n, lit = 0, base = (uint32_t)(KEY0 + 12 * set.oct);
     int32_t d;
     platform_poll();
+#if defined ARCTIC_PRESS_TEST && !defined DINGHY_HOST && !defined ARCTIC_WEB && !defined FM1_PLATFORM_FILE
+    press_show();
+#endif
     if (fm1_in.notes != prev || fm1_in.buttons) t_touch = t_hand = fm1_ms;   /* (the autosave waits for the hands
                                              * to rest; SCREEN OFF counts from their last touch) */
 
