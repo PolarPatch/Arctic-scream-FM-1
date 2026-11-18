@@ -77,7 +77,8 @@ static void fm1__tch_go(uint32_t ch)
     if (FM1_WLA_CON0 & (1u << 14))
         FM1_WLA_CON0 &= ~(1u << 14);
     FM1_ADC_CON = (FM1_TCH_CON & 0xF00Fu) | 0x40u | ((ch & 0xFu) << 8);
-    FM1_ADC_CON |= 0x10u;
+    FM1_ADC_CON |= 0x10u;                       /* (enabled,) */
+    FM1_ADC_CON |= 0x40u;                       /* (then started: without it, never done) */
     fm1_adc_isr = 1;
 }
 

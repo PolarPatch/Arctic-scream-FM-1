@@ -42,6 +42,7 @@ enum { TCH_OFF, TCH_VEL, TCH_PRESS };           /* SYSTEM 4's TOUCH */
 static volatile struct {                        /* the ISR's */
     uint8_t st, dnext, nd, up, ready;
     uint16_t d, dmin, vel_d;                    /* driven: the last, the lowest since the touch, the velocity's */
+    uint16_t v;                                 /* the last pulled-up reading (SYSTEM 4's test line) */
 } tt_k[TT_NA];
 static volatile struct { uint16_t base16, peak; uint8_t n, down; } tt_p[7];   /* the top row's probe */
 static volatile uint8_t tch_mode;               /* TOUCH: TCH_ (main loop; sys_sync) */
@@ -69,6 +70,7 @@ static void tch_sample(uint32_t k, uint32_t v, uint32_t driven)
         if (tt_k[k].nd < 255u && ++tt_k[k].nd == TT_WAIT) tt_k[k].vel_d = tt_k[k].dmin, tt_k[k].ready = 1;
         return;
     }
+    tt_k[k].v = (uint16_t)v;
     switch (tt_k[k].st) {
     case TS_OPEN:
         if (v < TT_TOUCH) tt_k[k].st = TS_TOUCH, tt_k[k].dmin = 1023, tt_k[k].nd = 0, tt_k[k].ready = 0;
