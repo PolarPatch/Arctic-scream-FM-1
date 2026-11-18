@@ -373,7 +373,8 @@ static __attribute__((noinline)) void fm6_op_fb(int32_t *out, int32_t phase, int
 
 /* msfa FmCore::render: the six operators of algorithm alg into out (Q24). Unlike msfa, out starts empty:
  * the first carrier sounding writes it, the next ones add. Returns 0 when none sounded (out untouched) */
-static int32_t fm6_bus[2][FM6_N];
+static int32_t fm6_bus_c[2][2][FM6_N];          /* (2.2: each core its own: voices.c VC_CORE) */
+#define fm6_bus (fm6_bus_c[VC_CORE()])
 static int fm6_core_render(int32_t *out, fm6_op_t *op, uint32_t alg, int32_t *fb, int32_t fb_shift)
 {
     const uint8_t *a = FM6_ALG[alg & 31u];

@@ -120,6 +120,8 @@ static void fm_track(uint32_t t, const volatile int32_t *e)
     fm_trk[t].ld = fm6_lfo_delay(&fm_trk[t].lfo);
 }
 
+static void fm_prep(voice_t *v, const volatile int32_t *e) { fm_track(v->trk, e); }   /* (2.2: voices_render, first) */
+
 static void fm_begin(voice_t *v)                /* a note from silence (eng_fm6.c fm6_note_on) */
 {
     uint32_t t = v->trk;
@@ -214,4 +216,4 @@ static void fm_text(const volatile int32_t *e, uint32_t k, char *s)   /* paramet
 }
 
 static const engine_t FM_ENGINE = {"FM", {"PATCH", "BRIGHT", "DECAY", "DETUNE"}, {FM_NPATCH - 1, 127, 127, 127},
-                                   fm_begin, fm_block, fm_text};
+                                   fm_begin, fm_block, fm_text, fm_prep};

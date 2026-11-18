@@ -163,6 +163,8 @@ static uint32_t stk_irq(void) { return 0u; }
 #define STK_IRQ_SZ 0u
 static uint32_t host_rec_from = 1, host_rec_to;   /* (ARCTIC_USB_REC=FROM,TO: a computer reads the USB audio from FROM to TO ms) */
 static int usb_recording(void) { return fm1_ms >= host_rec_from && fm1_ms < host_rec_to; }
+static uint32_t host_vsteps[2];                 /* (2.2: voices.c, ARCTIC_CPU2: the voices' control steps rendered on
+                                                 * this core, on the second: said at the end) */
 static uint32_t c1_sim;                         /* (2.2: ARCTIC_CPU2=1: arctic.c's SPACE as on the second core, a block
                                                  * behind) */
 static uint32_t cpu_hot_force;                  /* (2.2: ARCTIC_CPU_HOT=1: arctic.c's CPU guard as if the blocks ran hot) */
@@ -559,6 +561,8 @@ static void platform_poll(void)                 /* one call = one millisecond */
         if (ho.n)
             printf("clock  out: %u pulses, %u.%03u .. %u.%03u ms apart\n", ho.n, ho.lo / 24000u, ho.lo / 24u % 1000u,
                    ho.hi / 24000u, ho.hi / 24u % 1000u);
+        if (c1_sim)
+            printf("cpu2   voices: %u steps here, %u on the second core\n", host_vsteps[0], host_vsteps[1]);
         write_wav();
         exit(0);
     }

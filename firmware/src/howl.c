@@ -157,6 +157,17 @@ static const int16_t *hw_excite(uint32_t t)    /* track t's sample this control 
     return E->buf;
 }
 
+static void howl_prep(voice_t *v, const volatile int32_t *p)   /* (2.2: voices_render, first) the track's sample
+                                                 * this control step, as howl_block asks for it */
+{
+    int32_t ex = clamp(trk[v->trk < NT ? v->trk : 0].hw_x[HX_EXCITE], 0, 127);
+    (void)p;
+#ifdef FM1_LIVE_IN
+    if (live_ex >> (v->trk & 3u) & 1u) ex = clamp(live_amt, 0, 127);
+#endif
+    if (ex) (void)hw_excite(v->trk < NT ? v->trk : 0);
+}
+
 /* CTL frames of voice v, added to mono[] */
 static void howl_block(voice_t *v, const volatile int32_t *p, int32_t *mono, int32_t amp0, int32_t amp1)
 {
@@ -277,4 +288,4 @@ static void howl_text(const volatile int32_t *p, uint32_t k, char *s)   /* param
 }
 
 static const engine_t HOWL_ENGINE = {"Holvut", {"FEEDBACK", "BODY", "DAMP", "DRIVE"}, {127, 127, 127, 127}, howl_begin,
-                                     howl_block, howl_text};
+                                     howl_block, howl_text, howl_prep};

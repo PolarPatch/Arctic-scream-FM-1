@@ -165,6 +165,15 @@ static void wheel_begin(voice_t *v)             /* a note from silence (wheel_no
     V->gate = 1;
 }
 
+static void wheel_prep(voice_t *v, const volatile int32_t *p)   /* (2.2: voices_render, first) the track's state */
+{
+    drw_trk_t *T = &drw_t[v->trk % NT];
+    if (T->stamp != vblock) {
+        T->stamp = vblock;
+        drw_track(T, p);
+    }
+}
+
 /* CTL frames of voice v, added to mono[] (wheel_render) */
 static void wheel_block(voice_t *v, const volatile int32_t *p, int32_t *mono, int32_t amp0, int32_t amp1)
 {
@@ -252,4 +261,4 @@ static void wheel_text(const volatile int32_t *p, uint32_t k, char *s)   /* para
 }
 
 static const engine_t WHEEL_ENGINE = {"WHEEL", {"DRAWBARS", "PERC", "CLICK", "DRIVE"}, {15, 6, 127, 127},
-                                      wheel_begin, wheel_block, wheel_text};
+                                      wheel_begin, wheel_block, wheel_text, wheel_prep};
