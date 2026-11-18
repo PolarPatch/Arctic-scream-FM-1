@@ -195,6 +195,7 @@ static volatile uint32_t cpu_stage[CS_N];       /* audio: NOW split (the editor'
                                                  * the audio ISR) taken out of them and counted on its own */
 static uint32_t cpu_over;                       /* audio: blocks in a row over the budget (the overload guard) */
 static int32_t tbuf[NT][VB], dbus[VB], rbus[VB], gbus[VB];   /* the tracks (mono); the DLY, REV and GRAIN buses */
+#include "tide.c"                               /* (2.1.2) TIDE: the whole sound ebbing now and then; GUARD */
 #include "master.c"                             /* MASTER (a filter on the whole sound), DRIVE (and a limiter) */
 static volatile uint32_t trk_mute, trk_solo;    /* main loop: GLO held + white keys 1..4, 5..8 (bit t: track t) */
 enum { PF_REV, PF_ECHO, PF_TAPE, PF_BACK, PF_FDOWN, PF_FUP, PF_STUT, PF_SWELL, NPF };   /* the FX layer's tricks: G3 ..
@@ -662,6 +663,7 @@ static void app_audio(int32_t *out, uint32_t n)
     master_filter(out, n, MP_END);              /* MASTER, END: the very last */
     CS_MARK(CS_MASTER);
     jk_out(out, n);                             /* (2.0) JIEHKKI: the piece's rise and fall (jiehkki.c) */
+    td_block(out, n);                           /* (2.1.2) TIDE and GUARD (tide.c) */
     out_stage(out, n);                          /* the headroom, the MASTER knob, the limiter */
     CS_MARK(CS_MASTER);
 #undef CS_MARK
@@ -1333,7 +1335,7 @@ static char *put_ms(char *s, uint32_t q16)      /* a time, ms in Q16: "5 ms", "1
  * tap opens its first page, again the next (round); SYSTEM is HOME's, held */
 enum { PG_SOUND, PG_SOURCE, PG_ENV, PG_LFO, PG_SCALE, PG_CHORD, PG_SONG, PG_HOME, PG_MIX1, PG_MIX2, PG_SYSTEM,
        PG_SYS2, PG_SOUNDS, PG_PROJECTS, PG_ARP, PG_GRID, PG_PATTERN, PG_TAPE, PG_GRAIN, PG_DELAY, PG_SPACE, PG_PERFORM,
-       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, PG_RUOHCAT, PG_JAHKI, PG_ENV2, PG_SYS4, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
+       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, PG_RUOHCAT, PG_JAHKI, PG_ENV2, PG_SYS4, PG_TIDE, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
                                                  * have; in their button's round by pg_key. TRACK: gone in step 25, its
                                                  * number kept: sys_load moves its links onto HOME) */
 typedef struct {
@@ -1388,7 +1390,8 @@ static const page_t PAGES[NPAGE] = {
                                                  * your samples among its sounds, jiehkki.c) */
     {"JAHKI", BTN_LFO, 1, 0, 1, {"YEAR", "SEASON", "DEPTH", "SKY"}},   /* (2.2: LFO's fifth: the year, year.c) */
     {"ENV 2", BTN_ENV, 1, 1, 1, {"LOOP", "ONSET", "SPREAD", "DETUNE"}},
-    {"SYSTEM 4", BTN_HOME, 1, 0, 0, {"SOUND", "HELP", "TOUCH", ""}},   /* (2.2: after SYSTEM 3: the speaker's sound, the
+    {"SYSTEM 4", BTN_HOME, 1, 0, 0, {"SOUND", "HELP", "TOUCH", ""}},
+    {"TIDE", BTN_LFO, 1, 0, 1, {"TIDE", "DEPTH", "GUARD", "NOW"}},   /* (2.1.2: LFO's sixth: the tide, GUARD, tide.c) */   /* (2.2: after SYSTEM 3: the speaker's sound, the
                                                  * help on the screen) */   /* (2.2: ENV's second: the envelope looping,
                                                  * a note's wait, the voice steps, voices.c) */   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
                                                  * (tape.c), SPACE's SHIMMER (hall.c)) */
@@ -1488,6 +1491,7 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_JIEHKKI: return k == 0u ? &jk_len : k == 1u ? &jk_drift : k == 2u ? &jk_ruo : &jk_go;
     case PG_RUOHCAT: return k == 0u ? &jk_ruo : k == 1u ? &ru_smp : k == 2u ? &ru_share : &ru_vary;
     case PG_JAHKI: return k == 0u ? &yr_len : k == 1u ? &yr_season : k == 2u ? &yr_depth : &yr_sky;
+    case PG_TIDE: return k == 0u ? &td_mode : k == 1u ? &td_depth : k == 2u ? &td_guard : &td_now;
     default: return 0;                          /* (not built yet: the knobs do nothing) */
     }
 }
@@ -1519,6 +1523,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_DRONE ? (k < 2u ? 100 : k == 2u ? DR_NRISE - 1 : 1) :
            pg == PG_JIEHKKI ? (k == 0u ? JK_NLEN - 1 : k == 3u ? JK_ALWAYS : 100) : pg == PG_RUOHCAT ? (k == 1u ? RU_NSMP - 1 : 100) :
            pg == PG_JAHKI ? (k == 0u ? YR_NLEN - 1 : k == 1u ? YR_NS - 1 : k == 2u ? 100 : 1) :
+           pg == PG_TIDE ? (k == 0u ? TD_NMODE - 1 : k == 3u ? 1 : 100) :
            pg == PG_ENV2 ? (k == 0u ? NELOOP - 1 : 100) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : NSCR - 1) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
@@ -1678,6 +1683,11 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
         return;
     case PG_RUOHCAT:                            /* (2.0) AMOUNT, SAMPLE, SHARE, VARY */
         if (k == 1u) put_s(s, RU_SMP_NAME[clamp(v, 0, RU_NSMP - 1)]);
+        else put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
+        return;
+    case PG_TIDE:                               /* (2.1.2) TIDE, DEPTH, GUARD, NOW */
+        if (k == 0u) put_s(s, TD_NAME[clamp(v, 0, TD_NMODE - 1)]);
+        else if (k == 3u) put_s(s, v ? "OUT" : "IN");
         else put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
         return;
     case PG_JAHKI:                              /* (2.2) YEAR, SEASON, DEPTH, SKY */
@@ -2706,6 +2716,7 @@ static void app_step(void)                      /* one pass of the main loop: on
     platform_poll();
     tch_tracks();
     shot_poll(fm1_ms);                          /* (2.1.2: ONE-SHOTS) */
+    td_tick(fm1_ms);                            /* (2.1.2: TIDE) */
     if (fm1_in.notes != prev || fm1_in.buttons) t_touch = t_hand = fm1_ms;   /* (the autosave waits for the hands
                                              * to rest; SCREEN OFF counts from their last touch) */
 

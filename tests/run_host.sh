@@ -70,6 +70,9 @@ python3 tests/jack_test.py build/host/arctic
 python3 tests/touch_test.py build/host/arctic
 # (2.1.2) ONE-SHOTS: GLO held + the free keys, each gesture plays and ends (tests/shot_test.py)
 python3 tests/shot_test.py build/host/arctic
+# (2.1.2) TIDE and GUARD: an ebb by NOW and by itself (a build with minutes as seconds), GUARD holding a swell down
+cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DTD_SPEED=60u -DAPP_VER="\"${APP_VER:-2.1.1}\"" ${MACHO:+"$MACHO"} -Ifirmware/src -Ifirmware/gen -o build/host/arctic_tide60 firmware/src/arctic.c
+python3 tests/tide_test.py build/host/arctic build/host/arctic_tide60
 cc -O2 -Wall -o build/host/touch_unit tests/touch_unit.c -lm && build/host/touch_unit   # (its readings fed by hand)
 # the gain staging: no clip at any MASTER, SPACE and DELAY under their knee (tests/level_test.py)
 python3 tests/level_test.py build/host/arctic

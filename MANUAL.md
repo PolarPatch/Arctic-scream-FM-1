@@ -375,6 +375,29 @@ fog lower and duller.
 
 <br clear="right">
 
+### TIDE: the music ebbing, and GUARD (new in 2.1.2)
+
+**Press LFO a sixth time.** Left to play for a long while, the whole sound can ebb now and then: down slowly, far
+down, for a few minutes, and back again, a little quicker than it left. GUARD is a slow hand on the level that keeps a
+swell from towering over the music around it.
+
+| KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
+|---|---|---|---|
+| TIDE | DEPTH | GUARD | NOW |
+
+- **TIDE:** `OFF` (the start), `RARE` (an ebb every 40 to 70 minutes), `SOMETIMES` (every 15 to 30) or `OFTEN` (every
+  5 to 10). An ebb goes down at 0.15 dB a second, stays out one to three minutes, and comes back at 0.3 dB a second.
+- **DEPTH, 0–100 %:** how far an ebb goes. 100 % is 36 dB down, all but silent; 70 % (the start) about 25 dB.
+- **GUARD, 0–100 %:** listens to the last two seconds against the music's longer level. When a swell, a stacked chord
+  or a rising howl gets more than 2 dB over it, GUARD takes the excess off at its share, slowly: in at 1 dB a second,
+  out at 0.3. It only ever holds down (12 dB at most), never lifts, and a sound that stays becomes the music's level
+  within about half a minute. 0 (the start) is off.
+- **NOW:** `IN` or `OUT`, where the tide is. Turn it to OUT for an ebb now, to IN to bring it back now.
+- The screen shows the sea with its surface at the tide's level, what the tide is doing, when the next ebb is due and
+  how much GUARD is holding down.
+- Both act on the whole sound (the speaker, the jack and the USB recording), effects' tails included. With TIDE OFF and
+  GUARD at 0 the sound is exactly as before. TIDE, DEPTH and GUARD are saved with the project.
+
 ---
 
 ## 05 · ENV and LFO

@@ -90,6 +90,7 @@ static void host_probe(void)
             printf(" lv %u %u %u ch1 %d snd1 %s", lv_rvk, lv_dlk, lv_pre, (int)trk[0].chord, nm[0] ? nm : "-");
         }
         printf(" shot %d", (int)sh_now);        /* (2.1.2: the ONE-SHOT playing, -1 none) */
+        printf(" tide %u %d %d", td_st, (int)td_lv, (int)td_gov_shown);   /* (2.1.2: TIDE, GUARD) */
         printf(" lit %x", host_lit);            /* (1.4: the keys lit, bit k: key k, F3 = 0) */
         printf(" voices");                      /* (each voice: its stage (0 off, 1 attack, 2 sustain, 3 release, 4
                                                  * fade), track, note, in the notes-on list or not) */

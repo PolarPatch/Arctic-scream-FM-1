@@ -31,7 +31,7 @@ def run(name, ev, end):
     out = subprocess.run([BIN, str(OUT / name), str(OUT / f"{name}.txt")], capture_output=True, text=True, check=True).stdout
     pr = {}
     for ln in out.splitlines():
-        m = re.match(r"probe (\d+) .* shot (-?\d+) lit \w+ voices (.*)$", ln)
+        m = re.match(r"probe (\d+) .* shot (-?\d+) tide [-\d ]+ lit \w+ voices (.*)$", ln)
         if m:
             vs = [tuple(int(x) for x in v.split("/")) for v in m.group(3).split()]
             pr[int(m.group(1))] = (int(m.group(2)), sum(1 for v in vs if v[3]))

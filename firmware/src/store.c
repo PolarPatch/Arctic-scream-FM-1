@@ -604,6 +604,9 @@ static void pk_work(uint8_t *q)
                                                  * PICTURE; 2.2, its bit 4: JIEHKKI's START ALWAYS) */
     q[24] = (uint8_t)clamp(yr_len, 0, YR_NLEN - 1), q[25] = (uint8_t)yr_pos8();   /* (2.2) JAHKI */
     q[26] = (uint8_t)clamp(yr_depth, 0, 100), q[27] = (uint8_t)(yr_sky != 0);
+    q[28] = (uint8_t)(0x80 | clamp(td_mode, 0, TD_NMODE - 1)), q[29] = (uint8_t)clamp(td_depth, 0, 100);   /* (2.1.2) TIDE,
+                                                 * its top bit: kept (before it the byte was 0) */
+    q[30] = (uint8_t)clamp(td_guard, 0, 100);
     for (t = 0; t < NT; t++) {                  /* (2.2, version 11) ENV 2 */
         q[32 + t * 4u] = (uint8_t)clamp(trk[t].e_loop, 0, NELOOP - 1), q[33 + t * 4u] = (uint8_t)clamp(trk[t].e_onset, 0, 100);
         q[34 + t * 4u] = (uint8_t)clamp(trk[t].spread, 0, 100), q[35 + t * 4u] = (uint8_t)clamp(trk[t].detune, 0, 100);
@@ -658,6 +661,9 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
             jk_always(ex && x[23] >> 4 & 1u);   /* (2.2: a project that always plays: it begins) */
             yr_len = ex >= 32u ? clamp(x[24], 0, YR_NLEN - 1) : 3, yr_at(ex >= 32u ? x[25] : 0u);   /* (2.2) JAHKI; */
             yr_depth = ex >= 32u ? clamp(x[26], 0, 100) : 0, yr_sky = ex >= 32u && x[27];   /* (before: 1 HOUR, DALVI, 0 %) */
+            td_mode = ex >= 64u && x[28] & 0x80u ? clamp(x[28] & 0x7F, 0, TD_NMODE - 1) : TD_OFF;   /* (2.1.2) TIDE; */
+            td_depth = ex >= 64u && x[28] & 0x80u ? clamp(x[29], 0, 100) : 70;   /* (before: OFF, 70 %, GUARD 0) */
+            td_guard = ex >= 64u && x[28] & 0x80u ? clamp(x[30], 0, 100) : 0;
         }
     }
     if (globals && !sg) dl_pp = rv_shim = 0;    /* (saved before the song: AIR off) */
