@@ -66,6 +66,9 @@ python3 tests/latch_test.py build/host/arctic
 python3 tests/gen_test.py build/host/arctic
 # (2.1.2) SOUND AUTO: the headphone jack says speaker or headphones (tests/jack_test.py)
 python3 tests/jack_test.py build/host/arctic
+# (2.1.2) TOUCH: velocity and pressure from the keys, MIDI's velocity (tests/touch_test.py)
+python3 tests/touch_test.py build/host/arctic
+cc -O2 -Wall -o build/host/touch_unit tests/touch_unit.c -lm && build/host/touch_unit   # (its readings fed by hand)
 # the gain staging: no clip at any MASTER, SPACE and DELAY under their knee (tests/level_test.py)
 python3 tests/level_test.py build/host/arctic
 # the USB audio ring (firmware/src/uac_ring.h) in time: no dropout at any CPU load

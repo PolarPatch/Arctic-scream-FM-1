@@ -31,7 +31,7 @@ static const char *const HELP_TXT[NPAGE][4] = {
     [PG_DRIVE] = {"HOW HARD IT IS DRIVEN", "THE KIND OF DRIVE", "BRIGHTER OR DARKER", "HOW MUCH OF IT"},
     [PG_SCALE] = {"THE SCALE'S ROOT", "WHICH NOTES THE KEYS PLAY", "PURE TUNINGS FOR DRONES", 0},
     [PG_ARP] = {"THE NOTES' ORDER", "HOW FAST", "OVER HOW MANY OCTAVES", "HOW LONG EACH NOTE"},
-    [PG_SYS4] = {"THE SPEAKER'S OWN SOUND", "THESE LINES, ON OR OFF", 0, 0},
+    [PG_SYS4] = {"THE SPEAKER'S OWN SOUND", "THESE LINES, ON OR OFF", "HOW HARD THE KEYS ARE PLAYED", 0},
 };
 static const char *help_sound(uint32_t e, uint32_t k)   /* the SOUND page's, by its source (0: none) */
 {

@@ -51,7 +51,7 @@ SDK_SHA256 = {
 PRODUCT = "FM-1_977"                # Arctic Scream 1.x: 977, every release (FM-1_9NN: the installers resume its loader; the hub's
                                     # other firmwares hold 950, 95x, 961, so not Dinghy's 9 + minor); Dinghy is 99N
 VERSION = None                      # APP_VER for release builds (else DEFAULT_VERSION)
-DEFINES = []                        # --define: a test build's -D names (e.g. ARCTIC_PRESS_TEST)
+DEFINES = []                        # --define: a test build's -D names (e.g. ARCTIC_FOO)
 DEFAULT_VERSION = "2.1.1"
 
 
@@ -290,7 +290,7 @@ def main():
     ap.add_argument("--release", metavar="X.Y", help="release build: the version string X.Y (identity FM-1_977 as always)")
     ap.add_argument("--sdk", type=Path, help="JieLi AC79 SDK checkout (default: $AC79_SDK)")
     ap.add_argument("--define", action="append", default=[], metavar="NAME",
-                    help="a test build: -DNAME for the app (e.g. ARCTIC_PRESS_TEST); give it its own --name")
+                    help="a test build: -DNAME for the app (e.g. ARCTIC_FOO); give it its own --name")
     ap.add_argument("--name", help="the package's file name (default arctic-scream[-X.Y].fwsc)")
     a = ap.parse_args()
     DEFINES[:] = a.define

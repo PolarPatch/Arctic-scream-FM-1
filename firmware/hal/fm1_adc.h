@@ -14,8 +14,8 @@
 #define FM1_ADC_RES (*(volatile uint32_t *)0x13104u)
 #define FM1_WLA_CON0 (*(volatile uint32_t *)0x11900u)
 enum { FM1_ADC_BATT = 3, FM1_ADC_MASTER = 4 };
-static volatile uint8_t fm1_adc_main;   /* a main-loop reading under way: the timer ISR starts none (fm1_press.h) */
-static volatile uint8_t fm1_adc_isr;    /* the timer ISR's reading under way (fm1_press.h): the main loop waits */
+static volatile uint8_t fm1_adc_main;   /* a main-loop reading under way: the timer ISR starts none (fm1_touch.h) */
+static volatile uint8_t fm1_adc_isr;    /* the timer ISR's reading under way (fm1_touch.h): the main loop waits */
 
 /* Both are only ever analog inputs: PB1 held low for 8 s would reset the
  * chip (isd_config). */

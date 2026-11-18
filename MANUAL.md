@@ -691,7 +691,7 @@ FM-1, not the project.
 | SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA, MONO) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF |
 | SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES | CLOCK (INT, I+OUT, USB, TRS) |
 | SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB, and each with SPK OFF) | MOD OUT (OFF, ON) | PICTURE (CARD, SKY, OFF) |
-| SYSTEM 4 (new in 2.1) | SOUND (AUTO, HEADPHONES, SPEAKER) | HELP (ON, OFF) | | |
+| SYSTEM 4 (new in 2.1) | SOUND (AUTO, HEADPHONES, SPEAKER) | HELP (ON, OFF) | TOUCH (OFF, VELOCITY, VEL+PRESS) | |
 
 - **COLOUR:** pick the one that matches your FM-1. **MONO** (new in 2.0) turns the whole screen black and white, the
   greys as a fine pattern of dots, as on an old one-bit screen. The header stays clean so the sound's name reads.
@@ -737,6 +737,14 @@ FM-1, not the project.
     It shapes the speaker and the headphone jack, never the USB sound.
   - **HELP:** `ON` (the start) shows a short line under the picture for a moment when you turn a knob, saying what it
     does ("EACH NOTE WAITS THIS LONG"). `OFF` for none.
+  - **TOUCH** (new in 2.1.2): the FM-1's own keys can tell how hard they are played, with no change to the hardware.
+    Each key has a carbon pill under its rubber whose resistance falls as it is pressed, and Arctic Scream reads it.
+    `OFF` (the start): every note at one level, as before. `VELOCITY`: a key played harder is louder, about 24 dB
+    from the softest to the firmest; a MIDI note's velocity counts too. `VEL+PRESS`: as VELOCITY, and pressing a held
+    key harder deepens the track's LFO, up to twice its DEPTH (set some DEPTH first), and is HOWL's pressure, as MIDI
+    pressure is. Pressure works on the 20 lower keys, F3 to D5; the top seven, C#5 to G5, give velocity only. The page
+    shows the last key played, its velocity and its pressure. A held key's column of LEDs glows a little less while
+    TOUCH is on. The way of reading the keys follows Charles Vestal's measurements on an FM-1 (fm1-base).
 - **The guide (new in 2.1):** the very first time Arctic Scream starts, three short pages show the first steps. Any key
   or button turns the page; after the third it is gone.
 - **For app makers:** since 1.5.2 Arctic Scream also answers **PANEL OUT**, an open protocol that tells an app which buttons

@@ -367,7 +367,8 @@ static void ui_slab_make(uint32_t k, slab_t *S)
               v == LEARN_CLEAR ? "CLEAR" : LEARN_NAME[clamp(v, 0, 2)]);
         return;
     case PG_SYS4:                               /* (2.2) SOUND: (2.1.2) "AUTO", "PHONES", "SPKR"; HELP: ON, OFF */
-        put_s(S->val, k == 0u ? (v == 2 ? "SPKR" : v ? "PHONES" : "AUTO") : v ? "ON" : "OFF");
+        put_s(S->val, k == 0u ? (v == 2 ? "SPKR" : v ? "PHONES" : "AUTO") : k == 2u ? (v == 2 ? "V+P" : v ? "VEL" : "OFF") :
+              v ? "ON" : "OFF");
         return;
     case PG_SYS3:                               /* LATCH: FROM SOUND, ALWAYS OFF; USB LEVEL: -12DB .. +24DB;
                                                  * (1.5.2) MOD OUT: OFF, ON */
@@ -2299,12 +2300,21 @@ static void sys3_row(int32_t y, const char *l, const char *v)
 }
 static void pic_sys4(void)                      /* (2.2) SYSTEM 4: SOUND (the speaker's curve), HELP */
 {
-    ui_caption("SOUND, HELP", 0);
+    ui_caption("SOUND, HELP, TOUCH", 0);
     sys3_row(40, "SOUND", spk_mode == 2u ? "SPEAKER" : spk_mode ? "HEADPHONES" : SPK_ON() ? "AUTO: SPEAKER" : "AUTO: PHONES");
     ui_text(PX0 + 6, 57, SPK_ON() ? "LOWS OFF, LOW MIDS UP" : "THE WHOLE RANGE", 1, UI_M);
     ui_text(PX0 + 6, 68, "USB AS EVER", 1, UI_M);
     sys3_row(82, "HELP", help_on ? "ON" : "OFF");
     ui_text(PX0 + 6, 99, help_on ? "A KNOB TURNED SAYS WHAT IT DOES" : "NO HELP LINES", 1, UI_M);
+    sys3_row(112, "TOUCH", tch_mode == TCH_PRESS ? "VEL+PRESS" : tch_mode ? "VELOCITY" : "OFF");   /* (2.1.2) */
+    if (tch_mode && tch_last_k < 27u) {         /* (the last key played: its velocity, its pressure while held) */
+        char v[32], *e = put_u(put_s(v, "KEY "), tch_last_k + 1u);
+        e = put_u(put_s(e, " VEL "), tch_last_v);
+        if (tch_mode == TCH_PRESS && tch_last_k < TT_NA) put_u(put_s(e, " PRESS "), tch_pv[tch_last_k]);
+        ui_text(PX0 + 6, 129, v, 1, UI_M);
+    } else {
+        ui_text(PX0 + 6, 129, tch_mode ? "PLAY A KEY" : "THE KEYS AT ONE LEVEL", 1, UI_M);
+    }
 }
 static void pic_sys3(void)                      /* SYSTEM 3: LATCH, what it does; the combo for the track's;
                                                  * (Arctic Scream p0larpatch) USB LEVEL, the computer's recording */
@@ -2444,6 +2454,7 @@ static uint32_t ui_pic_key(void)
     if (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3 || page == PG_SYS4) {   /* the settings, the links */
         UI_H(set.col), UI_H(set.mch), UI_H(set.tune), UI_H(set.scr), UI_H(set.out), UI_H(set.nlk), UI_H(set.latch), UI_H(set.usb);
         UI_H(set.sys4), UI_H(SPK_ON());          /* (2.1.2: AUTO's speaker or headphones, as the jack says) */
+        UI_H(tch_last_k), UI_H(tch_last_v), UI_H(tch_last_k < TT_NA ? tch_pv[tch_last_k] : 0u);   /* (TOUCH's last key) */
         for (k = 0; k < NLINK * 5u; k++) UI_H(set.lk[k / 5u][k % 5u]);
     }
     if (PAGES[page].btn == BTN_SEQ) {           /* the pattern, its settings, the cursor, the step playing */

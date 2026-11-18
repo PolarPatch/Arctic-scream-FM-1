@@ -163,6 +163,7 @@ static uint32_t vc_core;                        /* (1 while the second core's jo
 static int C1_WAIT(void) { if (c1_fn) vc_core = 1, c1_fn(c1_arg), c1_fn = 0, vc_core = 0; return 0; }
 #endif
 #include "voices.c"
+#include "touch.c"                              /* (2.1.2) TOUCH: velocity and pressure from the keys */
 #include "grain.c"
 #ifdef DINGHY_HOST
 static uint32_t lv_rvk, lv_dlk, lv_pre;         /* (host: tests/level_test.py: SPACE's lines, DELAY's line past their soft
@@ -1094,7 +1095,11 @@ static void key_ask(uint32_t c, uint32_t t, uint32_t id, uint32_t note, int echo
         return;
     }
     if (c == NQ_TOGGLE && (h = note_find_root(t, note)) >= 0) note_off(t, lat_id[h], SRC_KEY, lat_id[h] < 27u);
-    else if (c == NQ_ON || c == NQ_TOGGLE) note_on(t, id, note, SRC_KEY, echo, -1);
+    else if (c == NQ_ON || c == NQ_TOGGLE) {
+        gen_vel = id < sizeof id_vel ? id_vel[id] : 0u;   /* (2.1.2: TOUCH, the key's or the MIDI note's velocity) */
+        note_on(t, id, note, SRC_KEY, echo, -1);
+        gen_vel = 0;
+    }
     else note_off(t, id, SRC_KEY, echo);
 }
 
@@ -1217,12 +1222,15 @@ static struct {
                                                  * OFF (USB_KMAX) */
     uint8_t mod;                                /* (1.5.2, SET_VER 5) SYSTEM 3's MOD OUT: 0 OFF (before), 1 ON */
     uint8_t sys4;                               /* (2.2, SET_VER 6) SYSTEM 4: bit 0 SOUND SPEAKER, bit 1 HELP OFF (0 ON),
-                                                 * (2.1.2) bit 2 SOUND HEADPHONES; neither: AUTO (2.2's HEADPHONES, before) */
+                                                 * (2.1.2) bit 2 SOUND HEADPHONES; neither: AUTO (2.2's HEADPHONES, before);
+                                                 * bits 3, 4 TOUCH (0 OFF, 1 VELOCITY, 2 VEL+PRESS) */
 } set;
 #define SET_VER 6u
 static uint32_t set_dirty, set_t;               /* the settings changed, when */
 static volatile int32_t sy_snd, sy_help;       /* (2.2) SYSTEM 4's knobs: SOUND (0 AUTO, 1 HEADPHONES, 2 SPEAKER), HELP (1 ON) */
 #define SYS4_SND(s4) ((s4) & 1u ? 2 : (s4) & 4u ? 1 : 0)   /* (sys4's SOUND as the knob's) */
+#define SYS4_OK(s4) ((s4) <= 0x17u && ((s4) & 5u) != 5u && ((s4) >> 3) <= 2u)
+static volatile int32_t sy_touch;               /* (2.1.2) SYSTEM 4's KNOB 3: TOUCH (TCH_) */
 static volatile int32_t sy_col, sy_mch, sy_tune, sy_scr, sy_learn, sy_out, sy_fac, sy_clk, sy_latch, sy_usb, sy_mod;   /* SYSTEM's,
                                                  * SYSTEM 2's, SYSTEM 3's knobs (sy_fac: SAMPLES, 1 RESTORE: OCT+
                                                  * writes the factory ones) */
@@ -1371,7 +1379,7 @@ static const page_t PAGES[NPAGE] = {
                                                  * your samples among its sounds, jiehkki.c) */
     {"JAHKI", BTN_LFO, 1, 0, 1, {"YEAR", "SEASON", "DEPTH", "SKY"}},   /* (2.2: LFO's fifth: the year, year.c) */
     {"ENV 2", BTN_ENV, 1, 1, 1, {"LOOP", "ONSET", "SPREAD", "DETUNE"}},
-    {"SYSTEM 4", BTN_HOME, 1, 0, 0, {"SOUND", "HELP", "", ""}},   /* (2.2: after SYSTEM 3: the speaker's sound, the
+    {"SYSTEM 4", BTN_HOME, 1, 0, 0, {"SOUND", "HELP", "TOUCH", ""}},   /* (2.2: after SYSTEM 3: the speaker's sound, the
                                                  * help on the screen) */   /* (2.2: ENV's second: the envelope looping,
                                                  * a note's wait, the voice steps, voices.c) */   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
                                                  * (tape.c), SPACE's SHIMMER (hall.c)) */
@@ -1465,7 +1473,7 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_SYSTEM: return k == 0u ? &sy_col : k == 1u ? &sy_mch : k == 2u ? &sy_tune : &sy_scr;
     case PG_SYS2: return k == 0u ? &sy_learn : k == 1u ? &sy_out : k == 2u ? &sy_fac : &sy_clk;
     case PG_SYS3: return k == 0u ? &sy_latch : k == 1u ? &sy_usb : k == 2u ? &sy_mod : &pc_mode;
-    case PG_SYS4: return k == 0u ? &sy_snd : k == 1u ? &sy_help : 0;
+    case PG_SYS4: return k == 0u ? &sy_snd : k == 1u ? &sy_help : k == 2u ? &sy_touch : 0;
     case PG_LOOP: return &trk[sel].hw_x[k & 3u];
     case PG_AIR: return k == 0u ? &dl_pp : k == 1u ? &rv_shim : 0;
     case PG_JIEHKKI: return k == 0u ? &jk_len : k == 1u ? &jk_drift : k == 2u ? &jk_ruo : &jk_go;
@@ -1505,7 +1513,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_ENV2 ? (k == 0u ? NELOOP - 1 : 100) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : NSCR - 1) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
-           pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_KMAX : k == 3u ? NPC - 1 : 1) : pg == PG_SYS4 ? (k ? 1 : 2) :
+           pg == PG_SYS3 ? (k == 1u ? (int32_t)USB_KMAX : k == 3u ? NPC - 1 : 1) : pg == PG_SYS4 ? (k == 1u ? 1 : 2) :
            pg == PG_FMALGO ? (k == 0u ? 31 : k == 1u ? 7 : k == 2u ? 5 : 99) :
            pg == PG_FMOP ? (k ? 99 : 31) : pg == PG_MIX2 ? (k == 1u ? NFTYPE - 1 : k == 2u ? 1 : 127) :
            pg == PG_MASTER ? (k == 2u ? NFTYPE - 1 : k == 3u ? NMPOS - 1 : 127) :
@@ -1646,7 +1654,8 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
         else put_s(s, v >= JK_ALWAYS ? "ALWAYS" : v ? "ON" : "OFF");   /* (2.2: ALWAYS) */
         return;
     case PG_SYS4:                               /* (2.2) SOUND, HELP */
-        put_s(s, k == 0u ? (v == 2 ? "SPEAKER" : v ? "HEADPHONES" : "AUTO") : v ? "ON" : "OFF");
+        put_s(s, k == 0u ? (v == 2 ? "SPEAKER" : v ? "HEADPHONES" : "AUTO") : k == 2u ? (v == 2 ? "VEL+PRESS" : v ? "VELOCITY" : "OFF") :
+              v ? "ON" : "OFF");
         return;
     case PG_SYS3:                               /* (2.1: its PICTURE; the others as the slabs say them, ui.c) */
         if (k == 3u) { put_s(s, PC_NAME[clamp(v, 0, NPC - 1)]); return; }
@@ -2196,7 +2205,7 @@ static void sys_sync(void)
     uint8_t col = (uint8_t)clamp(sy_col, 0, 4), mch = (uint8_t)clamp(sy_mch, 0, MCH_MAX), scr = (uint8_t)clamp(sy_scr, 0, NSCR - 1);
     uint8_t out = (uint8_t)clamp(sy_out, 0, 1), clk = (uint8_t)clamp(sy_clk, 0, CK_N - 1), la = (uint8_t)clamp(sy_latch, 0, 1);
     uint8_t ul = (uint8_t)clamp(sy_usb, 0, (int32_t)USB_KMAX), md = (uint8_t)clamp(sy_mod, 0, 1);
-    uint8_t s4 = (uint8_t)((sy_snd == 2 ? 1u : sy_snd == 1 ? 4u : 0u) | (sy_help ? 0u : 2u));
+    uint8_t s4 = (uint8_t)((sy_snd == 2 ? 1u : sy_snd == 1 ? 4u : 0u) | (sy_help ? 0u : 2u) | (uint32_t)clamp(sy_touch, 0, 2) << 3);
     uint32_t n, t;
     if (mch != set.mch || (set.out && !out)) mo_flush = 1;
     if (mch != set.mch)
@@ -2217,6 +2226,10 @@ static void sys_sync(void)
     tune_f = (set.tune * 23666 + set.tune * set.tune * 7) / 10000;   /* (2^(c / 1200) - 1, x 4096) */
     mo_seq = set.out, snd_latch_off = set.latch, usb_lvl = set.usb;
     spk_mode = (uint8_t)SYS4_SND(set.sys4), help_on = !(set.sys4 & 2u);   /* (2.2: SYSTEM 4) */
+    tch_mode = (uint8_t)(set.sys4 >> 3);        /* (2.1.2: TOUCH; on the FM-1 the keys' readings with it) */
+#ifdef FM1_TOUCH_HAL
+    fm1_touch_on(tch_mode != TCH_OFF);
+#endif
 }
 static void sys_load(void)                      /* the settings at power-on into SYSTEM's knobs (version 19's: the
                                                  * octave alone; steps 20..24's: no ver, their links to HOME's T1..T4
@@ -2250,12 +2263,12 @@ static void sys_load(void)                      /* the settings at power-on into
     if (set.latch > 1u) set.latch = 0;
     if (set.usb > USB_KMAX) set.usb = USB_L0;   /* (2.2: 7 .. 13 SPK OFF; 2.1 and before read them as 0 dB) */
     if (set.mod > 1u) set.mod = 0;
-    if (set.sys4 > 7u || (set.sys4 & 5u) == 5u) set.sys4 = 0;
+    if (!SYS4_OK(set.sys4)) set.sys4 = 0;
     if (set.oct < -2 || set.oct > 2) set.oct = 0;
     if (set.nlk > NLINK) set.nlk = 0;
     sy_col = set.col, sy_mch = set.mch, sy_tune = set.tune, sy_scr = set.scr, sy_out = set.out, sy_clk = set.clk;
     sy_latch = set.latch, sy_usb = set.usb, sy_mod = set.mod;
-    sy_snd = SYS4_SND(set.sys4), sy_help = !(set.sys4 & 2u);
+    sy_snd = SYS4_SND(set.sys4), sy_help = !(set.sys4 & 2u), sy_touch = set.sys4 >> 3;
     sys_sync();
     set_dirty = 0;
     if (!set.ver)                               /* (steps 20..24's; V1.0's are version 1: as they are) */
@@ -2573,6 +2586,7 @@ static void midi_in(void)
                 midi_held[d1] &= (uint8_t)~(0x11u << m);
             }
         if (on) ru_heard(n);                    /* (2.1: the ice may answer it) */
+        if (on) id_vel[MIDI_ID(d1)] = tch_gain(d2 & 0x7Fu);   /* (2.1.2: TOUCH on, its velocity) */
         if (on && trk[t].latch)
             nq_note(NQ_TOGGLE, t, n, MIDI_ID(d1));
         else if (on) {
@@ -2664,40 +2678,23 @@ static void app_start(void)                     /* once, at power-on: the saves,
 static volatile uint32_t ui_force_n;
 #endif
 
-#if defined ARCTIC_PRESS_TEST && !defined DINGHY_HOST && !defined ARCTIC_WEB && !defined FM1_PLATFORM_FILE
-static void press_show(void)                    /* (a test, hal/fm1_press.h) the header: the key held last (1 = F3),
-                                                 * its reading now and the lowest since it went down (lower: harder) */
+static void tch_tracks(void)                    /* (2.1.2: TOUCH) the held keys' pressure, the most of them: the
+                                                 * selected track's (the keys play it; LATCH too), its LFO deepened,
+                                                 * HOWL's pressure */
 {
-    static int16_t lo[27];
-    static uint32_t last, t, was;
-    uint32_t k, now = fm1_in.notes;
-    int32_t v;
-    char *e;
-    for (k = 0; k < 27u; k++) {
-        v = fm1_press_raw[k];
-        if (v < 0) lo[k] = 1024;
-        else if (v < lo[k]) lo[k] = (int16_t)v;
-        if ((now & ~was) >> k & 1u) last = k;   /* (the key just gone down) */
-    }
-    was = now;
-    if (fm1_ms - t < 100u || !(now >> last & 1u)) return;
-    t = fm1_ms;
-    v = fm1_press_raw[last];
-    e = put_u(put_s(hd_msg, "KEY "), last + 1u);
-    if (last >= 20u) e = put_s(e, " NO PRESSURE");
-    else if (v < 0) e = put_s(e, " ...");
-    else e = put_u(put_s(put_u(put_s(e, " "), (uint32_t)v), " LO "), (uint32_t)lo[last]);
-    hd_until = fm1_ms + 400u;
+    uint32_t k, t;
+    uint8_t p = 0;
+    tch_update(fm1_ms);
+    for (k = 0; k < 27u; k++)
+        if (tch_pv[k] > p) p = tch_pv[k];
+    for (t = 0; t < NT; t++) key_press[t] = t == sel ? p : 0u;
 }
-#endif
 static void app_step(void)                      /* one pass of the main loop: one millisecond (platform_poll) */
 {
     uint32_t k, keys, down, up, rel, b, n, lit = 0, base = (uint32_t)(KEY0 + 12 * set.oct);
     int32_t d;
     platform_poll();
-#if defined ARCTIC_PRESS_TEST && !defined DINGHY_HOST && !defined ARCTIC_WEB && !defined FM1_PLATFORM_FILE
-    press_show();
-#endif
+    tch_tracks();
     if (fm1_in.notes != prev || fm1_in.buttons) t_touch = t_hand = fm1_ms;   /* (the autosave waits for the hands
                                              * to rest; SCREEN OFF counts from their last touch) */
 
@@ -2853,7 +2850,8 @@ static void app_step(void)                      /* one pass of the main loop: on
         b_used |= 1u << BTN_FX;
     }
 
-    keys = fm1_in.notes;                        /* bit k: key k (0 = F3 .. 26 = G5) */
+    keys = tch_keys(fm1_in.notes, fm1_ms);      /* bit k: key k (0 = F3 .. 26 = G5); (2.1.2: TOUCH) a key down once
+                                                 * its velocity is read */
     down = keys & ~prev;
     up = prev & ~keys;
     if (scr_dark && down) scr_woke = 1, down = 0;   /* (the screen dark: a key only wakes it) */
@@ -2966,8 +2964,9 @@ static void app_step(void)                      /* one pass of the main loop: on
         }
         ru_heard(n);                            /* (2.1: the ice may answer it) */
         if (trk[sel].latch && !rec)             /* (LATCH ON: that key's voices on, or off) */
-            nq_note(NQ_TOGGLE | NQ_ECHO | NQ_OCT(set.oct), sel, n, KEY_ID(k));
+            id_vel[KEY_ID(k)] = tch_gain(tch_v[k]), nq_note(NQ_TOGGLE | NQ_ECHO | NQ_OCT(set.oct), sel, n, KEY_ID(k));
         else {
+            id_vel[KEY_ID(k)] = tch_gain(tch_v[k]);   /* (2.1.2: TOUCH, its velocity) */
             nq_note(NQ_ON | NQ_ECHO | NQ_OCT(set.oct), sel, n, KEY_ID(k));
             key_held[k] = (uint16_t)(0x8000u | sel << 8);
         }

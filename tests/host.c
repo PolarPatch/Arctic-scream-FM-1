@@ -242,6 +242,8 @@ static int32_t host_master = 4092;              /* the MASTER knob as the app re
                                                  * the way up, as the USB audio always was here; ARCTIC_MASTER: the knob
                                                  * 0 .. 1023 (squared, as platform.c) */
 static int32_t fm1_master(void) { return host_master; }
+static uint8_t host_tvel[27], host_tpress[27];  /* (2.1.2) the script's "touch K VEL PRESS": what key K would read with
+                                                 * TOUCH on (firmware/src/touch.c); VEL 0: no reading */
 static volatile int8_t fm1_jack = -1;           /* the headphone jack (SOUND AUTO): not read (the whole range, as before);
                                                  * the script's "jack 1" headphones in, "jack 0" nothing plugged */
 static void app_main(void);
@@ -254,7 +256,7 @@ static void app_main(void);
  * BPMx10 0: none from T), "T probe" (the clock's and the sequencer's state out: tests/probe.c) */
 typedef struct { uint32_t t, keys; int btn; uint8_t st, d1, d2; int enc, steps, kind, src; uint32_t a, b;
                  const uint8_t *sx; uint32_t sxn; } host_ev_t;
-enum { HK_PLAIN, HK_CLOCK, HK_PROBE, HK_JACK };          /* (kind) */
+enum { HK_PLAIN, HK_CLOCK, HK_PROBE, HK_JACK, HK_TOUCH };          /* (kind) */
 static void host_probe(void);                   /* (tests/probe.c) */
 #define CHORD1 (1u << 7 | 1u << 11 | 1u << 14)                  /* C E G (C4 .. G4 at OCTAVE +0) */
 #define CHORD2 (1u << 2 | 1u << 5 | 1u << 9)                   /* G Bb D (G3 .. D4) */
@@ -336,6 +338,7 @@ static void read_script(const char *path)
             e.kind = HK_CLOCK, e.src = s[0] == 't';
         } else if (!strcmp(what, "probe")) e.kind = HK_PROBE;
         else if (!strcmp(what, "jack")) { sscanf(line, "%*u %*s %u", &e.a); e.kind = HK_JACK; }
+        else if (!strcmp(what, "touch")) { sscanf(line, "%*u %*s %u %u %u", &a, &e.a, &e.b); e.d1 = (uint8_t)a; e.kind = HK_TOUCH; }
         else continue;
         ev[n++] = e;
     }
@@ -496,6 +499,8 @@ static void platform_poll(void)                 /* one call = one millisecond */
         } else if (script[step].kind == HK_CLOCK) {
             hg.t0 = (uint64_t)script[step].t * 24000u, hg.k = 0, hg.bpm10 = script[step].a;
             hg.end = script[step].t + script[step].b, hg.src = (uint32_t)script[step].src;
+        } else if (script[step].kind == HK_TOUCH) {
+            if (script[step].d1 < 27u) host_tvel[script[step].d1] = (uint8_t)script[step].a, host_tpress[script[step].d1] = (uint8_t)script[step].b;
         } else if (script[step].kind == HK_JACK) {
             fm1_jack = (int8_t)(script[step].a != 0);
         } else if (script[step].kind == HK_PROBE) {
