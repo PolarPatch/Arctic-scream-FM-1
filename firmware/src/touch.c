@@ -160,7 +160,7 @@ static uint32_t tch_vel(uint32_t k)             /* key k's velocity for its pres
 static uint32_t tch_keys(uint32_t raw, uint32_t ms)
 {
     uint32_t k, v, show = tch_shown;
-#if !defined FM1_TOUCH_HAL && !defined DINGHY_HOST
+#if !defined FM1_TOUCH_HAL && !defined DINGHY_HOST && !defined TT_TEST
     if (1) {                                    /* (no readings here, VIBE, the SMK-37, the browser: the keys at once;
                                                  * MIDI's velocity still counts while TOUCH is on) */
 #else
