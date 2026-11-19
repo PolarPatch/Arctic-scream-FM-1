@@ -74,7 +74,9 @@ static void vowel_at(int32_t pos, int32_t *f, int32_t *b)
 }
 
 typedef struct { int32_t a, b, c; } fres_t;
-static int32_t formant_nz = 0x2545F491;         /* breath noise, one xorshift for all voices */
+static int32_t formant_nz[NV] = {0x2545F491, 0x1B873593, 0x6C8E9CF5, 0x3C6EF372, 0x5BE0CD19, 0x1F83D9AB};   /* breath
+                                                 * noise, a xorshift a voice (2.2: one for all before; the two cores) */
+_Static_assert(NV == 6u, "formant_nz: a seed a voice");
 static int32_t vx_s[NV][7];                     /* F1..F3 y1 / y2, the tilt */
 
 /* Klatt resonator coefficients (Q30) for F, BW in Hz * 16 */
@@ -109,7 +111,7 @@ static void formant_block(voice_t *v, const volatile int32_t *p, int32_t *mono, 
     uint32_t inc = vinc(pitch), i, te, tp, rp, rn, ratio, f0;
     uint32_t ph = v->ph[0];
     int32_t y1 = st[0], y2 = st[1], y3 = st[2], y4 = st[3], y5 = st[4], y6 = st[5];
-    int32_t y7 = (int32_t)v->ph[1], y8 = (int32_t)v->ph[2], lp = st[6], nst = formant_nz;
+    int32_t y7 = (int32_t)v->ph[1], y8 = (int32_t)v->ph[2], lp = st[6], nst = formant_nz[v - vc];
 
     vowel_at(clamp(p[0], 0, 127) << 8, fa, ba);
     /* SHIFT (semitones) and the key tracking around C4 (fixed), one ratio for all four; Q at 64: the bandwidths as
@@ -181,7 +183,7 @@ static void formant_block(voice_t *v, const volatile int32_t *p, int32_t *mono, 
     v->ph[0] = ph;
     v->ph[1] = (uint32_t)y7;
     v->ph[2] = (uint32_t)y8;
-    formant_nz = nst;
+    formant_nz[v - vc] = nst;
     st[0] = y1, st[1] = y2, st[2] = y3, st[3] = y4, st[4] = y5, st[5] = y6, st[6] = lp;
 }
 

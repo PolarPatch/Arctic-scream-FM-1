@@ -375,6 +375,29 @@ fog lower and duller.
 
 <br clear="right">
 
+### TIDE: the music ebbing, and GUARD (new in 2.1.4)
+
+**Press LFO a sixth time.** Left to play for a long while, the whole sound can ebb now and then: down slowly, far
+down, for a few minutes, and back again, a little quicker than it left. GUARD is a slow hand on the level that keeps a
+swell from towering over the music around it.
+
+| KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
+|---|---|---|---|
+| TIDE | DEPTH | GUARD | NOW |
+
+- **TIDE:** `OFF` (the start), `RARE` (an ebb every 40 to 70 minutes), `SOMETIMES` (every 15 to 30) or `OFTEN` (every
+  5 to 10). An ebb goes down at 0.15 dB a second, stays out one to three minutes, and comes back at 0.3 dB a second.
+- **DEPTH, 0–100 %:** how far an ebb goes. 100 % is 36 dB down, all but silent; 70 % (the start) about 25 dB.
+- **GUARD, 0–100 %:** listens to the last two seconds against the music's longer level. When a swell, a stacked chord
+  or a rising howl gets more than 2 dB over it, GUARD takes the excess off at its share, slowly: in at 1 dB a second,
+  out at 0.3. It only ever holds down (12 dB at most), never lifts, and a sound that stays becomes the music's level
+  within about half a minute. 0 (the start) is off.
+- **NOW:** `IN` or `OUT`, where the tide is. Turn it to OUT for an ebb now, to IN to bring it back now.
+- The screen shows the sea with its surface at the tide's level, what the tide is doing, when the next ebb is due and
+  how much GUARD is holding down.
+- Both act on the whole sound (the speaker, the jack and the USB recording), effects' tails included. With TIDE OFF and
+  GUARD at 0 the sound is exactly as before. TIDE, DEPTH and GUARD are saved with the project.
+
 ---
 
 ## 05 · ENV and LFO
@@ -573,6 +596,17 @@ Name them in the [editor](#14--the-editor-and-the-demo) (up to 10 characters).
 - **MODE:** OFF (PLAY loops the slot), SONG (once), SONG LOOP.
 - **Record a song:** on SONG press **REC**, then **PLAY**, and switch slots with SAVE + keys 1–4.
 - **Hold GLO + keys 1–4** mutes T1–T4, **keys 5–8** solos them.
+- **ONE-SHOTS** (new in 2.1.4): hold **GLO** and press any of the other 19 keys, the five black keys among white keys
+  1–8 and every key above white key 8. A short musical gesture plays once over whatever is going on, then fades by
+  itself: 1 to 8 seconds. While GLO is held these keys glow, and the one playing is lit. It plays on the selected
+  track with that track's own sound, in the SCALE from its ROOT (MINOR PENTATONIC when SCALE is OFF), around C4, and
+  OCT moves it. On a SAMPLE track it plays your sample. Its notes speak at once, whatever the track's ATTACK, and each
+  has a velocity of its own. One plays at a time: a new one takes the old one's place. From the lowest key up:
+  SNOWFALL (soft high notes drifting down), STRUM (down from high, then again softer), RISE, CASCADE, ARP (up and
+  down the triad at the tempo), RAINDROPS, ECHO NOTE (one note echoing in time), FIFTHS, TWINKLE, UNFOLD (the triad a
+  note at a time, ringing on), GLIMMER (the triad, then higher, and higher), CALL AND REPLY, METEOR (a streak up three
+  octaves), BOUNCE (a note bouncing like a ball), TRILL (slowing down), LULLABY, PEAL (bells changing their order),
+  HARP and CHIMES.
 
 <br clear="right">
 
@@ -604,7 +638,7 @@ colours the whole mix at the end. Each page has its own northern lights.
 - **Runaway echo:** past 100 % FEEDBACK the echo grows and saturates, and burns magenta on the screen.
 - GRAIN and DELAY both pour into SPACE. All four TAPE knobs at 0 switch TAPE off.
 - GRAIN and DELAY only hear what the tracks send them (MIXER 1). Turn a GRAIN or DELAY knob up while the selected track sends nothing, and its send goes to 50 % (the header says so), so you hear the page at once.
-- TAPE goes far: WOW to a seasick ±2 % of pitch, SATURATION to 12x drive, TONE darker as it turns up, from `OPEN` down to ~400 Hz (the screen shows its corner: `10K`, `2.4K`, `400`; the opposite way to DRIVE's TONE), HISS loud. DELAY's WEAR wobbles up to ~11 ms and drives the loop to 4x.
+- TAPE goes far: WOW to a seasick ±2 % of pitch, SATURATION to 12x drive, TONE darker as it turns up, from `OPEN` down to ~400 Hz (the screen shows its corner: `10K`, `2.4K`, `400`; the opposite way to DRIVE's TONE), HISS loud. Turned past 48, HISS says `HISS HIGH: A WALL OF NOISE` in pink under the picture (new in 2.1.4, even with HELP off): with DRIVE, GRAIN, DELAY and SPACE up it piles into a steady roar that can sound like a fault. DELAY's WEAR wobbles up to ~11 ms and drives the loop to 4x.
 
 - **MASTER** filters everything, in stereo. **POSITION** says where: `PRE FX` filters the tracks' dry mix before the effects return (the reverb and echoes stay bright), `POST REVERB` filters the tracks and the effects together (before DRIVE and TAPE), `END` filters the very end, after TAPE and the PERFORM tricks. `LP` with CUTOFF at the top or `HP` at the bottom switches it off completely.
 - **DRIVE** distorts everything after SPACE, before TAPE. **AMOUNT** is how hard (0 = off completely), **TYPE** the character: `SOFT` (warm saturation), `FUZZ` (lopsided, buzzy), `CLIP` (hard), `FOLD` (a wavefolder: the harder you drive it, the more it folds back into new overtones). All four are about equally loud at the same AMOUNT, so switching TYPE doesn't jump in volume, and turning AMOUNT all the way up makes it at most ~6 dB louder. **TONE** darkens it (`OPEN` at the top), **MIX** blends it with the clean sound. A limiter after it keeps even the loudest settings from blowing up the output.
@@ -691,7 +725,7 @@ FM-1, not the project.
 | SYSTEM | COLOUR (ICE, AURORA, VIOLET, PLASMA, MONO) | MIDI CHANNEL | TUNE (±50 cents) | SCREEN OFF |
 | SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES | CLOCK (INT, I+OUT, USB, TRS) |
 | SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB, and each with SPK OFF) | MOD OUT (OFF, ON) | PICTURE (CARD, SKY, OFF) |
-| SYSTEM 4 (new in 2.1) | SOUND (HEADPHONES, SPEAKER) | HELP (ON, OFF) | | |
+| SYSTEM 4 (new in 2.1) | SOUND (AUTO, HEADPHONES, SPEAKER) | HELP (ON, OFF) | TOUCH (OFF, VELOCITY, VEL+PRESS) | |
 
 - **COLOUR:** pick the one that matches your FM-1. **MONO** (new in 2.0) turns the whole screen black and white, the
   greys as a fine pattern of dots, as on an old one-bit screen. The header stays clean so the sound's name reads.
@@ -730,11 +764,21 @@ FM-1, not the project.
 - **PICTURE** (SYSTEM 3, new in 2.1): `CARD`, a sound's picture on HOME a moment while PRESETS turns; `SKY`, the
   selected track's picture as HOME's sky, dimmed under the waves; `OFF`. Saved with the project.
 - **SYSTEM 4** (new in 2.1: **HOME once more** after SYSTEM 3):
-  - **SOUND:** `HEADPHONES` (the whole range, as before) or `SPEAKER`, a curve for the FM-1's little speaker: the
-    deepest lows it cannot play taken away (they only make it rattle and eat the loudness), the low mids lifted a little
-    so a drone still sounds deep. It shapes the speaker and the headphone jack, never the USB sound.
+  - **SOUND:** `SPEAKER` is a curve for the FM-1's little speaker: the deepest lows it cannot play taken away (they
+    only make it rattle and eat the loudness), the low mids lifted a little so a drone still sounds deep. `HEADPHONES`
+    is the whole range. `AUTO` (new in 2.1.4, the start) lets the headphone jack decide: the speaker's curve with
+    nothing plugged in, the whole range as soon as headphones or a cable go in. The page shows which one AUTO picked.
+    It shapes the speaker and the headphone jack, never the USB sound.
   - **HELP:** `ON` (the start) shows a short line under the picture for a moment when you turn a knob, saying what it
     does ("EACH NOTE WAITS THIS LONG"). `OFF` for none.
+  - **TOUCH** (new in 2.1.4): the FM-1's own keys can tell how hard they are played, with no change to the hardware.
+    Each key has a carbon pill under its rubber whose resistance falls as it is pressed, and Arctic Scream reads it.
+    `OFF` (the start): every note at one level, as before. `VELOCITY`: a key played harder is louder, about 24 dB
+    from the softest to the firmest; a MIDI note's velocity counts too. `VEL+PRESS`: as VELOCITY, and pressing a held
+    key harder deepens the track's LFO, up to twice its DEPTH (set some DEPTH first), and is HOWL's pressure, as MIDI
+    pressure is. Pressure works on the 20 lower keys, F3 to D5; the top seven, C#5 to G5, give velocity only. The page
+    shows the last key played, its velocity and its pressure. A held key's column of LEDs glows a little less while
+    TOUCH is on. The way of reading the keys follows Charles Vestal's measurements on an FM-1 (fm1-base).
 - **The guide (new in 2.1):** the very first time Arctic Scream starts, three short pages show the first steps. Any key
   or button turns the page; after the third it is gone.
 - **For app makers:** since 1.5.2 Arctic Scream also answers **PANEL OUT**, an open protocol that tells an app which buttons

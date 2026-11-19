@@ -98,6 +98,8 @@ static void lfo_ctl(void)                       /* audio, a control step: each t
             lfo_b[t] = lfo_rand();
         }
         d = clamp(trk[t].lfo_depth, 0, 100);
+        if (key_press[t]) d = clamp(d + d * key_press[t] / 127, 0, 100);   /* (2.1.4: TOUCH) pressed harder: deeper, to
+                                                 * twice DEPTH (100 % at most) */
         a = lfo_amt[t];
         if (!d && !a) {                         /* off: nothing to do */
             lfo_p16[t] = 0;

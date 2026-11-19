@@ -78,6 +78,9 @@ static void rt_out(uint32_t st, uint32_t due)   /* audio ISR: a realtime byte ou
 #include "fm1_lcd_hw.h"
 #include "fm1_audio.h"
 #include "fm1_adc.h"
+#include "fm1_jack.h"
+#include "fm1_touch.h"                         /* (2.1.4) TOUCH: the keys' readings (src/touch.c) */
+#define FM1_TOUCH_HAL 1
 #include "bootguard.h"
 
 #ifndef APP_NAME
@@ -334,7 +337,7 @@ static void midi_send(uint32_t st, uint32_t d1, uint32_t d2)   /* from the main 
 {
     midi_out_event((st >> 4) | st << 8 | (d1 & 0x7Fu) << 16 | (d2 & 0x7Fu) << 24);
 }
-static int32_t batt_raw(void) { return fm1_adc_read(FM1_ADC_BATT); }   /* the battery divider (PB1, ADC ch3): raw
+static int32_t batt_raw(void) { return fm1_tch.on ? fm1_tch.batt : fm1_adc_read(FM1_ADC_BATT); }   /* the battery divider (PB1, ADC ch3): raw
                                                  * 0..1023 (-1: no reading) */
 static uint32_t usb_drops(void) { return uac.underruns + uac.overruns; }   /* the USB recording's dropouts so far:
                                                  * a frame repeated (ring dry), a block dropped (full) */
@@ -382,7 +385,9 @@ void fm1_timer5_irq(void)
     static uint32_t sub, owed, last, acc;
     uint32_t t0 = fm1_ticks(), usb_due = sub % 5u == 0u, d;
     fm1_timer5_ack();
+    fm1_touch_harvest();                        /* (2.1.4: TOUCH, the keys' readings, hal/fm1_touch.h) */
     fm1_input_tick();
+    fm1_touch_start();
     if (last) {                                 /* (the gap since the tick before) */
         d = t0 - last;
         if (d > hl.gap) hl.gap = d;
@@ -463,6 +468,7 @@ static void platform_poll(void)
     int32_t a;
     fm1_wdt_feed();
     usb_retry(fm1_ms);
+    fm1_jack_poll(fm1_ms);
     {                                           /* (the battery divider ~100 times a second: a supply that sags) */
         static uint32_t bt;
         if (fm1_ms - bt >= 10u) {
@@ -503,7 +509,7 @@ static void platform_poll(void)
     }
     if (fm1_ms >= 30000u && bootguard.pending)
         bootguard_clear(&bootguard);            /* 30 s up: this firmware boots */
-    if ((a = fm1_adc_read(FM1_ADC_MASTER)) >= 0) {
+    if ((a = fm1_tch.on ? fm1_tch.master : fm1_adc_read(FM1_ADC_MASTER)) >= 0) {   /* (TOUCH on: the scan's) */
         uint32_t k10;
         knob_avg += (a * 16 - knob_avg) / 8;
         k10 = (uint32_t)(knob_avg / 16);
@@ -597,6 +603,7 @@ void fm1_cstart(void)
     lcd_fill(0, 0, 240, 240, C_BLACK);
     fm1_input_init();
     fm1_adc_init();
+    fm1_jack_init();                            /* (the headphone jack: SOUND AUTO) */
     {                                           /* (2.2) the second core: started before the audio and the timers,
                                                  * interrupts off (felucca-bsp's finding); a new build may try it again
                                                  * where an older one gave it up */

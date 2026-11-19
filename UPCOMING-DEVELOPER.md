@@ -27,7 +27,7 @@ Built, tested (host, stress 1..3, ARM, web, the device names in a Linux containe
 | 19 | Pictures that melt | GOVVA (and so JAHKI's seasons there): a new picture dissolves in over 3 s, a 4 x 4 ordered dither cell by cell, both moving (`ui.c` `gv_draw`, two passes while melting) | built |
 | 20 | SWELL | PERFORM's ninth white key (G3) or CC 1: `sw_e` up ~4 s, down ~1.5 s; the tracks +2.5 dB, REV send + 64, the filters 24 steps open | built |
 | 17, 21 | SYSTEM 4: SOUND (speaker), HELP; the guide | `arctic.c` `spk_eq` (shifts only, the speaker and jack, never USB); `help.c` (a line under the picture a knob turned, 26 characters; three guide pages at the first start, the FM-1 only; host `ARCTIC_GUIDE`); settings version 6 (173 B) | built |
-| 16 | The second core | felucca-bsp's `fm1_cpu1` (MPL-2.0, as hal/ is Felucca's; the user's yes, 2026-11-14) in `firmware/hal/`; started at power-on before the audio, FALLBACK 1 (a failure: one core, never a restart); SPACE runs there a block behind (`c1_space`), no job outstanding outside the audio interrupt. Host `ARCTIC_CPU2`. On the FM-1 (beta6, 2026-11-14): SYSTEM 2 says 2C NOW; a three-note ICE WRAITH chord 22.6 % (SPACE 0.6 %: only the wait and the add; beta4 had SPACE ~8 % under load), idle 8.7 % | built, runs on the FM-1 |
+| 16 | The second core | felucca-bsp's `fm1_cpu1` (MPL-2.0, as hal/ is Felucca's; the user's yes, 2026-11-14) in `firmware/hal/`; started at power-on before the audio, FALLBACK 1 (a failure: one core, never a restart); SPACE runs there a block behind (`c1_space`), no job outstanding outside the audio interrupt. Host `ARCTIC_CPU2`. On the FM-1 (beta6, 2026-11-14): SYSTEM 2 says 2C NOW; a three-note ICE WRAITH chord 22.6 % (SPACE 0.6 %: only the wait and the add; beta4 had SPACE ~8 % under load), idle 8.7 %. (2.2) A share of the voices too: `voices.c` `voices_render` makes every voice's control step ready here (levels, detune, knobs, the engine's `prep`: FM, WHEEL, HOLVUT's shared track state), deals the voices out by `ENG_COST` and the second core renders its own into `vr_tb` / `vr_sb`, added in; each core its own `vc_fine`, `vc_at`, FM6's bus (`VC_CORE`); VOICE's breath noise a voice's own. SPACE then starts after the voices. Host: the same sound, bit for bit, as all on one core (stress seeds 1, 2: about half the voice steps on the second); `ARCTIC_C1_NO_VOICES` turns the share off. Not yet run on an FM-1 | built, runs on the FM-1 (SPACE); the voices: built |
 | 12 | MOTION, knob moves that loop | `motion.c`: REC held + a knob, its move (50 ms points, up to 2 min) spread over 256 and looped; four lanes; REC + OCT- clears the track's; saved in the slots' stream's tail (`MO_AT`), the project packed with each knob at its lane's first value (`mo_home`: no saves of its own) | built |
 | 8 | Jiekna, the singing ice (a tenth source) | `jiekna.c`: STRIKE, RING (ENDLESS: held by a soft knee), HOLLOW (string, pipe), BRITTLE (an all-pass); its line in `vx_pool`; saved in EXT (version 11, 64 B) and `slot_e2`; DRONE moves STRIKE, RING, BRITTLE; in tune within 1 % (`drone_test.py`). No factory sound yet | built |
 | 9, 13 | ENV 2: LOOP, ONSET; SPREAD, DETUNE | ENV's second page (`PG_ENV2`): `voices.c` `env_tick` (LOOP PULSE, BREATHE; ONSET, a note let go while it waits plays as held), the voice steps (`sbuf`, a side signal a track, its own filter state `tf_is`); saved in EXT (project version 11) and the slots' stream's tail (`slot_e2`), not in a sound (its record is full for FM) | built |
@@ -280,3 +280,22 @@ KB, the voices' scratch `vx_pool` 48 KB, GRAIN's `ge_buf` 44 KB, the screen `cv_
 When it gets tight (the user's choice): DELAY's line at half the sample rate (22 kHz, still 2.6 s; the echoes a little
 darker, above ~10 kHz gone): 58 KB of the pool back. Not now. The moving pictures cost ~6 KB of flash and ~70 B of
 RAM (the pictures themselves are there as stills anyway): kept.
+
+## From Tekstuur and fm1-base (noted 2026-11-16)
+
+### 23. The screen mirrored to a phone or tablet (fm1-base's protocol)
+
+The FM-1's screen is tiny. fm1-base (Charles Vestal, MPL-2.0, `../fm1-base` to read) mirrors any app's screen over
+USB-MIDI (`device/mirror.c`, `mirror = true`), and its firmwares (Tekstuur, CTL-1 and more) all speak the same protocol.
+Arctic Scream speaks it too, so POLAR SIGNAL's iPhone/iPad app (`../polar-signal/MIRROR-DEVELOPER.md`) shows every one
+of them with one decoder: SysEx in the update framing, cmd 0x50 on/off/refresh (a keep-alive within 6 s), 0x51 run-length
+RGB565 rectangles, 0x52 fills, 0x53 the panel's state and lights, 0x54 the panel played from the host. Written anew from
+the protocol, credited in `LICENSING.md`. Here the screen is `cv_px` (dirty rows are known), so the rows that changed go
+out from the main loop, never the audio ISR, after the notes and clock in the USB ring. Bluetooth MIDI (and the mirror
+over it) waits: fm1-base's BLE stack (Henri David's, from Optimist) is a far bigger step.
+
+### 24. EVOLVE: a point that blends the four tracks and wanders (after Tekstuur)
+
+Tekstuur's vector point mixes its four layers (a corner one layer, the middle all) and Evolve moves it by itself. Here:
+the four tracks' levels from one point that drifts slowly (DRONE-like rates, minutes), so the mix keeps finding new
+blends. Not built.

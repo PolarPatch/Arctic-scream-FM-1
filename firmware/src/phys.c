@@ -15,7 +15,7 @@
  *   BOW        MODAL, STRING: 0 struck / plucked, above sustained (bowed, blown) at that level; MEMBRANE: BEND,
  *              the pitch falling after the strike; SYMPATH: BUZZ, the curved bridge
  * Fixed at Felucca's defaults: BRIT 80, POS 20 (SYMPATH: SYMP), ACC 90 at a velocity of 100, EXC 0.
- * State: ph_slot[voice] (~4 KB each, RAM); voice_t is unused but for its random state. */
+ * State: ph_slot[voice] (~4 KB each, the pool); voice_t is unused but for its random state. */
 
 #include "phys_dsp.c"
 #include "phys_symp.c"
@@ -39,7 +39,8 @@ typedef struct {
         howl_t h;                               /* HOWL (howl.c) */
     } u;
 } phys_slot_t;
-static phys_slot_t ph_slot[NV];
+static phys_slot_t ph_slot[NV] __attribute__((section(".pool")));   /* (2.1.4: in the pool, out of the RAM
+                                                 * the rest needs) */
 typedef union { px_modal_t m; px_string_t s; px_symp_t y; } phys_only_t;
 _Static_assert(sizeof(howl_t) <= sizeof(phys_only_t), "HOWL fits in the PHYS slot: no RAM of its own");
 

@@ -8,8 +8,9 @@
  * has them (softclip, soft_knee, sh_tz, the one-pole low-pass that keeps
  * its steps' remainders so a tail ends in exact silence).
  *
- *   at half the rate (22.05 kHz, as SPACE: 2.6 s fit in 116 KB, the work halves, the echoes stop near 10 kHz): the
- *   voices (every other sample, 1 2 1) -> the line (57984 samples) -> read TIME back, plus the wow (two slow sines,
+ *   at a quarter of the rate (11.025 kHz; 2.1.4, was half: 2.6 s fit in 58 KB, the pool's 58 KB for the rest, the echoes
+ *   stop near 5 kHz, as a worn tape's do): the voices (four samples into one, 1 2 2 2 1) -> the line (28992 samples)
+ *   -> read TIME back, plus the wow (two slow sines,
  *   0.5 and 0.19 Hz: not quite periodic) and a little flutter (6.1 Hz), between samples, gliding over the block; the
  *   right side 9 ms later -> the loop: a one-pole low-pass (WEAR: ~7 kHz .. ~1.2 kHz), FEEDBACK (0 .. 150 %), a tanh
  *   saturation (WEAR: 1x .. 4x drive, the level made up; and WEAR's wow up to ~11 ms: Arctic Scream 1.3), the DC block -> back into the line with the input,
@@ -26,17 +27,19 @@
  * The audio ISR calls tape_render with the DLY bus, before SPACE (the echoes fall into the reverb); the main loop
  * sets the four parameters. The line and the state are in the pool (zero at boot): ~117 KB. */
 
-#define DL_NC 128u                              /* a block at half the rate: app_audio's 256 frames */
-#define DL_LEN 57984u                           /* 2600 ms (57332 samples; 1.5.2, was 3000: 17 KB of pool) + the wow's
-                                                 * reach (1.3: ~11 ms) + the right side's 9 ms, a whole number of blocks */
-#define DL_SPREAD (198 << 8)                    /* the right side reads 9 ms further back (Q8 samples) */
+#define DL_D 4u                                 /* (2.1.4) the line's rate: 44.1 kHz / DL_D (was 2) */
+#define DL_NC 64u                               /* a block at that rate: app_audio's 256 frames */
+#define DL_LEN 28992u                           /* 2600 ms (28665 samples; 1.5.2, was 3000) + the wow's reach (1.3: ~11
+                                                 * ms) + the right side's 9 ms, a whole number of blocks */
+#define DL_SPREAD (99 << 8)                     /* the right side reads 9 ms further back (Q8 samples) */
 #define DL_IN 8192                              /* the voices into the line, Q15: a quarter (headroom for the loop; V2:
                                                  * half of 1.0's, its return twice: loud chords never reach its knee) */
-#define DL_DCK 280                              /* the DC block: 30 Hz at 22.05 kHz, Q15 */
+#define DL_DCK 560                              /* the DC block: 30 Hz at 11.025 kHz, Q15 */
 #define DL_W1 12467522u                         /* the wow: 0.5 Hz, a block's step (2^32 * 256 / 44100 * Hz) */
 #define DL_W2 4737658u                          /* .. and 0.19 Hz beside it: not quite periodic */
 #define DL_W3 152103765u                        /* the flutter: 6.1 Hz */
-_Static_assert(2600u * 5645u / 256u + 1u + 51u + 198u + 2u < DL_LEN, "DELAY: the longest read stays in the line");
+#define DL_MSQ8 2822                            /* a ms in Q8 samples at 11.025 kHz */
+_Static_assert(2600u * DL_MSQ8 / 256u + 1u + 26u + 99u + 2u < DL_LEN, "DELAY: the longest read stays in the line");
 
 static int16_t dl_buf[DL_LEN] __attribute__((section(".pool")));
 static struct {
@@ -73,9 +76,9 @@ static void tape_render(const int32_t *in, int32_t *out, int32_t *rev, uint32_t 
     int32_t mix = dl_mix, wear = dl_wear, fbk = dl_fb;
     int32_t target, d0, d1, m1, a, tc, g, ig, fb, f1, pp = clamp(dl_pp, 0, 127), po = 32767 - pp * 258;
     int32_t xp = dl.x, lp = dl.lp, le = dl.le, dc = dl.dc, de = dl.de, ml = dl.ml, mr = dl.mr;
-    if (n != 2u * DL_NC || mix <= 0)
+    if (n != DL_D * DL_NC || mix <= 0)
         return;                                 /* MIX 0: the dry alone; the line waits as it is */
-    for (i = 0; i < 2u * DL_NC && !any; i++)
+    for (i = 0; i < DL_D * DL_NC && !any; i++)
         any = in[i] != 0;
     if (!any && dl.quiet >= DL_LEN)
         return;                                 /* the line silent, nothing coming in: nothing to do */
@@ -83,7 +86,7 @@ static void tape_render(const int32_t *in, int32_t *out, int32_t *rev, uint32_t 
     fbk = clamp(fbk, 0, 127);
 
     /* this block's settings: TIME (gliding), the wow, the loop's tone, drive and feedback */
-    target = (int32_t)DL_MS[clamp(dl_time, 0, 127)] * 5645;   /* ms -> Q8 samples at 22.05 kHz */
+    target = (int32_t)DL_MS[clamp(dl_time, 0, 127)] * DL_MSQ8;   /* ms -> Q8 samples at 11.025 kHz */
     if (pp && target > (int32_t)DL_PPMAX) target = (int32_t)DL_PPMAX;
     if (!dl.d)
         dl.d = target;                          /* (the first block: no glide from nothing) */
@@ -91,10 +94,11 @@ static void tape_render(const int32_t *in, int32_t *out, int32_t *rev, uint32_t 
     d1 = d0 + ((target - d0) >> 3);             /* ~50 ms to a new TIME */
     dl.d = d1;
     dl.p1 += DL_W1, dl.p2 += DL_W2, dl.p3 += DL_W3;
-    a = (10 + wear) * 94 + wear * wear * 3;     /* the wow's reach, Q8 samples: ~0.17 .. ~11 ms (Arctic Scream 1.3: was
+    a = ((10 + wear) * 94 + wear * wear * 3) / 2;   /* the wow's reach, Q8 samples: ~0.17 .. ~11 ms (Arctic Scream 1.3: was
                                                  * 2.3 ms; a worn-out tape at the top) */
     m1 = wear_wow(dl.p1, dl.p2, dl.p3, a);      /* (wear.c) */
-    tc = 28300 - wear * 148;                    /* the loop's low-pass, Q15: ~7 kHz .. ~1.2 kHz */
+    tc = 32767 - wear * 148 - 4467;             /* the loop's low-pass, Q15, as it was at 22.05 kHz (~7 kHz .. ~1.2 kHz), */
+    tc = 32768 - (((32768 - tc) * (32768 - tc)) >> 15);   /* .. the same pole over two of its samples at 11.025 */
     g = 4096 + wear * 97;                       /* the saturation's drive, Q12: 1x .. 4x (1.3: was 1.8x) */
     ig = (int32_t)(134217728u / (uint32_t)g) >> 1;   /* .. and the level made up after it, Q15 (the line at
                                                  * half: driven twice as hard, half back: saturating where it did) */
@@ -109,9 +113,10 @@ static void tape_render(const int32_t *in, int32_t *out, int32_t *rev, uint32_t 
     {
         int32_t D0 = d0 + dl.m, dD = (d1 + m1) - D0;
         for (i = 0; i < DL_NC; i++) {
-            int32_t x = (xp + 2 * in[2u * i] + in[2u * i + 1u]) >> 2, D = D0 + ((dD * (int32_t)i) >> 7);
+            const int32_t *q = in + DL_D * i;
+            int32_t x = (xp + 2 * (q[0] + q[1] + q[2]) + q[3]) >> 3, D = D0 + ((dD * (int32_t)i) >> 6);
             int32_t y = tape_read(w, D), v, e;
-            xp = in[2u * i + 1u];
+            xp = q[3];
             x = mulq15(clamp(x, -65535, 65535), DL_IN);
             if (pp) {                           /* PING-PONG: left TIME back, right (and the loop) 2 TIME */
                 int32_t y2 = tape_read(w, 2 * D), yr = mulq15(y2, f1);   /* (the right's echo: one FEEDBACK after
@@ -140,11 +145,12 @@ static void tape_render(const int32_t *in, int32_t *out, int32_t *rev, uint32_t 
     {
         int32_t wg = mix * 258;
         for (i = 0; i < DL_NC; i++) {
-            int32_t wl = dl.l[i], wr = dl.r[i], *o = out + 4u * i, a = 2 * mulq15((ml + wl) >> 1, wg),
-                    b = 2 * mulq15((mr + wr) >> 1, wg), c = 2 * mulq15(wl, wg), d = 2 * mulq15(wr, wg);   /* (x 2) */
-            o[0] += a, o[1] += b, o[2] += c, o[3] += d;
-            rev[2u * i] += (a + b) >> 1;        /* (the echoes, both sides, into SPACE) */
-            rev[2u * i + 1u] += (c + d) >> 1;
+            int32_t wl = dl.l[i], wr = dl.r[i], *o = out + 2u * DL_D * i, k;
+            for (k = 0; k < (int32_t)DL_D; k++) {   /* (from the last toward this one, a quarter on each) */
+                int32_t a = 2 * mulq15((ml * (3 - k) + wl * (k + 1)) >> 2, wg), b = 2 * mulq15((mr * (3 - k) + wr * (k + 1)) >> 2, wg);   /* (x 2) */
+                o[2 * k] += a, o[2 * k + 1] += b;
+                rev[DL_D * i + (uint32_t)k] += (a + b) >> 1;   /* (the echoes, both sides, into SPACE) */
+            }
             ml = wl;
             mr = wr;
         }

@@ -5,8 +5,11 @@
  * in the small font); a knob without one says nothing. The SOUND page's by its source. ui.c draws it (ui_help_bar). */
 
 #define HL_MS 2500u                             /* how long a line stays */
+#define HISS_WARN 48                            /* TAPE's HISS from here: a warning, HELP on or off (~ -46 dB rms of
+                                                 * noise, and more once DRIVE, GRAIN, DELAY and SPACE pile it up) */
 static uint32_t hl_until;                       /* the line shown till then */
 static const char *hl_txt;
+static uint8_t hl_warn;                         /* the line is a warning (drawn in pink) */
 
 static const char *const HELP_TXT[NPAGE][4] = {
     [PG_ENV] = {"HOW EACH NOTE STARTS", "HOW FAST IT FALLS", "THE LEVEL IT HOLDS", "HOW IT DIES AWAY"},
@@ -15,6 +18,7 @@ static const char *const HELP_TXT[NPAGE][4] = {
     [PG_DRONE] = {"SLOW RANDOM WALKS", "THE STORM, THE TENSION", "HOW LONG THE STORM RISES", "NOTES STAY AFTER THE KEY"},
     [PG_JIEHKKI] = {"HOW LONG THE PIECE PLAYS", "HOW MUCH MOVES IN IT", "THE ICE: CRACKS, DRIPS", "ON: IT PLAYS BY ITSELF"},
     [PG_RUOHCAT] = {"HOW OFTEN THE ICE SOUNDS", "WHICH OF YOUR SAMPLES", "HOW MANY ARE YOUR SAMPLES", "SHORTER, SHIFTED, MOVED"},
+    [PG_TIDE] = {"HOW OFTEN THE MUSIC EBBS", "HOW FAR IT GOES DOWN", "HOLDS A SWELL DOWN", "OUT NOW, OR BACK"},
     [PG_JAHKI] = {"HOW LONG A WHOLE YEAR IS", "WHERE THE YEAR IS NOW", "HOW FAR SEASONS LEAN", "SEASONS ON THE SCREENSAVER"},
     [PG_HOME] = {"THE TRACK'S LEVEL", "THE TRACK'S FILTER", "MORE LIFE, STILL TO WILD", "THE SOUND SLOWLY CHANGING"},
     [PG_MIX1] = {"THE TRACK'S LEVEL", "HOW MUCH INTO DELAY", "HOW MUCH INTO SPACE", "HOW MUCH INTO GRAIN"},
@@ -28,7 +32,7 @@ static const char *const HELP_TXT[NPAGE][4] = {
     [PG_DRIVE] = {"HOW HARD IT IS DRIVEN", "THE KIND OF DRIVE", "BRIGHTER OR DARKER", "HOW MUCH OF IT"},
     [PG_SCALE] = {"THE SCALE'S ROOT", "WHICH NOTES THE KEYS PLAY", "PURE TUNINGS FOR DRONES", 0},
     [PG_ARP] = {"THE NOTES' ORDER", "HOW FAST", "OVER HOW MANY OCTAVES", "HOW LONG EACH NOTE"},
-    [PG_SYS4] = {"THE SPEAKER'S OWN SOUND", "THESE LINES, ON OR OFF", 0, 0},
+    [PG_SYS4] = {"THE SPEAKER'S OWN SOUND", "THESE LINES, ON OR OFF", "HOW HARD THE KEYS ARE PLAYED", 0},
 };
 static const char *help_sound(uint32_t e, uint32_t k)   /* the SOUND page's, by its source (0: none) */
 {
@@ -40,10 +44,14 @@ static const char *help_sound(uint32_t e, uint32_t k)   /* the SOUND page's, by 
 static void help_knob(uint32_t pg, uint32_t k)  /* knob k + 1 turned on page pg: its line, if HELP is on */
 {
     const char *t;
+    if (pg == PG_TAPE && k == 3u && tf_hiss >= HISS_WARN) {   /* (a wall of noise: said even with HELP off) */
+        hl_txt = "HISS HIGH: A WALL OF NOISE", hl_warn = 1, hl_until = fm1_ms + HL_MS;
+        return;
+    }
     if (!help_on || pg >= NPAGE || k > 3u) return;
     t = pg == PG_SOUND ? help_sound(sel_eng(), k) : HELP_TXT[pg][k];
     if (!t) return;
-    hl_txt = t, hl_until = fm1_ms + HL_MS;
+    hl_txt = t, hl_warn = 0, hl_until = fm1_ms + HL_MS;
 }
 /* (2.2) the guide at the very first start (after HADAL-1's first steps, written anew): three pages, any key or button
  * the next, the last one gone. On the FM-1 only (the host's tests, the browser and VIBE have none: VIBE its welcome) */

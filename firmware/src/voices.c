@@ -50,6 +50,8 @@ typedef struct {
     void (*begin)(voice_t *v);                  /* a note from silence */
     void (*block)(voice_t *v, const volatile int32_t *p, int32_t *mono, int32_t amp0, int32_t amp1);   /* CTL frames, added */
     void (*text)(const volatile int32_t *p, uint32_t k, char *s);   /* parameter k as the screen shows it */
+    void (*prep)(voice_t *v, const volatile int32_t *p);   /* (2.2, or 0) what its voices of a track share, made once a
+                                                 * control step, before any of them renders (voices_render: this core) */
 } engine_t;
 
 typedef struct {
@@ -148,10 +150,17 @@ static const volatile int32_t *lfo_params(uint32_t v, uint32_t t, uint32_t e);
 /* SYSTEM's TUNE (main loop): every source's pitch times 1 + tune_f / 4096 (-50 .. +50 cents: -117 .. +120; finer than
  * VP16's 6.25-cent steps); vinc: a pitch's phase increment, tuned */
 static volatile int32_t tune_f;
-static uint32_t vc_at;                          /* audio: the frame in the render where the voice's block begins (HOWL's
-                                                 * BLOOM reads the effects' return there) */
-static int32_t vc_fine;                         /* audio: the voice being rendered's own detune, as tune_f (DRONE's
-                                                 * BORGA, STOARBMA: dr_fine; 0 between voices) */
+#if !defined DINGHY_HOST && !defined ARCTIC_WEB && !defined FM1_PLATFORM_FILE
+#define VC_CORE() fm1_cnum()                    /* (2.2) the core rendering, 0 or 1: what each keeps of its own */
+#else
+#define VC_CORE() vc_core                       /* (arctic.c: 1 while the host's stand-in for the second core runs) */
+#endif
+static uint32_t vc_at_c[2];                     /* audio: the frame in the render where the voice's block begins (HOWL's
+                                                 * BLOOM reads the effects' return there), each core its own */
+static int32_t vc_fine_c[2];                    /* audio: the voice being rendered's own detune, as tune_f (DRONE's
+                                                 * BORGA, STOARBMA: dr_fine; 0 between voices), each core its own */
+#define vc_at (vc_at_c[VC_CORE()])
+#define vc_fine (vc_fine_c[VC_CORE()])
 static int32_t dr_fine[NV], dr_gain[NV] = {32767, 32767, 32767, 32767, 32767, 32767};   /* audio: drone.c's, a voice's
                                                  * detune (tune_f units) and breath (its level, Q15) */
 static int32_t dr_gain_was[NV] = {32767, 32767, 32767, 32767, 32767, 32767};   /* (the last block's: ramped) */
@@ -378,9 +387,52 @@ static int32_t env_tick(voice_t *v)
 static int32_t sbuf[NT][VB];                    /* audio: (2.2) the tracks' side signals (SPREAD) */
 static void ctl_hook(void);                     /* arctic.c: a control block's notes (the main loop's asks, the
                                                  * sequencer), before the voices */
+/* (2.2) the second core takes a share of the voices, a control step at a time: here first, for every voice that sounds,
+ * its levels (env_tick), its detune, its knobs (lfo_params), what its track's voices share (the engine's prep: FM's
+ * patch and LFO, WHEEL's registration, HOLVUT's sample), the tracks' buffers cleared; then the voices dealt out by a
+ * rough cost a source (ENG_COST: lighter here, the asks and the adding are this core's), the second core's into its
+ * own buffers (vr_tb, vr_sb) and added in when it is back. Each voice is wholly one core's in a step; nothing a voice
+ * renders is shared but the read-only. The second core given up meanwhile: its voices rendered here, this once */
+static const uint8_t ENG_COST[NENG] = {2, 3, 2, 3, 3, 6, 2, 3, 2, 3};   /* (by ENG_: a rough guess, PHYS the heaviest) */
+static const volatile int32_t *vr_p[NV];         /* audio: a voice's four this control step (lfo_params) */
+static int32_t vr_a0[NV], vr_a1[NV], vr_fine[NV]; /* .. its levels at the step's two ends, its detune */
+static uint32_t vr_b, vr_sp;                     /* .. the step's first frame; the tracks with SPREAD on in it (bit t) */
+static int32_t vr_tb[NT][CTL], vr_sb[NT][CTL];   /* the second core's: its voices' tracks, and their side (SPREAD) */
+static void vr_voice(uint32_t k, int32_t *o, int32_t *sd)   /* voice k's control step into o (sd: its track's side
+                                                 * signal, SPREAD on; else 0); either core */
+{
+    voice_t *v = &vc[k];
+    uint32_t i;
+    vc_fine = vr_fine[k], vc_at = vr_b;
+#ifdef DINGHY_HOST
+    host_vsteps[VC_CORE()]++;
+#endif
+    if (sd) {                                   /* (2.2: SPREAD: the voice alone, then into the track and its side) */
+        int32_t vb[CTL], g = VS_PAN[vc_vs[k] & 3u] * clamp(trk[v->trk].spread, 0, 100) / 100;
+        for (i = 0; i < CTL; i++) vb[i] = 0;
+        ENGINES[v->eng]->block(v, vr_p[k], vb, vr_a0[k], vr_a1[k]);
+        for (i = 0; i < CTL; i++) o[i] += vb[i], sd[i] += ((vb[i] >> 4) * g) >> 11;   /* (+-2^19 x Q15: in 32 bits) */
+    } else
+        ENGINES[v->eng]->block(v, vr_p[k], o, vr_a0[k], vr_a1[k]);   /* (the engine it began with; the LFO's on one of
+                                                 * its knobs) */
+    vc_fine = 0;
+}
+static void vr_c1(uint32_t m)                   /* (the second core) the voices in m (bit k), into vr_tb, vr_sb */
+{
+    uint32_t k, t, i, z = 0;
+    for (k = 0; k < NV; k++) {
+        if (!(m >> k & 1u)) continue;
+        t = vc[k].trk;
+        if (!(z >> t & 1u)) {
+            z |= 1u << t;
+            for (i = 0; i < CTL; i++) vr_tb[t][i] = vr_sb[t][i] = 0;
+        }
+        vr_voice(k, vr_tb[t], vr_sp >> t & 1u ? vr_sb[t] : 0);
+    }
+}
 static uint32_t voices_render(int32_t (*tb)[VB], uint32_t n)
 {
-    uint32_t b, i, k, used = 0, envd = 0;
+    uint32_t b, i, k, t, used = 0, envd = 0, on, m, mt, go, l0 = 0, l1 = 0;
     if (n > VB)
         return 0;
     sb_used = 0;
@@ -395,10 +447,14 @@ static uint32_t voices_render(int32_t (*tb)[VB], uint32_t n)
                 env_coef(&env_c[k], trk[k].env);
             envd = 1;
         }
-        for (k = 0; k < NV; k++) {
+        vr_b = vc_at = b;
+        for (t = 0, vr_sp = 0; t < NT; t++)      /* (SPREAD as it is now, for the whole step: a knob turned meanwhile
+                                                 * waits for the next) */
+            if (trk[t].spread > 0) vr_sp |= 1u << t;
+        for (k = 0, on = 0; k < NV; k++) {      /* every voice's step made ready */
             voice_t *v = &vc[k];
-            int32_t amp0 = v->amp, amp1 = env_tick(v);
-            uint32_t t = v->trk;
+            int32_t amp0 = v->amp, amp1 = env_tick(v), f;
+            t = v->trk;
             v->amp = amp1;
             if (!amp0 && !amp1)
                 continue;                       /* silent: costs nothing */
@@ -407,28 +463,55 @@ static uint32_t voices_render(int32_t (*tb)[VB], uint32_t n)
                 for (i = 0; i < n; i++)
                     tb[t][i] = 0;
             }
-            vc_fine = dr_fine[k] + ch_fine[k] + tn_fine(v->note);   /* (DRONE: its detune and breath, drone.c; WARP's,
+            if ((vr_sp >> t & 1u) && !(sb_used >> t & 1u)) {
+                sb_used |= 1u << t;
+                for (i = 0; i < n; i++) sbuf[t][i] = 0;
+            }
+            f = dr_fine[k] + ch_fine[k] + tn_fine(v->note);   /* (DRONE: its detune and breath, drone.c; WARP's,
                                                  * chaos.c; 2.0 SCALE's TUNING, scale.c) */
             if (trk[t].detune > 0)              /* (2.2: DETUNE, the voice's step: up to +-24 cents) */
-                vc_fine += VS_DET[vc_vs[k] & 3u] * clamp(trk[t].detune, 0, 100) * 28 / 100;
+                f += VS_DET[vc_vs[k] & 3u] * clamp(trk[t].detune, 0, 100) * 28 / 100;
+            vr_fine[k] = f;
             if (dr_gain[k] < 32767 || dr_gain_was[k] < 32767) amp0 = mulq15(amp0, dr_gain_was[k]), amp1 = mulq15(amp1, dr_gain[k]);
             dr_gain_was[k] = dr_gain[k];
-            vc_at = b;
-            if (trk[t].spread > 0) {            /* (2.2: SPREAD: the voice alone, then into the track and its side) */
-                int32_t vb[CTL], *o = tb[t] + b, *sd = sbuf[t] + b;
-                int32_t g = VS_PAN[vc_vs[k] & 3u] * clamp(trk[t].spread, 0, 100) / 100;
-                if (!(sb_used >> t & 1u)) {
-                    sb_used |= 1u << t;
-                    for (i = 0; i < n; i++) sbuf[t][i] = 0;
+            vr_a0[k] = amp0, vr_a1[k] = amp1;
+            vr_p[k] = lfo_params(k, t, v->eng);
+            if (ENGINES[v->eng]->prep)
+                ENGINES[v->eng]->prep(v, vr_p[k]);
+            on |= 1u << k;
+        }
+        m = mt = 0;                             /* the second core's voices (bit k), their tracks (bit t) */
+#ifndef ARCTIC_C1_NO_VOICES
+        if (C1_ON() && (on & (on - 1u)))        /* (two or more sound: a share each) */
+            for (k = 0, l0 = 1, l1 = 0; k < NV; k++)
+                if (on >> k & 1u) {
+                    if (l1 < l0) m |= 1u << k, mt |= 1u << vc[k].trk, l1 += ENG_COST[vc[k].eng];
+                    else l0 += ENG_COST[vc[k].eng];
                 }
-                for (i = 0; i < CTL; i++) vb[i] = 0;
-                ENGINES[v->eng]->block(v, lfo_params(k, t, v->eng), vb, amp0, amp1);
-                for (i = 0; i < CTL; i++) o[i] += vb[i], sd[i] += ((vb[i] >> 4) * g) >> 11;   /* (+-2^19 x Q15: in 32 bits) */
+#endif
+        go = m && C1_RUN(vr_c1, m);
+        if (!go) m = mt = 0;
+        for (k = 0; k < NV; k++)                /* this core's */
+            if ((on & ~m) >> k & 1u) {
+                t = vc[k].trk;
+                vr_voice(k, tb[t] + b, vr_sp >> t & 1u ? sbuf[t] + b : 0);
+            }
+        if (go) {
+            if (C1_WAIT()) {                    /* (given up just now: its voices here, this once) */
+                for (k = 0; k < NV; k++)
+                    if (m >> k & 1u) {
+                        t = vc[k].trk;
+                        vr_voice(k, tb[t] + b, vr_sp >> t & 1u ? sbuf[t] + b : 0);
+                    }
             } else
-                ENGINES[v->eng]->block(v, lfo_params(k, t, v->eng), tb[t] + b, amp0, amp1);   /* (the engine it began
-                                                 * with; the LFO's on one of its knobs) */
-            vc_fine = 0;
+                for (t = 0; t < NT; t++)
+                    if (mt >> t & 1u) {
+                        for (i = 0; i < CTL; i++) tb[t][b + i] += vr_tb[t][i];
+                        if (vr_sp >> t & 1u)
+                            for (i = 0; i < CTL; i++) sbuf[t][b + i] += vr_sb[t][i];
+                    }
         }
     }
+    (void)l0, (void)l1;                         /* (ARCTIC_C1_NO_VOICES: unused) */
     return used;
 }

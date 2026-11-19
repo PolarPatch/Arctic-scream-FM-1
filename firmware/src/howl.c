@@ -39,6 +39,7 @@
 
 _Static_assert(HW_BL <= VX_POOL, "BODY's line fits in a voice's pool scratch");
 static uint8_t hw_press[NT];                    /* a track's MIDI pressure, 0 .. 127 (the main loop writes it) */
+static uint8_t key_press[NT];                   /* (2.1.4: TOUCH) .. the keys' (arctic.c tch_tracks): the more of the two */
 #define HW_RN 256u                              /* (the render's frames: VB) */
 static int32_t hw_ret[HW_RN] __attribute__((section(".pool")));   /* BLOOM: the effects' return, mono, the last render's
                                                  * (arctic.c app_audio) */
@@ -83,7 +84,8 @@ static int32_t hw_glide(int32_t x, int32_t t)   /* an eighth of the way a block,
 static int32_t hw_fb(const voice_t *v, int32_t fb)   /* FEEDBACK with the track's pressure (Q8): toward 127 */
 {
     fb = clamp(fb, 0, 127);
-    return (fb << 8) + (127 - fb) * 2 * (int32_t)hw_press[v->trk < NT ? v->trk : 0];
+    return (fb << 8) + (127 - fb) * 2 * (int32_t)(hw_press[v->trk < NT ? v->trk : 0] > key_press[v->trk < NT ? v->trk : 0] ?
+                                                     hw_press[v->trk < NT ? v->trk : 0] : key_press[v->trk < NT ? v->trk : 0]);
 }
 static uint32_t hw_cut(int32_t dmp)             /* DAMP: the low-pass's corner, Hz: ~18 kHz .. ~100 Hz */
 {
@@ -155,6 +157,17 @@ static const int16_t *hw_excite(uint32_t t)    /* track t's sample this control 
     }
     E->vb = vblock;
     return E->buf;
+}
+
+static void howl_prep(voice_t *v, const volatile int32_t *p)   /* (2.2: voices_render, first) the track's sample
+                                                 * this control step, as howl_block asks for it */
+{
+    int32_t ex = clamp(trk[v->trk < NT ? v->trk : 0].hw_x[HX_EXCITE], 0, 127);
+    (void)p;
+#ifdef FM1_LIVE_IN
+    if (live_ex >> (v->trk & 3u) & 1u) ex = clamp(live_amt, 0, 127);
+#endif
+    if (ex) (void)hw_excite(v->trk < NT ? v->trk : 0);
 }
 
 /* CTL frames of voice v, added to mono[] */
@@ -277,4 +290,4 @@ static void howl_text(const volatile int32_t *p, uint32_t k, char *s)   /* param
 }
 
 static const engine_t HOWL_ENGINE = {"Holvut", {"FEEDBACK", "BODY", "DAMP", "DRIVE"}, {127, 127, 127, 127}, howl_begin,
-                                     howl_block, howl_text};
+                                     howl_block, howl_text, howl_prep};
