@@ -3,13 +3,13 @@
 // Arctic Scream p0larpatch changes (the look, SOUND TOOLS, the sequencer page): Copyright (C) 2026 PolarPatch
 // The editor page (web/editor.html). As SLOOP's editor (isod89/sloop-fm1, web/, GPL-3.0) works on the sound that
 // plays: the sound page shows the four tracks' sounds (T1..T4) and every move of a control reaches the track at once,
-// on the FM-1 (editor.c's TRACK, live, no flash) and in the firmware's own engine here (grimm.wasm in an AudioWorklet,
+// on the FM-1 (editor.c's TRACK, live, no flash) and in the firmware's own engine here (arctic.wasm in an AudioWorklet,
 // worklet.js: its screen and its keys). STORE IN SLOT saves it into a user slot (flash: only by that button, the FM-1
 // stopped and silent). SOUND TOOLS: undo, redo, compare with the sound as loaded, A / B and a morph between them,
 // randomize; all here, the result sent as any edit. The sequencer page: the four tracks' sequences, live (editor.c's
 // SEQ, protocol 3), as a grid, a piano roll or a list, MIDI files in and out. The library lists the user's and the
 // factory sounds (LOAD TO T1..T4), samples the sample slots, backup everything. The protocol, the records, the WAV
-// conversion: editor_core.js. Without an FM-1 the same, with the "virtual FM-1" (grimm.wasm here) in its place.
+// conversion: editor_core.js. Without an FM-1 the same, with the "virtual FM-1" (arctic.wasm here) in its place.
 import { Client, MidiTransport, VirtualFM1, LiveSender, findFM1, HEAD, CMD, OBJ, PROTOS, EditorError, emptyRecord, isEmpty,
          recordOk, parseSound, buildRecord, soundTitle, makeBackup, checkBackup, restoreBackup, makeProject, checkProject, projectExtras, makeSlot, noteFromName,
          sampleName, noteName, pack7, hex, SEQ_N, SEQ_DIV, SEQ_MODE, parseSeq, buildSeq, emptyStep, seqToMidi,
@@ -35,7 +35,7 @@ const EC = ["var(--ice)", "var(--aurora)", "var(--amber)", "var(--plasma)"];  //
 const NAME = "ARCTIC SCREAM";
 const fwName = (v) => `p0larpatch v${v}`;                   // (the firmware as INFO names it: its version)
 
-let wasm = null, vf = null, vfc = null, meta = null;        // grimm.wasm; its instance here (texts, the virtual FM-1)
+let wasm = null, vf = null, vfc = null, meta = null;        // arctic.wasm; its instance here (texts, the virtual FM-1)
 let conn = null;                                             // { client, info, kind: "fm1" | "virtual", transport, live, seq }
 let busy = false;
 let setBytes = null;                                         // the settings as last read from the FM-1 (SETTINGS)
@@ -125,7 +125,7 @@ function startEngine() {                                     // at once; the bro
   engReady = (async () => {
     ac = new AudioContext({ sampleRate: 44100, latencyHint: "interactive" });
     await ac.audioWorklet.addModule("worklet.js");
-    node = new AudioWorkletNode(ac, "grimm", { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] });
+    node = new AudioWorkletNode(ac, "arctic", { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] });
     node.connect(ac.destination);
     await new Promise((res, rej) => {
       node.port.onmessage = (e) => {
@@ -495,7 +495,7 @@ function card(parent, icon, title, color, small) {
 }
 
 // ------------------------------------------------------------------ the sound page
-function loopText(k, v) {                                  // (1.4) Holvut's LOOP knob as the FM-1 shows it (grimm.c hx_text)
+function loopText(k, v) {                                  // (1.4) Holvut's LOOP knob as the FM-1 shows it (arctic.c hx_text)
   if (k === 2) { const hz = 70 * 2 ** (Math.floor(v * 920 / 127) / 192); return hz < 1000 ? `${Math.floor(hz)} hz` : `${(hz / 1000).toFixed(1)} khz`; }
   return v ? `${Math.round(v * 100 / 127)} %` : "off";
 }
@@ -1344,7 +1344,7 @@ drawSettings();
 // ------------------------------------------------------------------ start: the four tracks and sequences as the firmware starts
 (async () => {
   try {
-    wasm = await (await fetch("grimm.wasm")).arrayBuffer();
+    wasm = await (await fetch("arctic.wasm")).arrayBuffer();
     vf = await VirtualFM1.create(wasm.slice(0));
     vf.log = midiLog;
     vfc = new Client(vf);
@@ -1357,7 +1357,7 @@ drawSettings();
       if (meta.proto >= 3) { const q = await vfc.seq(t, true); seqs[t] = parseSeq(q.bytes), bpm = q.bpm; }
     }
   } catch (e) {
-    say(`COULD NOT LOAD ARCTIC SCREAM (grimm.wasm): ${e.message || e}. OPEN THIS PAGE FROM A WEB SERVER, NOT A FILE.`.toUpperCase(), "err");
+    say(`COULD NOT LOAD ARCTIC SCREAM (arctic.wasm): ${e.message || e}. OPEN THIS PAGE FROM A WEB SERVER, NOT A FILE.`.toUpperCase(), "err");
     return;
   }
   screenText(["CLICK ANYWHERE:", "ARCTIC SCREAM'S", "SOUND AND SCREEN"]);

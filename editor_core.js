@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 GR!MM
 // Arctic Scream's editor without its page: the editor protocol (docs/EDITOR_PROTOCOL.md) over a transport (Web MIDI to the
-// FM-1, or the "virtual FM-1": grimm.wasm, the firmware's own code, stepped a millisecond at a time), the tracks' sounds
+// FM-1, or the "virtual FM-1": arctic.wasm, the firmware's own code, stepped a millisecond at a time), the tracks' sounds
 // live (TRACK, sent as SLOOP's editor sends its SETs: one at a time, the latest kept), the sound records,
 // the backup file, and a WAV made a sample slot (a port of Felucca's tools/sampleio.py, GPL-3.0, and of
 // tools/fm1_sample_upload.py: the same bytes). web/editor.js (the page) and web/test_web.mjs use it.
@@ -277,7 +277,7 @@ export async function findFM1(access, log = null) {
   }
   return null;
 }
-// the virtual FM-1: grimm.wasm (the firmware's code, the browser build), its main loop run until it answers
+// the virtual FM-1: arctic.wasm (the firmware's code, the browser build), its main loop run until it answers
 export class VirtualFM1 {
   static async create(wasmBytes) {
     const v = new VirtualFM1();
@@ -514,7 +514,7 @@ export async function makeBackup(client, info, progress) {   // (the sample slot
     smp.push(await client.smpRead(k));
     if (progress) progress(list.length + k + 1, n, `sample ${k + 1}`);
   }
-  const b = { format: "grimm-backup", version: 1, proto: info.proto, fmt: info.fmt, firmware: info.firmware,
+  const b = { format: "arctic-backup", version: 1, proto: info.proto, fmt: info.fmt, firmware: info.firmware,
               date: new Date().toISOString().replace("T", " ").slice(0, 19), objects };
   if (!info.samplesUsed || smp.some((d) => d)) {
     b.samples = smp.map((d, k) => d && { slot: k + 1, name: String.fromCharCode(...d.subarray(8, 16)).replace(/\0+$/, ""),
@@ -558,7 +558,7 @@ export function sameSettings(written, back) {                // read back as wri
     Array.from(written).every((x, k) => x === back[k] || (written.length < back.length && k === SET_V1 - 1));
 }
 export function checkBackup(b, info) {                       // -> [{id, data, what}] or throws (nothing written)
-  if (!b || b.format !== "grimm-backup" || b.version !== 1) throw new EditorError("not a backup file", 90);
+  if (!b || !/^(grimm|arctic)-backup$/.test(b.format) || b.version !== 1) throw new EditorError("not a backup file", 90);
   if (b.fmt !== info.fmt) throw new EditorError(`the backup's format is ${b.fmt}, the FM-1's is ${info.fmt}`, 90);
   const sizes = new Map(backupObjects(info).map(([id, size, what]) => [id, [size, what]]));
   return b.objects.map((o) => {
