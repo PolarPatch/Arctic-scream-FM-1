@@ -122,6 +122,13 @@
 #define APP_NAME "ARCTIC SCREAM p0larpatch"     /* the app, the rescue and the crash screen say this */
 static void app_idle(void);
 #define LCD_IDLE app_idle                       /* (2.0) lcd.c: while the screen's DMA runs, MIDI in (after Dinghy) */
+#include <stdint.h>
+static void mr_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *px);
+static void mr_fill(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint16_t c);
+#define LCD_MIRROR 1                            /* (2.1.5) SCREEN MIRROR (mirror.c): what lcd.c paints, to it too */
+#define LCD_MIRROR_BLIT mr_blit
+#define LCD_MIRROR_FILL mr_fill
+#define SXQ 256u                                /* (2.1.5) usb.c's SysEx queue: the mirror's rows go out quickly */
 #include "platform.c"
 #define ANN_NAME "Arctic Scream " APP_VER       /* (1.5) the screen reader (reader.c): its HELLO answer, */
 #define ANN_MAX 160u                            /* its longest SAY (platform.c's SysEx queue, 64 packets, holds it) */
@@ -129,6 +136,7 @@ static void app_idle(void);
 #include "announce.c"                           /* (fm1-base's, MPL-2.0: fm1-reader's tools/sync_announce.sh) */
 #define PO_NAME "Arctic Scream " APP_VER        /* (1.5.2) PANEL OUT: the panel, for an app (docs/PANEL_OUT.md) */
 #include "panel_out.c"
+#include "mirror.c"                             /* (2.1.5) SCREEN MIRROR: the screen big in an app (the Big Screen protocol) */
 #ifdef FM1_LIVE_IN
 /* (Arctic Scream VIBE) sound in, on a host that has it (VIBE FM; never on the FM-1): the platform hands over this
  * render's input, n frames, mono, Q15 at the engine's 44.1 kHz (live_take: through whatever the platform does to it
@@ -2621,6 +2629,7 @@ static void app_idle(void)
     if (!idle_ok) return;
     idle_ok = 0;                                /* (not inside itself) */
     midi_in();
+    mr_send();                                  /* (2.1.5) the mirror's rows out meanwhile too */
     idle_ok = 1;
 }
 
@@ -2697,6 +2706,15 @@ static void app_start(void)                     /* once, at power-on: the saves,
                                                  * for "everything again" by a count (one writer each side) */
 static volatile uint32_t ui_force_n;
 #endif
+static void mr_redraw(void)                     /* (2.1.5) the mirror: everything drawn again */
+{
+#ifdef APP_DRAW_APART
+    ui_force_n++;
+#else
+    ui_force = 1;
+#endif
+}
+
 
 static void tch_tracks(void)                    /* (2.1.4: TOUCH) the held keys' pressure, the most of them: the
                                                  * selected track's (the keys play it; LATCH too), its LFO deepened,
@@ -3144,7 +3162,16 @@ static void app_step(void)                      /* one pass of the main loop: on
                                              * (F0 7D 50 4F), before the editor's */
         const uint8_t *fp;
         uint32_t fn;
-        if (sysex_get(&fp, &fn) && (ann_frame(fp, fn, fm1_ms) || po_frame(fp, fn, fm1_ms))) sysex_done();
+        if (sysex_get(&fp, &fn) && (ann_frame(fp, fn, fm1_ms) || po_frame(fp, fn, fm1_ms) || mr_frame(fp, fn, fm1_ms)))
+            sysex_done();
+    }
+    mr_tick(fm1_ms);                            /* (2.1.5) SCREEN MIRROR: the rows painted, out as USB has room */
+    if ((fm1_ms & 127u) == 0u) {                /* (its name of the sound: the track and its source) */
+        char nm[24], *e = nm;
+        *e++ = 'T', *e++ = (char)('1' + sel), *e++ = ' ';
+        for (const char *s = sel_engine()->name; *s && e < nm + sizeof nm - 1; s++) *e++ = *s;
+        *e = 0;
+        mr_name(nm, fm1_ms);
     }
 #ifdef ARCTIC_STRESS
     stress_poll();

@@ -31,6 +31,10 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
   - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
   - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
+- **New in 2.1.5:**
+  - **SCREEN MIRROR:** the FM-1's screen, big and sharp, on a computer, a tablet or a phone. Arctic Scream speaks the
+    Big Screen protocol, so [FM-1 Mirror](https://github.com/pfkellogg/fm1-mirror) (Mac, Windows, Linux) and FM-1 Mirror
+    + Spyglass (Android) show it as you play. Nothing is sent until an app asks, and it stops 3 s after the app goes.
 - **New in 2.1.4:**
   - **TOUCH** (SYSTEM 4): the FM-1's own keys tell how hard they are played, with no change to the hardware.
     VELOCITY on all 27 keys, and on the lower 20 pressure: pressing a held key harder deepens the track's LFO and

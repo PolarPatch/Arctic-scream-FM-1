@@ -65,6 +65,9 @@ static void lcd_fill(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint16_t c)
     for (j = y; j < y + h && j < 240u; j++)
         for (i = x; i < x + w && i < 240u; i++)
             fb[j * 240u + i] = c;
+#ifdef LCD_MIRROR
+    LCD_MIRROR_FILL(x, y, w, h, c);             /* (2.1.5) as lcd.c: what is painted, to the mirror too */
+#endif
 }
 static void lcd_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *px)
 {
@@ -75,6 +78,9 @@ static void lcd_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint1
                 uint16_t c = px[j * w + i];
                 fb[(y + j) * 240u + x + i] = (uint16_t)(c >> 8 | c << 8);
             }
+#ifdef LCD_MIRROR
+    LCD_MIRROR_BLIT(x, y, w, h, px);
+#endif
 }
 #define CV_MAX (240u * 64u)
 #include "gfx.c"
@@ -234,6 +240,50 @@ static int po_wire_send(const uint8_t *p, uint32_t n)
     printf("%6u ms  panel:", fm1_ms);
     for (i = 4; i + 1u < n; i++) printf(" %u", p[i]);
     printf("\n");
+    return 0;
+}
+
+/* (2.1.5) SCREEN MIRROR's frames (mirror.c), read as an app would: the rows painted into mr_fb, the names printed
+ * ("mirror name: .."); ARCTIC_MR_RATE: at most so many messages a millisecond (a slow USB: rows dropped, everything
+ * asked for again); at the end "mirror: .." with how many pixels differ from the screen (tests/mirror_test.py) */
+static uint16_t mr_fb[240 * 240];
+static void mr_tick(uint32_t now);                 /* (mirror.c's: at the end, what waits sent first) */
+static int mr_stale(uint32_t y);                   /* (mirror.c's: a row not yet as the screen has it) */
+static uint32_t mr_msgs, mr_bytes, mr_bad, mr_rate_t, mr_rate_n, mr_last_ms, mr_flush;
+static int mr_wire_send(const uint8_t *p, uint32_t n)
+{
+    static int rate = -1;
+    uint32_t y, x, i;
+    if (rate < 0) rate = getenv("ARCTIC_MR_RATE") ? atoi(getenv("ARCTIC_MR_RATE")) : 0;
+    if (rate && !mr_flush) {
+        if (mr_rate_t != fm1_ms) mr_rate_t = fm1_ms, mr_rate_n = 0;
+        if (mr_rate_n >= (uint32_t)rate) return -1;
+        mr_rate_n++;
+    }
+    if (n < 6u || p[0] != 0xF0u || p[1] != 0x7Du || p[2] != 'F' || p[3] != 'S' || p[n - 1u] != 0xF7u || n > 70u) {
+        mr_bad++;
+        return 0;
+    }
+    for (i = 1; i + 1u < n; i++)
+        if (p[i] & 0x80u) mr_bad++;
+    if (p[4] == 2u) {
+        printf("%6u ms  mirror name: %.*s\n", fm1_ms, (int)(n - 6u), (const char *)p + 5);
+        return 0;
+    }
+    if (p[4] != 1u || n < 14u || (n - 10u) % 4u) {
+        mr_bad++;
+        return 0;
+    }
+    y = p[5] | (uint32_t)p[6] << 7, x = p[7] | (uint32_t)p[8] << 7;
+    for (i = 9; i + 4u <= n - 1u; i += 4u) {
+        uint32_t k = p[i], c = p[i + 1u] | (uint32_t)p[i + 2u] << 7 | (uint32_t)p[i + 3u] << 14;
+        if (!k || y >= 240u || x + k > 240u || c > 0xFFFFu) {
+            mr_bad++;
+            return 0;
+        }
+        while (k--) mr_fb[y * 240u + x++] = (uint16_t)c;
+    }
+    mr_msgs++, mr_bytes += n, mr_last_ms = fm1_ms;
     return 0;
 }
 
@@ -573,6 +623,31 @@ static void platform_poll(void)                 /* one call = one millisecond */
                    ho.hi / 24000u, ho.hi / 24u % 1000u);
         if (c1_sim)
             printf("cpu2   voices: %u steps here, %u on the second core\n", host_vsteps[0], host_vsteps[1]);
+        if (mr_msgs || mr_bad) {
+            uint32_t d = 0, q;
+            mr_flush = 1, mr_tick(fm1_ms);     /* (what waits, out at once: then the screen as the viewer has it) */
+            uint32_t x0 = 240, x1 = 0, y0 = 240, y1 = 0, st = 0;
+            for (q = 0; q < 240u; q++) st += mr_stale(q) != 0;
+            for (q = 0; q < 240u * 240u; q++)
+                if (mr_fb[q] != fb[q] && !mr_stale(q / 240u)) {
+                    d++;
+                    if (q % 240u < x0) x0 = q % 240u;
+                    if (q % 240u > x1) x1 = q % 240u;
+                    if (q / 240u < y0) y0 = q / 240u;
+                    if (q / 240u > y1) y1 = q / 240u;
+                }
+            if (d) printf("mirror: differs within x %u .. %u, y %u .. %u\n", x0, x1, y0, y1);
+            printf("mirror: %u rows waiting for a repair", st);
+            for (q = 0; q < 240u; q++)          /* (which: from .. to) */
+                if (mr_stale(q) && (!q || !mr_stale(q - 1u))) {
+                    uint32_t e = q;
+                    while (e + 1u < 240u && mr_stale(e + 1u)) e++;
+                    printf(" %u..%u", q, e);
+                }
+            printf("\n");
+            printf("mirror: %u messages, %u bytes, the last at %u ms, %u bad, %u pixels differ (the rows up to date)\n", mr_msgs, mr_bytes,
+                   mr_last_ms, mr_bad, d);
+        }
         write_wav();
         exit(0);
     }
