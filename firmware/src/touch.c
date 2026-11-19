@@ -28,13 +28,15 @@
 #define TT_OPEN 600u                            /* lifting: over it twice running, open */
 #define TT_WAIT 2u                              /* driven readings after the touch the velocity waits for (~6.6 ms) */
 #define TT_DBASE 185u                           /* a driven reading with no pill: the diode and the 595 */
-#define TT_FIRM 530u                            /* the driven reading that is 127 (CTL-1's, tuned by playing) */
-#define TT_LIGHT 896u                           /* .. and 1 */
+#define TT_FIRM 585u                            /* the driven reading that is 127 (CTL-1's 530, tuned by playing; on
+                                                 * PolarPatch's FM-1 a firm hit read ~600, a light one ~865) */
+#define TT_LIGHT 885u                           /* .. and 1 (CTL-1's 896) */
 #define TT_TOP 43u                              /* the top row: the probe's rise above its open level that is 127 */
 #define TT_WAIT_MS 15u                          /* a key down waits this long for its velocity at most */
 #define TT_SETTLE 250u                          /* ms: the pressure's zero follows the key down while it settles */
 #define TT_DEAD 2621                            /* 0.04 octave (Q16): noise */
-#define TT_SPAN 30147                           /* 0.46 octave (Q16): 127 */
+#define TT_SPAN 10486                           /* 0.16 octave (Q16): 127 (MONK-1's 0.46 reached 37 at the firmest on
+                                                 * PolarPatch's FM-1; its most sensitive setting is 0.12) */
 #define TT_NA 20u                               /* the keys on the analog rows */
 enum { TS_OPEN, TS_TOUCH, TS_DOWN, TS_LIFT };
 enum { TCH_OFF, TCH_VEL, TCH_PRESS };           /* SYSTEM 4's TOUCH */
