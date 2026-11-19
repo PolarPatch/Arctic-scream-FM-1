@@ -781,6 +781,12 @@ FM-1, not the project.
     TOUCH is on. The way of reading the keys follows Charles Vestal's measurements on an FM-1 (fm1-base).
 - **The guide (new in 2.1):** the very first time Arctic Scream starts, three short pages show the first steps. Any key
   or button turns the page; after the third it is gone.
+- **The screen, big (new in 2.1.5):** Arctic Scream sends its screen to an app that asks for it, row by row, as it is
+  drawn: the Big Screen protocol of Patrick F. Kellogg's FM-1 Mirror. Open [FM-1 Mirror](https://github.com/pfkellogg/fm1-mirror)
+  (Mac, Windows, Linux) or FM-1 Mirror + Spyglass (Android) with the FM-1 on USB and the screen appears, big and sharp,
+  with the track and its sound's source over it. Nothing is sent until an app asks, and it stops 3 seconds after the
+  app goes, so a DAW on the same port never sees it. On a busy screen (the aurora, GOVVA, the moving pictures) the app
+  shows fewer frames than the FM-1 draws; everything still ends up exactly as on the FM-1.
 - **For app makers:** since 1.5.2 Arctic Scream also answers **PANEL OUT**, an open protocol that tells an app which buttons
   and keys are down and how the knobs turn, so it can draw the FM-1 as you play. It is silent until an app asks. See
   [docs/PANEL_OUT.md](docs/PANEL_OUT.md).
