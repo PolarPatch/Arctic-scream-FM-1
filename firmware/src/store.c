@@ -187,7 +187,8 @@ static const char *snd_fname(const uint8_t *r)  /* a factory sound's name, or 0 
 
 static uint8_t st_img[4096] __attribute__((section(".pool")));   /* a sector as it will be written */
 static uint32_t st_gen;                         /* + 1 a save (the screens: what they list has changed) */
-static uint8_t slots[4][SLOT_ALL];              /* A..D, packed ([0]: used), each its FM patches after SLOT_PK */
+static uint8_t slots[4][SLOT_ALL] __attribute__((section(".pool")));   /* A..D, packed ([0]: used), each its FM
+                                                 * patches after SLOT_PK (2.1.2: in the pool) */
 static uint32_t slot_dirty, slot_lost, slot_up; /* slots to write (autosave); lost at power-on (bit: slot); slot_up:
                                                  * the old copies' newest sector + 1, an upgrade to write */
 static volatile int32_t slot_cur;               /* the slot in use (the last saved or recalled) */
