@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 PolarPatch
-"""(2.1.2) ONE-SHOTS in host mode: GLO held + each of the 19 keys its mutes and solos leave free plays its gesture
+"""(2.1.4) ONE-SHOTS in host mode: GLO held + each of the 19 keys its mutes and solos leave free plays its gesture
 on the selected track (sounding, its notes in the list), and it ends by itself (no note of it left on); GLO held + a
 mute key still mutes, and plays none; a gesture over another: the first one's notes let go
     python3 tests/shot_test.py build/host/arctic"""

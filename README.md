@@ -31,6 +31,16 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
   - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
   - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
+- **New in 2.1.4:**
+  - **TOUCH** (SYSTEM 4): the FM-1's own keys tell how hard they are played, with no change to the hardware.
+    VELOCITY on all 27 keys, and on the lower 20 pressure: pressing a held key harder deepens the track's LFO and
+    makes HOWL scream. MIDI velocity counts too. Off at the start.
+  - **ONE-SHOTS:** hold GLO and press any key the mutes and solos leave free: 19 short gestures (SNOWFALL, STRUM,
+    METEOR, PEAL, CHIMES …) played once on the selected track, in the scale, with its own sound or your sample.
+  - **TIDE** (press LFO six times): now and then the whole sound ebbs far down for a few minutes and comes back;
+    GUARD keeps a swell from towering over the music.
+  - **SOUND AUTO:** the headphone jack decides between the speaker's curve and the whole range.
+  - The second core now takes a share of the voices as well as SPACE, and TAPE's HISS warns when turned high.
 - **New in 2.1.1:**
   - **No more glitch under a drone.** The automatic save waits for silence again, however long; before, it saved
     anyway 30 s after you last touched anything, and the flash stopped the sound for a moment. A slot or a sound you

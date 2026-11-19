@@ -39,7 +39,7 @@ typedef struct {
         howl_t h;                               /* HOWL (howl.c) */
     } u;
 } phys_slot_t;
-static phys_slot_t ph_slot[NV] __attribute__((section(".pool")));   /* (2.1.2: in the pool, out of the RAM
+static phys_slot_t ph_slot[NV] __attribute__((section(".pool")));   /* (2.1.4: in the pool, out of the RAM
                                                  * the rest needs) */
 typedef union { px_modal_t m; px_string_t s; px_symp_t y; } phys_only_t;
 _Static_assert(sizeof(howl_t) <= sizeof(phys_only_t), "HOWL fits in the PHYS slot: no RAM of its own");

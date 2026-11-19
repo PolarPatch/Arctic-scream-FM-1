@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 PolarPatch */
-/* (2.1.2) TOUCH (SYSTEM 4): velocity and pressure from the FM-1's own keys, no change to the hardware. The method and
+/* (2.1.4) TOUCH (SYSTEM 4): velocity and pressure from the FM-1's own keys, no change to the hardware. The method and
  * its numbers are Charles Vestal's (fm1-base lib/sense.c and lib/touch.c, from fm1-velocity, CTL-1 and MONK-1, MPL-2.0:
  * measured on an FM-1 over 830 presses), written anew here in integers (the chip has no FPU); the readings come from
  * hal/fm1_touch.h (the timer ISR, every ~3.3 ms a key).

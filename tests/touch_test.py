@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 PolarPatch
-"""(2.1.2) TOUCH (SYSTEM 4, KNOB 3) in host mode (tests/host.c's "touch K VEL PRESS": what key K would read):
+"""(2.1.4) TOUCH (SYSTEM 4, KNOB 3) in host mode (tests/host.c's "touch K VEL PRESS": what key K would read):
   - OFF (the start): the readings change nothing
   - VELOCITY: a key at 127 as with TOUCH off; a soft one quieter, by about the curve's 24 dB from 127 to 1
   - a MIDI note's velocity too, while TOUCH is on

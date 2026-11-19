@@ -8,7 +8,7 @@
  * has them (softclip, soft_knee, sh_tz, the one-pole low-pass that keeps
  * its steps' remainders so a tail ends in exact silence).
  *
- *   at a quarter of the rate (11.025 kHz; 2.1.2, was half: 2.6 s fit in 58 KB, the pool's 58 KB for the rest, the echoes
+ *   at a quarter of the rate (11.025 kHz; 2.1.4, was half: 2.6 s fit in 58 KB, the pool's 58 KB for the rest, the echoes
  *   stop near 5 kHz, as a worn tape's do): the voices (four samples into one, 1 2 2 2 1) -> the line (28992 samples)
  *   -> read TIME back, plus the wow (two slow sines,
  *   0.5 and 0.19 Hz: not quite periodic) and a little flutter (6.1 Hz), between samples, gliding over the block; the
@@ -27,7 +27,7 @@
  * The audio ISR calls tape_render with the DLY bus, before SPACE (the echoes fall into the reverb); the main loop
  * sets the four parameters. The line and the state are in the pool (zero at boot): ~117 KB. */
 
-#define DL_D 4u                                 /* (2.1.2) the line's rate: 44.1 kHz / DL_D (was 2) */
+#define DL_D 4u                                 /* (2.1.4) the line's rate: 44.1 kHz / DL_D (was 2) */
 #define DL_NC 64u                               /* a block at that rate: app_audio's 256 frames */
 #define DL_LEN 28992u                           /* 2600 ms (28665 samples; 1.5.2, was 3000) + the wow's reach (1.3: ~11
                                                  * ms) + the right side's 9 ms, a whole number of blocks */

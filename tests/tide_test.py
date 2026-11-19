@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 PolarPatch
-"""(2.1.2) TIDE and GUARD (LFO's sixth page) in host mode:
+"""(2.1.4) TIDE and GUARD (LFO's sixth page) in host mode:
   - NOW turned to OUT: the sound ebbs from then, at 0.15 dB a second
   - TIDE OFTEN (a build with minutes as seconds, -DTD_SPEED=60): an ebb comes by itself, goes down about DEPTH's
     25 dB (70 %), stays, and comes back all the way

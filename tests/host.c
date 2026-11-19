@@ -242,7 +242,7 @@ static int32_t host_master = 4092;              /* the MASTER knob as the app re
                                                  * the way up, as the USB audio always was here; ARCTIC_MASTER: the knob
                                                  * 0 .. 1023 (squared, as platform.c) */
 static int32_t fm1_master(void) { return host_master; }
-static uint8_t host_tvel[27], host_tpress[27];  /* (2.1.2) the script's "touch K VEL PRESS": what key K would read with
+static uint8_t host_tvel[27], host_tpress[27];  /* (2.1.4) the script's "touch K VEL PRESS": what key K would read with
                                                  * TOUCH on (firmware/src/touch.c); VEL 0: no reading */
 static volatile int8_t fm1_jack = -1;           /* the headphone jack (SOUND AUTO): not read (the whole range, as before);
                                                  * the script's "jack 1" headphones in, "jack 0" nothing plugged */

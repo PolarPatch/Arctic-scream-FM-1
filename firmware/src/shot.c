@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 PolarPatch */
-/* (2.1.2) ONE-SHOTS: hold GLO and press one of the 19 keys GLO's mutes and solos leave free (the black keys F#2 ..
+/* (2.1.4) ONE-SHOTS: hold GLO and press one of the 19 keys GLO's mutes and solos leave free (the black keys F#2 ..
  * D#3 and every key from F3 up): a short gesture plays once over the music, 1 .. 8 s, and fades by itself. The idea
  * (a menu of melodic effects on the keys, played once and gone) follows Polystellarflow's ZENITH-1 (MPL-2.0), written
  * anew; the gestures are my own.

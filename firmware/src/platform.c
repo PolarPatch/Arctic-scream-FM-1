@@ -79,7 +79,7 @@ static void rt_out(uint32_t st, uint32_t due)   /* audio ISR: a realtime byte ou
 #include "fm1_audio.h"
 #include "fm1_adc.h"
 #include "fm1_jack.h"
-#include "fm1_touch.h"                         /* (2.1.2) TOUCH: the keys' readings (src/touch.c) */
+#include "fm1_touch.h"                         /* (2.1.4) TOUCH: the keys' readings (src/touch.c) */
 #define FM1_TOUCH_HAL 1
 #include "bootguard.h"
 
@@ -385,7 +385,7 @@ void fm1_timer5_irq(void)
     static uint32_t sub, owed, last, acc;
     uint32_t t0 = fm1_ticks(), usb_due = sub % 5u == 0u, d;
     fm1_timer5_ack();
-    fm1_touch_harvest();                        /* (2.1.2: TOUCH, the keys' readings, hal/fm1_touch.h) */
+    fm1_touch_harvest();                        /* (2.1.4: TOUCH, the keys' readings, hal/fm1_touch.h) */
     fm1_input_tick();
     fm1_touch_start();
     if (last) {                                 /* (the gap since the tick before) */

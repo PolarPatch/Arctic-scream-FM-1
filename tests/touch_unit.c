@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 PolarPatch */
-/* (2.1.2) TOUCH's readings (firmware/src/touch.c) fed by hand, as hal/fm1_touch.h would: a key touched, seated, its
+/* (2.1.4) TOUCH's readings (firmware/src/touch.c) fed by hand, as hal/fm1_touch.h would: a key touched, seated, its
  * velocity from the driven readings on the log scale (against the formula in floats), the LEDs and the drive while
  * held, the release, a graze, the pressure, the top row's probe, and the keys held back until their velocity.
  *   cc -O2 -Wall -o build/host/touch_unit tests/touch_unit.c -lm && build/host/touch_unit */

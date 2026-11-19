@@ -366,7 +366,7 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         put_s(S->val, k == 2u ? (v ? SMP_FACT_N ? "RESTORE" : "CLEAR" : "KEEP") : k ? (v ? "ON" : "OFF") :
               v == LEARN_CLEAR ? "CLEAR" : LEARN_NAME[clamp(v, 0, 2)]);
         return;
-    case PG_SYS4:                               /* (2.2) SOUND: (2.1.2) "AUTO", "PHONES", "SPKR"; HELP: ON, OFF */
+    case PG_SYS4:                               /* (2.2) SOUND: (2.1.4) "AUTO", "PHONES", "SPKR"; HELP: ON, OFF */
         put_s(S->val, k == 0u ? (v == 2 ? "SPKR" : v ? "PHONES" : "AUTO") : k == 2u ? (v == 2 ? "V+P" : v ? "VEL" : "OFF") :
               v ? "ON" : "OFF");
         return;
@@ -409,7 +409,7 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         else if (k < 3u) ui_3(S->val, (uint32_t)clamp(v, 0, 100));
         else put_s(S->val, v >= JK_ALWAYS ? "ALWAYS" : v ? "ON" : "OFF");   /* (2.2: ALWAYS) */
         return;
-    case PG_TIDE:                               /* (2.1.2) TIDE ("SOME"), DEPTH %, GUARD %, NOW */
+    case PG_TIDE:                               /* (2.1.4) TIDE ("SOME"), DEPTH %, GUARD %, NOW */
         if (k == 0u) put_s(S->val, TD_SHORT[clamp(v, 0, TD_NMODE - 1)]);
         else if (k == 3u) put_s(S->val, v ? "OUT" : "IN");
         else ui_3(S->val, (uint32_t)clamp(v, 0, 100));
@@ -1348,7 +1348,7 @@ static void pic_jahki(void)
     ui_text(PX0, 137, yr_depth > 0 ? l : "DEPTH 0: THE YEAR ONLY TURNS", 1, UI_L);
 }
 
-/* (2.1.2) TIDE's page: the sea, its level the tide's now (down the page as it ebbs), what it is doing and when the
+/* (2.1.4) TIDE's page: the sea, its level the tide's now (down the page as it ebbs), what it is doing and when the
  * next ebb is due; GUARD's hand on the level, in dB, while it holds a swell down */
 static void pic_tide(void)
 {
@@ -2341,7 +2341,7 @@ static void pic_sys4(void)                      /* (2.2) SYSTEM 4: SOUND (the sp
     ui_text(PX0 + 6, 68, "USB AS EVER", 1, UI_M);
     sys3_row(82, "HELP", help_on ? "ON" : "OFF");
     ui_text(PX0 + 6, 99, help_on ? "A KNOB TURNED SAYS WHAT IT DOES" : "NO HELP LINES", 1, UI_M);
-    sys3_row(112, "TOUCH", tch_mode == TCH_PRESS ? "VEL+PRESS" : tch_mode ? "VELOCITY" : "OFF");   /* (2.1.2) */
+    sys3_row(112, "TOUCH", tch_mode == TCH_PRESS ? "VEL+PRESS" : tch_mode ? "VELOCITY" : "OFF");   /* (2.1.4) */
     if (tch_mode && tch_last_k < 27u) {         /* (the last key played: its velocity, its pressure while held) */
         char v[32], *e = put_u(put_s(v, "KEY "), tch_last_k + 1u);
         e = put_u(put_s(e, " VEL "), tch_last_v);
@@ -2500,7 +2500,7 @@ static uint32_t ui_pic_key(void)
             UI_H(tracks_latched()), UI_H(playing);
     if (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3 || page == PG_SYS4) {   /* the settings, the links */
         UI_H(set.col), UI_H(set.mch), UI_H(set.tune), UI_H(set.scr), UI_H(set.out), UI_H(set.nlk), UI_H(set.latch), UI_H(set.usb);
-        UI_H(set.sys4), UI_H(SPK_ON());          /* (2.1.2: AUTO's speaker or headphones, as the jack says) */
+        UI_H(set.sys4), UI_H(SPK_ON());          /* (2.1.4: AUTO's speaker or headphones, as the jack says) */
         UI_H(tch_last_k), UI_H(tch_last_v), UI_H(tch_last_k < TT_NA ? tch_pv[tch_last_k] : 0u);   /* (TOUCH's last key) */
 #ifdef FM1_TOUCH_HAL
         UI_H(fm1_tch.on), UI_H(fm1_tch.timeouts), UI_H(tt_k[tch_last_k < TT_NA ? tch_last_k : 0u].v), UI_H(tt_k[tch_last_k < TT_NA ? tch_last_k : 0u].d);

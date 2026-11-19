@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 PolarPatch */
-/* (2.1.2) TIDE (LFO, tapped a sixth time): the whole sound ebbing now and then, far down for a few minutes, and coming
+/* (2.1.4) TIDE (LFO, tapped a sixth time): the whole sound ebbing now and then, far down for a few minutes, and coming
  * back, quicker than it left; and GUARD, a slow hand on the level that keeps a swell from towering over the music
  * around it. The ideas follow Tomorrow's Man's SAMSARA (the tide and the energy governor over AMB-1, MPL-2.0),
  * written anew; none of its code.

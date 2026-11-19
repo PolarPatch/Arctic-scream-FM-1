@@ -39,7 +39,7 @@
 
 _Static_assert(HW_BL <= VX_POOL, "BODY's line fits in a voice's pool scratch");
 static uint8_t hw_press[NT];                    /* a track's MIDI pressure, 0 .. 127 (the main loop writes it) */
-static uint8_t key_press[NT];                   /* (2.1.2: TOUCH) .. the keys' (arctic.c tch_tracks): the more of the two */
+static uint8_t key_press[NT];                   /* (2.1.4: TOUCH) .. the keys' (arctic.c tch_tracks): the more of the two */
 #define HW_RN 256u                              /* (the render's frames: VB) */
 static int32_t hw_ret[HW_RN] __attribute__((section(".pool")));   /* BLOOM: the effects' return, mono, the last render's
                                                  * (arctic.c app_audio) */

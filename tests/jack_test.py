@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 PolarPatch
-"""(2.1.2) SOUND AUTO in host mode (tests/host.c's "jack 1|0"): with the jack unread, and with headphones in, the sound
+"""(2.1.4) SOUND AUTO in host mode (tests/host.c's "jack 1|0"): with the jack unread, and with headphones in, the sound
 is the whole range, as before; with nothing plugged in, the speaker's curve (its lows taken away); a plug pulled out
 in the middle turns the curve on from then on
     python3 tests/jack_test.py build/host/arctic"""

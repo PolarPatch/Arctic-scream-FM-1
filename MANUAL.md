@@ -375,7 +375,7 @@ fog lower and duller.
 
 <br clear="right">
 
-### TIDE: the music ebbing, and GUARD (new in 2.1.2)
+### TIDE: the music ebbing, and GUARD (new in 2.1.4)
 
 **Press LFO a sixth time.** Left to play for a long while, the whole sound can ebb now and then: down slowly, far
 down, for a few minutes, and back again, a little quicker than it left. GUARD is a slow hand on the level that keeps a
@@ -596,7 +596,7 @@ Name them in the [editor](#14--the-editor-and-the-demo) (up to 10 characters).
 - **MODE:** OFF (PLAY loops the slot), SONG (once), SONG LOOP.
 - **Record a song:** on SONG press **REC**, then **PLAY**, and switch slots with SAVE + keys 1–4.
 - **Hold GLO + keys 1–4** mutes T1–T4, **keys 5–8** solos them.
-- **ONE-SHOTS** (new in 2.1.2): hold **GLO** and press any of the other 19 keys, the five black keys among white keys
+- **ONE-SHOTS** (new in 2.1.4): hold **GLO** and press any of the other 19 keys, the five black keys among white keys
   1–8 and every key above white key 8. A short musical gesture plays once over whatever is going on, then fades by
   itself: 1 to 8 seconds. While GLO is held these keys glow, and the one playing is lit. It plays on the selected
   track with that track's own sound, in the SCALE from its ROOT (MINOR PENTATONIC when SCALE is OFF), around C4, and
@@ -638,7 +638,7 @@ colours the whole mix at the end. Each page has its own northern lights.
 - **Runaway echo:** past 100 % FEEDBACK the echo grows and saturates, and burns magenta on the screen.
 - GRAIN and DELAY both pour into SPACE. All four TAPE knobs at 0 switch TAPE off.
 - GRAIN and DELAY only hear what the tracks send them (MIXER 1). Turn a GRAIN or DELAY knob up while the selected track sends nothing, and its send goes to 50 % (the header says so), so you hear the page at once.
-- TAPE goes far: WOW to a seasick ±2 % of pitch, SATURATION to 12x drive, TONE darker as it turns up, from `OPEN` down to ~400 Hz (the screen shows its corner: `10K`, `2.4K`, `400`; the opposite way to DRIVE's TONE), HISS loud. Turned past 48, HISS says `HISS HIGH: A WALL OF NOISE` in pink under the picture (new in 2.1.2, even with HELP off): with DRIVE, GRAIN, DELAY and SPACE up it piles into a steady roar that can sound like a fault. DELAY's WEAR wobbles up to ~11 ms and drives the loop to 4x.
+- TAPE goes far: WOW to a seasick ±2 % of pitch, SATURATION to 12x drive, TONE darker as it turns up, from `OPEN` down to ~400 Hz (the screen shows its corner: `10K`, `2.4K`, `400`; the opposite way to DRIVE's TONE), HISS loud. Turned past 48, HISS says `HISS HIGH: A WALL OF NOISE` in pink under the picture (new in 2.1.4, even with HELP off): with DRIVE, GRAIN, DELAY and SPACE up it piles into a steady roar that can sound like a fault. DELAY's WEAR wobbles up to ~11 ms and drives the loop to 4x.
 
 - **MASTER** filters everything, in stereo. **POSITION** says where: `PRE FX` filters the tracks' dry mix before the effects return (the reverb and echoes stay bright), `POST REVERB` filters the tracks and the effects together (before DRIVE and TAPE), `END` filters the very end, after TAPE and the PERFORM tricks. `LP` with CUTOFF at the top or `HP` at the bottom switches it off completely.
 - **DRIVE** distorts everything after SPACE, before TAPE. **AMOUNT** is how hard (0 = off completely), **TYPE** the character: `SOFT` (warm saturation), `FUZZ` (lopsided, buzzy), `CLIP` (hard), `FOLD` (a wavefolder: the harder you drive it, the more it folds back into new overtones). All four are about equally loud at the same AMOUNT, so switching TYPE doesn't jump in volume, and turning AMOUNT all the way up makes it at most ~6 dB louder. **TONE** darkens it (`OPEN` at the top), **MIX** blends it with the clean sound. A limiter after it keeps even the loudest settings from blowing up the output.
@@ -766,12 +766,12 @@ FM-1, not the project.
 - **SYSTEM 4** (new in 2.1: **HOME once more** after SYSTEM 3):
   - **SOUND:** `SPEAKER` is a curve for the FM-1's little speaker: the deepest lows it cannot play taken away (they
     only make it rattle and eat the loudness), the low mids lifted a little so a drone still sounds deep. `HEADPHONES`
-    is the whole range. `AUTO` (new in 2.1.2, the start) lets the headphone jack decide: the speaker's curve with
+    is the whole range. `AUTO` (new in 2.1.4, the start) lets the headphone jack decide: the speaker's curve with
     nothing plugged in, the whole range as soon as headphones or a cable go in. The page shows which one AUTO picked.
     It shapes the speaker and the headphone jack, never the USB sound.
   - **HELP:** `ON` (the start) shows a short line under the picture for a moment when you turn a knob, saying what it
     does ("EACH NOTE WAITS THIS LONG"). `OFF` for none.
-  - **TOUCH** (new in 2.1.2): the FM-1's own keys can tell how hard they are played, with no change to the hardware.
+  - **TOUCH** (new in 2.1.4): the FM-1's own keys can tell how hard they are played, with no change to the hardware.
     Each key has a carbon pill under its rubber whose resistance falls as it is pressed, and Arctic Scream reads it.
     `OFF` (the start): every note at one level, as before. `VELOCITY`: a key played harder is louder, about 24 dB
     from the softest to the firmest; a MIDI note's velocity counts too. `VEL+PRESS`: as VELOCITY, and pressing a held

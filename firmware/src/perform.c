@@ -14,7 +14,7 @@
  * screen). */
 
 #define PF_LEN 8820u                            /* the history: 0.4 s at 22.05 kHz (Arctic Scream p0larpatch: was 0.75;
-                                                 * 2.1.2: was 0.6, 8.8 KB of the pool) */
+                                                 * 2.1.4: was 0.6, 8.8 KB of the pool) */
 #define PF_EDGE 64u                             /* a loop's end fades (history samples, ~3 ms) */
 #define PF_XF 75                                /* the crossfade's step a frame (Q15): ~10 ms */
 enum { PR_NONE, PR_TAPE, PR_BACK, PR_STUT };    /* the reader: what it plays */
