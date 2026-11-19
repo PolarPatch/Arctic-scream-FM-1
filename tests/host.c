@@ -306,14 +306,14 @@ static const uint32_t SHOT[] = {2500, 3500, 6000, 15500};   /* HOME; TAPE; GRAIN
 
 static void read_script(const char *path)
 {
-    static host_ev_t ev[4096];
-    static uint8_t sx[65536];
+    static host_ev_t ev[65536];                 /* (2.1.4: was 4096; a film's soundtrack turns its knobs in small steps) */
+    static uint8_t sx[1u << 20];
     static uint32_t sx_n;
     char line[4096], what[16];                  /* (a sample upload's END: its 480 B header, pack7, in hex) */
     FILE *f = fopen(path, "r");
     uint32_t n = 0;
     if (!f) { perror(path); exit(1); }
-    while (fgets(line, sizeof line, f) && n < 4096u) {
+    while (fgets(line, sizeof line, f) && n < 65536u) {
         host_ev_t e = {0, 0, -1, 0, 0, 0, 0, 0, 0, 0};
         unsigned a = 0, b = 0, c = 0;
         if (line[0] == '#' || sscanf(line, "%u %15s", &e.t, what) != 2) continue;
