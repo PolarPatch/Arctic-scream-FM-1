@@ -20,4 +20,3 @@ luovos
 boazu
 sarvvis
 goddi
-aldu

@@ -176,11 +176,11 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSNDD(CAT_DRONE, 12, ENG_HOWL, 96, 55, 75, 70, 95, 90, 51, 110, 1, 0x00, 35, 30, 3, 6, 65, 0, 4),  /* ICE WRAITH */
     /* (2.1.6) DEEP's: from below, calm, drawn out (after the dark drones of Caravel's DRONE, measured: most of it under
      * 320 Hz, a slow swell): SARVVIS (North Sami: a reindeer bull) two octaves under, warm (COUPLE high), its level swelling on
-     * a slow LFO; GODDI (the wild reindeer) the rub (a minor second over two octaves under), COUPLE drifting; ALDU (áldu,
-     * the doe) an octave under and a fifth over, purer, TONE slowly opening and closing (sanit.oahpa.no) */
+     * a slow LFO; GODDI (the wild reindeer) the rub (a minor second over two octaves under), COUPLE drifting; LUOVOS (loose,
+     * roaming free) an octave under and a fifth over, purer, TONE slowly opening and closing (sanit.oahpa.no) */
     FSNDD(CAT_DRONE, 15, ENG_DEEP, 85, 110, 70, 64, 112, 90, 127, 118, 1, 0x00, 8, 18, 1, 0, 40, 0, 0),   /* SARVVIS */
     FSNDD(CAT_DRONE, 16, ENG_DEEP, 127, 80, 95, 52, 116, 90, 127, 122, 1, 0x00, 6, 30, 4, 6, 50, 10, 0),  /* GODDI */
-    FSNDD(CAT_DRONE, 17, ENG_DEEP, 42, 50, 60, 68, 108, 90, 127, 115, 1, 0x00, 7, 25, 6, 0, 30, 0, 0),   /* ALDU */
+    FSNDD(CAT_DRONE, 17, ENG_DEEP, 42, 50, 60, 68, 108, 90, 127, 115, 1, 0x00, 7, 25, 6, 0, 30, 0, 0),   /* LUOVOS */
 };
 static const char *const SND_FNAME[] = {
     "POLAR NIGHT", "SNOW VEIL", "GLACIER PAD", "MIDNIGHT SUN", "LICHEN", "SNOWDRIFT", "PERMAFROST", "DEEP FJORD",
@@ -188,7 +188,7 @@ static const char *const SND_FNAME[] = {
     "CRYSTAL HARP", "BOWED ICICLE", "AURORA CHOIR", "TUNDRA VOICES", "BLIZZARD BREATH", "NORTHERN CALL",
     "EMPTY HORIZON", "TUNDRA STRINGS", "ICEBREAKER", "FOG HORN", "SVALBARD CELLO", "NORTH STRINGS", "SIGNAL FLARE",
     "WIND OVER ICE", "BIEGGA", "RIDDU", "POLAR HOWL", "WENDIGO", "FROZEN SCREAM", "WHITEOUT", "DEAD SIGNAL", "POLAR STILL", "III", "ICE WRAITH",
-    "SARVVIS", "GODDI", "ALDU",
+    "SARVVIS", "GODDI", "LUOVOS",
 };   /* (16 characters at most: the header beside HOME's tempo) */
 #define SND_NFACT (sizeof SND_FACTORY / sizeof SND_FACTORY[0])
 #define SND_DEFAULT (SND_NFACT - 4u)            /* the four tracks' sound at first power-on and at NEW: ICE WRAITH (2.1.6:
