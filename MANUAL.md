@@ -239,9 +239,9 @@ over by itself.
 - **DRIFT:** each generator wanders slowly in pitch (up to ~12 cents) and breathes in level, each at its own pace
   (10 to 25 s round).
 - **TONE:** two gentle low-passes, from a far rumble (~190 Hz) to open (~6 kHz).
-- Three factory sounds (DRONE, after ICE WRAITH): **SEABED** (two octaves under, warm, a slow swell), **DARK WATER**
-  (the dark rub, COUPLE drifting) and **COLD CURRENT** (an octave under and a fifth over, purer, its TONE opening and
-  closing). Hold one low note, LATCH on, and leave it.
+- Three factory sounds (DRONE, after ICE WRAITH): **SARVVIS** (a reindeer bull: two octaves under, warm, a slow swell), **GODDI**
+  (the wild reindeer: the dark rub, COUPLE drifting) and **ALDU** (*áldu*, the doe: an octave under and a fifth over,
+  purer, its TONE opening and closing). The names are North Sami (sanit.oahpa.no). Hold one low note, LATCH on, and leave it.
 - DRONE's BORGA moves COUPLE, DRIFT and TONE; DEPTH stays where you set it.
 - The idea, coupled oscillators that pull on each other and drift apart, comes from the DRONE engine in bonszaimusic's
   [Caravel](https://github.com/bonszaimusic/caravel) firmware (itself after the LYRA-8); written anew, none of its code.
