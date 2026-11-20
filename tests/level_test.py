@@ -45,12 +45,12 @@ def peak(a, t0=0):
     return max(abs(x) for x in a[2 * 44100 * t0 // 1000:])
 
 
-# the factory sounds, by PRESETS (T1, from power-on: 1 .. 38), and whether each loads with chord mode on
+# the factory sounds, by PRESETS (T1, from power-on: 1 .. 41; 2.1.6: Luovos boazu's three), and whether each loads with chord mode on
 SNDS = []
-for i in range(1, 39):
+for i in range(1, 42):
     pr, _ = run(f"name{i}", [(300, f"enc 6 {i}"), (3000, "probe")], 3100)
     SNDS.append((pr[3000]["snd"], pr[3000]["ch"]))
-check("the 38 factory sounds on PRESETS", len(set(s for s, c in SNDS)) == 38, f"{len(set(SNDS))}")
+check("the 41 factory sounds on PRESETS", len(set(s for s, c in SNDS)) == 41, f"{len(set(SNDS))}")
 
 LEVEL100 = [(3000, "enc 2 27")]                 # (HOME, KNOB 1: VOLUME, 100 -> 127: "100")
 CASES = (("a note", 0x80, 0), ("a chord", 0x80, 1), ("two chord keys", 0x4080, 1))
@@ -69,10 +69,10 @@ for m in MASTERS:
             if p > LIM: over.append(f"{snd} {what} {p}")
             if pr[9000]["lv"] != pr[3500]["lv"]: knee.append(f"{snd} {what} {pr[9000]['lv']}")
     w = max((v, k) for k, v in worst.items() if k[0] == m)
-    check(f"MASTER {m}: the 38 sounds at LEVEL 100, a note, a chord, two chord keys: no sample at full scale "
+    check(f"MASTER {m}: the 41 sounds at LEVEL 100, a note, a chord, two chord keys: no sample at full scale "
           f"(the loudest {w[0]}: {w[1][1]}, {w[1][2]})", not clip and not over, f"{clip[:4]} {over[:4]}")
     if m == 768:
-        check("SPACE's and DELAY's lines never past their soft knee, the pre-delay never clipped (the 38 sounds)",
+        check("SPACE's and DELAY's lines never past their soft knee, the pre-delay never clipped (the 41 sounds)",
               not knee, f"{knee[:4]}")
 
 # four tracks together, LEVEL 100 and DLY sends up, a key each (chord mode off, then on)

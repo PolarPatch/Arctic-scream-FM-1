@@ -147,7 +147,7 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   const vf = await VirtualFM1.create(readFileSync("web/dist/arctic.wasm"));
   vf.warmUp();
   const cl = new Client(vf), info = await cl.info(), meta = vf.meta();
-  check(info.proto === 3 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 173 && info.factory === 38,
+  check(info.proto === 3 && info.sounds === 64 && info.slotSize === 2548 && info.setSize === 173 && info.factory === 41,
         `editor: INFO (${info.firmware}, protocol ${info.proto}, ${info.sounds} sounds, slots ${info.slotSize} B)`);
   check(info.key0 === 41 && info.octave === 0 && info.keys === 27,
         `editor: INFO's keys (1.5.2: key 0 ${info.key0} at octave ${info.octave}, ${info.keys} keys)`);
@@ -158,7 +158,7 @@ check(saved === null, `settings: ${saved ? `saved at ${saved.ms} ms` : "not save
   check(meta.factory[36].name === "III" && iii.eng === 7 && iii.latch === 1 && iii.chordOn === 1 && iii.chord === 10 &&
         iii.voicing === 2 && iii.drone.borga === 65 && iii.drone.storm === 35 && iii.drone.rise === 4 &&
         iii.lfo.join() === "14,30,4,6", "editor: III, a Holvut CLUSTER (SPREAD), its DRONE, LATCH and LFO");
-  check(meta.factory.length === 38 && meta.engines.length === 10 && meta.fmAlg.length === 32, "editor: the page's names and tables from the firmware");
+  check(meta.factory.length === 41 && meta.engines.length === 11 && meta.engines[10].name === "Luovos boazu" && meta.fmAlg.length === 32, "editor: the page's names and tables from the firmware");
   const f2 = await cl.get(OBJ.FACT + 2, 64);
   check(eq([...f2], meta.factory[2].rec) && recordOk(f2), `editor: factory sound 3 (${meta.factory[2].name}) read as the page has it`);
   const b0 = await makeBackup(cl, info);

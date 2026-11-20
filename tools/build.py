@@ -52,7 +52,7 @@ PRODUCT = "FM-1_977"                # Arctic Scream 1.x: 977, every release (FM-
                                     # other firmwares hold 950, 95x, 961, so not Dinghy's 9 + minor); Dinghy is 99N
 VERSION = None                      # APP_VER for release builds (else DEFAULT_VERSION)
 DEFINES = []                        # --define: a test build's -D names (e.g. ARCTIC_FOO)
-DEFAULT_VERSION = "2.1.5"
+DEFAULT_VERSION = "2.1.6"
 
 
 def toolchain():

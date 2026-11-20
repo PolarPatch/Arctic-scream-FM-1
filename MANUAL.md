@@ -127,6 +127,7 @@ across the stereo field.
 | **PHASE** | WAVE | WAVE2 | DCW | DETUNE | Phase distortion |
 | **Biegga** | GUST | HOWL | TONE | SNOW | The wind: noise singing at the note (new in 2.0) |
 | **Jiekna** | STRIKE | RING | HOLLOW | BRITTLE | Ice that sings when struck or bowed: a loop tuned to the note (new in 2.1) |
+| **Luovos boazu** | DEPTH | COUPLE | DRIFT | TONE | A deep, calm drone from below: four sines playing into each other (new in 2.1.6) |
 
 ### Holvut, the feedback voice
 
@@ -215,6 +216,35 @@ the rim, a stone skimming the frozen lake, a frozen string.
 - It is about as light as Biegga. DRONE's BORGA moves STRIKE, RING and BRITTLE. ENV 2's LOOP on a bowed Jiekna makes it
   swell and fade like breath on glass.
 - The idea, a burst played into a loop tuned to the note, comes from Romain Guy's Adrift; written anew for the ice.
+
+### Luovos boazu, the drone from below (new in 2.1.6)
+
+<img src="docs/manual/screens/luovos.png" alt="Luovos boazu's SOUND page: four waves, the deepest lowest, bending into each other" width="300" align="right">
+
+*Luovos boazu* is North Sami for a free reindeer: one that roams loose, not tied, not gathered into the fences with the
+herd. Where Holvut howls and screams, Luovos boazu goes deep and stays calm: four sine generators, at the note and
+below it, each pulled a little by the one beside it, each drifting and breathing on its own, so the sound slowly turns
+over by itself.
+
+| KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
+|---|---|---|---|
+| DEPTH | COUPLE (PURE ..) | DRIFT | TONE |
+
+- **DEPTH:** how far down it reaches. `UNISON` all four at the note (a slow chorus); `SUB, FIFTH` an octave under and
+  a fifth over; `TWO SUBS` two octaves under; `DARK RUB` two octaves under and a minor second over the note, the dark
+  friction of a cluster. Between them the generators glide. Nothing goes below ~22 Hz: a generator that would, plays an
+  octave up.
+- **COUPLE:** at `PURE` four clean sines; turned up, each generator bends the next one's phase, and the sound grows
+  warmer and rougher, a growl from below. It never runs away into a howl: the bend is bounded.
+- **DRIFT:** each generator wanders slowly in pitch (up to ~12 cents) and breathes in level, each at its own pace
+  (10 to 25 s round).
+- **TONE:** two gentle low-passes, from a far rumble (~190 Hz) to open (~6 kHz).
+- Three factory sounds (DRONE, after ICE WRAITH): **SEABED** (two octaves under, warm, a slow swell), **DARK WATER**
+  (the dark rub, COUPLE drifting) and **COLD CURRENT** (an octave under and a fifth over, purer, its TONE opening and
+  closing). Hold one low note, LATCH on, and leave it.
+- DRONE's BORGA moves COUPLE, DRIFT and TONE; DEPTH stays where you set it.
+- The idea, coupled oscillators that pull on each other and drift apart, comes from the DRONE engine in bonszaimusic's
+  [Caravel](https://github.com/bonszaimusic/caravel) firmware (itself after the LYRA-8); written anew, none of its code.
 
 <br clear="right">
 

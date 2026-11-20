@@ -22,7 +22,7 @@ feedback screams: slow, cold sounds that hum for minutes, and a voice that wakes
 ## At a glance
 
 - Four tracks, six voices shared between them.
-- Ten sound sources, among them **Holvut**, a feedback loop that howls by itself, **Biegga**, the wind, and (2.1) **Jiekna**, the singing ice.
+- Eleven sound sources, among them **Holvut**, a feedback loop that howls by itself, **Biegga**, the wind, (2.1) **Jiekna**, the singing ice, and (2.1.6) **Luovos boazu**, the deep drone from below.
 - **DRONE**: a sound that lives on its own (BORGA, STOARBMA, GOHCCAT).
 - **JIEHKKI**: a whole piece the FM-1 plays by itself for 5 to 60 minutes (or ENDLESS), then dies out; **RUOHČAT**,
   the ice cracking around it.
@@ -60,6 +60,7 @@ EDIT opens SOUND (the source's four knobs), then SOURCE (the source and LATCH). 
 | **Holvut** | FEEDBACK | BODY | DAMP | DRIVE | A feedback loop that howls (below) |
 | **Biegga** | GUST | HOWL | TONE | SNOW | The wind (2.0, below) |
 | **Jiekna** | STRIKE | RING | HOLLOW | BRITTLE | The singing ice (2.1, below) |
+| **Luovos boazu** | DEPTH | COUPLE | DRIFT | TONE | The deep drone from below (2.1.6, below) |
 
 **FM ALGO**: ALGO 1–32, FEEDBACK, OP (the operator, 1–6), FINE. **FM OP**: that operator's RATIO, LEVEL, ATTACK,
 DECAY.
@@ -92,6 +93,23 @@ scratch for the FM-1.
     own wakes and colours the howl. The slab shows the slot (`S2 45%`, or `EMPTY`).
 - The howl's pitch comes mostly from the loop itself, not the key, so OCT− and OCT+ do not move it by an octave.
   [DEVELOPER.md](DEVELOPER.md) describes a possible change.
+
+### Luovos boazu, the drone from below (2.1.6)
+
+*Luovos boazu* is North Sami for a free reindeer, one roaming loose (the name chosen by the user; LUOVOS BOAZU in the
+source list as "Luovos boazu"). Written for Arctic Scream after the DRONE engine of bonszaimusic's
+[Caravel](https://github.com/bonszaimusic/caravel) (GPL-3.0; coupled oscillators after the LYRA-8), none of its code.
+
+- Four sine generators a voice (`firmware/src/deep.c`), tuned by DEPTH between four sets (the note four times; an
+  octave under, the note twice, a fifth over; two octaves under, one under, the note, a fifth over; the same with a
+  minor second, 16/15, in place of the fifth), linearly between them; under ~22 Hz an octave up.
+- In a ring each is phase-moved by the one before it (COUPLE: up to ~0.45 of a turn, bounded, nothing fed into the
+  pitch) and rounded toward 1.5x - 0.5x³; each has its own slow triangle drift (~12 cents at the top) and breath (its
+  level down to half), 0.04 .. 0.1 Hz; two one-pole low-passes (TONE).
+- Fixed point, no 64-bit multiplies, about as light as Jiekna; in tune within 1 % of VA's, its sub-octaves too
+  (tests/drone_test.py). Saved in the project's EXT (version 12) and in the slots' stream after the MOTION lanes.
+- Measured against a Caravel drone recording: most of its sound under 320 Hz (SEABED: about a fifth under 80 Hz, half
+  80 .. 320 Hz, a quarter above), where Holvut has nothing under 80 Hz and the VA drones nothing above 320 Hz.
 
 ### Jiekna, the singing ice (2.1)
 
@@ -342,6 +360,7 @@ page. <https://polarpatch.github.io/Arctic-scream-FM-1/editor.html>
 | --- | --- | --- |
 | 1.0 | 2026-10-25 | The first release: HOWL (now Holvut), six screaming presets, the HORROR scale, runaway echo, keys an octave down, 46 arctic factory sounds, the new look, the web editor with sound tools and sequencer, the demo and cheat sheet |
 | 1.1 | 2026-10-26 | DRONE (BORGA, STOARBMA, GOHCCAT); HOWL renamed Holvut; moving northern lights on ENV, LFO, FX and the mixers; SUSTAIN 40 % by default; DRONE in the editor |
+| 2.1.6 | (in the making) | Luovos boazu (the deep drone from below, an eleventh source) and its factory sounds SEABED, DARK WATER, COLD CURRENT (41 factory sounds); project version 12; idea after Caravel's DRONE |
 | 2.1 | (in the making) | Jiekna (the singing ice, a tenth source), JAHKI (the year's eight Sami seasons leaning the filters, SPACE and SHIMMER), ENV 2 (LOOP, ONSET, SPREAD, DETUNE), LFO SHAPE CHAOS, MOTION (a knob's move recorded and looped), SWELL, JIEHKKI's LENGTH 2, 4, 8 hours, START ALWAYS, dusk, MOTIF and MIDI out, RUOHČAT's answers and held breath, a moving picture for every sound and GOVVA (the pictures as a screensaver, melting), PLAY MODE EVOLVE, the second core (SPACE there), the CPU guard, SYSTEM 4 (SOUND SPEAKER, HELP) and the first start's guide, USB LEVEL's SPK OFF, PRESETS undone, the keys as a display; project version 11, settings version 6; ideas after Demake, ZEN-1, Arcturus S6, PaperLagoon, DEEP FIELD, Adrift, SHRUB and HADAL-1 |
 | 2.0 | 2026-11-12 | The drone machine: JIEHKKI (a piece played by itself for LENGTH, then dying out; DRIFT; a sleep timer at DRIFT 0), RUOHČAT (ice cracks, drips, booms; its own page with your samples among them), ŠUOKŊA tunings (JUST, PYTHAG, HARMONIC), Biegga (the wind, a ninth source) and the factory sounds BIEGGA, RIDDU and POLAR STILL (FROST CHIME, STARLIGHT, ICE ORGAN, BASE CAMP, SNOW GLOBE, ICE PIANO and the other keys but SIGNAL FLARE gone: 38 factory sounds), GUOVSSAHAS (the aurora as a screen saver), PRESETS on a sounding drone blending into the next (crossfade, or the knobs gliding), ATTACK swelling in (a cube, not a straight line), MASTER louder (its turn^1.5, half way -9 dB; the output +3 dB); the web page's player takes your WAVs (a SAMPLES box beside it), its slots ~95 s each (the FM-1's 6.6 s), the editor cutting to whichever it talks to; DICE (SEQ held + G3 .. G4: a new part in one of eight moods, HUSH .. MACHINE) and ACCIDENT (EDIT held + E4 .. G4: two or three settings moved at random), ideas after KRIECHSTROM, COLOUR MONO (black and white, Bayer dots); MIDI in while the screen draws (LCD_IDLE); saves version 9; update tests |
 | 1.5.2 | 2026-11-10 | The update's own screen (UPDATE MODE, WRITING with a bar, DONE or FAILED); SYSTEM 3's MOD OUT (each track's level and LFO as CC 102, 103); PANEL OUT for apps (buttons, keys, knobs); INFO tells key 0's note and the octave; the browser demo in tune at 48 kHz; DELAY up to 2.6 s and more free memory (RAM 93.4 → 79.0 KB used); the stacks' depth in the CPU command |

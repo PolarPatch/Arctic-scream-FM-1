@@ -47,6 +47,15 @@ What Arctic Scream p0larpatch is made of, where it lives in the code, and how to
 
 ### Sound
 
+- **Luovos boazu** (2.1.6; `ENG_DEEP`, `firmware/src/deep.c`; on the screen "Luovos boazu", North Sami: a free
+  reindeer, the name the user's), the eleventh source: four sines a voice in a ring, each phase-moved by the one before it
+  (COUPLE, bounded), tuned by DEPTH (UNISON, SUB + FIFTH, TWO SUBS, DARK RUB), each drifting and breathing on its own
+  (DRIFT), two one-poles (TONE). State in `ph[]` (phases; last outputs and drift phases packed) and `s[0..1]`; no
+  64-bit multiplies (`tools/check_mul64.py`). Saved in EXT bytes 64..79 (project version 12) and, per slot, `slot_dp`
+  after the MOTION lanes in the slots' stream (`DP_AT`, `DP_MARK`: a stream from before it keeps the tracks' own).
+  Its header and SOURCE knob show the first word where the name does not fit (`ui.c`). Factory sounds SEABED, DARK
+  WATER, COLD CURRENT after ICE WRAITH (`SND_DEFAULT` = `SND_NFACT - 4`). Idea after Caravel's DRONE (bonszaimusic,
+  GPL-3.0), written anew; credited in LICENSING.md.
 - **Holvut** (North Sami: to howl), the eighth source (`ENG_HOWL`; its name on the screen "Holvut", `howl.c`
   `HOWL_ENGINE`):
   - Code: `firmware/src/howl.c` and `howl.h`. Its state shares the PHYS slot (`phys.c` `ph_slot`); only BODY's line
