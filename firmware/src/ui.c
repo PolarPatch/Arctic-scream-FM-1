@@ -2733,7 +2733,8 @@ static void ui_update(int32_t oct)
     }
 }
 
-/* ---- (2.2) GOVVA (North Sami: a picture, satni.uit.no), SCREEN OFF's last: after a minute untouched the whole screen
+/* ---- (2.2) GOVVA (North Sami: a picture, satni.uit.no), SCREEN OFF's last (2.1.6: and GUOVSSAHAS, always the
+ * northern lights' card, tundra_aurora; ui_aurora no longer shown): after a minute untouched the whole screen
  * is the picture, moving (pictures.c's pic_anim_rows): JAHKI's season's while JAHKI is on (DEPTH up or SKY on;
  * GUOVSSAHAS stays the aurora: 2.1.6), else the selected track's sound's; 2 x 2 pixels a cell, in the middle, black round it. Nothing over it, no text. A frame every UI_GOVVA_MS
  * (~11 a second: far lighter than GUOVSSAHAS, the music first); the first touch only wakes the screen (arctic.c). */
@@ -2778,7 +2779,7 @@ static void gv_draw(void)
 static void ui_govva(uint32_t now)
 {
     static uint32_t t_last, shown;
-    uint32_t id = yr_on() ? yr_pic() : pic_of_track(sel);
+    uint32_t id = set.scr == SCR_AUR ? pic_named("tundra_aurora") : yr_on() ? yr_pic() : pic_of_track(sel);
     if (now - t_last < UI_GOVVA_MS) return;
     if (now - t_last > 1000u || ui_force)       /* (its first frame, or everything asked for again (2.1.5: a screen
                                                  * mirror's): the screen black once, the picture at once) */

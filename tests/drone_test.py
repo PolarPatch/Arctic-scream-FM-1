@@ -216,7 +216,7 @@ check("Arctic Scream 1.2's project: Biegga, JIEHKKI, TUNING as at power-on", jk[
 ev = [(6200, f"down {HOME}"), (6900, f"up {HOME}"), (7200, f"enc {K4} 5"), (130000, f"btn {EDIT}")]
 out, a, jk, notes = run("aurora", ev + P(100000, 129000, 131000), 132000)
 check("GUOVSSAHAS: not before 2 min", jk[100000]["aur"] == 0, jk[100000])
-check("GUOVSSAHAS: after 2 min untouched, the aurora (lit)", jk[129000]["aur"] == 1 and jk[129000]["scr"] == 1, jk[129000])
+check("GUOVSSAHAS: after 2 min untouched, the northern lights' card (lit; 2.1.6: GOVVA's way)", jk[129000]["aur"] == 2 and jk[129000]["scr"] == 1, jk[129000])
 check("GUOVSSAHAS: a touch, back", jk[131000]["aur"] == 0 and jk[131000]["scr"] == 0, jk[131000])
 
 # (2.2) GOVVA: SCREEN OFF's very last; 1 min untouched: the moving picture (the screen lit); a knob back
@@ -225,11 +225,11 @@ out, a, jk, notes = run("govva", ev + P(60000, 69000, 71000), 72000)
 check("(2.2) GOVVA: not before 1 min", jk[60000]["aur"] == 0, jk[60000])
 check(".. after 1 min untouched, the picture (lit)", jk[69000]["aur"] == 2 and jk[69000]["scr"] == 1, jk[69000])
 check(".. a knob turned, back", jk[71000]["aur"] == 0 and jk[71000]["scr"] == 0, jk[71000])
-# .. JAHKI on (DEPTH up), SCREEN OFF at GUOVSSAHAS: the aurora all the same (2.1.6; its seasons on GOVVA only)
+# .. JAHKI on (DEPTH up), SCREEN OFF at GUOVSSAHAS: the northern lights' card all the same (2.1.6; its seasons on GOVVA only)
 ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (6800, f"btn {LFO}"), (7000, f"btn {LFO}"),
       (7200, f"enc {K3} 50"), (7600, f"down {HOME}"), (8300, f"up {HOME}"), (8600, f"enc {K4} 5")]
 out, a, jk, notes = run("govva_year", ev + P(130000), 131000)
-check(".. JAHKI on, GUOVSSAHAS set: the aurora, not the seasons", jk[130000]["aur"] == 1 and jk[130000]["scr"] == 1, jk[130000])
+check(".. JAHKI on, GUOVSSAHAS set: the northern lights' card, not the seasons", jk[130000]["aur"] == 2 and jk[130000]["scr"] == 1, jk[130000])
 
 # RUOHCAT's page (LFO x 4) with a sample: a 1.5 s tone of 440 Hz into slot 1 (as tools/fm1_sample_upload.py sends it),
 # SAMPLE SLOT 1, SHARE 100 %, AMOUNT 100 %: the sample heard (440 Hz the loudest), nothing else of the ice

@@ -53,6 +53,14 @@ static uint32_t pic_of_track(uint32_t t)        /* the picture of track t's soun
     return PIC_CAT[(uint32_t)brw_cat[t] % (sizeof PIC_CAT)];
 }
 
+static uint32_t pic_named(const char *nm)       /* (2.1.6) a picture by its name (pictures.h's), else 0 */
+{
+    uint32_t i;
+    for (i = 0; i < NPIC; i++)
+        if (same(PIC_NAME[i], nm)) return i;
+    return 0;
+}
+
 static uint32_t yr_pic(void)                    /* (2.2) JAHKI's season's picture (year.c's YR_PIC: by name) */
 {
     uint32_t i;

@@ -2498,17 +2498,22 @@ static void dice(uint32_t w, uint32_t base)
  * sound shows itself at a press; a part DEMO wrote, untouched, goes over for the new sound's (PRESETS, PLAY, PRESETS,
  * PLAY: one after another); a track with notes of its own as it is. One undo for all four; the header names them.
  * A part: its sound's name, then up to five notes (step, semitones from the keys' C, length in steps; len 0: the end) */
-typedef struct { const char *name; int8_t n[5][3]; } demo_t;
+typedef struct { const char *name; uint8_t say; int8_t n[8][4]; } demo_t;   /* (say 0: no DEMO in the header) */
 static int32_t dm_c[NT];                        /* the keys' C a track's DEMO part was written at */
+#define DC(t, v) (0x80 | (VC_##v) << 4 | (CH_##t))   /* a chord step's byte (seq.c's chord) */
 static const demo_t DEMO[] = {
-    {"SARVVIS", {{0, 0, 32}, {16, 7, 16}, {0, 0, 0}}},                          /* the root held, its fifth over the
-                                                                                  * second half */
-    {"GODDI", {{0, 0, 24}, {16, -2, 16}, {0, 0, 0}}},                           /* two long notes rubbing */
-    {"LUOVOS", {{0, 0, 10}, {8, 7, 10}, {16, 5, 10}, {24, 3, 8}, {0, 0, 0}}},   /* wandering round the root */
-    {"POLAR HOWL", {{0, 0, 24}, {0, 0, 0}}},                                     /* a note to wake it, then its own */
-    {"BIEGGA", {{0, -12, 32}, {0, 0, 0}}},                                       /* the wind held, rising on its own */
-    {"MANDALORIA", {{0, 0, 20}, {0, 0, 0}}},                                     /* a note to wake its loop */
+    /* (2.1.6) the deep ones an octave over the keys' C (their subs under it: heard on the speaker too), moving: */
+    {"SARVVIS", 1, {{0, 12, 8, DC(MIN, OPEN)}, {8, 8, 8, DC(MAJ, OPEN)}, {16, 15, 8, DC(MAJ, OPEN)},
+                    {24, 10, 8, DC(SUS2, OPEN)}}},   /* the bull: four slow chords, Cm, Ab, Eb, Bb */
+    {"GODDI", 1, {{0, 12, 10, 0}, {8, 15, 8, 0}, {14, 14, 6, 0}, {18, 12, 8, 0}, {24, 10, 6, 0}, {28, 7, 6, 0}}},
+                                                 /* the wild one: a dark line, C Eb D C Bb G, its rub under each */
+    {"LUOVOS", 1, {{0, 12, 8, 0}, {4, 19, 8, 0}, {8, 24, 6, 0}, {12, 22, 6, 0}, {16, 15, 8, 0}, {20, 19, 8, 0},
+                   {24, 17, 6, 0}, {28, 14, 4, 0}}},   /* loose: wandering up and down round the octave */
+    {"POLAR HOWL", 1, {{0, 0, 24, 0}}},          /* a note to wake it, then its own */
+    {"BIEGGA", 0, {{0, -12, 32, 0}}},            /* the wind held, rising on its own (no DEMO said: the wind's own name) */
+    {"MANDALORIA", 1, {{0, 0, 20, 0}}},          /* a note to wake its loop */
 };
+#undef DC
 static const demo_t *demo_of(uint32_t t)        /* track t's sound's part, or 0 (not a factory sound with one) */
 {
     const uint8_t *r = brw_pos[t] >= 0 ? cat_item((uint32_t)brw_cat[t] % NCAT, (uint32_t)brw_pos[t]) : 0;
@@ -2526,10 +2531,10 @@ static void demo_put(seq_pat_t *P, const demo_t *D, int32_t c)   /* D's part int
 {
     uint32_t i;
     for (i = 0; i < SEQ_N; i++) step_off(&P->st[i]);
-    for (i = 0; i < 5u && D->n[i][2]; i++) {
+    for (i = 0; i < 8u && D->n[i][2]; i++) {
         seq_step_t *s = &P->st[(uint32_t)D->n[i][0] % SEQ_N];
         s->note = (uint8_t)sc_snap((uint32_t)clamp(c + D->n[i][1], 1, 127));
-        s->chance = 100, s->ratchet = 1, s->len = (uint8_t)D->n[i][2];
+        s->chance = 100, s->ratchet = 1, s->len = (uint8_t)D->n[i][2], s->chord = (uint8_t)D->n[i][3];
     }
 }
 static int demo_left(uint32_t t, const seq_pat_t *P)   /* P is empty, or still a part DEMO wrote (as it wrote it:
@@ -2543,7 +2548,7 @@ static int demo_left(uint32_t t, const seq_pat_t *P)   /* P is empty, or still a
     for (j = 0; j < sizeof DEMO / sizeof DEMO[0]; j++) {
         demo_put(&q, &DEMO[j], dm_c[t]);
         for (i = 0; i < SEQ_N && P->st[i].note == q.st[i].note && (!q.st[i].note || (P->st[i].len == q.st[i].len &&
-                    P->st[i].chance == 100 && P->st[i].ratchet == 1 && !P->st[i].lmask && !P->st[i].chord)); i++)
+                    P->st[i].chance == 100 && P->st[i].ratchet == 1 && !P->st[i].lmask && P->st[i].chord == q.st[i].chord)); i++)
             ;
         if (i == SEQ_N) return 1;
     }
@@ -2551,7 +2556,7 @@ static int demo_left(uint32_t t, const seq_pat_t *P)   /* P is empty, or still a
 }
 static void demo(uint32_t base)                 /* main loop, PLAY pressed to start */
 {
-    uint32_t t, done = 0;
+    uint32_t t, done = 0, said = 0;
     int32_t c = (int32_t)base + 7;              /* (the keys' C) */
     char m[24], *e = put_s(m, "DEMO");
     if (song_mode != SM_OFF) return;
@@ -2563,10 +2568,10 @@ static void demo(uint32_t base)                 /* main loop, PLAY pressed to st
         demo_put(P, D, c);
         dm_c[t] = c;
         seq[t].steps = 32, seq[t].div = 0;      /* (32 quarter notes: 16 s at 120) */
-        if (done < 2u) e = put_s(put_s(e, " "), D->name);
+        if (D->say && said < 2u) e = put_s(put_s(e, " "), D->name), said++;
         done++;
     }
-    if (done) hd_say(m);
+    if (said) hd_say(m);
 }
 
 /* (2.0) ACCIDENT: EDIT held + E4, F4 or G4: two or three of the selected track's settings moved at random, a little,
@@ -3208,9 +3213,9 @@ static void app_step(void)                      /* one pass of the main loop: on
         lcd_light(1);
     } else if (!scr_dark && set.scr && fm1_ms - t_hand >= SCR_S[set.scr % NSCR] * 1000u) {
         scr_dark = 1;
-        if (set.scr == SCR_PIC) scr_aur = 2;   /* (2.1.6: GUOVSSAHAS the aurora always, JAHKI on or not; its seasons
-                                                 * on GOVVA only) */
-        else if (set.scr == SCR_AUR) scr_aur = 1;
+        if (set.scr == SCR_PIC || set.scr == SCR_AUR) scr_aur = 2;   /* (2.1.6: GUOVSSAHAS the northern lights' card,
+                                                 * tundra_aurora, moving, always: ui.c's ui_govva; JAHKI's seasons on
+                                                 * GOVVA only) */
         else lcd_light(0);
     }
     batt_poll();
