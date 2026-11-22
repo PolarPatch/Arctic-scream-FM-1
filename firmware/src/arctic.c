@@ -2507,6 +2507,7 @@ static const demo_t DEMO[] = {
     {"LUOVOS", {{0, 0, 10}, {8, 7, 10}, {16, 5, 10}, {24, 3, 8}, {0, 0, 0}}},   /* wandering round the root */
     {"POLAR HOWL", {{0, 0, 24}, {0, 0, 0}}},                                     /* a note to wake it, then its own */
     {"BIEGGA", {{0, -12, 32}, {0, 0, 0}}},                                       /* the wind held, rising on its own */
+    {"MANDALORIA", {{0, 0, 20}, {0, 0, 0}}},                                     /* a note to wake its loop */
 };
 static const demo_t *demo_of(uint32_t t)        /* track t's sound's part, or 0 (not a factory sound with one) */
 {
@@ -3207,8 +3208,8 @@ static void app_step(void)                      /* one pass of the main loop: on
         lcd_light(1);
     } else if (!scr_dark && set.scr && fm1_ms - t_hand >= SCR_S[set.scr % NSCR] * 1000u) {
         scr_dark = 1;
-        if (set.scr == SCR_PIC || (set.scr == SCR_AUR && yr_on())) scr_aur = 2;   /* (JAHKI on: its seasons, never
-                                                 * the aurora) */
+        if (set.scr == SCR_PIC) scr_aur = 2;   /* (2.1.6: GUOVSSAHAS the aurora always, JAHKI on or not; its seasons
+                                                 * on GOVVA only) */
         else if (set.scr == SCR_AUR) scr_aur = 1;
         else lcd_light(0);
     }

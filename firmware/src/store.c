@@ -181,6 +181,9 @@ static const uint8_t SND_FACTORY[][SND_FSIZE] = {
     FSNDD(CAT_DRONE, 15, ENG_DEEP, 85, 110, 70, 64, 112, 90, 127, 118, 1, 0x00, 8, 18, 1, 0, 40, 0, 0),   /* SARVVIS */
     FSNDD(CAT_DRONE, 16, ENG_DEEP, 127, 80, 95, 52, 116, 90, 127, 122, 1, 0x00, 6, 30, 4, 6, 50, 10, 0),  /* GODDI */
     FSNDD(CAT_DRONE, 17, ENG_DEEP, 42, 50, 60, 68, 108, 90, 127, 115, 1, 0x00, 7, 25, 6, 0, 30, 0, 0),   /* LUOVOS */
+    /* (2.1.6) MANDALORIA: the user's own HOWL sound (MANDALORIA.arcticsound), a factory sound now: the loop awake on
+     * its own once a key wakes it, KNOB 2 wandering on the LFO */
+    FSNDD(CAT_DRONE, 18, ENG_HOWL, 96, 63, 68, 78, 56, 31, 61, 48, 1, 0x00, 35, 31, 4, 4, 0, 0, 0),     /* MANDALORIA */
 };
 static const char *const SND_FNAME[] = {
     "POLAR NIGHT", "SNOW VEIL", "GLACIER PAD", "MIDNIGHT SUN", "LICHEN", "SNOWDRIFT", "PERMAFROST", "DEEP FJORD",
@@ -188,11 +191,11 @@ static const char *const SND_FNAME[] = {
     "CRYSTAL HARP", "BOWED ICICLE", "AURORA CHOIR", "TUNDRA VOICES", "BLIZZARD BREATH", "NORTHERN CALL",
     "EMPTY HORIZON", "TUNDRA STRINGS", "ICEBREAKER", "FOG HORN", "SVALBARD CELLO", "NORTH STRINGS", "SIGNAL FLARE",
     "WIND OVER ICE", "BIEGGA", "RIDDU", "POLAR HOWL", "WENDIGO", "FROZEN SCREAM", "WHITEOUT", "DEAD SIGNAL", "POLAR STILL", "III", "ICE WRAITH",
-    "SARVVIS", "GODDI", "LUOVOS",
+    "SARVVIS", "GODDI", "LUOVOS", "MANDALORIA",
 };   /* (16 characters at most: the header beside HOME's tempo) */
 #define SND_NFACT (sizeof SND_FACTORY / sizeof SND_FACTORY[0])
-#define SND_DEFAULT (SND_NFACT - 4u)            /* the four tracks' sound at first power-on and at NEW: ICE WRAITH (2.1.6:
-                                                 * DEEP's three after it) */
+#define SND_DEFAULT (SND_NFACT - 5u)            /* the four tracks' sound at first power-on and at NEW: ICE WRAITH (2.1.6:
+                                                 * DEEP's three and MANDALORIA after it) */
 _Static_assert(SND_NFACT == sizeof SND_FNAME / sizeof SND_FNAME[0], "a name a factory sound");
 static const char *snd_fname(const uint8_t *r)  /* a factory sound's name, or 0 (the user's) */
 {

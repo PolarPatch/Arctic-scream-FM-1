@@ -19,7 +19,7 @@ import wave
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GOLD = os.path.join(ROOT, "tests", "sound_prints.txt")
 OUT = os.path.join(ROOT, "build", "prints")
-N = 41                                          # the factory sounds (store.c's SND_NFACT)
+N = 42                                          # the factory sounds (store.c's SND_NFACT)
 T0, STEP, KEY = 7000, 3000, 1 << 12             # (after the boot screen; a sound every 3 s; one key)
 
 
