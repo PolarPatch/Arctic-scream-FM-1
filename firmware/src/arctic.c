@@ -2522,22 +2522,61 @@ static void dice(uint32_t w, uint32_t base)
  * sound shows itself at a press; a part DEMO wrote, untouched, goes over for the new sound's (PRESETS, PLAY, PRESETS,
  * PLAY: one after another); a track with notes of its own as it is. One undo for all four; the header names them.
  * A part: its sound's name, then up to five notes (step, semitones from the keys' C, length in steps; len 0: the end) */
-typedef struct { const char *name; uint8_t say; int8_t n[8][4]; } demo_t;   /* (say 0: no DEMO in the header) */
+typedef struct { const char *name; uint8_t say; int8_t n[8][4]; uint8_t mv[2][3]; } demo_t;   /* (say 0: no DEMO in
+                                                 * the header; mv: up to two knobs it turns while it plays, MOTION's
+                                                 * way: the source's knob + 1 (0: none), (unused), to (0 .. 127): from where the sound has it, there and back) */
 static int32_t dm_c[NT];                        /* the keys' C a track's DEMO part was written at */
+static uint32_t dm_lanes;                       /* (bit i: MOTION lane i a DEMO's, gone at STOP) */
 #define DC(t, v) (0x80 | (VC_##v) << 4 | (CH_##t))   /* a chord step's byte (seq.c's chord) */
 static const demo_t DEMO[] = {
-    /* (2.1.6) the deep ones an octave over the keys' C (their subs under it: heard on the speaker too), moving: */
+    /* (2.1.6) the deep ones an octave over the keys' C (their subs under it: heard on the speaker too), each turning
+     * its own knob over the 32 steps (out and back): */
     {"SARVVIS", 1, {{0, 12, 8, DC(MIN, OPEN)}, {8, 8, 8, DC(MAJ, OPEN)}, {16, 15, 8, DC(MAJ, OPEN)},
-                    {24, 10, 8, DC(SUS2, OPEN)}}},   /* the bull: four slow chords, Cm, Ab, Eb, Bb */
-    {"GODDI", 1, {{0, 12, 10, 0}, {8, 15, 8, 0}, {14, 14, 6, 0}, {18, 12, 8, 0}, {24, 10, 6, 0}, {28, 7, 6, 0}}},
-                                                 /* the wild one: a dark line, C Eb D C Bb G, its rub under each */
+                    {24, 10, 8, DC(SUS2, OPEN)}}, {{4, 36, 100}}},   /* the bull: four slow chords, TONE breathing open */
+    {"GODDI", 1, {{0, 0, 10, 0}, {8, 3, 8, 0}, {14, 2, 6, 0}, {18, 0, 8, 0}, {24, -2, 6, 0}, {28, -5, 6, 0}},
+                 {{2, 10, 90}}},                 /* the wild one: a low dark line, its rub under it, COUPLE growling up */
     {"LUOVOS", 1, {{0, 12, 8, 0}, {4, 19, 8, 0}, {8, 24, 6, 0}, {12, 22, 6, 0}, {16, 15, 8, 0}, {20, 19, 8, 0},
-                   {24, 17, 6, 0}, {28, 14, 4, 0}}},   /* loose: wandering up and down round the octave */
-    {"POLAR HOWL", 1, {{0, 0, 24, 0}}},          /* a note to wake it, then its own */
-    {"BIEGGA", 0, {{0, -12, 32, 0}}},            /* the wind held, rising on its own (no DEMO said: the wind's own name) */
-    {"MANDALORIA", 1, {{0, 0, 20, 0}}},          /* a note to wake its loop */
+                   {24, 17, 6, 0}, {28, 14, 4, 0}}, {{1, 0, 127}, {4, 50, 110}}},   /* loose: wandering, DEPTH all the
+                                                 * way round (UNISON .. DARK RUB) and TONE with it */
+    {"POLAR HOWL", 1, {{0, 0, 24, 0}}, {{0}}},   /* a note to wake it, then its own */
+    {"BIEGGA", 0, {{0, -12, 32, 0}}, {{0}}},     /* the wind held, rising on its own (no DEMO said: the wind's own name) */
+    {"MANDALORIA", 1, {{0, 0, 20, 0}}, {{0}}},   /* a note to wake its loop */
 };
 #undef DC
+static void demo_lanes_off(void)                /* (STOP, another DEMO) the DEMO's knob moves gone, the knobs where they
+                                                 * began */
+{
+    uint32_t i;
+    volatile int32_t *p;
+    for (i = 0; i < MO_N; i++)
+        if (dm_lanes >> i & 1u) {
+            int32_t v = mo_val(&mo[i], mo[i].home, &p);
+            if (p) *p = v;
+            mo[i].on = 0, mo_dirty = 1;
+        }
+    dm_lanes = 0;
+}
+static void demo_lanes(uint32_t t, const demo_t *D)   /* D's knob moves on track t, a loop as long as its 32 steps */
+{
+    uint32_t j, i, l, len = 32u * 60000u / (uint32_t)clamp(seq_bpm, 20, 300);
+    for (j = 0; j < 2u && D->mv[j][0]; j++) {
+        mo_lane_t *L;
+        for (l = 0; l < MO_N && mo[l].on; l++)  /* (a free lane; none: the DEMO turns no knob) */
+            ;
+        if (l == MO_N) return;
+        L = &mo[l];
+        int32_t from;
+        L->pg = PG_SOUND, L->k = (uint8_t)(D->mv[j][0] - 1u), L->t = (uint8_t)t, L->x = (uint8_t)trk[t].eng;
+        from = (int32_t)mo_get(L);              /* (from the knob where the sound has it: there again at STOP, and
+                                                 * what a save keeps) */
+        for (i = 0; i < MO_PTS; i++) {          /* (out to mv's and back: a raised cosine) */
+            int32_t f = sine_i((i << 24) - 0x40000000u);   /* (-1 .. 1 Q15, -1 at the start) */
+            L->v[i] = (uint8_t)clamp(from + ((D->mv[j][2] - from) * (f + 32768) >> 16), 0, 127);
+        }
+        L->home = L->v[0], L->len10 = (uint16_t)(len / 10u), L->on = 1;
+        mo_t[l] = fm1_ms, mo_dirty = 1, dm_lanes |= 1u << l;
+    }
+}
 static const demo_t *demo_of(uint32_t t)        /* track t's sound's part, or 0 (not a factory sound with one) */
 {
     const uint8_t *r = brw_pos[t] >= 0 ? cat_item((uint32_t)brw_cat[t] % NCAT, (uint32_t)brw_pos[t]) : 0;
@@ -2578,24 +2617,29 @@ static int demo_left(uint32_t t, const seq_pat_t *P)   /* P is empty, or still a
     }
     return 0;
 }
-static void demo(uint32_t base)                 /* main loop, PLAY pressed to start */
+static void demo(uint32_t base)                 /* main loop, PLAY pressed to start: the selected track's DEMO (the
+                                                 * others' untouched DEMO parts cleared: one sound shown at a time) */
 {
-    uint32_t t, done = 0, said = 0;
+    uint32_t t;
     int32_t c = (int32_t)base + 7;              /* (the keys' C) */
-    char m[24], *e = put_s(m, "DEMO");
+    const demo_t *D = demo_of(sel);
+    char m[24];
     if (song_mode != SM_OFF) return;
+    if (!D || !demo_left(sel, &seq[sel].pat[clamp(seq[sel].cur, 0, SEQ_NPAT - 1)])) return;   /* (notes of its own) */
+    undo_take(UK_ONE | ++uk_n, -1);
+    demo_lanes_off();
     for (t = 0; t < NT; t++) {
-        const demo_t *D = demo_of(t);
         seq_pat_t *P = &seq[t].pat[clamp(seq[t].cur, 0, SEQ_NPAT - 1)];
-        if (!D || !demo_left(t, P)) continue;   /* (notes of its own: as they are) */
-        if (!done) undo_take(UK_ONE | ++uk_n, -1);
-        demo_put(P, D, c);
-        dm_c[t] = c;
-        seq[t].steps = 32, seq[t].div = 0;      /* (32 quarter notes: 16 s at 120) */
-        if (D->say && said < 2u) e = put_s(put_s(e, " "), D->name), said++;
-        done++;
+        uint32_t i;
+        if (t == sel) {
+            demo_put(P, D, c);
+            dm_c[t] = c;
+            seq[t].steps = 32, seq[t].div = 0;  /* (32 quarter notes: 16 s at 120) */
+            demo_lanes(t, D);
+        } else if (demo_left(t, P))             /* (an empty one stays empty; another DEMO's part goes) */
+            for (i = 0; i < SEQ_N; i++) step_off(&P->st[i]);
     }
-    if (said) hd_say(m);
+    if (D->say) put_s(put_s(m, "DEMO "), D->name), hd_say(m);
 }
 
 /* (2.0) ACCIDENT: EDIT held + E4, F4 or G4: two or three of the selected track's settings moved at random, a little,
@@ -2943,6 +2987,7 @@ static void app_step(void)                      /* one pass of the main loop: on
     if (b & (1u << BTN_PLAY)) {                 /* PLAY/STOP: all four tracks' sequences (a song: song.c) */
         playing ^= 1u;
         if (playing) demo(base);                /* (2.1.6: an empty track with a DEMO sound: its part) */
+        else demo_lanes_off();                  /* (STOP: the DEMO's knob moves gone) */
         nq_put(playing ? NQ_PLAY : NQ_STOP, 0, (uint32_t)slot_cur & 3u);
     }
     if (b & (1u << BTN_REC)) {
