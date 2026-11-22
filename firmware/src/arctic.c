@@ -1831,6 +1831,23 @@ static void brw_at(uint32_t t, const uint8_t *r)   /* PRESETS: track t's place, 
     for (k = 0; cat_item(r[1], k); k++)
         if (cat_item(r[1], k) == r) { brw_pos[t] = (int32_t)k; return; }
 }
+static void brw_find(void)                      /* (2.1.6) after power-on or a slot: each track's place in PRESETS
+                                                 * found again, its sound one of the lists' as it is (source, the four,
+                                                 * ENV): its name on HOME, the next turn from there; else none (the turn
+                                                 * from ICE WRAITH's place: presets_turn) */
+{
+    uint32_t t, c, k, j;
+    const uint8_t *r;
+    for (t = 0; t < NT; t++)
+        for (c = 0; c < NCAT && brw_pos[t] < 0; c++)
+            for (k = 0; (r = cat_item(c, k)) != 0 && brw_pos[t] < 0; k++) {
+                uint32_t e = r[3] < NENG ? r[3] : 0u;
+                if (e != (uint32_t)trk[t].eng) continue;
+                for (j = 0; j < 4u && trk[t].p[e][j] == clamp(r[4 + j], 0, ENGINES[e]->max[j]) && trk[t].env[j] == r[8 + j]; j++)
+                    ;
+                if (j == 4u) brw_at(t, r);
+            }
+}
 static void snd_default(void)                   /* the four tracks: SND_DEFAULT (first power-on, NEW), its name shown */
 {
     uint32_t t;
@@ -1953,6 +1970,13 @@ static void presets_turn(int32_t d)
     int32_t pos = brw_pos[sel];
     const uint8_t *r;
     char m[24];
+    if (pos < 0) {                              /* (2.1.6: the track's sound not one of the lists' (a slot's, turned):
+                                                 * from ICE WRAITH's place, the next DEEP's SARVVIS, not the list's top) */
+        const uint8_t *a = SND_FACTORY[SND_DEFAULT];
+        c = a[1];
+        for (pos = 0; cat_item(c, (uint32_t)pos) && cat_item(c, (uint32_t)pos) != a; pos++)
+            ;
+    }
     for (; d; d += d > 0 ? -1 : 1) {
         tries = 0;
         if (d > 0) {
@@ -2733,6 +2757,7 @@ static void app_start(void)                     /* once, at power-on: the saves,
     if (store_fresh && getenv("ARCTIC_PLAIN")) store_fresh = 0;   /* (host tests: Arctic Scream's plain VA tracks, not ICE WRAITH) */
 #endif
     if (store_fresh) snd_default();             /* (nothing saved: ICE WRAITH) */
+    else brw_find();                            /* (2.1.6: the tracks' places in PRESETS, as they were) */
 #if !defined DINGHY_HOST && !defined ARCTIC_WEB && !defined FM1_PLATFORM_FILE
     if (store_fresh) gd_page = 1;               /* (2.2: the guide, the very first start) */
 #endif
