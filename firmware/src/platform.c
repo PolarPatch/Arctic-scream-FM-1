@@ -319,6 +319,7 @@ static int ann_wire_send(const uint8_t *p, uint32_t n)
     return ota_wire_send(p, n);
 }
 static int po_wire_send(const uint8_t *p, uint32_t n) { return ann_wire_send(p, n); }   /* (1.5.2) PANEL OUT's: the same */
+static int mr_wire_send(const uint8_t *p, uint32_t n) { return ann_wire_send(p, n); }   /* (2.1.5) SCREEN MIRROR's: the same */
 
 /* ---- MIDI over USB: 4-byte USB-MIDI packets, cable 0 */
 static int midi_get(uint8_t *st, uint8_t *d1, uint8_t *d2)   /* 1: a message (status, data 1, data 2) */

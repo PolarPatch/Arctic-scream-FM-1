@@ -2744,8 +2744,9 @@ static void ui_govva(uint32_t now)
     static uint32_t t_last, shown;
     uint32_t id = yr_on() ? yr_pic() : pic_of_track(sel);
     if (now - t_last < UI_GOVVA_MS) return;
-    if (now - t_last > 1000u) ui_region(0, 0, 240, 240, UI_K, 0), shown = 0, gv_f = 16;   /* (its first frame: the screen
-                                                 * black once, the picture at once) */
+    if (now - t_last > 1000u || ui_force)       /* (its first frame, or everything asked for again (2.1.5: a screen
+                                                 * mirror's): the screen black once, the picture at once) */
+        ui_region(0, 0, 240, 240, UI_K, 0), shown = 0, gv_f = 16, ui_force = 0;
     else if (shown != id + 1u) gv_old = shown - 1u, gv_t0 = now, gv_f = 0;   /* (2.2: another: it melts in) */
     if (gv_f < 16u) gv_f = (now - gv_t0) * 16u / GV_MELT_MS, gv_f = gv_f > 16u ? 16u : gv_f;
     t_last = now, shown = id + 1u;
