@@ -219,7 +219,7 @@ C("02", "HOME and the mixers", "var(--aurora)",
 C("03", "Sources: EDIT", "var(--violet)",
   "EDIT opens the track's SOUND page, the source's four knobs, then SOURCE (a Holvut track has LOOP between them). Nine sources, each with its own picture.", [
   P("SOURCE", "Tap EDIT twice (Holvut: three times)", "source", K(
-    ["SOURCE", "Picks the track's source.", "VA, FM, SAMPLE, VOICE, WHEEL, PHYS, PHASE, Holvut, Biegga, Jiekna"],
+    ["SOURCE", "Picks the track's source.", "VA, FM, SAMPLE, VOICE, WHEEL, PHYS, PHASE, Holvut, Biegga, Jiekna, Luovos boazu"],
     ["LATCH", "Holds the notes: a key starts its note, the same key again stops it.", "OFF / ON"], ["", "", ""], ["", "", ""])),
   P("Holvut, the feedback voice", "EDIT, source Holvut", "holvut", K(
     ["FEEDBACK", "Wakes the loop. Below the threshold it sleeps (THE LOOP: ASLEEP); past ~2/3 it grows out of silence and howls by itself (HOWLING). Its last steps (120–127) overblow: the howl leaps up the overtones.", "0–100 %"],
@@ -289,7 +289,14 @@ C("03", "Sources: EDIT", "var(--violet)",
     ["HOLLOW", "Lower half a string (every harmonic), upper half a pipe (the odd ones, ice over water); darker to brighter in each.", "STRING … PIPE"],
     ["BRITTLE", "Pulls the overtones apart: a clean string, glass, a bell, metal.", "0–100 %"]),
     ["Jiekŋa is North Sami for ice. Noise is played into a loop tuned to the note: ice that sings when struck or bowed, glass rubbed at the rim. About as light as Biegga.",
-     "After Romain Guy's Adrift (a burst into a delay tuned to the note), written anew."])]),
+     "After Romain Guy's Adrift (a burst into a delay tuned to the note), written anew."]),
+  P("Luovos boazu, the drone from below " + NEW, "EDIT, source Luovos boazu", "luovos", K(
+    ["DEPTH", "How far down it reaches: UNISON, SUB, FIFTH (an octave under, a fifth over), TWO SUBS, DARK RUB (two under, a minor second over); gliding between.", "UNISON … DARK RUB"],
+    ["COUPLE", "Pure sines at 0; up, each bends the next one's phase: warmer, rougher, a growl, never a howl.", "PURE … 100 %"],
+    ["DRIFT", "Each generator wanders in pitch and breathes in level, slowly, on its own.", "0–100 %"],
+    ["TONE", "Two gentle low-passes: a far rumble … open.", "~190 Hz – ~6 kHz"]),
+    ["Luovos boazu is North Sami for a free reindeer, roaming loose. Four sines, at the note and under it, pull on each other and drift: a deep, calm drone. Factory sounds SARVVIS, GODDI, LUOVOS.",
+     "After the DRONE engine of bonszaimusic's Caravel (coupled oscillators after the LYRA-8), written anew."])]),
 
 C("04", "DRONE: a sound that lives on its own", "var(--teal)",
   "Press LFO twice. DRONE makes a held sound move by itself, slowly, and never the same way twice. The knobs have North Sami names.", [
