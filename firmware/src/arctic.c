@@ -552,15 +552,18 @@ static inline void out_lim(int32_t *l, int32_t *r, int32_t *env)
     }
     *env = e;
 }
+static int32_t out_g0 = -1;                     /* (2.1.6) the last block's MASTER gain: a new one glides in over a block */
 static void out_stage(int32_t *out, uint32_t n)
 {
-    int32_t g = out_gain(), env = out_env, ue = usb_env, ug = USB_G[usb_lvl <= USB_KMAX ? usb_lv(usb_lvl) : USB_L0], u[64];
+    int32_t g1 = out_gain(), g = out_g0 < 0 ? g1 : out_g0, gq = g << 8, gd = n ? ((g1 - g) << 8) / (int32_t)n : 0, env = out_env, ue = usb_env, ug = USB_G[usb_lvl <= USB_KMAX ? usb_lv(usb_lvl) : USB_L0], u[64];
     int32_t se = side_env, sg = spk_g, st, hg = hush_g, ht = hush_n ? 0 : 4096;
     uint32_t i, rec = (uint32_t)usb_feeding(), spk = SPK_ON();
     st = rec && usb_lvl > USB_LMAX && usb_lvl <= USB_KMAX ? 0 : 4096;   /* (2.2: SPK OFF while the computer takes it) */
     for (i = 0; i < n; i++) {
         int32_t x = clamp(out[2u * i], -500000, 500000), y = clamp(out[2u * i + 1u], -500000, 500000);
-        int32_t l = (x * g) >> 12, r = (y * g) >> 12;
+        int32_t l, r;
+        gq += gd, g = gq >> 8;                  /* (the SMK-37's K1 turns MASTER in detents: no steps heard) */
+        l = (x * g) >> 12, r = (y * g) >> 12;
         side_lim(&l, &r, &se);
         if (sm_g != (spk ? 4096 : 0)) sm_g += spk ? 2 : -2;   /* (2.2: SOUND SPEAKER, ~50 ms) */
         if (sm_g) l = spk_eq(l, 0), r = spk_eq(r, 1);
@@ -582,6 +585,7 @@ static void out_stage(int32_t *out, uint32_t n)
     spk_g = sg;
     hush_g = hg;
     hush_z = hg ? 0u : hush_z + n;
+    out_g0 = g1;
     out_env = env;
     usb_env = ue;
     side_env = se;
