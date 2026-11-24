@@ -31,6 +31,17 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
   - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
   - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
+- **New in 2.1.6:**
+  - **Luovos boazu** (North Sami: a free reindeer, roaming loose), an eleventh sound source: a deep, calm drone from
+    below, no howl. Four sines at the note and under it pull on each other and drift and breathe on their own.
+    **DEPTH** reaches down (UNISON, SUB + FIFTH, TWO SUBS, DARK RUB), **COUPLE** warms it from pure to a growl,
+    **DRIFT** lets it wander, **TONE** opens it. Three new factory sounds: SARVVIS, GODDI, LUOVOS.
+  - **The demos play themselves:** pick SARVVIS, GODDI, LUOVOS, POLAR HOWL, BIEGGA or MANDALORIA and press PLAY on
+    an empty track: a short piece starts, its knobs moving on their own, to show what the sound can do. Your own
+    patterns are never touched.
+  - **MANDALORIA**, a new HOWL sound, and the four DEEP sounds next to each other in PRESETS, right after ICE WRAITH.
+  - **GUOVSSAHAS**, the screen saver, shows the dithered northern lights over the tundra again.
+  - MASTER glides from one level to the next, so turning it is smooth.
 - **New in 2.1.5:**
   - **SCREEN MIRROR:** the FM-1's screen, big and sharp, on a computer, a tablet or a phone. Arctic Scream speaks the
     Big Screen protocol, so [FM-1 Mirror](https://github.com/pfkellogg/fm1-mirror) (Mac, Windows, Linux) and FM-1 Mirror

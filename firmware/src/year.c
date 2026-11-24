@@ -11,7 +11,7 @@
  *   YEAR       STILL, 8, 24 MIN, 1, 2, 8, 24 HOURS: a whole year's time (STILL: SEASON stays)
  *   SEASON     where the year is now; turned, the year is there (it goes on from it)
  *   DEPTH      0 .. 100 %: how far the seasons lean the sound (0: not at all, the year only turns)
- *   SKY        OFF, ON: the screensaver (SCREEN OFF's GOVVA, GUOVSSAHAS) the season's picture (ui.c's ui_govva), as
+ *   SKY        OFF, ON: the screensaver (SCREEN OFF's GOVVA; 2.1.6: GUOVSSAHAS the aurora always) the season's picture (ui.c's ui_govva), as
  *              with DEPTH up (yr_on); HOME keeps its stars
  * What leans: the tracks' filters (with JIEHKKI's moves, jiehkki.c's jk_glide), SPACE's SIZE (hall.c's rv_lean: SIZE
  * as set, its tail longer or shorter), SHIMMER (rv_shq: as set, more or less of it; 0 stays 0). Between two seasons,

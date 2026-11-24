@@ -39,7 +39,8 @@ static const char *help_sound(uint32_t e, uint32_t k)   /* the SOUND page's, by 
     static const char *const JN[4] = {"BOWED .. STRUCK", "HOW LONG IT SINGS", "STRING OR HOLLOW PIPE", "GLASS, BELL, METAL"};
     static const char *const BG[4] = {"HOW HARD IT GUSTS", "THE WIND'S WHISTLE", "A FAR STORM .. HISS", "SNOW TICKING"};
     static const char *const HW[4] = {"HOW HARD IT HOWLS", "THE LOOP'S BODY", "HOW DARK", "HOW HARD IT IS DRIVEN"};
-    return e == ENG_JIEKNA ? JN[k & 3u] : e == ENG_BIEGGA ? BG[k & 3u] : e == ENG_HOWL ? HW[k & 3u] : 0;
+    static const char *const DP[4] = {"HOW FAR DOWN IT REACHES", "PURE .. WARM AND ROUGH", "HOW IT WANDERS, BREATHES", "A FAR RUMBLE .. OPEN"};
+    return e == ENG_DEEP ? DP[k & 3u] : e == ENG_JIEKNA ? JN[k & 3u] : e == ENG_BIEGGA ? BG[k & 3u] : e == ENG_HOWL ? HW[k & 3u] : 0;
 }
 static void help_knob(uint32_t pg, uint32_t k)  /* knob k + 1 turned on page pg: its line, if HELP is on */
 {

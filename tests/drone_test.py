@@ -216,7 +216,7 @@ check("Arctic Scream 1.2's project: Biegga, JIEHKKI, TUNING as at power-on", jk[
 ev = [(6200, f"down {HOME}"), (6900, f"up {HOME}"), (7200, f"enc {K4} 5"), (130000, f"btn {EDIT}")]
 out, a, jk, notes = run("aurora", ev + P(100000, 129000, 131000), 132000)
 check("GUOVSSAHAS: not before 2 min", jk[100000]["aur"] == 0, jk[100000])
-check("GUOVSSAHAS: after 2 min untouched, the aurora (lit)", jk[129000]["aur"] == 1 and jk[129000]["scr"] == 1, jk[129000])
+check("GUOVSSAHAS: after 2 min untouched, the northern lights' card (lit; 2.1.6: GOVVA's way)", jk[129000]["aur"] == 2 and jk[129000]["scr"] == 1, jk[129000])
 check("GUOVSSAHAS: a touch, back", jk[131000]["aur"] == 0 and jk[131000]["scr"] == 0, jk[131000])
 
 # (2.2) GOVVA: SCREEN OFF's very last; 1 min untouched: the moving picture (the screen lit); a knob back
@@ -225,11 +225,11 @@ out, a, jk, notes = run("govva", ev + P(60000, 69000, 71000), 72000)
 check("(2.2) GOVVA: not before 1 min", jk[60000]["aur"] == 0, jk[60000])
 check(".. after 1 min untouched, the picture (lit)", jk[69000]["aur"] == 2 and jk[69000]["scr"] == 1, jk[69000])
 check(".. a knob turned, back", jk[71000]["aur"] == 0 and jk[71000]["scr"] == 0, jk[71000])
-# .. JAHKI on (DEPTH up), SCREEN OFF at GUOVSSAHAS: its seasons, never the aurora
+# .. JAHKI on (DEPTH up), SCREEN OFF at GUOVSSAHAS: the northern lights' card all the same (2.1.6; its seasons on GOVVA only)
 ev = [(6200, f"btn {LFO}"), (6400, f"btn {LFO}"), (6600, f"btn {LFO}"), (6800, f"btn {LFO}"), (7000, f"btn {LFO}"),
       (7200, f"enc {K3} 50"), (7600, f"down {HOME}"), (8300, f"up {HOME}"), (8600, f"enc {K4} 5")]
 out, a, jk, notes = run("govva_year", ev + P(130000), 131000)
-check(".. JAHKI on, GUOVSSAHAS set: the seasons instead of the aurora", jk[130000]["aur"] == 2 and jk[130000]["scr"] == 1, jk[130000])
+check(".. JAHKI on, GUOVSSAHAS set: the northern lights' card, not the seasons", jk[130000]["aur"] == 2 and jk[130000]["scr"] == 1, jk[130000])
 
 # RUOHCAT's page (LFO x 4) with a sample: a 1.5 s tone of 440 Hz into slot 1 (as tools/fm1_sample_upload.py sends it),
 # SAMPLE SLOT 1, SHARE 100 %, AMOUNT 100 %: the sample heard (440 Hz the loudest), nothing else of the ice
@@ -395,6 +395,49 @@ check("Jiekna RING at the top, bowed: it sings on by itself, held (no clip, no d
       rms(a, 20, 24) > 0.5 * rms(a, 9, 13) and rms(a, 20, 24) > 200 and peak(a) < 32000,
       (round(rms(a, 9, 13)), round(rms(a, 20, 24)), peak(a)))
 
+# (2.1.6) Luovos boazu, the eleventh source (DEEP: the drone from below): on T1 (EDIT twice: SOURCE, + 10), C3 held:
+# heard, never clipping, its note in tune with VA's C3, and below it the octaves DEPTH puts there (C2, C1); COUPLE up:
+# more above the note (warmer, rougher), the note still there; TONE down: darker
+LB = [(5000, f"btn {EDIT}"), (5300, f"btn {EDIT}"), (5600, f"enc {K1} 10"), (5800, f"btn {EDIT}")]
+lbd = lambda d: [d["lb0"], d["lb1"], d["lb2"], d["lb3"]]
+out, a, jk, notes = run("luovos", LB + P(6500) + [(7000, f"keys {1 << 7}"), (14000, "keys 0")], 15000)
+check("Luovos boazu: its knobs as at power-on (DEPTH 85, COUPLE 40, DRIFT 64, TONE 64)", lbd(jk[6500]) == [85, 40, 64, 64], jk[6500])
+check("Luovos boazu: heard, never clipping", rms(a, 9, 13) > 200 and peak(a) < 32000, (round(rms(a, 9, 13)), peak(a)))
+if have_np:
+    fl, fv = freq(a, 9, 13, 110, 160), freq(av, 7.3, 9.3, 110, 160)
+    f2, f1 = freq(a, 9, 13, 55, 80), freq(a, 9, 13, 26, 40)
+    check("Luovos boazu: C3 in tune with VA's (within 1 %), C2 and C1 under it (DEPTH: two octaves under)",
+          abs(fl / fv - 1) < 0.01 and abs(f2 / (fv / 2) - 1) < 0.01 and abs(f1 / (fv / 4) - 1) < 0.01,
+          (round(fl, 1), round(f2, 1), round(f1, 1), round(fv, 1)))
+    def above(x, t0, t1, f0):                   # the share of the sound's power above f0 Hz
+        import numpy as np
+        s = np.array(x[2 * int(t0 * 44100):2 * int(t1 * 44100)], float).reshape(-1, 2).mean(1)
+        p = np.abs(np.fft.rfft(s * np.hanning(len(s)))) ** 2
+        f = np.fft.rfftfreq(len(s), 1 / 44100)
+        return p[f > f0].sum() / p.sum()
+    out, ac, jk, notes = run("luovos_couple", LB + [(6200, f"enc {K2} 80"), (7000, f"keys {1 << 7}"), (14000, "keys 0")], 15000)
+    out, ad, jk, notes = run("luovos_dark", LB + [(6200, f"enc {K4} -64"), (7000, f"keys {1 << 7}"), (14000, "keys 0")], 15000)
+    check("Luovos boazu: COUPLE up, more above the note (x 2 or more); TONE down, less (x 0.5 or less)",
+          above(ac, 9, 13, 200) > 2 * above(a, 9, 13, 200) and above(ad, 9, 13, 200) < 0.5 * above(a, 9, 13, 200) and
+          peak(ac) < 32000, (round(above(a, 9, 13, 200), 4), round(above(ac, 9, 13, 200), 4), round(above(ad, 9, 13, 200), 4)))
+# saved with the project (version 12) and in a slot; a project saved before it: its knobs as at power-on
+sv5 = OUT / "saves_luovos.bin"
+ev = LB + [(6200, f"enc {K1} -43"), (6400, f"enc {K2} 30"), (6600, f"enc {K3} -20"), (6800, f"enc {K4} 10")]
+out, a, jk, notes = run("luovos_save", ev + P(7500), 40000, {"ARCTIC_SAVE_OUT": str(sv5)})
+out, a, jk2, notes = run("luovos_load", P(3000), 3500, {"ARCTIC_SAVE_IN": str(sv5)})
+check("Luovos boazu saved with the project (version 12): at power-on as set (42, 70, 44, 74)",
+      lbd(jk[7500]) == [42, 70, 44, 74] and lbd(jk2[3000]) == [42, 70, 44, 74], (lbd(jk[7500]), lbd(jk2[3000])))
+ev = LB + [(6200, f"enc {K1} 20"), (7400, f"down {SAVE}"), (8000, "keys 128"), (8200, "keys 0"), (8400, f"up {SAVE}"),
+           (9000, f"enc {K1} -60"), (9400, f"down {SAVE}"), (10000, "keys 1"), (10200, "keys 0"), (10400, f"up {SAVE}")]
+sv6 = OUT / "saves_lbslot.bin"
+out, a, jk, notes = run("lbslot", ev + P(9300, 11000), 40000, {"ARCTIC_SAVE_OUT": str(sv6)})
+ev = [(5000, f"down {SAVE}"), (5600, "keys 1"), (5800, "keys 0"), (6000, f"up {SAVE}")]
+out, a, jk2, notes = run("lbslot_on", P(4000) + ev + P(7000), 7500, {"ARCTIC_SAVE_IN": str(sv6)})
+check("slot A: its Luovos boazu recalled (DEPTH 105, after 45), and after a power-on",
+      jk[9300]["lb0"] == 45 and jk[11000]["lb0"] == 105 and jk2[7000]["lb0"] == 105, (jk[9300]["lb0"], jk[11000]["lb0"], jk2[7000]["lb0"]))
+out, a, jk, notes = run("lb_old", P(3000), 3500, {"ARCTIC_SAVE_IN": "tests/data/a1.2-saves.bin"})
+check("a project from 1.2: Luovos boazu as at power-on", lbd(jk[3000]) == [85, 40, 64, 64], lbd(jk[3000]))
+
 # (2.2) MOTION: REC held, HOME's CUTOFF turned up and down over ~3 s, REC let go: the move plays by itself, over and over
 # (REC not left on, the pattern not cleared); saved: at power-on it plays again; REC held + OCT-: gone
 RECB = 13
@@ -467,4 +510,4 @@ check("MOTIF: a few notes over the drone, again minutes later, a little changed"
 
 if fails:
     sys.exit(1)
-print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna, MOTION, the second core's way, the guide, SWELL, MIDI out roles, MOTIF ok")
+print("drone: JIEHKKI, RUOHCAT (its samples too), TUNING, Biegga, GUOVSSAHAS, GOVVA, PRESETS' crossing over, DICE, ACCIDENT, PRESETS' undo, SPK OFF, LFO CHAOS, ENV 2, the CPU guard, Jiekna, Luovos boazu, MOTION, the second core's way, the guide, SWELL, MIDI out roles, MOTIF ok")

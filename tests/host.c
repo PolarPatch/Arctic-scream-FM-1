@@ -439,6 +439,11 @@ static void write_wav(void)
     fwrite(wav, 4, wav_n, f);
     fclose(f);
     printf("sound  -> %s (%u frames)\n", name, wav_n);
+    if (getenv("ARCTIC_SAVE_OUT")) {             /* (2.1.6: the save sectors as the run left them, for ARCTIC_SAVE_IN: a power-on) */
+        FILE *f = fopen(getenv("ARCTIC_SAVE_OUT"), "wb");
+        if (!f || fwrite(fake_save, 1, sizeof fake_save, f) != sizeof fake_save) perror("ARCTIC_SAVE_OUT");
+        if (f) fclose(f);
+    }
     printf("cpu    app_audio() at most %u us of 5805 (%u%%, this computer)\n", host_cpu_max / FM1_TICKS_PER_US,
            (host_cpu_max * 100u + 69660u) / 139320u);
 }

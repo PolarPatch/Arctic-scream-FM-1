@@ -179,8 +179,8 @@ for clock, play in ((0, 0), (0, 1), (1, 0), (1, 1)):
 OLD = sys.argv[2] if len(sys.argv) > 2 else None
 # (Arctic Scream's, PRESETS turned from its start: T1 BOWED ICICLE (PHYS), T2 RIDDU (Biegga), T3 SIGNAL FLARE
 # (VA), T4 AURORA CHOIR (VOICE); all four loaded with chord mode off: on, SEL held on each in turn)
-LOAD = [(300, "enc 6 24"), (400, "enc 1 1"), (500, "enc 6 28"), (600, "enc 1 1"), (700, "enc 6 25"), (800, "enc 1 1"),
-        (900, "enc 6 29"), (1000, "enc 1 -3")]
+LOAD = [(300, "enc 6 25"), (400, "enc 1 1"), (500, "enc 6 29"), (600, "enc 1 1"), (700, "enc 6 26"), (800, "enc 1 1"),
+        (900, "enc 6 30"), (1000, "enc 1 -3")]   # (2.1.6: one more DRONE, MANDALORIA: each one further)
 
 
 def chords(on):                                 # (SEL held 650 ms, past HOLD_MS, on T1 .. T4)

@@ -552,15 +552,18 @@ static inline void out_lim(int32_t *l, int32_t *r, int32_t *env)
     }
     *env = e;
 }
+static int32_t out_g0 = -1;                     /* (2.1.6) the last block's MASTER gain: a new one glides in over a block */
 static void out_stage(int32_t *out, uint32_t n)
 {
-    int32_t g = out_gain(), env = out_env, ue = usb_env, ug = USB_G[usb_lvl <= USB_KMAX ? usb_lv(usb_lvl) : USB_L0], u[64];
+    int32_t g1 = out_gain(), g = out_g0 < 0 ? g1 : out_g0, gq = g << 8, gd = n ? ((g1 - g) << 8) / (int32_t)n : 0, env = out_env, ue = usb_env, ug = USB_G[usb_lvl <= USB_KMAX ? usb_lv(usb_lvl) : USB_L0], u[64];
     int32_t se = side_env, sg = spk_g, st, hg = hush_g, ht = hush_n ? 0 : 4096;
     uint32_t i, rec = (uint32_t)usb_feeding(), spk = SPK_ON();
     st = rec && usb_lvl > USB_LMAX && usb_lvl <= USB_KMAX ? 0 : 4096;   /* (2.2: SPK OFF while the computer takes it) */
     for (i = 0; i < n; i++) {
         int32_t x = clamp(out[2u * i], -500000, 500000), y = clamp(out[2u * i + 1u], -500000, 500000);
-        int32_t l = (x * g) >> 12, r = (y * g) >> 12;
+        int32_t l, r;
+        gq += gd, g = gq >> 8;                  /* (the SMK-37's K1 turns MASTER in detents: no steps heard) */
+        l = (x * g) >> 12, r = (y * g) >> 12;
         side_lim(&l, &r, &se);
         if (sm_g != (spk ? 4096 : 0)) sm_g += spk ? 2 : -2;   /* (2.2: SOUND SPEAKER, ~50 ms) */
         if (sm_g) l = spk_eq(l, 0), r = spk_eq(r, 1);
@@ -582,6 +585,7 @@ static void out_stage(int32_t *out, uint32_t n)
     spk_g = sg;
     hush_g = hg;
     hush_z = hg ? 0u : hush_z + n;
+    out_g0 = g1;
     out_env = env;
     usb_env = ue;
     side_env = se;
@@ -1831,6 +1835,23 @@ static void brw_at(uint32_t t, const uint8_t *r)   /* PRESETS: track t's place, 
     for (k = 0; cat_item(r[1], k); k++)
         if (cat_item(r[1], k) == r) { brw_pos[t] = (int32_t)k; return; }
 }
+static void brw_find(void)                      /* (2.1.6) after power-on or a slot: each track's place in PRESETS
+                                                 * found again, its sound one of the lists' as it is (source, the four,
+                                                 * ENV): its name on HOME, the next turn from there; else none (the turn
+                                                 * from ICE WRAITH's place: presets_turn) */
+{
+    uint32_t t, c, k, j;
+    const uint8_t *r;
+    for (t = 0; t < NT; t++)
+        for (c = 0; c < NCAT && brw_pos[t] < 0; c++)
+            for (k = 0; (r = cat_item(c, k)) != 0 && brw_pos[t] < 0; k++) {
+                uint32_t e = r[3] < NENG ? r[3] : 0u;
+                if (e != (uint32_t)trk[t].eng) continue;
+                for (j = 0; j < 4u && trk[t].p[e][j] == clamp(r[4 + j], 0, ENGINES[e]->max[j]) && trk[t].env[j] == r[8 + j]; j++)
+                    ;
+                if (j == 4u) brw_at(t, r);
+            }
+}
 static void snd_default(void)                   /* the four tracks: SND_DEFAULT (first power-on, NEW), its name shown */
 {
     uint32_t t;
@@ -1953,6 +1974,13 @@ static void presets_turn(int32_t d)
     int32_t pos = brw_pos[sel];
     const uint8_t *r;
     char m[24];
+    if (pos < 0) {                              /* (2.1.6: the track's sound not one of the lists' (a slot's, turned):
+                                                 * from ICE WRAITH's place, the next DEEP's SARVVIS, not the list's top) */
+        const uint8_t *a = SND_FACTORY[SND_DEFAULT];
+        c = a[1];
+        for (pos = 0; cat_item(c, (uint32_t)pos) && cat_item(c, (uint32_t)pos) != a; pos++)
+            ;
+    }
     for (; d; d += d > 0 ? -1 : 1) {
         tries = 0;
         if (d > 0) {
@@ -2493,6 +2521,131 @@ static void dice(uint32_t w, uint32_t base)
     hd_say(m);
 }
 
+/* (2.1.6) DEMO: PLAY (no song MODE) on a track whose sequence is empty and whose sound is one of the factory sounds below:
+ * that sound's own little part written into it (32 steps of 1/4, a few long notes from the keys' C, in its SCALE), so a
+ * sound shows itself at a press; a part DEMO wrote, untouched, goes over for the new sound's (PRESETS, PLAY, PRESETS,
+ * PLAY: one after another); a track with notes of its own as it is. One undo for all four; the header names them.
+ * A part: its sound's name, then up to five notes (step, semitones from the keys' C, length in steps; len 0: the end) */
+typedef struct { const char *name; uint8_t say; int8_t n[8][4]; uint8_t mv[2][3]; } demo_t;   /* (say 0: no DEMO in
+                                                 * the header; mv: up to two knobs it turns while it plays, MOTION's
+                                                 * way: the source's knob + 1 (0: none), (unused), to (0 .. 127): from where the sound has it, there and back) */
+static int32_t dm_c[NT];                        /* the keys' C a track's DEMO part was written at */
+static uint32_t dm_lanes;                       /* (bit i: MOTION lane i a DEMO's, gone at STOP) */
+#define DC(t, v) (0x80 | (VC_##v) << 4 | (CH_##t))   /* a chord step's byte (seq.c's chord) */
+static const demo_t DEMO[] = {
+    /* (2.1.6) the deep ones an octave over the keys' C (their subs under it: heard on the speaker too), each turning
+     * its own knob over the 32 steps (out and back): */
+    {"SARVVIS", 1, {{0, 12, 8, DC(MIN, OPEN)}, {8, 8, 8, DC(MAJ, OPEN)}, {16, 15, 8, DC(MAJ, OPEN)},
+                    {24, 10, 8, DC(SUS2, OPEN)}}, {{4, 36, 100}}},   /* the bull: four slow chords, TONE breathing open */
+    {"GODDI", 1, {{0, 0, 10, 0}, {8, 3, 8, 0}, {14, 2, 6, 0}, {18, 0, 8, 0}, {24, -2, 6, 0}, {28, -5, 6, 0}},
+                 {{2, 10, 90}}},                 /* the wild one: a low dark line, its rub under it, COUPLE growling up */
+    {"LUOVOS", 1, {{0, 12, 8, 0}, {4, 19, 8, 0}, {8, 24, 6, 0}, {12, 22, 6, 0}, {16, 15, 8, 0}, {20, 19, 8, 0},
+                   {24, 17, 6, 0}, {28, 14, 4, 0}}, {{1, 0, 127}, {4, 50, 110}}},   /* loose: wandering, DEPTH all the
+                                                 * way round (UNISON .. DARK RUB) and TONE with it */
+    {"POLAR HOWL", 1, {{0, 0, 24, 0}}, {{0}}},   /* a note to wake it, then its own */
+    {"BIEGGA", 0, {{0, -12, 32, 0}}, {{0}}},     /* the wind held, rising on its own (no DEMO said: the wind's own name) */
+    {"MANDALORIA", 1, {{0, 0, 20, 0}}, {{0}}},   /* a note to wake its loop */
+};
+#undef DC
+static void demo_lanes_off(void)                /* (STOP, another DEMO) the DEMO's knob moves gone, the knobs where they
+                                                 * began */
+{
+    uint32_t i;
+    volatile int32_t *p;
+    for (i = 0; i < MO_N; i++)
+        if (dm_lanes >> i & 1u) {
+            int32_t v = mo_val(&mo[i], mo[i].home, &p);
+            if (p) *p = v;
+            mo[i].on = 0, mo_dirty = 1;
+        }
+    dm_lanes = 0;
+}
+static void demo_lanes(uint32_t t, const demo_t *D)   /* D's knob moves on track t, a loop as long as its 32 steps */
+{
+    uint32_t j, i, l, len = 32u * 60000u / (uint32_t)clamp(seq_bpm, 20, 300);
+    for (j = 0; j < 2u && D->mv[j][0]; j++) {
+        mo_lane_t *L;
+        for (l = 0; l < MO_N && mo[l].on; l++)  /* (a free lane; none: the DEMO turns no knob) */
+            ;
+        if (l == MO_N) return;
+        L = &mo[l];
+        int32_t from;
+        L->pg = PG_SOUND, L->k = (uint8_t)(D->mv[j][0] - 1u), L->t = (uint8_t)t, L->x = (uint8_t)trk[t].eng;
+        from = (int32_t)mo_get(L);              /* (from the knob where the sound has it: there again at STOP, and
+                                                 * what a save keeps) */
+        for (i = 0; i < MO_PTS; i++) {          /* (out to mv's and back: a raised cosine) */
+            int32_t f = sine_i((i << 24) - 0x40000000u);   /* (-1 .. 1 Q15, -1 at the start) */
+            L->v[i] = (uint8_t)clamp(from + ((D->mv[j][2] - from) * (f + 32768) >> 16), 0, 127);
+        }
+        L->home = L->v[0], L->len10 = (uint16_t)(len / 10u), L->on = 1;
+        mo_t[l] = fm1_ms, mo_dirty = 1, dm_lanes |= 1u << l;
+    }
+}
+static const demo_t *demo_of(uint32_t t)        /* track t's sound's part, or 0 (not a factory sound with one) */
+{
+    const uint8_t *r = brw_pos[t] >= 0 ? cat_item((uint32_t)brw_cat[t] % NCAT, (uint32_t)brw_pos[t]) : 0;
+    const char *nm = r && r[3] == (uint32_t)trk[t].eng ? snd_fname(r) : 0;
+    uint32_t i, j;
+    if (!nm || trk_nm[t][0]) return 0;
+    for (i = 0; i < sizeof DEMO / sizeof DEMO[0]; i++) {
+        for (j = 0; nm[j] && nm[j] == DEMO[i].name[j]; j++)
+            ;
+        if (!nm[j] && !DEMO[i].name[j]) return &DEMO[i];
+    }
+    return 0;
+}
+static void demo_put(seq_pat_t *P, const demo_t *D, int32_t c)   /* D's part into P (P cleared first) */
+{
+    uint32_t i;
+    for (i = 0; i < SEQ_N; i++) step_off(&P->st[i]);
+    for (i = 0; i < 8u && D->n[i][2]; i++) {
+        seq_step_t *s = &P->st[(uint32_t)D->n[i][0] % SEQ_N];
+        s->note = (uint8_t)sc_snap((uint32_t)clamp(c + D->n[i][1], 1, 127));
+        s->chance = 100, s->ratchet = 1, s->len = (uint8_t)D->n[i][2], s->chord = (uint8_t)D->n[i][3];
+    }
+}
+static int demo_left(uint32_t t, const seq_pat_t *P)   /* P is empty, or still a part DEMO wrote (as it wrote it:
+                                                 * another sound's part goes over for this one's) */
+{
+    static seq_pat_t q;
+    uint32_t i, j;
+    for (i = 0; i < SEQ_N && !P->st[i].note; i++)
+        ;
+    if (i == SEQ_N) return 1;
+    for (j = 0; j < sizeof DEMO / sizeof DEMO[0]; j++) {
+        demo_put(&q, &DEMO[j], dm_c[t]);
+        for (i = 0; i < SEQ_N && P->st[i].note == q.st[i].note && (!q.st[i].note || (P->st[i].len == q.st[i].len &&
+                    P->st[i].chance == 100 && P->st[i].ratchet == 1 && !P->st[i].lmask && P->st[i].chord == q.st[i].chord)); i++)
+            ;
+        if (i == SEQ_N) return 1;
+    }
+    return 0;
+}
+static void demo(uint32_t base)                 /* main loop, PLAY pressed to start: the selected track's DEMO (the
+                                                 * others' untouched DEMO parts cleared: one sound shown at a time) */
+{
+    uint32_t t;
+    int32_t c = (int32_t)base + 7;              /* (the keys' C) */
+    const demo_t *D = demo_of(sel);
+    char m[24];
+    if (song_mode != SM_OFF) return;
+    if (!D || !demo_left(sel, &seq[sel].pat[clamp(seq[sel].cur, 0, SEQ_NPAT - 1)])) return;   /* (notes of its own) */
+    undo_take(UK_ONE | ++uk_n, -1);
+    demo_lanes_off();
+    for (t = 0; t < NT; t++) {
+        seq_pat_t *P = &seq[t].pat[clamp(seq[t].cur, 0, SEQ_NPAT - 1)];
+        uint32_t i;
+        if (t == sel) {
+            demo_put(P, D, c);
+            dm_c[t] = c;
+            seq[t].steps = 32, seq[t].div = 0;  /* (32 quarter notes: 16 s at 120) */
+            demo_lanes(t, D);
+        } else if (demo_left(t, P))             /* (an empty one stays empty; another DEMO's part goes) */
+            for (i = 0; i < SEQ_N; i++) step_off(&P->st[i]);
+    }
+    if (D->say) put_s(put_s(m, "DEMO "), D->name), hd_say(m);
+}
+
 /* (2.0) ACCIDENT: EDIT held + E4, F4 or G4: two or three of the selected track's settings moved at random, a little,
  * more, or wildly (its source's four knobs, gliding there as PRESETS does; ENV; the LFO's RATE and DEPTH; DRONE's BORGA
  * and STOARBMA), the header saying how many; EDIT + OCT- undoes it. The idea after KRIECHSTROM's HAPPY ACCIDENT (Grigorii
@@ -2652,6 +2805,7 @@ static void app_start(void)                     /* once, at power-on: the saves,
     if (store_fresh && getenv("ARCTIC_PLAIN")) store_fresh = 0;   /* (host tests: Arctic Scream's plain VA tracks, not ICE WRAITH) */
 #endif
     if (store_fresh) snd_default();             /* (nothing saved: ICE WRAITH) */
+    else brw_find();                            /* (2.1.6: the tracks' places in PRESETS, as they were) */
 #if !defined DINGHY_HOST && !defined ARCTIC_WEB && !defined FM1_PLATFORM_FILE
     if (store_fresh) gd_page = 1;               /* (2.2: the guide, the very first start) */
 #endif
@@ -2836,6 +2990,8 @@ static void app_step(void)                      /* one pass of the main loop: on
     if (song_end) song_end = 0, playing = 0;   /* (a SONG played out: stopped) */
     if (b & (1u << BTN_PLAY)) {                 /* PLAY/STOP: all four tracks' sequences (a song: song.c) */
         playing ^= 1u;
+        if (playing) demo(base);                /* (2.1.6: an empty track with a DEMO sound: its part) */
+        else demo_lanes_off();                  /* (STOP: the DEMO's knob moves gone) */
         nq_put(playing ? NQ_PLAY : NQ_STOP, 0, (uint32_t)slot_cur & 3u);
     }
     if (b & (1u << BTN_REC)) {
@@ -3131,9 +3287,9 @@ static void app_step(void)                      /* one pass of the main loop: on
         lcd_light(1);
     } else if (!scr_dark && set.scr && fm1_ms - t_hand >= SCR_S[set.scr % NSCR] * 1000u) {
         scr_dark = 1;
-        if (set.scr == SCR_PIC || (set.scr == SCR_AUR && yr_on())) scr_aur = 2;   /* (JAHKI on: its seasons, never
-                                                 * the aurora) */
-        else if (set.scr == SCR_AUR) scr_aur = 1;
+        if (set.scr == SCR_PIC || set.scr == SCR_AUR) scr_aur = 2;   /* (2.1.6: GUOVSSAHAS the northern lights' card,
+                                                 * tundra_aurora, moving, always: ui.c's ui_govva; JAHKI's seasons on
+                                                 * GOVVA only) */
         else lcd_light(0);
     }
     batt_poll();

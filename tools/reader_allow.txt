@@ -16,3 +16,7 @@ pre-delay
 supersaw
 centre
 dropped
+luovos
+boazu
+sarvvis
+goddi
