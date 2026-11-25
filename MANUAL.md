@@ -829,6 +829,10 @@ USB, or the 3.5 mm TRS jack with a TRS-to-DIN MIDI adapter (type A). Notes on MI
 their keys do, a CC its MIDI LEARN link, and the MIDI clock is followed when CLOCK says so. A DAW's ALL NOTES OFF lets
 go of the notes MIDI holds (a latched note stays). Aftertouch pushes a Holvut track's FEEDBACK (see Holvut).
 
+**SUSTAIN** (new in 2.1.7): a sustain pedal's CC 64 holds the notes you let go, keys and MIDI notes alike, until the
+pedal comes up. A note played again while it is down starts afresh instead of doubling. A latched track, the sequence
+and the arp are not touched. ALL NOTES OFF lets go of what the pedal holds too.
+
 ### Good to know
 
 - **CPU FULL: NOTE DROPPED** in the header: the FM-1 had more to play than it can; it let go of a fading or a generated

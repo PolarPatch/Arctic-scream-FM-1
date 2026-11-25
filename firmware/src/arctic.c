@@ -753,6 +753,47 @@ static void nq_note(uint32_t c, uint32_t t, uint32_t note, uint32_t id)   /* mai
 }
 static void nq_put(uint32_t c, uint32_t t, uint32_t note) { nq_note(c, t, note, 0); }   /* (RELEASE, RESTART, ..) */
 #define NQ_OCT(o) ((uint32_t)((o) + 3) << 10)   /* (1.4) with a key's command: the octave it is played in */
+/* (2.1.7) SUSTAIN: a pedal (the SMK-37's jack, smk.c) or CC 64 in. While it is down, a note a hand lets go (a key, an
+ * outer key, a MIDI note) sounds on; up, those go, a few a millisecond (sus_poll: never more than the queue takes). A
+ * note played again meanwhile: the held one goes first, the new one starts (as a piano's string struck again). A
+ * LATCH track's notes, the sequence's, the arp's: as ever (the pedal is the hand's) */
+static uint32_t sus_down, sus_n;                /* main loop: the pedal (bit 0 the pedal, bit 1 CC 64); held notes */
+static uint32_t sus_pend[NT][8], sus_echo[NT][8];   /* main loop: the notes held by it, by track and origin id */
+static void hand_off(uint32_t c, uint32_t t, uint32_t id)   /* a hand's note let go: now, or once the pedal is up */
+{
+    uint32_t w = (id & 0xFFu) >> 5, b = 1u << (id & 31u);
+    if (!sus_down || t >= NT) { nq_note(c, t, 0, id); return; }
+    if (!(sus_pend[t][w] & b)) sus_n++;
+    sus_pend[t][w] |= b;
+    sus_echo[t][w] = c & NQ_ECHO ? sus_echo[t][w] | b : sus_echo[t][w] & ~b;
+}
+static void sus_go(uint32_t t, uint32_t id)     /* a held note let go now */
+{
+    uint32_t w = (id & 0xFFu) >> 5, b = 1u << (id & 31u);
+    if (t >= NT || !(sus_pend[t][w] & b)) return;
+    sus_pend[t][w] &= ~b, sus_n--;
+    nq_note(NQ_OFF | (sus_echo[t][w] & b ? NQ_ECHO : 0u), t, 0, id);
+}
+static void sus_again(uint32_t id)              /* a note played again: its held one (any track) goes first */
+{
+    uint32_t t;
+    if (sus_n) for (t = 0; t < NT; t++) sus_go(t, id);
+}
+static void sus_set(uint32_t which, uint32_t down)   /* the pedal (1) or CC 64 (2) down or up */
+{
+    sus_down = down ? sus_down | which : sus_down & ~which;
+}
+static void sus_poll(void)                      /* every main-loop pass: the pedal up, up to 8 held notes go */
+{
+    uint32_t t, w, k = 0;
+    if (sus_down || !sus_n) return;
+    for (t = 0; t < NT; t++)
+        for (w = 0; w < 8u; w++)
+            while (sus_pend[t][w]) {
+                if (k++ == 8u) return;
+                sus_go(t, w << 5 | (uint32_t)__builtin_ctz(sus_pend[t][w]));
+            }
+}
 static void ec_put(uint32_t st, uint32_t t, uint32_t note)   /* audio: a USB-MIDI echo of track t for the main loop
                                                  * to send (on t's channel); full: said (the main loop then lets go of
                                                  * what it sent, never a note left on out there) */
@@ -1253,6 +1294,13 @@ static uint32_t set_dirty, set_t;               /* the settings changed, when */
 static volatile int32_t sy_snd, sy_help;       /* (2.2) SYSTEM 4's knobs: SOUND (0 AUTO, 1 HEADPHONES, 2 SPEAKER), HELP (1 ON) */
 #define SYS4_SND(s4) ((s4) & 1u ? 2 : (s4) & 4u ? 1 : 0)   /* (sys4's SOUND as the knob's) */
 #define SYS4_OK(s4) ((s4) <= 0x17u && ((s4) & 5u) != 5u && ((s4) >> 3) <= 2u)
+#if BOARD_SMK37
+#define TCH_OF(s) ((uint32_t)(s) < 2u ? 1u - (uint32_t)(s) : (uint32_t)(s))   /* (2.1.7) TOUCH as sys4 keeps it and back: the
+                                                 * SMK-37's keys feel their velocity, so it starts at VELOCITY (0 kept
+                                                 * is VELOCITY, 1 OFF) */
+#else
+#define TCH_OF(s) ((uint32_t)(s))
+#endif
 static volatile int32_t sy_touch;               /* (2.1.4) SYSTEM 4's KNOB 3: TOUCH (TCH_) */
 static volatile int32_t sy_col, sy_mch, sy_tune, sy_scr, sy_learn, sy_out, sy_fac, sy_clk, sy_latch, sy_usb, sy_mod;   /* SYSTEM's,
                                                  * SYSTEM 2's, SYSTEM 3's knobs (sy_fac: SAMPLES, 1 RESTORE: OCT+
@@ -2261,7 +2309,7 @@ static void sys_sync(void)
     uint8_t col = (uint8_t)clamp(sy_col, 0, 4), mch = (uint8_t)clamp(sy_mch, 0, MCH_MAX), scr = (uint8_t)clamp(sy_scr, 0, NSCR - 1);
     uint8_t out = (uint8_t)clamp(sy_out, 0, 1), clk = (uint8_t)clamp(sy_clk, 0, CK_N - 1), la = (uint8_t)clamp(sy_latch, 0, 1);
     uint8_t ul = (uint8_t)clamp(sy_usb, 0, (int32_t)USB_KMAX), md = (uint8_t)clamp(sy_mod, 0, 1);
-    uint8_t s4 = (uint8_t)((sy_snd == 2 ? 1u : sy_snd == 1 ? 4u : 0u) | (sy_help ? 0u : 2u) | (uint32_t)clamp(sy_touch, 0, 2) << 3);
+    uint8_t s4 = (uint8_t)((sy_snd == 2 ? 1u : sy_snd == 1 ? 4u : 0u) | (sy_help ? 0u : 2u) | TCH_OF(clamp(sy_touch, 0, 2)) << 3);
     uint32_t n, t;
     if (mch != set.mch || (set.out && !out)) mo_flush = 1;
     if (mch != set.mch)
@@ -2282,7 +2330,7 @@ static void sys_sync(void)
     tune_f = (set.tune * 23666 + set.tune * set.tune * 7) / 10000;   /* (2^(c / 1200) - 1, x 4096) */
     mo_seq = set.out, snd_latch_off = set.latch, usb_lvl = set.usb;
     spk_mode = (uint8_t)SYS4_SND(set.sys4), help_on = !(set.sys4 & 2u);   /* (2.2: SYSTEM 4) */
-    tch_mode = (uint8_t)(set.sys4 >> 3);        /* (2.1.4: TOUCH; on the FM-1 the keys' readings with it) */
+    tch_mode = (uint8_t)TCH_OF(set.sys4 >> 3);        /* (2.1.4: TOUCH; on the FM-1 the keys' readings with it) */
 #ifdef FM1_TOUCH_HAL
     fm1_touch_on(tch_mode != TCH_OFF);
 #endif
@@ -2324,7 +2372,7 @@ static void sys_load(void)                      /* the settings at power-on into
     if (set.nlk > NLINK) set.nlk = 0;
     sy_col = set.col, sy_mch = set.mch, sy_tune = set.tune, sy_scr = set.scr, sy_out = set.out, sy_clk = set.clk;
     sy_latch = set.latch, sy_usb = set.usb, sy_mod = set.mod;
-    sy_snd = SYS4_SND(set.sys4), sy_help = !(set.sys4 & 2u), sy_touch = set.sys4 >> 3;
+    sy_snd = SYS4_SND(set.sys4), sy_help = !(set.sys4 & 2u), sy_touch = (int32_t)TCH_OF(set.sys4 >> 3);
     sys_sync();
     set_dirty = 0;
     if (!set.ver)                               /* (steps 20..24's; V1.0's are version 1: as they are) */
@@ -2735,6 +2783,8 @@ static void midi_in(void)
                             nq_note(NQ_OFF, m, 0, MIDI_ID(n));
                             midi_held[n] &= (uint8_t)~(0x11u << m);
                         }
+            if (d1 == 64u) sus_set(2u, d2 >= 64u);   /* (2.1.7: SUSTAIN, CC 64) */
+            if (d1 == 120u || d1 == 123u) sus_set(2u, 0);   /* (.. and what it held goes too) */
             midi_cc(d1, d2 & 0x7Fu);
             continue;
         }
@@ -2763,7 +2813,7 @@ static void midi_in(void)
         for (m = 0; m < NT; m++)            /* LATCH OFF: the voices it started released (a note-on again without
                                              * its off: those first); ALL > SEL: whichever track it went to */
             if ((midi_held[d1] >> m & 1u) && (m == t || set.mch >= MCH_ALL)) {
-                nq_note(NQ_OFF, m, 0, MIDI_ID(d1));
+                hand_off(NQ_OFF, m, MIDI_ID(d1));   /* (2.1.7: SUSTAIN holds it) */
                 midi_held[d1] &= (uint8_t)~(0x11u << m);
             }
         if (on) ru_heard(n);                    /* (2.1: the ice may answer it) */
@@ -2771,6 +2821,7 @@ static void midi_in(void)
         if (on && trk[t].latch)
             nq_note(NQ_TOGGLE, t, n, MIDI_ID(d1));
         else if (on) {
+            sus_again(MIDI_ID(d1));
             nq_note(NQ_ON, t, n, MIDI_ID(d1));
             midi_held[d1] |= (uint8_t)(1u << t);
             if (again) midi_held[d1] |= (uint8_t)(0x10u << t);
@@ -2886,6 +2937,7 @@ static void app_step(void)                      /* one pass of the main loop: on
     uint32_t k, keys, down, up, rel, b, n, lit = 0, base = (uint32_t)(KEY0 + 12 * set.oct);
     int32_t d;
     platform_poll();
+    sus_poll();                                 /* (2.1.7: SUSTAIN up, the notes it held go) */
     tch_tracks();
     shot_poll(fm1_ms);                          /* (2.1.4: ONE-SHOTS) */
     td_tick(fm1_ms);                            /* (2.1.4: TIDE) */
@@ -3074,7 +3126,7 @@ static void app_step(void)                      /* one pass of the main loop: on
             gen_kd &= (uint8_t)~(1u << w), gen_ku &= (uint8_t)~(1u << w);
         }
         if (up >> k & 1u && key_held[k]) {      /* a held key let go: the voices it started released */
-            nq_note(NQ_OFF | NQ_ECHO, (key_held[k] >> 8) & 3u, 0, KEY_ID(k));
+            hand_off(NQ_OFF | NQ_ECHO, (key_held[k] >> 8) & 3u, KEY_ID(k));   /* (2.1.7: SUSTAIN holds it) */
             key_held[k] = 0;
         }
         if (!(down >> k & 1u)) continue;
@@ -3164,6 +3216,7 @@ static void app_step(void)                      /* one pass of the main loop: on
             id_vel[KEY_ID(k)] = tch_gain(tch_v[k]), nq_note(NQ_TOGGLE | NQ_ECHO | NQ_OCT(set.oct), sel, n, KEY_ID(k));
         else {
             id_vel[KEY_ID(k)] = tch_gain(tch_v[k]);   /* (2.1.4: TOUCH, its velocity) */
+            sus_again(KEY_ID(k));
             nq_note(NQ_ON | NQ_ECHO | NQ_OCT(set.oct), sel, n, KEY_ID(k));
             key_held[k] = (uint16_t)(0x8000u | sel << 8);
         }

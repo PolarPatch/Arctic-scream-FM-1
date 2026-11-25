@@ -222,7 +222,11 @@ static const uint8_t STR2[] = {30, 3, 'F', 0, 'e', 0, 'l', 0, 'u', 0, 'c', 0, 'c
                                'd', 0, 'a', 0, 't', 0, 'e', 0};
 #else                                           /* (Arctic Scream p0larpatch: its own names, the loader's kept) */
 static const uint8_t STR1[] = {22, 3, 'P', 0, 'o', 0, 'l', 0, 'a', 0, 'r', 0, 'P', 0, 'a', 0, 't', 0, 'c', 0, 'h', 0};
+#if BOARD_SMK37                                 /* (2.1.7) the SMK-37's own name: told apart from an FM-1 */
+static const uint8_t STR2[] = {42, 3, 'A', 0, 'r', 0, 'c', 0, 't', 0, 'i', 0, 'c', 0, ' ', 0, 'S', 0, 'c', 0, 'r', 0, 'e', 0, 'a', 0, 'm', 0, ' ', 0, 'S', 0, 'M', 0, 'K', 0, '-', 0, '3', 0, '7', 0};
+#else
 static const uint8_t STR2[] = {28, 3, 'A', 0, 'r', 0, 'c', 0, 't', 0, 'i', 0, 'c', 0, ' ', 0, 'S', 0, 'c', 0, 'r', 0, 'e', 0, 'a', 0, 'm', 0};
+#endif
 #endif
 
 static int get_desc(uint32_t wvalue, const uint8_t **d, uint16_t *l)

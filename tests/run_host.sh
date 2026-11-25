@@ -62,6 +62,8 @@ python3 tests/mono_test.py build/host/arctic
 python3 tests/drone_test.py build/host/arctic
 # LATCH: every factory sound, SYSTEM 3 both ways, EDIT, SEL + OCT+, slots, the project, PHYS (tests/latch_test.py)
 python3 tests/latch_test.py build/host/arctic
+# (2.1.7) SUSTAIN: CC 64 in holds the notes let go (tests/sustain_test.py)
+python3 tests/sustain_test.py build/host/arctic
 # GENERATE (FX held + the black keys): in the SCALE, the pattern unheard and unchanged (tests/gen_test.py)
 python3 tests/gen_test.py build/host/arctic
 # (2.1.4) SOUND AUTO: the headphone jack says speaker or headphones (tests/jack_test.py)
