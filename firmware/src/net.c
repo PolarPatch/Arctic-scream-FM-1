@@ -19,6 +19,9 @@
 #endif
 /* (NW_*, NW_NAME, nw_wifi, nw_link, nw_bt: arctic.c, by SYSTEM's knobs) */
 static int32_t nw_wifi_was = -1, nw_link_was = -1, nw_bt_was = -1;
+#ifndef NET_MIDI
+#define NET_MIDI 1                              /* (MIDI over Wi-Fi: nm_*; a build may leave it out) */
+#endif
 #define RT_LINK 2u                              /* (platform.c RT_USB, RT_TRS: the realtime source CK_LINK reads) */
 
 #if ARCTIC_RADIO
@@ -96,7 +99,11 @@ static int lk_play(int on)                      /* PLAY / STOP in LINK: the sess
 static void nw_apply(void)                      /* the knobs to the radio */
 {
     int32_t w = clamp(nw_wifi, 0, NNW - 1), l = clamp(nw_link, 0, 1), bt = clamp(nw_bt, 0, 1);
-    if ((w || bt) && !radio_wanted) radio_on();
+    if ((w || bt) && !radio_wanted) {
+        if (fm1_ms < 3000u) return;             /* (at power-on: from the main loop, 3 s in, never inside the start:
+                                                 * its calibration there reset the FM-1, twice: the USB rescue) */
+        radio_on();
+    }
     if (w != nw_wifi_was) {
         nw_wifi_was = w;
         if (radio_wanted) {
@@ -555,7 +562,7 @@ static void nw_tick(void)                       /* main loop, each pass */
     nw_wifi_was = nw_wifi, nw_link_was = nw_link, nw_bt_was = nw_bt;
 #endif
     lk_tick();
-#if ARCTIC_RADIO
+#if ARCTIC_RADIO && NET_MIDI
     nm_tick();
 #endif
 }
