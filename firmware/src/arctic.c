@@ -2784,13 +2784,15 @@ static void midi_in(void)
 {
     uint8_t st, d1, d2;
     uint32_t n;
-    while (midi_get(&st, &d1, &d2) || nw_midi_in(&st, &d1, &d2)) {   /* MIDI in (USB, the TRS jack; 2.1.9 Bluetooth): a note on MIDI CHANNEL's T1 .. T4
+    int wired;
+    while ((wired = midi_get(&st, &d1, &d2)) != 0 || nw_midi_in(&st, &d1, &d2)) {   /* MIDI in (USB, the TRS jack; 2.1.9 Bluetooth): a note on MIDI CHANNEL's T1 .. T4
                                              * channels plays that track as its keys (ALL > SEL: any channel, the
                                              * selected track; CH n > SEL: channel n alone, the selected track); a
                                              * CC: its link (MIDI LEARN) */
         uint32_t ty = st & 0xF0u, c = st & 15u, on = ty == 0x90u && d2, off = ty == 0x80u || (ty == 0x90u && !d2), t, m;
         uint32_t again;
         midi_touch = 1;                     /* (app_main: t_touch) */
+        if (wired) nw_thru(st, d1, d2);     /* (2.1.9: USB's and the jack's notes on to Wi-Fi and Bluetooth MIDI too) */
         d1 &= 0x7Fu;
         if (set.mch > MCH_ALL && c != (uint32_t)(set.mch - MCH_ALL - 1)) continue;   /* (CH n > SEL: another
                                              * channel's, nothing; its CCs too) */

@@ -11,6 +11,8 @@
  *              PLAY starts at the session's next bar (alone: the next beat), and STOP from anyone stops all; the
  *              tempo knobs set the session's tempo, and another peer's comes here
  *   BLUETOOTH  OFF, ON: Bluetooth MIDI ("Arctic Scream XXXX"), in as from USB (notes, CCs; not its clock)
+ * MIDI out goes to the radio too: what USB-MIDI sends, and (THRU) the notes that come in over USB or the jack, so a
+ * computer playing the FM-1 plays a phone's app through it as well
  * The radio starts when one of them is first turned on (or at power-on, kept so), and its first second is silent
  * (platform.c radio_quiet). A build without the radio (the host, the browser) shows the page and does nothing. */
 
@@ -424,6 +426,12 @@ static void nm_tick(void)                       /* main loop (nw_tick) */
     }
 }
 
+static void nw_thru(uint8_t st, uint8_t d1, uint8_t d2)   /* MIDI THRU: a channel message from USB or the jack, on to
+                                                 * the radio's outs (never back to USB: no loop) */
+{
+    if (st >= 0x80u && st < 0xF0u)
+        nw_out_tap((uint32_t)(st >> 4) | (uint32_t)st << 8 | (uint32_t)(d1 & 0x7Fu) << 16 | (uint32_t)(d2 & 0x7Fu) << 24);
+}
 static int nw_midi_in(uint8_t *st, uint8_t *d1, uint8_t *d2)   /* Bluetooth MIDI and Wi-Fi MIDI in (1: a message), as
                                                  * midi_get */
 {
@@ -546,6 +554,7 @@ static int lk_play(int on) { (void)on; return 0; }
 static void nw_apply(void) {}
 static void nw_boot(void) { nw_bt = (set.sys4 >> 5) & 1u, nw_link = ck_mode == CK_LINK; }
 static int nw_midi_in(uint8_t *st, uint8_t *d1, uint8_t *d2) { (void)st, (void)d1, (void)d2; return 0; }
+static void nw_thru(uint8_t st, uint8_t d1, uint8_t d2) { (void)st, (void)d1, (void)d2; }
 static int nw_status(char *a, char *b, char *c, char *d)
 {
 #ifdef DINGHY_HOST
