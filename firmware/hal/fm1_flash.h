@@ -155,6 +155,22 @@ static RAMFN uint32_t fl_jedec_ram(void)                 /* fl_id_known (fm1_fla
     return id;
 }
 
+/* (2.1.9, from felucca-bsp chip/fm1_flash.h, MPL-2.0 there: the radio's name and address) the part's factory unique ID
+ * (0x4B, four dummy bytes): dst (RAM) gets 16 bytes. Only with FL_UID defined */
+#ifdef FL_UID
+static RAMFN int fl_uid_ram(uint8_t *dst)
+{
+    fl_saved_t s; uint32_t i;
+    { int rc = fl_enter(&s); if (rc) return rc; }
+    fl_cs(0);
+    for (i = 0; i < 5u; i++) fl_tx(i ? 0 : 0x4B);
+    for (i = 0; i < 16u; i++) dst[i] = fl_rx();
+    fl_cs(1);
+    fl_exit(&s);
+    return 0;
+}
+#endif
+
 static RAMFN uint32_t fl_status_ram(void)                /* SR1 | SR2 << 8 */
 {
     fl_saved_t s; uint32_t v;

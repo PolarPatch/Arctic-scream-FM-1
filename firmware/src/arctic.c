@@ -1296,7 +1296,8 @@ static struct {
 static uint32_t set_dirty, set_t;               /* the settings changed, when */
 static volatile int32_t sy_snd, sy_help;       /* (2.2) SYSTEM 4's knobs: SOUND (0 AUTO, 1 HEADPHONES, 2 SPEAKER), HELP (1 ON) */
 #define SYS4_SND(s4) ((s4) & 1u ? 2 : (s4) & 4u ? 1 : 0)   /* (sys4's SOUND as the knob's) */
-#define SYS4_OK(s4) ((s4) <= 0x17u && ((s4) & 5u) != 5u && ((s4) >> 3) <= 2u)
+#define SYS4_OK(s4) (((s4) & ~0x20u) <= 0x17u && ((s4) & 5u) != 5u && (((s4) >> 3) & 3u) <= 2u)   /* (2.1.9: bit 5
+                                                 * BLUETOOTH ON, net.c) */
 #if BOARD_SMK37
 #define TCH_OF(s) ((uint32_t)(s) < 2u ? 1u - (uint32_t)(s) : (uint32_t)(s))   /* (2.1.7) TOUCH as sys4 keeps it and back: the
                                                  * SMK-37's keys feel their velocity, so it starts at VELOCITY (0 kept
@@ -1305,6 +1306,9 @@ static volatile int32_t sy_snd, sy_help;       /* (2.2) SYSTEM 4's knobs: SOUND 
 #define TCH_OF(s) ((uint32_t)(s))
 #endif
 static volatile int32_t sy_touch;               /* (2.1.4) SYSTEM 4's KNOB 3: TOUCH (TCH_) */
+enum { NW_OFF, NW_JOIN, NW_HOTSPOT, NNW };     /* (2.1.9) NETWORK's WIFI (net.c) */
+static const char *const NW_NAME[NNW] = {"OFF", "JOIN", "HOTSPOT"};
+static volatile int32_t nw_wifi, nw_link, nw_bt;   /* (2.1.9) NETWORK's knobs: WIFI, LINK, BLUETOOTH (net.c) */
 static volatile int32_t sy_col, sy_mch, sy_tune, sy_scr, sy_learn, sy_out, sy_fac, sy_clk, sy_latch, sy_usb, sy_mod;   /* SYSTEM's,
                                                  * SYSTEM 2's, SYSTEM 3's knobs (sy_fac: SAMPLES, 1 RESTORE: OCT+
                                                  * writes the factory ones) */
@@ -1398,7 +1402,7 @@ static char *put_ms(char *s, uint32_t q16)      /* a time, ms in Q16: "5 ms", "1
  * tap opens its first page, again the next (round); SYSTEM is HOME's, held */
 enum { PG_SOUND, PG_SOURCE, PG_ENV, PG_LFO, PG_SCALE, PG_CHORD, PG_SONG, PG_HOME, PG_MIX1, PG_MIX2, PG_SYSTEM,
        PG_SYS2, PG_SOUNDS, PG_PROJECTS, PG_ARP, PG_GRID, PG_PATTERN, PG_TAPE, PG_GRAIN, PG_DELAY, PG_SPACE, PG_PERFORM,
-       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, PG_RUOHCAT, PG_JAHKI, PG_ENV2, PG_SYS4, PG_TIDE, PG_DRIFT, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
+       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, PG_RUOHCAT, PG_JAHKI, PG_ENV2, PG_SYS4, PG_TIDE, PG_DRIFT, PG_NET, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
                                                  * have; in their button's round by pg_key. TRACK: gone in step 25, its
                                                  * number kept: sys_load moves its links onto HOME) */
 typedef struct {
@@ -1455,7 +1459,8 @@ static const page_t PAGES[NPAGE] = {
     {"ENV 2", BTN_ENV, 1, 1, 1, {"LOOP", "ONSET", "SPREAD", "DETUNE"}},
     {"SYSTEM 4", BTN_HOME, 1, 0, 0, {"SOUND", "HELP", "TOUCH", ""}},
     {"TIDE", BTN_LFO, 1, 0, 1, {"TIDE", "DEPTH", "GUARD", "NOW"}},
-    {"DRIFT", BTN_HOME, 1, 0, 1, {"AMOUNT", "PACE", "WANDER", "DISTANCE"}},   /* (2.1.8: HOME's fourth, after MIXER 2:
+    {"DRIFT", BTN_HOME, 1, 0, 1, {"AMOUNT", "PACE", "WANDER", "DISTANCE"}},
+    {"NETWORK", BTN_HOME, 1, 0, 0, {"WIFI", "LINK", "BLUETOOTH", ""}},   /* (2.1.9: HOME held, after SYSTEM 4: net.c) */   /* (2.1.8: HOME's fourth, after MIXER 2:
                                                  * the mix moving by itself, drift.c) */   /* (2.1.4: LFO's sixth: the tide, GUARD, tide.c) */   /* (2.2: after SYSTEM 3: the speaker's sound, the
                                                  * help on the screen) */   /* (2.2: ENV's second: the envelope looping,
                                                  * a note's wait, the voice steps, voices.c) */   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
@@ -1483,8 +1488,8 @@ static uint32_t page = PG_HOME;
 static uint32_t next_page(uint32_t b)           /* button b tapped: its first page, or (on one of its) the next */
 {
     uint32_t p, first = NPAGE, nx = NPAGE, on = PAGES[page].btn == b && pg_on(page);
-    if (b == BTN_HOME && (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3 || page == PG_SYS4))
-        return page == PG_SYSTEM ? PG_SYS2 : page == PG_SYS2 ? PG_SYS3 : page == PG_SYS3 ? PG_SYS4 : PG_SYSTEM;
+    if (b == BTN_HOME && (page == PG_SYSTEM || page == PG_SYS2 || page == PG_SYS3 || page == PG_SYS4 || page == PG_NET))
+        return page == PG_SYSTEM ? PG_SYS2 : page == PG_SYS2 ? PG_SYS3 : page == PG_SYS3 ? PG_SYS4 : page == PG_SYS4 ? PG_NET : PG_SYSTEM;
     for (p = 0; p < NPAGE; p++) {
         if (PAGES[p].btn != b || !pg_on(p)) continue;
         if (first == NPAGE || pg_key(p) < pg_key(first)) first = p;
@@ -1558,6 +1563,7 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_JAHKI: return k == 0u ? &yr_len : k == 1u ? &yr_season : k == 2u ? &yr_depth : &yr_sky;
     case PG_TIDE: return k == 0u ? &td_mode : k == 1u ? &td_depth : k == 2u ? &td_guard : &td_now;
     case PG_DRIFT: return k == 0u ? &df_amt : k == 1u ? &df_pace : k == 2u ? &df_wand : &df_dist;
+    case PG_NET: return k == 0u ? &nw_wifi : k == 1u ? &nw_link : k == 2u ? &nw_bt : 0;
     default: return 0;                          /* (not built yet: the knobs do nothing) */
     }
 }
@@ -1589,7 +1595,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_DRONE ? (k < 2u ? 100 : k == 2u ? DR_NRISE - 1 : 1) :
            pg == PG_JIEHKKI ? (k == 0u ? JK_NLEN - 1 : k == 3u ? JK_ALWAYS : 100) : pg == PG_RUOHCAT ? (k == 1u ? RU_NSMP - 1 : 100) :
            pg == PG_JAHKI ? (k == 0u ? YR_NLEN - 1 : k == 1u ? YR_NS - 1 : k == 2u ? 100 : 1) :
-           pg == PG_TIDE ? (k == 0u ? TD_NMODE - 1 : k == 3u ? 1 : 100) : pg == PG_DRIFT ? 100 :
+           pg == PG_TIDE ? (k == 0u ? TD_NMODE - 1 : k == 3u ? 1 : 100) : pg == PG_DRIFT ? 100 : pg == PG_NET ? (k == 0u ? NNW - 1 : 1) :
            pg == PG_ENV2 ? (k == 0u ? NELOOP - 1 : 100) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : NSCR - 1) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
@@ -1650,6 +1656,7 @@ static char *tone_text(char *s, int32_t v)      /* TAPE's TONE: its low-pass cor
 static char *tempo_text(char *s, const char *pre)   /* the tempo: pre "120"; a MIDI clock's: "EXT 120.4", "EXT"
                                                  * (not measured yet: its first beat) */
 {
+    if (ck_mode == CK_LINK) return put_u(put_s(s, ck_ext ? "LINK " : pre), (uint32_t)clamp(seq_bpm, 20, 300));   /* (2.1.9) */
     if (!ck_ext) return put_u(put_s(s, pre), (uint32_t)clamp(seq_bpm, 20, 300));
     s = put_s(s, "EXT");
     return ck_bpm10 ? put_x10(put_s(s, " "), ck_bpm10) : s;
@@ -1750,6 +1757,9 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
     case PG_RUOHCAT:                            /* (2.0) AMOUNT, SAMPLE, SHARE, VARY */
         if (k == 1u) put_s(s, RU_SMP_NAME[clamp(v, 0, RU_NSMP - 1)]);
         else put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
+        return;
+    case PG_NET:                                /* (2.1.9) WIFI, LINK, BLUETOOTH */
+        put_s(s, k == 0u ? NW_NAME[clamp(v, 0, NNW - 1)] : v ? "ON" : "OFF");
         return;
     case PG_DRIFT:                              /* (2.1.8) AMOUNT, PACE, WANDER, DISTANCE */
         if (k == 0u && v <= 0) put_s(s, "OFF");
@@ -2319,7 +2329,7 @@ static void sys_sync(void)
     uint8_t col = (uint8_t)clamp(sy_col, 0, 4), mch = (uint8_t)clamp(sy_mch, 0, MCH_MAX), scr = (uint8_t)clamp(sy_scr, 0, NSCR - 1);
     uint8_t out = (uint8_t)clamp(sy_out, 0, 1), clk = (uint8_t)clamp(sy_clk, 0, CK_N - 1), la = (uint8_t)clamp(sy_latch, 0, 1);
     uint8_t ul = (uint8_t)clamp(sy_usb, 0, (int32_t)USB_KMAX), md = (uint8_t)clamp(sy_mod, 0, 1);
-    uint8_t s4 = (uint8_t)((sy_snd == 2 ? 1u : sy_snd == 1 ? 4u : 0u) | (sy_help ? 0u : 2u) | TCH_OF(clamp(sy_touch, 0, 2)) << 3);
+    uint8_t s4 = (uint8_t)((sy_snd == 2 ? 1u : sy_snd == 1 ? 4u : 0u) | (sy_help ? 0u : 2u) | TCH_OF(clamp(sy_touch, 0, 2)) << 3 | (nw_bt ? 0x20u : 0u));
     uint32_t n, t;
     if (mch != set.mch || (set.out && !out)) mo_flush = 1;
     if (mch != set.mch)
@@ -2340,7 +2350,7 @@ static void sys_sync(void)
     tune_f = (set.tune * 23666 + set.tune * set.tune * 7) / 10000;   /* (2^(c / 1200) - 1, x 4096) */
     mo_seq = set.out, snd_latch_off = set.latch, usb_lvl = set.usb;
     spk_mode = (uint8_t)SYS4_SND(set.sys4), help_on = !(set.sys4 & 2u);   /* (2.2: SYSTEM 4) */
-    tch_mode = (uint8_t)TCH_OF(set.sys4 >> 3);        /* (2.1.4: TOUCH; on the FM-1 the keys' readings with it) */
+    tch_mode = (uint8_t)TCH_OF((set.sys4 >> 3) & 3u);   /* (2.1.4: TOUCH; on the FM-1 the keys' readings with it) */
 #ifdef FM1_TOUCH_HAL
     fm1_touch_on(tch_mode != TCH_OFF);
 #endif
@@ -2382,7 +2392,7 @@ static void sys_load(void)                      /* the settings at power-on into
     if (set.nlk > NLINK) set.nlk = 0;
     sy_col = set.col, sy_mch = set.mch, sy_tune = set.tune, sy_scr = set.scr, sy_out = set.out, sy_clk = set.clk;
     sy_latch = set.latch, sy_usb = set.usb, sy_mod = set.mod;
-    sy_snd = SYS4_SND(set.sys4), sy_help = !(set.sys4 & 2u), sy_touch = (int32_t)TCH_OF(set.sys4 >> 3);
+    sy_snd = SYS4_SND(set.sys4), sy_help = !(set.sys4 & 2u), sy_touch = (int32_t)TCH_OF((set.sys4 >> 3) & 3u);
     sys_sync();
     set_dirty = 0;
     if (!set.ver)                               /* (steps 20..24's; V1.0's are version 1: as they are) */
@@ -2393,6 +2403,7 @@ static void sys_load(void)                      /* the settings at power-on into
         }
     set.ver = SET_VER, set_t = fm1_ms;
 }
+#include "net.c"                               /* (2.1.9) NETWORK: Wi-Fi, Ableton Link, Bluetooth MIDI */
 /* GRAIN's or DELAY's knobs turned up while the selected track sends nothing to it (MIXER 1's GRAIN SEND, DLY SEND at 0,
  * as a track starts): its send to half, said in the header, so the page is heard at once (Arctic Scream 1.3) */
 static void fx_send_on(uint32_t pg)
@@ -2773,7 +2784,7 @@ static void midi_in(void)
 {
     uint8_t st, d1, d2;
     uint32_t n;
-    while (midi_get(&st, &d1, &d2)) {       /* MIDI in (USB, the TRS jack): a note on MIDI CHANNEL's T1 .. T4
+    while (midi_get(&st, &d1, &d2) || nw_midi_in(&st, &d1, &d2)) {   /* MIDI in (USB, the TRS jack; 2.1.9 Bluetooth): a note on MIDI CHANNEL's T1 .. T4
                                              * channels plays that track as its keys (ALL > SEL: any channel, the
                                              * selected track; CH n > SEL: channel n alone, the selected track); a
                                              * CC: its link (MIDI LEARN) */
@@ -2876,6 +2887,7 @@ static void app_start(void)                     /* once, at power-on: the saves,
     pj_slot = slot_cur;
     sys_load();                                 /* (the settings: the octave, SYSTEM's; the accent before the boot
                                                  * screen) */
+    nw_boot();                                  /* (2.1.9: the radio again, if it was left on) */
 
     ui_boot();                                  /* (the boot screen, UI_BOOT_MS: ui_update moves it) */
     if (SMP_FACT_N && (k = smp_erased()) != 0u) {   /* the factory samples into the slots that hold nothing (samples.c),
@@ -2951,6 +2963,7 @@ static void app_step(void)                      /* one pass of the main loop: on
     tch_tracks();
     shot_poll(fm1_ms);                          /* (2.1.4: ONE-SHOTS) */
     td_tick(fm1_ms);                            /* (2.1.4: TIDE) */
+    nw_tick();                                  /* (2.1.9: Wi-Fi, Link, Bluetooth) */
     df_tick(fm1_ms);                            /* (2.1.8: DRIFT) */
     if (fm1_in.notes != prev || fm1_in.buttons) t_touch = t_hand = fm1_ms;   /* (the autosave waits for the hands
                                              * to rest; SCREEN OFF counts from their last touch) */
@@ -2968,13 +2981,14 @@ static void app_step(void)                      /* one pass of the main loop: on
             b_used |= 1u << BTN_SEQ;            /* (let go: no page change) */
         } else if (PAGES[page].btn == BTN_SEQ)
             seq[sel].cursor = clamp(seq[sel].cursor + enc_accel(ENC_SELECT, d, SEQ_N - 1), 0, SEQ_N - 1);
-        else if (page == PG_HOME && !ck_ext)   /* (a MIDI clock's tempo: not ours to turn) */
+        else if (page == PG_HOME && (!ck_ext || ck_mode == CK_LINK))   /* (a MIDI clock's tempo: not ours to turn; Link's
+                                                 * is everyone's) */
             seq_bpm = clamp(seq_bpm + enc_accel(ENC_SELECT, d, 280), 20, 300);
     }
     if ((d = enc_take(ENC_PRESETS)) != 0) {   /* PRESETS: on SEQ's pages the tempo; elsewhere the saved sounds */
         t_touch = fm1_ms;
         if (PAGES[page].btn == BTN_SEQ) {
-            if (!ck_ext) seq_bpm = clamp(seq_bpm + enc_accel(ENC_PRESETS, d, 280), 20, 300);
+            if (!ck_ext || ck_mode == CK_LINK) seq_bpm = clamp(seq_bpm + enc_accel(ENC_PRESETS, d, 280), 20, 300);
         }
         else
             presets_turn(d);
@@ -3055,7 +3069,8 @@ static void app_step(void)                      /* one pass of the main loop: on
         playing ^= 1u;
         if (playing) dmo_play(base);                /* (2.1.6: an empty track with a DEMO sound: its part) */
         else dmo_lanes_off();                  /* (STOP: the DEMO's knob moves gone) */
-        nq_put(playing ? NQ_PLAY : NQ_STOP, 0, (uint32_t)slot_cur & 3u);
+        if (lk_play((int)playing)) playing ^= 1u;   /* (2.1.9: LINK: the session's PLAY / STOP, ours at its bar) */
+        else nq_put(playing ? NQ_PLAY : NQ_STOP, 0, (uint32_t)slot_cur & 3u);
     }
     if (b & (1u << BTN_REC)) {
         if (page == PG_SONG || song_rec) {      /* the SONG page: song record armed (playing: from now), or ended */
@@ -3382,7 +3397,7 @@ static void app_step(void)                      /* one pass of the main loop: on
                                              * (F0 7D 50 4F), before the editor's */
         const uint8_t *fp;
         uint32_t fn;
-        if (sysex_get(&fp, &fn) && (ann_frame(fp, fn, fm1_ms) || po_frame(fp, fn, fm1_ms) || mr_frame(fp, fn, fm1_ms)))
+        if (sysex_get(&fp, &fn) && (ann_frame(fp, fn, fm1_ms) || po_frame(fp, fn, fm1_ms) || mr_frame(fp, fn, fm1_ms) || nw_frame(fp, fn)))
             sysex_done();
     }
     mr_tick(fm1_ms);                            /* (2.1.5) SCREEN MIRROR: the rows painted, out as USB has room */

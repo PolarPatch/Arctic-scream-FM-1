@@ -169,6 +169,7 @@ static const uint32_t SAVE_SECT[SAVE_NSECT] = {0xDF000u, 0xE5000u, 0xE6000u, 0xE
 #define FL_RANGE_OK(off, n) (FL_IN(off, n, FL_OTA_LO, FL_OTA_HI) || FL_IN(off, n, SETTINGS_AT, SETTINGS_AT + 0x1000u) || \
                              FL_IN(off, n, SAMPLE_AREA, SAMPLE_AREA + SAMPLE_AREA_LEN) || FL_IN(off, n, 0xDF000u, 0xE0000u) || \
                              FL_IN(off, n, 0xE5000u, 0xE8000u) || FL_IN(off, n, 0xFD000u, 0xFF000u))
+#define FL_UID 1                                /* (2.1.9: the radio's name and address, fl_uid_ram) */
 #include "fm1_flash.h"
 static uint8_t flash_ok;
 static int st_read(uint32_t off, void *dst, uint32_t n)
@@ -233,10 +234,18 @@ static void ota_commit(const uint8_t *parm)
 }
 #include "recovery.c"
 
+static uint32_t crc32(const uint8_t *p, uint32_t n);
+#ifndef ARCTIC_RADIO
+#define ARCTIC_RADIO 1                          /* (2.1.9) Bluetooth MIDI and Wi-Fi (radio_arctic.c; a build may leave them out) */
+#endif
+#if ARCTIC_RADIO
+#include "radio_arctic.c"
+#endif
+
 /* ---- settings: [magic][length][crc32] then the bytes; settings_save erases the sector (~50 ms with
  * the interrupts off: the sound drops out), so save when nothing plays, not on every knob step */
 #define SETTINGS_MAGIC 0x59474E44u              /* "DNGY" */
-static uint32_t crc32(const uint8_t *p, uint32_t n)
+static uint32_t crc32(const uint8_t *p, uint32_t n)   /* (radio_arctic.c's records too) */
 {
     uint32_t c = 0xFFFFFFFFu, k;
     while (n--) {
@@ -255,20 +264,38 @@ static int settings_load(void *p, uint32_t n)   /* 0: loaded; else p is untouche
     if (st_read(SETTINGS_AT + sizeof h, buf, n) || crc32(buf, n) != h[2])
         return -1;
     memcpy(p, buf, n);
+#if ARCTIC_RADIO
+    memcpy(st_last, buf, n), st_last_n = n;     /* (a radio record's save writes them again) */
+#endif
     return 0;
 }
-static int settings_save(const void *p, uint32_t n)   /* p in RAM, n <= 256 */
+static int settings_rewrite(const void *p, uint32_t n)   /* p in RAM (0: none), n <= 256 */
 {
     uint32_t h[3] = {SETTINGS_MAGIC, n, 0}, took;
     int rc;
     if (!flash_ok || n > 256u)
         return -1;
-    h[2] = crc32(p, n);
+    h[2] = p ? crc32(p, n) : 0;
     if ((rc = fl_erase4k(SETTINGS_AT, &took)) != 0)
         return rc;
+#if ARCTIC_RADIO
+    if ((rc = fl_write(SETTINGS_AT + RS_BLE_AT, rs_keep, sizeof rs_keep)) != 0)   /* (2.1.9: the radio's records, kept) */
+        return rc;
+#endif
+    if (!p)
+        return 0;
     if ((rc = fl_write(SETTINGS_AT + sizeof h, p, n)) != 0)
         return rc;
     return fl_write(SETTINGS_AT, (const uint8_t *)h, sizeof h);   /* the header last: a cut save stays invalid */
+}
+static int settings_save(const void *p, uint32_t n)   /* p in RAM, n <= 256 */
+{
+#if ARCTIC_RADIO
+    if (!flash_ok || n > 256u || st_read(SETTINGS_AT + RS_BLE_AT, rs_keep, sizeof rs_keep))
+        return -1;
+    memcpy(st_last, p, n), st_last_n = n;
+#endif
+    return settings_rewrite(p, n);
 }
 
 /* ---- Arctic Scream: the sample area (samples.c) and SysEx for the app. An erase or a write stops everything (the
@@ -451,6 +478,9 @@ void fm1_alnk0_irq(void)                       /* via isr_alnk0 (hal/fm1_isr.S) 
         for (i = 0; i < HALF_WORDS; i++)
             o[i] = 0;
         uac_render_start();
+#if ARCTIC_RADIO
+        if (!radio_quiet)                       /* (2.1.9: the radio calibrating: silence, nothing read from the flash) */
+#endif
         app_audio(o, HALF_FRAMES);
         for (i = 0; i < HALF_WORDS; i++)        /* (MASTER applied by the app) */
             o[i] = o[i] > 32767 ? 32767 : o[i] < -32767 ? -32767 : o[i];
@@ -470,6 +500,9 @@ static void platform_poll(void)
     fm1_wdt_feed();
     usb_retry(fm1_ms);
     fm1_jack_poll(fm1_ms);
+#if ARCTIC_RADIO
+    radio_poll();                               /* (2.1.9: Bluetooth MIDI, Wi-Fi, Link: once turned on) */
+#endif
     {                                           /* (the battery divider ~100 times a second: a supply that sags) */
         static uint32_t bt;
         if (fm1_ms - bt >= 10u) {

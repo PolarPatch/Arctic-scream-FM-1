@@ -374,6 +374,9 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         put_s(S->val, k == 2u ? (v ? SMP_FACT_N ? "RESTORE" : "CLEAR" : "KEEP") : k ? (v ? "ON" : "OFF") :
               v == LEARN_CLEAR ? "CLEAR" : LEARN_NAME[clamp(v, 0, 2)]);
         return;
+    case PG_NET:                                /* (2.1.9) WIFI: OFF, JOIN, "HOTSPT"; LINK, BLUETOOTH: ON, OFF */
+        put_s(S->val, k == 0u ? (v == NW_HOTSPOT ? "HOTSPT" : NW_NAME[clamp(v, 0, NNW - 1)]) : v ? "ON" : "OFF");
+        return;
     case PG_SYS4:                               /* (2.2) SOUND: (2.1.4) "AUTO", "PHONES", "SPKR"; HELP: ON, OFF */
         put_s(S->val, k == 0u ? (v == 2 ? "SPKR" : v ? "PHONES" : "AUTO") : k == 2u ? (v == 2 ? "V+P" : v ? "VEL" : "OFF") :
               v ? "ON" : "OFF");
@@ -598,7 +601,7 @@ static void ui_tint(uint32_t pg)
     case PG_MIX1: case PG_MIX2: case PG_DRIFT: case PG_TRACK: a = BW_CYAN, b = BW_GREEN, c = BW_VIOLET, x = BW_MAGENTA; break;
     case PG_SONG: a = BW_GOLD, b = BW_MAGENTA, c = BW_PERIWINKLE, x = BW_CYAN; break;
     case PG_SOUNDS: case PG_PROJECTS: a = BW_BLUE, b = BW_AMBER, c = BW_TEAL, x = BW_MAGENTA; break;
-    case PG_SYSTEM: case PG_SYS2: case PG_SYS3: case PG_SYS4: a = BW_SKY, b = BW_PERIWINKLE, c = BW_BLUE, x = BW_CYAN; break;
+    case PG_SYSTEM: case PG_SYS2: case PG_SYS3: case PG_SYS4: case PG_NET: a = BW_SKY, b = BW_PERIWINKLE, c = BW_BLUE, x = BW_CYAN; break;
     default:
         ui_d = UI_D0, ui_m = UI_M0, ui_l = UI_L0, ui_acc = ui_hd = ui_acc_user;
         return;
@@ -1604,7 +1607,7 @@ static int ui_anim_page(uint32_t p)             /* the pages whose ribbons move 
     return p == PG_DRONE || p == PG_ENV || p == PG_TAPE || p == PG_GRAIN || p == PG_DELAY || p == PG_SPACE || p == PG_LFO ||
            p == PG_MIX1 || p == PG_MIX2 || p == PG_MASTER || p == PG_DRIVE || p == PG_SOUND || p == PG_FMOP || p == PG_FMALGO || p == PG_SCALE ||
            p == PG_CHORD || p == PG_PERFORM || p == PG_ARP || p == PG_LOOP || p == PG_AIR || p == PG_JIEHKKI ||
-           p == PG_RUOHCAT || p == PG_JAHKI || p == PG_ENV2 || p == PG_TIDE || p == PG_DRIFT;
+           p == PG_RUOHCAT || p == PG_JAHKI || p == PG_ENV2 || p == PG_TIDE || p == PG_DRIFT || p == PG_NET;
 }
 
 /* ---- the aurora pages (Arctic Scream p0larpatch, after the DRONE and Holvut pages): every knob a ribbon of northern
@@ -2395,6 +2398,20 @@ static void sys3_row(int32_t y, const char *l, const char *v)
     ui_text(PX0 + 6, y + 4, l, 1, UI_L);
     ui_text(PX0 + 210 - 8 * ui_len(v), y + 4, v, 1, UI_W);
 }
+static int nw_status(char *a, char *b, char *c, char *d);   /* (net.c) */
+static void pic_net(void)                       /* (2.1.9) NETWORK: Wi-Fi, Link, Bluetooth, each its state */
+{
+    char a[48], b[48], c[48], d[48];
+    int on = nw_status(a, b, c, d);
+    ui_caption("WIFI, LINK, BLUETOOTH", 0);
+    sys3_row(40, "WIFI", NW_NAME[clamp(nw_wifi, 0, NNW - 1)]);
+    ui_text(PX0 + 6, 57, a, 1, UI_M);
+    ui_text(PX0 + 6, 68, b, 1, UI_M);
+    sys3_row(82, "LINK", nw_link ? "ON: CLOCK IS LINK" : "OFF");
+    ui_text(PX0 + 6, 99, c[0] ? c : nw_link ? "" : "TEMPO AND PLAY SHARED WHEN ON", 1, UI_M);
+    sys3_row(112, "BLUETOOTH", nw_bt ? "MIDI ON" : "OFF");
+    ui_text(PX0 + 6, 129, on ? d : "", 1, UI_M);
+}
 static void pic_sys4(void)                      /* (2.2) SYSTEM 4: SOUND (the speaker's curve), HELP */
 {
     ui_caption("SOUND, HELP, TOUCH", 0);
@@ -2493,6 +2510,7 @@ static void ui_pic_draw0(void)
     case PG_SYS2: pic_sys2(); return;
     case PG_SYS3: pic_sys3(); return;
     case PG_SYS4: pic_sys4(); return;
+    case PG_NET: pic_net(); return;
     default: pic_notbuilt(); return;
     }
 }

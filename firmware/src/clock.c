@@ -20,7 +20,8 @@
  * The messages come with their time (platform.c rt_in) and act in the control block of that time one audio block
  * later (CK_LAT): by then every one has come, so where a render falls adds no jitter (USB's and the jack's MIDI are
  * read within 0.5 ms, platform.c). All of it in the audio ISR (ctl_hook); INT costs one test a control block. */
-static const char *const CK_NAME[CK_N] = {"INT", "INT+OUT", "USB", "TRS"};
+static const char *const CK_NAME[CK_N] = {"INT", "INT+OUT", "USB", "TRS", "LINK"};   /* (2.1.9: LINK, Ableton Link's
+                                                 * pulses as a clock's: net.c) */
 #define CK_LAT 139320u                          /* an audio block (256 frames) in rt_now's ticks (24 a us) */
 #define CK_CTL 17415u                           /* a control block (32 frames): 32 / 44100 s (17414.97: a block's
                                                  * eight from its own start, so it never adds up) */

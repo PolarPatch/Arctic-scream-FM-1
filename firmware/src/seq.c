@@ -53,7 +53,7 @@ static const char *const SEQ_MODE_SHORT[SEQ_NMODE] = {"FWD", "BWD", "PONG", "RND
 static uint32_t seq_ticks;                      /* audio: ticks since PLAY (the bars) */
 static volatile int32_t seq_recall = -1;        /* main loop: a slot to come in at the next bar (-1: none); audio: -1 */
 static void slot_apply_isr(uint32_t s);         /* (store.c) */
-enum { CK_INT, CK_OUT, CK_USB, CK_TRS, CK_N };  /* (clock.c: CLOCK, INT .. TRS) */
+enum { CK_INT, CK_OUT, CK_USB, CK_TRS, CK_LINK, CK_N };  /* (clock.c: CLOCK, INT .. TRS; 2.1.9 LINK, net.c) */
 static volatile uint32_t ck_mode;               /* (clock.c) */
 static void ck_out(uint32_t st, uint32_t rem);  /* (clock.c: CLOCK INT+OUT, a message out at its time: STOP's) */
 static int slot_used(uint32_t s);
