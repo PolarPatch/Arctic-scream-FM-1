@@ -98,6 +98,26 @@ static void radio_poll(void)                    /* platform_poll, every pass */
     wifi_poll();
 }
 static void plat_yield_radio(void) { fm1_wdt_feed(); }   /* (a wait inside the stacks: the watchdog; the main loop polls) */
+/* (2.1.9) MIDI out over the radio: everything USB-MIDI sends (midi_out_event: the main loop and the render), channel
+ * messages and the realtime ones, to Bluetooth MIDI (a phone or a computer connected) and, once a session is up, to
+ * MIDI over Wi-Fi (net.c nm_*). The lock keeps the two senders apart; the main loop drains both */
+#define NO_RING 64u
+static uint32_t no_buf[NO_RING];
+static volatile uint32_t no_w, no_r;
+static volatile uint8_t nm_live;                /* (net.c: a Wi-Fi MIDI session is up) */
+static void nw_out_tap(uint32_t pkt)
+{
+    uint32_t f;
+    if (!radio_wanted || (pkt & 15u) < 8u) return;   /* (SysEx and the rest stay on USB) */
+    f = irq_save();
+    ble_midi_tap(pkt, TO_BLE_HOST);
+    if (nm_live && no_w - no_r < NO_RING) {
+        no_buf[no_w % NO_RING] = pkt;
+        RING_PUBLISH();
+        no_w++;
+    }
+    irq_restore(f);
+}
 static void radio_on(void)                      /* main loop: the radio started, once (Bluetooth MIDI; Wi-Fi as its mode says) */
 {
     if (radio_wanted) return;

@@ -116,11 +116,315 @@ static void nw_apply(void)                      /* the knobs to the radio */
         if (radio_wanted) plat_ble_enable(bt);
     }
 }
-static int nw_midi_in(uint8_t *st, uint8_t *d1, uint8_t *d2)   /* Bluetooth MIDI in (1: a message), as midi_get */
+/* ---- (2.1.9) MIDI over Wi-Fi (RTP-MIDI, Apple's "Network Session"), from FM-1 Again (app/net.h, GPL-3.0-or-later,
+ * PolarPatch). With an address (JOIN's network, or HOTSPOT's own), the FM-1 looks for a session on the network (an
+ * mDNS question for _apple-midi._udp, sent from its own port so the answer comes back to it: no group joined, Link
+ * keeps its own) and invites the first it finds: a phone's (iOS: an app's Network Session), a computer's (macOS: Audio
+ * MIDI Setup's network session). A computer may invite it too (its address, port 5004). Then what goes out on USB-MIDI
+ * goes there too (radio_arctic.c nw_out_tap), and what comes from it plays as MIDI in does. No journal. */
+#define NM_CTL 5004u                            /* the session's two ports: control, then data */
+#define NM_DATA 5005u
+#define NM_MDNS 0xE00000FBu                     /* 224.0.0.251:5353 */
+enum { NM_OFF, NM_SEARCH, NM_INV_CTL, NM_INV_DATA, NM_UP };
+static struct {
+    uint8_t st, tries, open;
+    uint32_t ip, addr;                          /* the peer's address; ours when the ports were opened */
+    uint16_t pctl, pdata, seq;                  /* its ports; our RTP sequence */
+    uint32_t token, ssrc, at, heard, ck_at;     /* (ms: the last thing sent, heard from it, the last sync) */
+    uint16_t qid;
+} nm;
+static const char NM_NAME[] = "Arctic Scream";
+#define NM_RING 64u
+static uint32_t nm_i_buf[NM_RING], nm_i_w, nm_i_r;   /* in (from wifi_poll), to nw_midi_in: both the main loop */
+static uint8_t nm_buf[512], nm_tmp[256], nm_inst[256];   /* (main loop only) */
+
+static uint8_t *nm_u16(uint8_t *p, uint32_t v) { p[0] = (uint8_t)(v >> 8); p[1] = (uint8_t)v; return p + 2; }
+static uint8_t *nm_u32(uint8_t *p, uint32_t v) { p = nm_u16(p, v >> 16); return nm_u16(p, v & 0xFFFFu); }
+static uint32_t nm_g16(const uint8_t *p) { return (uint32_t)p[0] << 8 | p[1]; }
+static uint32_t nm_g32(const uint8_t *p) { return nm_g16(p) << 16 | nm_g16(p + 2); }
+static uint64_t nm_now(void)                    /* the session's clock: 100 us steps (shifts: no 64-bit multiply) */
+{
+    uint64_t t = fm1_ms;
+    return (t << 3) + (t << 1);
+}
+
+static void nm_word(const char *w, uint16_t ours, uint16_t port, uint32_t token)   /* IN, OK, BY */
+{
+    uint8_t b[16 + sizeof NM_NAME], *p = b;
+    p = nm_u16(p, 0xFFFFu);
+    *p++ = (uint8_t)w[0];
+    *p++ = (uint8_t)w[1];
+    p = nm_u32(p, 2u);
+    p = nm_u32(p, token);
+    p = nm_u32(p, nm.ssrc);
+    if (w[0] != 'B') {
+        memcpy(p, NM_NAME, sizeof NM_NAME);
+        p += sizeof NM_NAME;
+    }
+    plat_net_udp_send(ours, nm.ip, port, b, (uint32_t)(p - b));
+}
+static void nm_ck(uint32_t count, const uint8_t *in)   /* a clock sync: count 0 starts it, 1 and 2 answer */
+{
+    uint8_t b[36], *p = b;
+    uint64_t t = nm_now();
+    int i;
+    p = nm_u16(p, 0xFFFFu);
+    *p++ = 'C';
+    *p++ = 'K';
+    p = nm_u32(p, nm.ssrc);
+    *p++ = (uint8_t)count;
+    *p++ = 0, *p++ = 0, *p++ = 0;
+    if (in) memcpy(p, in, 24);
+    else memset(p, 0, 24);
+    for (i = 0; i < 8; i++) p[8u * count + (uint32_t)i] = (uint8_t)(t >> (56 - 8 * i));
+    plat_net_udp_send(NM_DATA, nm.ip, nm.pdata, b, sizeof b);
+}
+static void nm_lost(void)
+{
+    nm.st = nm.open ? NM_SEARCH : NM_OFF;
+    nm.at = 0;
+    nm_live = 0;
+    no_r = no_w;
+}
+/* a name in an mDNS message, read through its pointers into o as it goes on the wire; its length, 0 bad */
+static uint32_t nm_name(const uint8_t *m, uint32_t n, uint32_t at, uint8_t *o, uint32_t room, uint32_t *after)
+{
+    uint32_t len = 0, hops = 0;
+    int jumped = 0;
+    while (at < n) {
+        uint32_t l = m[at];
+        if ((l & 0xC0u) == 0xC0u) {
+            if (at + 1 >= n || ++hops > 8) return 0;
+            if (!jumped && after) *after = at + 2;
+            jumped = 1;
+            at = (l & 0x3Fu) << 8 | m[at + 1];
+            continue;
+        }
+        if (l > 63u || at + 1 + l > n || len + 1 + l + 1 > room) return 0;
+        memcpy(o + len, m + at, 1 + l);
+        len += 1 + l;
+        at += 1 + l;
+        if (!l) {
+            if (!jumped && after) *after = at;
+            return len;
+        }
+    }
+    return 0;
+}
+static void nm_ask(const uint8_t *name, uint32_t nlen, uint32_t type)   /* an mDNS question, answered to our port */
+{
+    uint8_t b[300], *p = b;
+    if (nlen + 16 > sizeof b) return;
+    p = nm_u16(p, nm.qid);
+    p = nm_u16(p, 0);
+    p = nm_u16(p, 1);
+    p = nm_u32(p, 0);
+    p = nm_u16(p, 0);
+    memcpy(p, name, nlen);
+    p += nlen;
+    p = nm_u16(p, type);
+    p = nm_u16(p, 0x8001u);                     /* IN, an answer to us alone */
+    plat_net_udp_send(NM_CTL, NM_MDNS, 5353, b, (uint32_t)(p - b));
+}
+static void nm_mdns(uint32_t src, const uint8_t *m, uint32_t n)   /* an answer: the session's port (SRV), or ask it */
+{
+    uint32_t i, at = 12, cnt, ilen = 0;
+    if (n < 12 || nm_g16(m) != nm.qid || !(m[2] & 0x80u) || nm.st != NM_SEARCH) return;
+    for (i = nm_g16(m + 4); i; i--) {           /* the questions again */
+        if (!nm_name(m, n, at, nm_tmp, sizeof nm_tmp, &at)) return;
+        at += 4;
+    }
+    cnt = nm_g16(m + 6) + nm_g16(m + 8) + nm_g16(m + 10);
+    for (i = 0; i < cnt && at < n; i++) {
+        uint32_t type, rl;
+        if (!nm_name(m, n, at, nm_tmp, sizeof nm_tmp, &at) || at + 10 > n) return;
+        type = nm_g16(m + at);
+        rl = nm_g16(m + at + 8);
+        at += 10;
+        if (at + rl > n) return;
+        if (type == 33u && rl >= 6u) {          /* SRV: the control port; the address is the one that answered */
+            nm.ip = src;
+            nm.pctl = (uint16_t)nm_g16(m + at + 4);
+            nm.pdata = (uint16_t)(nm.pctl + 1u);
+            nm.st = NM_INV_CTL, nm.tries = 0, nm.at = 0;
+            return;
+        }
+        if (type == 12u && !ilen)               /* PTR: the session's own name, to ask its SRV */
+            ilen = nm_name(m, n, at, nm_inst, sizeof nm_inst, 0);
+        at += rl;
+    }
+    if (ilen) nm_ask(nm_inst, ilen, 33u);
+}
+static void nm_midi_in(const uint8_t *b, uint32_t n)   /* the MIDI in a data packet, queued for nw_midi_in */
+{
+    uint32_t at, len, end, st = 0;
+    int first = 1, z;
+    if (n < 13 || (b[0] & 0xC0u) != 0x80u) return;
+    at = 12u + 4u * (b[0] & 15u);
+    if (at >= n) return;
+    z = b[at] & 0x20;
+    if (b[at] & 0x80u) {
+        if (at + 1 >= n) return;
+        len = (b[at] & 15u) << 8 | b[at + 1];
+        at += 2;
+    } else
+        len = b[at++] & 15u;
+    end = at + len < n ? at + len : n;
+    while (at < end) {
+        uint32_t d, c, k;
+        if (!first || z)                        /* a delta time: up to four bytes */
+            for (k = 0; k < 4u && at < end; k++)
+                if (!(b[at++] & 0x80u)) break;
+        first = 0;
+        if (at >= end) break;
+        if (b[at] & 0x80u) st = b[at++];
+        if (st == 0xF0u || st == 0xF7u) {       /* SysEx: past it */
+            while (at < end && b[at] != 0xF7u && b[at] != 0xF0u && b[at] != 0xF4u) at++;
+            at++;
+            st = 0;
+            continue;
+        }
+        if (!st) break;
+        c = st >= 0xF8u || st == 0xF6u ? 0u : st == 0xF2u || st < 0xC0u || (st & 0xF0u) == 0xE0u ? 2u : 1u;
+        if (at + c > end) break;
+        d = st << 8;
+        if (c > 0u) d |= (uint32_t)b[at] << 16;
+        if (c > 1u) d |= (uint32_t)b[at + 1] << 24;
+        at += c;
+        if (st >= 0xF0u && st < 0xF8u) st = 0;
+        if (nm_i_w - nm_i_r < NM_RING) nm_i_buf[nm_i_w++ % NM_RING] = d;
+    }
+}
+static void nm_rx(void *ctx, uint32_t src, uint16_t sport, const uint8_t *p, uint32_t n, int64_t at_us)
+{
+    uint32_t data = (uint32_t)(uintptr_t)ctx;
+    (void)at_us;
+    if (!data && sport == 5353u) {
+        nm_mdns(src, p, n);
+        return;
+    }
+    if (n >= 4 && p[0] == 0xFF && p[1] == 0xFF) {   /* the session's words */
+        if (p[2] == 'I' && p[3] == 'N' && n >= 16) {   /* invited: yes (one session: a new one takes its place) */
+            if (!data || src != nm.ip) {
+                nm.ip = src, nm.pctl = sport, nm.pdata = (uint16_t)(sport + 1u);
+                nm.st = NM_INV_DATA, nm.tries = 0, nm.at = fm1_ms, nm.heard = fm1_ms;
+                nm_live = 0;
+            } else {
+                nm.pdata = sport, nm.st = NM_UP, nm.ck_at = 0, nm.heard = fm1_ms;
+                nm_live = 1;
+            }
+            nm_word("OK", data ? NM_DATA : NM_CTL, sport, nm_g32(p + 8));
+            return;
+        }
+        if (src != nm.ip) return;
+        nm.heard = fm1_ms;
+        if (p[2] == 'O' && p[3] == 'K' && n >= 16 && nm_g32(p + 8) == nm.token) {
+            if (nm.st == NM_INV_CTL)
+                nm.st = NM_INV_DATA, nm.tries = 0, nm.at = 0;
+            else if (nm.st == NM_INV_DATA && data)
+                nm.st = NM_UP, nm.ck_at = 0, nm_live = 1;
+        } else if ((p[2] == 'N' && p[3] == 'O') || (p[2] == 'B' && p[3] == 'Y'))
+            nm_lost();
+        else if (p[2] == 'C' && p[3] == 'K' && n >= 36 && data && p[8] < 2u)
+            nm_ck(p[8] + 1u, p + 12);
+        return;
+    }
+    if (data && src == nm.ip && nm.st == NM_UP) {
+        nm.heard = fm1_ms;
+        nm_midi_in(p, n);
+    }
+}
+static void nm_send(void)                       /* what went out since the last pass: one RTP-MIDI packet */
+{
+    uint8_t *b = nm_buf, *p = b + 14;
+    uint32_t len, w = no_w;
+    while (no_r != w) {
+        uint32_t pk = no_buf[no_r % NO_RING], st = pk >> 8 & 0xFFu, c;
+        if (st >= 0x80u && (st < 0xF0u || st >= 0xF8u)) {
+            c = st >= 0xF8u ? 0u : (st & 0xF0u) == 0xC0u || (st & 0xF0u) == 0xD0u ? 1u : 2u;
+            if (p + 2 + c > b + sizeof nm_buf) break;
+            if (p != b + 14) *p++ = 0;          /* (a delta time of none) */
+            *p++ = (uint8_t)st;
+            if (c > 0u) *p++ = (uint8_t)(pk >> 16 & 0x7Fu);
+            if (c > 1u) *p++ = (uint8_t)(pk >> 24 & 0x7Fu);
+        }
+        no_r++;
+    }
+    len = (uint32_t)(p - (b + 14));
+    if (!len) return;
+    b[0] = 0x80, b[1] = 0x61;
+    nm_u16(b + 2, nm.seq++);
+    nm_u32(b + 4, (uint32_t)nm_now());
+    nm_u32(b + 8, nm.ssrc);
+    b[12] = (uint8_t)(0x80u | len >> 8);        /* the long form always: B set, J, Z, P clear */
+    b[13] = (uint8_t)len;
+    plat_net_udp_send(NM_DATA, nm.ip, nm.pdata, b, 14u + len);
+}
+static void nm_tick(void)                       /* main loop (nw_tick) */
+{
+    uint32_t now = fm1_ms, addr = radio_wanted && nw_wifi ? plat_wifi_addr() : 0u;
+    if (!nm.ssrc) nm.ssrc = 0x41530000u ^ now * 2654435761u;
+    if (nm.open && addr != nm.addr) {           /* the network gone or changed: the ports go too */
+        if (nm.st == NM_UP) nm_word("BY", NM_CTL, nm.pctl, nm.token);
+        plat_net_udp_close(NM_CTL);
+        plat_net_udp_close(NM_DATA);
+        nm.open = 0;
+        nm_lost();
+    }
+    if (addr && !nm.open) {
+        if (plat_net_udp_open(NM_CTL, nm_rx, (void *)0) == 0 && plat_net_udp_open(NM_DATA, nm_rx, (void *)1) == 0) {
+            nm.open = 1, nm.addr = addr, nm.st = NM_SEARCH, nm.at = 0;
+        } else {
+            plat_net_udp_close(NM_CTL);
+            return;
+        }
+    }
+    switch (nm.st) {
+    case NM_SEARCH:                             /* ask every 2 s */
+        if (!nm.at || now - nm.at >= 2000u) {
+            static const uint8_t Q[] = "\013_apple-midi\004_udp\005local";
+            nm.at = now;
+            nm.qid = (uint16_t)(now | 1u);
+            nm_ask(Q, sizeof Q, 12u);
+        }
+        break;
+    case NM_INV_CTL:
+    case NM_INV_DATA:                           /* invite, once a second, five times */
+        if (!nm.at || now - nm.at >= 1000u) {
+            if (nm.tries++ >= 5u) {
+                nm_lost();
+                break;
+            }
+            nm.at = now;
+            if (nm.tries == 1u && nm.st == NM_INV_CTL) nm.token = now * 2246822519u + 1u;
+            if (nm.st == NM_INV_CTL) nm_word("IN", NM_CTL, nm.pctl, nm.token);
+            else nm_word("IN", NM_DATA, nm.pdata, nm.token);
+        }
+        break;
+    case NM_UP:
+        nm_send();
+        if (!nm.ck_at || now - nm.ck_at >= 5000u) {   /* a sync every 5 s: its answers say it is there */
+            nm.ck_at = now;
+            nm_ck(0, 0);
+        }
+        if (now - nm.heard > 30000u) nm_lost(); /* nothing heard for 30 s: gone */
+        break;
+    default:
+        break;
+    }
+}
+
+static int nw_midi_in(uint8_t *st, uint8_t *d1, uint8_t *d2)   /* Bluetooth MIDI and Wi-Fi MIDI in (1: a message), as
+                                                 * midi_get */
 {
     uint32_t pkt, from;
-    if (!radio_wanted || !nw_bt || !ble_midi_in(&pkt, &from)) return 0;
-    nw_ble_in_n++, nw_ble_in_t = fm1_ms;
+    if (!radio_wanted) return 0;
+    if (nm_i_r != nm_i_w)
+        pkt = nm_i_buf[nm_i_r++ % NM_RING];
+    else if (!nw_bt || !ble_midi_in(&pkt, &from))
+        return 0;
+    else
+        nw_ble_in_n++, nw_ble_in_t = fm1_ms;
     *st = (uint8_t)(pkt >> 8), *d1 = (uint8_t)(pkt >> 16) & 0x7Fu, *d2 = (uint8_t)(pkt >> 24) & 0x7Fu;
     return *st >= 0x80u && *st < 0xF0u;         /* (channel messages; the clock is USB's and the jack's) */
 }
@@ -164,7 +468,8 @@ static int nw_status(char *a, char *b, char *c, char *d)   /* the page's four li
         put_u(p, (uint32_t)clamp(seq_bpm, 20, 300));
     } else if (nw_link)
         put_s(c, "LINK: WAITING FOR A NETWORK");
-    put_s(d, !nw_bt ? "BLUETOOTH OFF" : plat_ble_connected() ? "BLUETOOTH MIDI CONNECTED" : "BLUETOOTH MIDI WAITING");
+    p = put_s(d, !nw_bt ? "BT OFF" : plat_ble_connected() ? "BT MIDI ON" : "BT WAITING");
+    if (nm.open) put_s(p, nm.st == NM_UP ? ", NET MIDI ON" : ", NET MIDI LOOKING");
     return 1;
 }
 /* SysEx F0 7D 4E 57 cmd ..: the network from a computer (tools/arctic_wifi.py). 1 join: SSID 0 PASSWORD 0; 2 forget
@@ -201,7 +506,7 @@ static int nw_frame(const uint8_t *f, uint32_t n)
     } else if (f[3] == 4u)
         rc = 0;                                 /* (the status only) */
     nw_status(a, b, c, d);
-    if (f[3] == 4u && radio_wanted) {           /* (status: the station's frames, Protected or not, a test line) */
+    if (f[3] == 4u && radio_wanted && nw_wifi == NW_JOIN) {           /* (status: the station's frames, Protected or not, a test line) */
         char *q = put_u(put_s(d, "RX PROT "), nw_rx_prot);
         put_u(put_s(q, " PLAIN "), nw_rx_plain);
     }
@@ -250,4 +555,7 @@ static void nw_tick(void)                       /* main loop, each pass */
     nw_wifi_was = nw_wifi, nw_link_was = nw_link, nw_bt_was = nw_bt;
 #endif
     lk_tick();
+#if ARCTIC_RADIO
+    nm_tick();
+#endif
 }

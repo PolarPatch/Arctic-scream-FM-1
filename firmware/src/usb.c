@@ -103,8 +103,12 @@ static volatile uint32_t so_w, so_r;
 #define MQ 64u
 static uint32_t midi_in_q[MQ], midi_out_q[MQ];
 static volatile uint32_t mi_w, mi_r, mo_w, mo_r;
+#ifndef NW_OUT_TAP
+#define NW_OUT_TAP(pkt) ((void)0)                   /* (2.1.9) the app's: the same out over the radio (radio_arctic.c) */
+#endif
 static void midi_out_event(uint32_t pkt)            /* from the audio ISR */
 {
+    NW_OUT_TAP(pkt);
     if (usb.config && mo_w - mo_r < MQ) {
         midi_out_q[mo_w % MQ] = pkt;
         RING_PUBLISH();

@@ -123,6 +123,8 @@ hl_boot_t hl_boot __attribute__((section(".noinit")));   /* (not static: the com
 #define MIDI_RT_SOON() (ro_r != ro_w && (int32_t)(ro_t[ro_r % RTQ] - fm1_ticks()) < 28800)   /* (usb.c: a clock message
                                                  * out due within 1.2 ms: EP1 left free for it, rt_flush) */
 static uint32_t rt_now(void) { return fm1_ticks(); }
+static void nw_out_tap(uint32_t pkt);           /* (2.1.9) MIDI out over the radio too (radio_arctic.c) */
+#define NW_OUT_TAP(pkt) nw_out_tap(pkt)
 #include "usb.c"
 #if FELUCCA_UART
 #include "midi_uart.c"
@@ -240,6 +242,8 @@ static uint32_t crc32(const uint8_t *p, uint32_t n);
 #endif
 #if ARCTIC_RADIO
 #include "radio_arctic.c"
+#else
+static void nw_out_tap(uint32_t pkt) { (void)pkt; }
 #endif
 
 /* ---- settings: [magic][length][crc32] then the bytes; settings_save erases the sector (~50 ms with
