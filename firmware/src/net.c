@@ -548,6 +548,20 @@ static void nw_boot(void) { nw_bt = (set.sys4 >> 5) & 1u, nw_link = ck_mode == C
 static int nw_midi_in(uint8_t *st, uint8_t *d1, uint8_t *d2) { (void)st, (void)d1, (void)d2; return 0; }
 static int nw_status(char *a, char *b, char *c, char *d)
 {
+#ifdef DINGHY_HOST
+    if (getenv("ARCTIC_NET_DEMO")) {            /* (host, for the videos: the page as the FM-1 shows it, made up) */
+        char *p;
+        *a = *b = *c = *d = 0;
+        if (nw_wifi == NW_HOTSPOT) put_s(a, "HOTSPOT FM1-4207"), put_s(b, "PASSWORD polarnight");
+        else put_s(a, nw_wifi ? "JOINED ARCTIC" : "WIFI OFF");
+        if (nw_link) {
+            p = put_s(c, "LINK 1 PEER ");
+            put_u(p, (uint32_t)clamp(seq_bpm, 20, 300));
+        }
+        put_s(d, nw_bt ? "BT MIDI ON, NET MIDI ON" : "BT OFF, NET MIDI ON");
+        return 1;
+    }
+#endif
     put_s(a, "NO RADIO IN THIS BUILD"), *b = *c = *d = 0;
     return 0;
 }
