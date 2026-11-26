@@ -70,6 +70,7 @@ static void rt_out(uint32_t st, uint32_t due)   /* audio ISR: a realtime byte ou
 #define FM1_CPU1_FALLBACK 1                     /* (a failure: one core from then on, never a restart) */
 #include "fm1_time.h"
 #include "fm1_sys.h"
+#include "fm1_power.h"                         /* (2.1.9: fm1-base's supplies and power setup) */
 #include "fm1_irq.h"
 #include "fm1_guard.h"
 #include "fm1_cpu1.h"
@@ -566,11 +567,11 @@ static void platform_poll(void)
 static void fm1_fault(const fm1_crash_t *c)
 {
     char b[12];
-    uint32_t i, t0, v[3] = {c->vec, c->pc, c->rets};
+    uint32_t i, t0, v[6] = {c->vec, c->pc, c->rets, c->emu, c->dbg, c->sp};   /* (2.1.9: which guard: EMU_MSG, DBG_MSG; the stack) */
     fm1_audio_stop();
     lcd_fill(0, 0, 240, 240, RGB(160, 0, 0));
     draw_text_box(0, 20, 240, &FONT_S, APP_NAME " CRASH", C_WHITE, 1);
-    for (i = 0; i < 3u; i++) {
+    for (i = 0; i < 6u; i++) {
         uint32_t k;
         for (k = 0; k < 8u; k++) b[k] = "0123456789ABCDEF"[(v[i] >> (28u - 4u * k)) & 15u];
         b[8] = 0;
@@ -639,6 +640,21 @@ void fm1_cstart(void)
     fm1_mailbox_clear();
     fm1_guard_enable(FM1_GUARD_STACK | FM1_GUARD_WRITE | FM1_GUARD_BUS | FM1_GUARD_PC);
     fm1_boot.p3_rst = (uint8_t)p3;
+    {                                           /* (2.1.9) M-VAVE's own supplies and power setup, as fm1-base's main_fm1.c does
+                                                 * before anything loads them (hal/fm1_sys.h): VDC14 1.60 V, SYSVDD 1.38 V
+                                                 * (read back, tried again), the 1.3 V supply on its DC-DC, VDDIO 3.2 V, the
+                                                 * Wi-Fi regulator automatic. At the boot loader's (1.40 V, 1.26 V) flash
+                                                 * fetches came back wrong under load: Wi-Fi and Bluetooth together crashed
+                                                 * Arctic Scream in harmless code (app_audio, usb_poll, the radio's own) */
+        uint32_t f = irq_save(), k;
+        for (k = 0; k < 3u; k++) {
+            fm1_vdc14_raise(7);
+            fm1_sysvdd_raise(15);
+            if (fm1_vdc14() == 7u && fm1_sysvdd() == 15u) break;
+        }
+        (void)fm1_power_stock();
+        irq_restore(f);
+    }
     if (boot_mode == BOOT_RECOVERY || recovery_key())
         recovery_main();                        /* OCT- at power-on: the USB rescue */
     flash_ok = fl_id_known(FL_FAR(fl_jedec_ram)());   /* either FM-1 chip (fm1_flash_id.h), else RAM only */
@@ -657,7 +673,9 @@ void fm1_cstart(void)
         uint32_t h = 2166136261u;
         while (*b) h = (h ^ (uint8_t)*b++) * 16777619u;
         fm1_cpu1_bar_build(h);
+#ifndef ARCTIC_ONE_CORE
         (void)fm1_cpu1_start();
+#endif
     }
     fm1_audio_init(abuf, HALF_WORDS, isr_alnk0, 3);   /* (abuf is zero: .bss) */
     usb_start();
