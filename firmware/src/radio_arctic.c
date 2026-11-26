@@ -29,7 +29,7 @@ enum { OBJ_BLE = 1, OBJ_WIFI = 2 };
 /* ---- plat.h: what the stacks ask of the platform */
 uint32_t plat_ticks24(void) { return fm1_ticks(); }
 uint32_t plat_ms(void) { return fm1_ms; }
-uint32_t plat_lock(void) { return irq_save(); }
+uint32_t plat_lock(void) { return irq_save(); }   /* (it nests: hal/fm1_flash.h) */
 void plat_unlock(uint32_t f) { irq_restore(f); }
 static uint8_t flash_uid[16];
 static uint8_t flash_uid_ok;
@@ -37,9 +37,9 @@ const uint8_t *plat_chip_uid(void)
 {
     if (!flash_ok) return 0;
     if (!flash_uid_ok) {
-        uint32_t f = irq_save();
+        uint32_t f = plat_lock();
         flash_uid_ok = FL_FAR(fl_uid_ram)(flash_uid) == 0;
-        irq_restore(f);
+        plat_unlock(f);
     }
     return flash_uid_ok ? flash_uid : 0;
 }
