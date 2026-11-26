@@ -8,7 +8,7 @@ mkdir -p build/host
 python3 tools/gen_words.py firmware/words.tsv web/words firmware/gen/ann_words.h >/dev/null   # (1.5: the reader's words)
 MACHO=                                          # (macOS: Mach-O has no ".pool" section; the pool is plain .bss there)
 [ "$(uname -s)" = Darwin ] && MACHO="-Dsection(x)=used"
-cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DAPP_VER="\"${APP_VER:-2.1.7}\"" ${MACHO:+"$MACHO"} -Ifirmware/src -Ifirmware/gen -o build/host/arctic firmware/src/arctic.c
+cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DAPP_VER="\"${APP_VER:-2.1.8}\"" ${MACHO:+"$MACHO"} -Ifirmware/src -Ifirmware/gen -o build/host/arctic firmware/src/arctic.c
 ARCTIC_MASTER=1022 build/host/arctic build/host/arctic   # (MASTER as web/test_web.mjs turns it: 1022, Q12 4080)
 python3 - <<'PY'
 from pathlib import Path
@@ -64,6 +64,8 @@ python3 tests/drone_test.py build/host/arctic
 python3 tests/latch_test.py build/host/arctic
 # (2.1.7) SUSTAIN: CC 64 in holds the notes let go (tests/sustain_test.py)
 python3 tests/sustain_test.py build/host/arctic
+# (2.1.8) DRIFT: the mix moving by itself, HOME's fourth page (tests/drift_test.py)
+python3 tests/drift_test.py build/host/arctic
 # GENERATE (FX held + the black keys): in the SCALE, the pattern unheard and unchanged (tests/gen_test.py)
 python3 tests/gen_test.py build/host/arctic
 # (2.1.4) SOUND AUTO: the headphone jack says speaker or headphones (tests/jack_test.py)
@@ -73,7 +75,7 @@ python3 tests/touch_test.py build/host/arctic
 # (2.1.4) ONE-SHOTS: GLO held + the free keys, each gesture plays and ends (tests/shot_test.py)
 python3 tests/shot_test.py build/host/arctic
 # (2.1.4) TIDE and GUARD: an ebb by NOW and by itself (a build with minutes as seconds), GUARD holding a swell down
-cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DTD_SPEED=60u -DAPP_VER="\"${APP_VER:-2.1.7}\"" ${MACHO:+"$MACHO"} -Ifirmware/src -Ifirmware/gen -o build/host/arctic_tide60 firmware/src/arctic.c
+cc -O2 -Wall -Wno-unused-function -DDINGHY_HOST -DTD_SPEED=60u -DAPP_VER="\"${APP_VER:-2.1.8}\"" ${MACHO:+"$MACHO"} -Ifirmware/src -Ifirmware/gen -o build/host/arctic_tide60 firmware/src/arctic.c
 python3 tests/tide_test.py build/host/arctic build/host/arctic_tide60
 cc -O2 -Wall -o build/host/touch_unit tests/touch_unit.c -lm && build/host/touch_unit   # (its readings fed by hand)
 # the gain staging: no clip at any MASTER, SPACE and DELAY under their knee (tests/level_test.py)

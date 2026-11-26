@@ -417,6 +417,10 @@ static void ui_slab_make(uint32_t k, slab_t *S)
         else if (k < 3u) ui_3(S->val, (uint32_t)clamp(v, 0, 100));
         else put_s(S->val, v >= JK_ALWAYS ? "ALWAYS" : v ? "ON" : "OFF");   /* (2.2: ALWAYS) */
         return;
+    case PG_DRIFT:                              /* (2.1.8) AMOUNT ("OFF"), PACE, WANDER, DISTANCE % */
+        if (k == 0u && v <= 0) put_s(S->val, "OFF");
+        else ui_3(S->val, (uint32_t)clamp(v, 0, 100));
+        return;
     case PG_TIDE:                               /* (2.1.4) TIDE ("SOME"), DEPTH %, GUARD %, NOW */
         if (k == 0u) put_s(S->val, TD_SHORT[clamp(v, 0, TD_NMODE - 1)]);
         else if (k == 3u) put_s(S->val, v ? "OUT" : "IN");
@@ -591,7 +595,7 @@ static void ui_tint(uint32_t pg)
     case PG_ARP: a = BW_TEAL, b = BW_PINK, c = BW_AMBER, x = BW_CYAN; break;
     case PG_TAPE: case PG_GRAIN: case PG_DELAY: case PG_SPACE: case PG_PERFORM: case PG_MASTER: case PG_DRIVE: case PG_AIR:
         a = BW_VIOLET, b = BW_SKY, c = BW_GREEN, x = BW_AMBER; break;
-    case PG_MIX1: case PG_MIX2: case PG_TRACK: a = BW_CYAN, b = BW_GREEN, c = BW_VIOLET, x = BW_MAGENTA; break;
+    case PG_MIX1: case PG_MIX2: case PG_DRIFT: case PG_TRACK: a = BW_CYAN, b = BW_GREEN, c = BW_VIOLET, x = BW_MAGENTA; break;
     case PG_SONG: a = BW_GOLD, b = BW_MAGENTA, c = BW_PERIWINKLE, x = BW_CYAN; break;
     case PG_SOUNDS: case PG_PROJECTS: a = BW_BLUE, b = BW_AMBER, c = BW_TEAL, x = BW_MAGENTA; break;
     case PG_SYSTEM: case PG_SYS2: case PG_SYS3: case PG_SYS4: a = BW_SKY, b = BW_PERIWINKLE, c = BW_BLUE, x = BW_CYAN; break;
@@ -1600,7 +1604,7 @@ static int ui_anim_page(uint32_t p)             /* the pages whose ribbons move 
     return p == PG_DRONE || p == PG_ENV || p == PG_TAPE || p == PG_GRAIN || p == PG_DELAY || p == PG_SPACE || p == PG_LFO ||
            p == PG_MIX1 || p == PG_MIX2 || p == PG_MASTER || p == PG_DRIVE || p == PG_SOUND || p == PG_FMOP || p == PG_FMALGO || p == PG_SCALE ||
            p == PG_CHORD || p == PG_PERFORM || p == PG_ARP || p == PG_LOOP || p == PG_AIR || p == PG_JIEHKKI ||
-           p == PG_RUOHCAT || p == PG_JAHKI || p == PG_ENV2 || p == PG_TIDE;
+           p == PG_RUOHCAT || p == PG_JAHKI || p == PG_ENV2 || p == PG_TIDE || p == PG_DRIFT;
 }
 
 /* ---- the aurora pages (Arctic Scream p0larpatch, after the DRONE and Holvut pages): every knob a ribbon of northern
@@ -1684,6 +1688,29 @@ static void pic_mix(void)
         ui_glow(40, 4, y, 48, t == (int32_t)sel ? wv_col((uint32_t)t) : ui_mix(UI_K, wv_col((uint32_t)t), 2, 3));
         ui_rect(px - 1, cy - 12, 3, 3, UI_W);
         ui_text(PX0, cy - 4, lab, 1, t == (int32_t)sel ? ui_acc : UI_M);
+    }
+}
+
+/* (2.1.8) DRIFT's page: the four tracks as MIXER 2's waves, each where DRIFT's walk has taken it now, as tall as its
+ * level is now (a track gone far off: low and dim) */
+static void pic_drift(void)
+{
+    int32_t t, i;
+    ui_caption(df_amt > 0 ? "THE MIX DRIFTS" : "THE MIX AS SET", df_amt > 0 ? "ON" : "OFF");
+    for (i = 0; i < 26; i++) ui_rect(132, 50 + i * 4, 1, 2, UI_D0);   /* (the middle) */
+    for (t = 0; t < (int32_t)NT; t++) {
+        int32_t g = df_tga[t], cy = 62 + t * 22, pan = clamp(trk[t].pan + df_pan[t], 0, 127), px = 40 + pan * 184 / 127, y[48], x;
+        int32_t h = 2 + g * 9 / 32767;          /* (its crest: as high as its level) */
+        uint16_t c = ui_mix(UI_K, wv_col((uint32_t)t), (uint32_t)(4 + g * 12 / 32767), 16u);
+        char lab[3] = {'T', (char)('1' + t), 0};
+        for (i = 0; i < 48; i++) {
+            int32_t d = 40 + i * 4 - px, env = d < -40 || d > 40 ? 0 : 1600 - d * d;
+            x = hw_wave((uint32_t)(i * 7 + (int32_t)hw_ph * 3 + t * 50) & 255u);
+            y[i] = cy + x * (1 + env * h / 1600) / 64 - env * h * 2 / 3 / 1600;
+        }
+        ui_glow(40, 4, y, 48, c);
+        ui_rect(px - 1, cy - 12, 3, 3, g > 16000 ? UI_W : UI_M);
+        ui_text(PX0, cy - 4, lab, 1, UI_M);
     }
 }
 
@@ -2457,6 +2484,7 @@ static void ui_pic_draw0(void)
     case PG_RUOHCAT: pic_ruohcat(); return;
     case PG_JAHKI: pic_jahki(); return;
     case PG_TIDE: pic_tide(); return;
+    case PG_DRIFT: pic_drift(); return;
     case PG_SONG: pic_song(); return;
     case PG_PERFORM: pic_perform(); return;
     case PG_SOUNDS: pic_sounds(); return;

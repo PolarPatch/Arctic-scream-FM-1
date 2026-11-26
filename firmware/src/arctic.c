@@ -204,6 +204,7 @@ static volatile uint32_t cpu_stage[CS_N];       /* audio: NOW split (the editor'
 static uint32_t cpu_over;                       /* audio: blocks in a row over the budget (the overload guard) */
 static int32_t tbuf[NT][VB], dbus[VB], rbus[VB], gbus[VB];   /* the tracks (mono); the DLY, REV and GRAIN buses */
 #include "tide.c"                               /* (2.1.4) TIDE: the whole sound ebbing now and then; GUARD */
+#include "drift.c"                              /* (2.1.8) DRIFT: the mix moving by itself (MIXER 3) */
 #include "master.c"                             /* MASTER (a filter on the whole sound), DRIVE (and a limiter) */
 static volatile uint32_t trk_mute, trk_solo;    /* main loop: GLO held + white keys 1..4, 5..8 (bit t: track t) */
 enum { PF_REV, PF_ECHO, PF_TAPE, PF_BACK, PF_FDOWN, PF_FUP, PF_STUT, PF_SWELL, NPF };   /* the FX layer's tricks: G3 ..
@@ -316,7 +317,7 @@ static uint8_t tf_on[NT];
 static int32_t tf_tgt(uint32_t t)               /* the track filter's cutoff to glide to (<< 8): CUTOFF, its LFO, DRONE's
                                                  * (drone.c), WARP's (chaos.c), JIEHKKI's (jiehkki.c) */
 {
-    return clamp((lfo_move(t, LD_CUT, clamp(trk[t].cut, 0, 127), 127) << 8) + dr_cut[t] + ch_cut[t] + jk_cut[t] + (sw_e * 3 >> 4),
+    return clamp((lfo_move(t, LD_CUT, clamp(trk[t].cut, 0, 127), 127) << 8) + dr_cut[t] + ch_cut[t] + jk_cut[t] + df_cut_of(t) + (sw_e * 3 >> 4),
                  0, 127 << 8);                  /* (2.2: SWELL, up to 24 steps open) */
 }
 static int32_t tf_px[NT];                       /* audio: POS's share of the sends taken before the filter, 0 (PRE) ..
@@ -388,13 +389,15 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
                                                  * TRACK's FX) */
 {
     uint32_t t, k;
+    df_seen |= used & ~trk_quiet;               /* (2.1.8: DRIFT's: the tracks heard) */
     for (t = 0; t < NT; t++) {
         int32_t *x = tbuf[t];
-        int32_t jg = jk_trk(t);                 /* (2.0: JIEHKKI's presence, jiehkki.c) */
+        int32_t jg = jk_trk(t), dg = df_trk(t);   /* (2.0: JIEHKKI's presence, jiehkki.c; 2.1.8: DRIFT's, drift.c) */
+        if (dg < 32767) jg = mulq15(jg, dg);    /* (DRIFT off: as before, exactly) */
         int32_t lv = (trk_quiet >> t & 1u) ? 0 : mulq15(lfo_move(t, LD_VOLUME, clamp(trk[t].level, 0, 127), 127) * 258, jg);   /* (a
                                                  * silent track: all its gains down, ramped) */
         if (sw_e) lv = clamp(lv + mulq15(lv, sw_e) / 3, 0, 32767);   /* (2.2: SWELL, up to +2.5 dB) */
-        int32_t pan = lfo_move(t, LD_PAN, clamp(trk[t].pan, 0, 127), 127), g[5];
+        int32_t pan = clamp(lfo_move(t, LD_PAN, clamp(trk[t].pan, 0, 127), 127) + df_pan[t], 0, 127), g[5];   /* (2.1.8: DRIFT's walk) */
         g[0] = mulq15(lv, pan <= 64 ? 32767 : (127 - pan) * 520);   /* PAN: the far side down, the near one full */
         g[1] = mulq15(lv, pan >= 64 ? 32767 : pan * 512);
         if (trk[t].spread > 0) {                /* (2.2: SPREAD: the middle down as the side comes up, so a voice at a
@@ -404,7 +407,7 @@ static void mix_tracks(int32_t *out, uint32_t used, uint32_t n)   /* the soundin
         }
         g[2] = mulq15(lv, pf_held >> PF_ECHO & 1u ? 127 * 258 : fx_send(t, clamp(trk[t].dly, 0, 127)));   /* the sends:
                                                  * after LEVEL (ECHO THROW, REV THROW held: full) */
-        g[3] = mulq15(lv, pf_held >> PF_REV & 1u ? 127 * 258 : fx_send(t, lfo_move(t, LD_REV, clamp(trk[t].rev + dr_rev[t] + (sw_e >> 9), 0, 127), 127)));   /* (2.2: SWELL, up to + 64) */
+        g[3] = mulq15(lv, pf_held >> PF_REV & 1u ? 127 * 258 : fx_send(t, lfo_move(t, LD_REV, clamp(trk[t].rev + dr_rev[t] + df_rev[t] + (sw_e >> 9), 0, 127), 127)));   /* (2.2: SWELL, up to + 64) */
         g[4] = mulq15(lv, fx_send(t, lfo_move(t, LD_GRAIN, clamp(trk[t].grn, 0, 127), 127)));
         int32_t px0 = tf_px[t], pw = trk[t].fpos ? TF_PX1 : 0;
         int32_t px1 = !(used >> t & 1u) ? pw : px0 < pw ? (px0 + 32 < pw ? px0 + 32 : pw) : (px0 - 32 > pw ? px0 - 32 : pw);
@@ -1395,7 +1398,7 @@ static char *put_ms(char *s, uint32_t q16)      /* a time, ms in Q16: "5 ms", "1
  * tap opens its first page, again the next (round); SYSTEM is HOME's, held */
 enum { PG_SOUND, PG_SOURCE, PG_ENV, PG_LFO, PG_SCALE, PG_CHORD, PG_SONG, PG_HOME, PG_MIX1, PG_MIX2, PG_SYSTEM,
        PG_SYS2, PG_SOUNDS, PG_PROJECTS, PG_ARP, PG_GRID, PG_PATTERN, PG_TAPE, PG_GRAIN, PG_DELAY, PG_SPACE, PG_PERFORM,
-       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, PG_RUOHCAT, PG_JAHKI, PG_ENV2, PG_SYS4, PG_TIDE, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
+       PG_TRACK, PG_FMALGO, PG_FMOP, PG_DRONE, PG_MASTER, PG_DRIVE, PG_SYS3, PG_LOOP, PG_AIR, PG_JIEHKKI, PG_RUOHCAT, PG_JAHKI, PG_ENV2, PG_SYS4, PG_TIDE, PG_DRIFT, NPAGE };   /* (the newer last: MIDI LEARN's links keep the pages' numbers they
                                                  * have; in their button's round by pg_key. TRACK: gone in step 25, its
                                                  * number kept: sys_load moves its links onto HOME) */
 typedef struct {
@@ -1451,7 +1454,9 @@ static const page_t PAGES[NPAGE] = {
     {"JAHKI", BTN_LFO, 1, 0, 1, {"YEAR", "SEASON", "DEPTH", "SKY"}},   /* (2.2: LFO's fifth: the year, year.c) */
     {"ENV 2", BTN_ENV, 1, 1, 1, {"LOOP", "ONSET", "SPREAD", "DETUNE"}},
     {"SYSTEM 4", BTN_HOME, 1, 0, 0, {"SOUND", "HELP", "TOUCH", ""}},
-    {"TIDE", BTN_LFO, 1, 0, 1, {"TIDE", "DEPTH", "GUARD", "NOW"}},   /* (2.1.4: LFO's sixth: the tide, GUARD, tide.c) */   /* (2.2: after SYSTEM 3: the speaker's sound, the
+    {"TIDE", BTN_LFO, 1, 0, 1, {"TIDE", "DEPTH", "GUARD", "NOW"}},
+    {"DRIFT", BTN_HOME, 1, 0, 1, {"AMOUNT", "PACE", "WANDER", "DISTANCE"}},   /* (2.1.8: HOME's fourth, after MIXER 2:
+                                                 * the mix moving by itself, drift.c) */   /* (2.1.4: LFO's sixth: the tide, GUARD, tide.c) */   /* (2.2: after SYSTEM 3: the speaker's sound, the
                                                  * help on the screen) */   /* (2.2: ENV's second: the envelope looping,
                                                  * a note's wait, the voice steps, voices.c) */   /* (1.4: FX's last, after DRIVE: DELAY's PING-PONG
                                                  * (tape.c), SPACE's SHIMMER (hall.c)) */
@@ -1552,6 +1557,7 @@ static volatile int32_t *knob_param(uint32_t pg, uint32_t k)   /* what KNOB k + 
     case PG_RUOHCAT: return k == 0u ? &jk_ruo : k == 1u ? &ru_smp : k == 2u ? &ru_share : &ru_vary;
     case PG_JAHKI: return k == 0u ? &yr_len : k == 1u ? &yr_season : k == 2u ? &yr_depth : &yr_sky;
     case PG_TIDE: return k == 0u ? &td_mode : k == 1u ? &td_depth : k == 2u ? &td_guard : &td_now;
+    case PG_DRIFT: return k == 0u ? &df_amt : k == 1u ? &df_pace : k == 2u ? &df_wand : &df_dist;
     default: return 0;                          /* (not built yet: the knobs do nothing) */
     }
 }
@@ -1583,7 +1589,7 @@ static int32_t knob_max(uint32_t pg, uint32_t k)
            pg == PG_DRONE ? (k < 2u ? 100 : k == 2u ? DR_NRISE - 1 : 1) :
            pg == PG_JIEHKKI ? (k == 0u ? JK_NLEN - 1 : k == 3u ? JK_ALWAYS : 100) : pg == PG_RUOHCAT ? (k == 1u ? RU_NSMP - 1 : 100) :
            pg == PG_JAHKI ? (k == 0u ? YR_NLEN - 1 : k == 1u ? YR_NS - 1 : k == 2u ? 100 : 1) :
-           pg == PG_TIDE ? (k == 0u ? TD_NMODE - 1 : k == 3u ? 1 : 100) :
+           pg == PG_TIDE ? (k == 0u ? TD_NMODE - 1 : k == 3u ? 1 : 100) : pg == PG_DRIFT ? 100 :
            pg == PG_ENV2 ? (k == 0u ? NELOOP - 1 : 100) :
            pg == PG_SONG ? (k == 0u ? SONG_N - 1 : k == 1u ? SONG_END : k == 2u ? 16 : NSONGMODE - 1) :
            pg == PG_SYSTEM ? (k == 0u ? 4 : k == 1u ? MCH_MAX : k == 2u ? 50 : NSCR - 1) : pg == PG_SYS2 ? (k == 3u ? CK_N - 1 : k ? 1 : 2) :
@@ -1743,6 +1749,10 @@ static void knob_text(uint32_t pg, uint32_t k, char *s)   /* knob k's value on p
         return;
     case PG_RUOHCAT:                            /* (2.0) AMOUNT, SAMPLE, SHARE, VARY */
         if (k == 1u) put_s(s, RU_SMP_NAME[clamp(v, 0, RU_NSMP - 1)]);
+        else put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
+        return;
+    case PG_DRIFT:                              /* (2.1.8) AMOUNT, PACE, WANDER, DISTANCE */
+        if (k == 0u && v <= 0) put_s(s, "OFF");
         else put_s(put_u(s, (uint32_t)clamp(v, 0, 100)), " %");
         return;
     case PG_TIDE:                               /* (2.1.4) TIDE, DEPTH, GUARD, NOW */
@@ -2941,6 +2951,7 @@ static void app_step(void)                      /* one pass of the main loop: on
     tch_tracks();
     shot_poll(fm1_ms);                          /* (2.1.4: ONE-SHOTS) */
     td_tick(fm1_ms);                            /* (2.1.4: TIDE) */
+    df_tick(fm1_ms);                            /* (2.1.8: DRIFT) */
     if (fm1_in.notes != prev || fm1_in.buttons) t_touch = t_hand = fm1_ms;   /* (the autosave waits for the hands
                                              * to rest; SCREEN OFF counts from their last touch) */
 

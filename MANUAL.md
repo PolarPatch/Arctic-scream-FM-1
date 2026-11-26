@@ -99,6 +99,30 @@ across the stereo field.
 - **TYPE** (MIXER 2): the track filter is a low-pass (`LP`), high-pass (`HP`) or band-pass (`BP`). `LP` open (CUTOFF at the top) or `HP` open (CUTOFF at the bottom) means no filtering. A band-pass is gentle at RESONANCE 0 and narrows as you turn it up.
 - **POS** (MIXER 2): `PRE`: the effect sends hear the filtered sound (as before 1.3). `POST`: only the track's dry sound is filtered; GRAIN, DELAY and SPACE hear it unfiltered (a dark track with a bright reverb, say).
 
+### DRIFT: the mix moving by itself (new in 2.1.8)
+
+Press **HOME** a fourth time for **DRIFT**: an ambient mixer that slowly rearranges the tracks while they play, so a
+drone never settles. Every so often it deals a new mix: one sounding track near full, the others somewhere under it,
+and now and then one left almost alone with the others far off. The levels always glide there over several seconds,
+never in a step. The page draws the four tracks where they are in the stereo field now, each as tall and bright as its
+level. (After TheGrizard's After Images and its DRIFT; written anew for Arctic Scream.)
+
+| Page | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
+|---|---|---|---|---|
+| DRIFT | AMOUNT | PACE | WANDER | DISTANCE |
+
+- **AMOUNT:** how far the levels wander. `OFF` (0, the start): the mix stays exactly as you set it. At 100 % a track can
+  sink to about -16 dB, or -26 dB while another plays almost alone.
+- **PACE:** how often a new mix comes, from about every 2 minutes (0 %) to about every 15 seconds (100 %).
+- **WANDER:** how far each track walks round the stereo field from its PAN, a new place every 5 to 15 seconds.
+- **DISTANCE:** a track fading goes into the distance, not only quieter: more of it into SPACE (up to +64 on its REV
+  SEND) and its track filter darker (`LP`; `HP`: thinner).
+- T1 is the ground: it never fades below about -4 dB and walks only half as far.
+- Only tracks you can hear take the top of the mix. One track sounding alone stays full.
+- With a JIEHKKI piece playing, its own moves in the mix and DRIFT's add up.
+- Turn AMOUNT back to `OFF` and everything glides back to as set within half a minute.
+- DRIFT's four knobs are saved with the project.
+
 <br clear="right">
 <p align="center"><img src="docs/manual/screens/mixer.png" alt="MIXER 1" width="300"></p>
 

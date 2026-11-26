@@ -49,13 +49,15 @@
 #define SONG_PK 20u                             /* the song: its chain (16), MODE, the mutes and solos; (1.4, spare
                                                  * till then: 0) AIR's PING-PONG and SHIMMER */
 #define FX2_PK 8u                               /* (version 8) MASTER's four, DRIVE's four */
-#define EXT_PK 80u                              /* (2.0, version 9) the tracks' Biegga (4 x 4), JIEHKKI's LENGTH,
+#define EXT_PK 96u                              /* (2.0, version 9) the tracks' Biegga (4 x 4), JIEHKKI's LENGTH,
                                                  * DRIFT, RUOHCAT, SCALE's TUNING, the RUOHCAT page's SAMPLE, SHARE,
                                                  * VARY, (2.1) PICTURE; (2.2, version 10: 8 more) JAHKI's YEAR, SEASON
                                                  * (where the year is: 256 a year), DEPTH, SKY, 4 spare; (2.2, version
                                                  * 11: 32 more) the tracks' ENV 2 (LOOP, ONSET, SPREAD, DETUNE each),
                                                  * their Jiekna (its four); (2.1.6, version 12: 16 more) their DEEP
-                                                 * (its four) */
+                                                 * (its four); (2.1.8, version 13: 16 more) DRIFT's
+                                                 * four, 12 spare */
+#define EXT_PK12 80u                            /* (version 12's) */
 #define EXT_PK11 64u                            /* (version 11's) */
 #define EXT_PK10 32u                            /* (version 10's) */
 #define EXT_PK9 24u                             /* (version 9's) */
@@ -78,10 +80,11 @@
 #define OBJ_HDR 12u                             /* magic, the save count, type, version, length */
 #define OBJ_MAGIC 0x4B504441u                   /* "ADPK" (Arctic Scream p0larpatch's own: its tracks are longer,
                                                  * so neither reads the other's saves) */
-#define OBJ_VER 12u
+#define OBJ_VER 13u
 #define SLS_VER 6u                              /* the slots' stream (its layout as version 6's) */
-#define NOBJV 11u
-static const uint16_t OBJ_VERS[NOBJV][8] = {{12, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK, EXT_PK},
+#define NOBJV 12u
+static const uint16_t OBJ_VERS[NOBJV][8] = {{13, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK, EXT_PK},
+                                            {12, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK, EXT_PK12},
                                             {11, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK, EXT_PK11},
                                             {10, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK, EXT_PK10},
                                             {9, TRK_PK, 20, 260, 288, FM_ALL, FX2_PK, EXT_PK9},
@@ -90,7 +93,7 @@ static const uint16_t OBJ_VERS[NOBJV][8] = {{12, TRK_PK, 20, 260, 288, FM_ALL, F
                                             {4, 52, 0, 196, 0, 0, 0, 0}, {3, 48, 0, 196, 0, 0, 0, 0},
                                             {2, 44, 0, 196, 0, 0, 0, 0}};   /* the versions loaded, newest first: a
                                                  * track's, the song's, a sequence's, the locks', the FM patches', MASTER
-                                                 * and DRIVE's, 2.0's EXT size (12: 2.1.6, DEEP; 11: 2.2, ENV 2; 10: 2.2, JAHKI; 9: 2.0, Biegga,
+                                                 * and DRIVE's, 2.0's EXT size (13: 2.1.8, DRIFT; 12: 2.1.6, DEEP; 11: 2.2, ENV 2; 10: 2.2, JAHKI; 9: 2.0, Biegga,
                                                  * JIEHKKI, TUNING;
                                                  * 8: 1.3, the MASTER and DRIVE; 7, Arctic
                                                  * Scream 1.0 .. 1.2's: before MASTER and DRIVE; 6: before
@@ -626,6 +629,8 @@ static void pk_work(uint8_t *q)
     q[28] = (uint8_t)(0x80 | clamp(td_mode, 0, TD_NMODE - 1)), q[29] = (uint8_t)clamp(td_depth, 0, 100);   /* (2.1.4) TIDE,
                                                  * its top bit: kept (before it the byte was 0) */
     q[30] = (uint8_t)clamp(td_guard, 0, 100);
+    q[80] = (uint8_t)clamp(df_amt, 0, 100), q[81] = (uint8_t)clamp(df_pace, 0, 100);   /* (2.1.8, version 13) DRIFT */
+    q[82] = (uint8_t)clamp(df_wand, 0, 100), q[83] = (uint8_t)clamp(df_dist, 0, 100);
     for (t = 0; t < NT; t++) {                  /* (2.2, version 11) ENV 2 */
         q[32 + t * 4u] = (uint8_t)clamp(trk[t].e_loop, 0, NELOOP - 1), q[33 + t * 4u] = (uint8_t)clamp(trk[t].e_onset, 0, 100);
         q[34 + t * 4u] = (uint8_t)clamp(trk[t].spread, 0, 100), q[35 + t * 4u] = (uint8_t)clamp(trk[t].detune, 0, 100);
@@ -686,6 +691,8 @@ static void uk_work(const uint8_t *q, uint32_t f, const uint16_t *vs)   /* (f: U
             td_mode = ex >= 64u && x[28] & 0x80u ? clamp(x[28] & 0x7F, 0, TD_NMODE - 1) : TD_OFF;   /* (2.1.4) TIDE; */
             td_depth = ex >= 64u && x[28] & 0x80u ? clamp(x[29], 0, 100) : 70;   /* (before: OFF, 70 %, GUARD 0) */
             td_guard = ex >= 64u && x[28] & 0x80u ? clamp(x[30], 0, 100) : 0;
+            df_amt = ex >= 96u ? clamp(x[80], 0, 100) : 0, df_pace = ex >= 96u ? clamp(x[81], 0, 100) : 50;   /* (2.1.8) DRIFT; */
+            df_wand = ex >= 96u ? clamp(x[82], 0, 100) : 50, df_dist = ex >= 96u ? clamp(x[83], 0, 100) : 50;   /* (before: OFF, 50 %s) */
         }
     }
     if (globals && !sg) dl_pp = rv_shim = 0;    /* (saved before the song: AIR off) */
