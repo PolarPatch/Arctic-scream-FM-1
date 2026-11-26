@@ -609,6 +609,8 @@ int wifi_ip_rx_frame(struct wifi_ip *wip, const uint8_t *frame, uint32_t len, in
 
             if (udp_len < 8u)
                 return -1;
+            if (ip_tot_len < ihl + 8u || udp_len > ip_tot_len - ihl || len < hlen + 8u + ihl + udp_len)
+                return -1;                      /* (Arctic Scream 2.1.9: the length within the frame, before any use) */
             payload = udp + 8;
             payload_len = (uint32_t)udp_len - 8u;
 

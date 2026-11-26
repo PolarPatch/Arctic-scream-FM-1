@@ -14,6 +14,9 @@ These files are copied unchanged from [fm1-base](https://github.com/charlesvesta
 | `chip/ble_rf_tables_v15.h` (and its copy `firmware/gen/ble_rf_tables.h`), `device/fm1_wifi_wlc.h` | felucca-bsp `chip/`, fm1-base `device/` | JieLi (AC79 SDK) and M-VAVE's start-up as packed by Optimist, Apache-2.0 (`LICENSES/Apache-2.0-radio.txt`, `NOTICE-felucca-bsp`, `NOTICE-fm1-base`) |
 | `device/radio.c`, `device/bt_own.c`, `device/bt_own_central.c`, `device/bt_own_stream.h`, `device/ble_peers_none.c`, `device/shim_lock.c`, `include/plat.h`, `include/plat_uid.h` | fm1-base `device/`, `include/` | Charles Vestal, MPL-2.0 (`LICENSES/MPL-2.0-fm1-base.txt`): MPL files may be carried in a GPL-3.0 work (MPL-2.0 §3.3); they stay MPL-2.0 |
 
+One change: `wifi/wifi_ip.c` checks a UDP datagram's length against the IP length and the frame before the DHCP
+client and server read it (marked "Arctic Scream 2.1.9"; to be offered upstream).
+
 Each file keeps its own SPDX header. To update: copy the same files again from a newer fm1-base and rebuild
 (`tools/build.py` checks that the Wi-Fi frame buffers sit in main RAM below 0x01C20000, and lists any 64-bit
 multiply inlined beside a load in the radio's functions).
