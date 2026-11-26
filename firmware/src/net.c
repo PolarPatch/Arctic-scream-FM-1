@@ -99,7 +99,12 @@ static void nw_apply(void)                      /* the knobs to the radio */
     if ((w || bt) && !radio_wanted) radio_on();
     if (w != nw_wifi_was) {
         nw_wifi_was = w;
-        if (radio_wanted) plat_wifi_mode(w == NW_JOIN ? WIFI_MODE_AUTO : w == NW_HOTSPOT ? WIFI_MODE_AP : WIFI_MODE_OFF);
+        if (radio_wanted) {
+            plat_link_enable(0);                /* (Link opens its port and joins its group again on the new mode:
+                                                 * FM-1 Again saw no peers in station mode when it came before) */
+            plat_wifi_mode(w == NW_JOIN ? WIFI_MODE_AUTO : w == NW_HOTSPOT ? WIFI_MODE_AP : WIFI_MODE_OFF);
+            nw_link_was = -1;
+        }
     }
     if (l != nw_link_was) {
         nw_link_was = l;
@@ -200,14 +205,16 @@ static int nw_frame(const uint8_t *f, uint32_t n)
         char *q = put_u(put_s(d, "RX PROT "), nw_rx_prot);
         put_u(put_s(q, " PLAIN "), nw_rx_plain);
     }
+    out[o++] = 0xF0u;                           /* (sysex_send: the whole frame, F0 .. F7) */
     out[o++] = 0x7Du, out[o++] = 0x4Eu, out[o++] = 0x57u, out[o++] = f[3], out[o++] = (uint8_t)(rc < 0 ? 1 : 0);
     {
         const char *L[4] = {a, b, c, d};
         for (k = 0; k < 4u; k++) {
-            for (i = 0; L[k][i] && o < sizeof out - 2u; i++) out[o++] = (uint8_t)(L[k][i] & 0x7F);
+            for (i = 0; L[k][i] && o < sizeof out - 3u; i++) out[o++] = (uint8_t)(L[k][i] & 0x7F);
             out[o++] = 0;
         }
     }
+    out[o++] = 0xF7u;
     sysex_send(out, o);
     return 1;
 }
