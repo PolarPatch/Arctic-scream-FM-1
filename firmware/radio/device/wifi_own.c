@@ -506,6 +506,11 @@ static void wl_rx(const uint8_t *f, uint32_t len, int8_t rssi, int64_t now)   /*
     hl = (f[0] & 0x80u) ? 26u : 24u;
     if (len < hl + 8u)
         return;
+    if (wl.ip.protect) {                          /* (Arctic Scream 2.1.9: does a decrypted frame keep its Protected bit?
+                                                   * counted, to decide on dropping plain frames once keyed) */
+        extern uint32_t nw_rx_prot, nw_rx_plain;
+        if (f[1] & 0x40u) nw_rx_prot++; else nw_rx_plain++;
+    }
     if (!wifi_ip_early_filter(&wl.ip, f, len))
         return;
     wl.n_kept++;

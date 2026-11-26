@@ -196,6 +196,10 @@ static int nw_frame(const uint8_t *f, uint32_t n)
     } else if (f[3] == 4u)
         rc = 0;                                 /* (the status only) */
     nw_status(a, b, c, d);
+    if (f[3] == 4u && radio_wanted) {           /* (status: the station's frames, Protected or not, a test line) */
+        char *q = put_u(put_s(d, "RX PROT "), nw_rx_prot);
+        put_u(put_s(q, " PLAIN "), nw_rx_plain);
+    }
     out[o++] = 0x7Du, out[o++] = 0x4Eu, out[o++] = 0x57u, out[o++] = f[3], out[o++] = (uint8_t)(rc < 0 ? 1 : 0);
     {
         const char *L[4] = {a, b, c, d};

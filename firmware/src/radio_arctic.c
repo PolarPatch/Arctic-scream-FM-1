@@ -82,6 +82,7 @@ int plat_store_save(uint32_t obj, const void *src, uint32_t len)
     return settings_rewrite(st_last_n ? st_last : 0, st_last_n);
 }
 
+uint32_t nw_rx_prot, nw_rx_plain;              /* (wifi_own.c wl_rx: keyed, data frames with / without the Protected bit) */
 /* ---- the stacks */
 static void plat_yield_radio(void);
 void plat_yield(void) { plat_yield_radio(); }
