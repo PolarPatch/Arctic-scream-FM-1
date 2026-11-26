@@ -131,7 +131,7 @@ static uint32_t ed_commit(uint32_t o)
         for (i = 0; i < s.nlk; i++)
             if (s.lk[i][1] >= NPAGE || s.lk[i][2] > 3u || s.lk[i][3] > 3u) return ER_BAD;
         sy_col = s.col, sy_mch = s.mch, sy_tune = s.tune, sy_scr = s.scr, sy_out = s.out, sy_clk = s.clk, sy_latch = s.latch;
-        sy_usb = s.usb, sy_mod = s.mod, sy_snd = SYS4_SND(s.sys4), sy_help = !(s.sys4 & 2u), sy_touch = s.sys4 >> 3;
+        sy_usb = s.usb, sy_mod = s.mod, sy_snd = SYS4_SND(s.sys4), sy_help = !(s.sys4 & 2u), sy_touch = (int32_t)TCH_OF(s.sys4 >> 3);
         sys_sync();                             /* (a new MIDI CHANNEL: what is on out there let go first) */
         set.oct = s.oct, set.nlk = s.nlk, set.ver = SET_VER;
         memcpy(set.lk, s.lk, sizeof set.lk);

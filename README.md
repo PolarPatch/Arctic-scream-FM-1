@@ -31,6 +31,9 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
   - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
   - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
+- **New in 2.1.7:**
+  - **SUSTAIN:** a sustain pedal (CC 64 from a MIDI keyboard) holds the notes you let go
+    until it comes up; a note played again meanwhile starts afresh.
 - **New in 2.1.6:**
   - **Luovos boazu** (North Sami: a free reindeer, roaming loose), an eleventh sound source: a deep, calm drone from
     below, no howl. Four sines at the note and under it pull on each other and drift and breathe on their own.
