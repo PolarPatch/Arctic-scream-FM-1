@@ -105,12 +105,13 @@ static void plat_yield_radio(void) { fm1_wdt_feed(); }   /* (a wait inside the s
 static uint32_t no_buf[NO_RING];
 static volatile uint32_t no_w, no_r;
 static volatile uint8_t nm_live;                /* (net.c: a Wi-Fi MIDI session is up) */
+static volatile uint8_t nw_ble_out;             /* (net.c: BLUETOOTH on) */
 static void nw_out_tap(uint32_t pkt)
 {
     uint32_t f;
     if (!radio_wanted || (pkt & 15u) < 8u) return;   /* (SysEx and the rest stay on USB) */
     f = irq_save();
-    ble_midi_tap(pkt, TO_BLE_HOST);
+    if (nw_ble_out) ble_midi_tap(pkt, TO_BLE_HOST);
     if (nm_live && no_w - no_r < NO_RING) {
         no_buf[no_w % NO_RING] = pkt;
         RING_PUBLISH();

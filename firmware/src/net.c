@@ -122,6 +122,9 @@ static void nw_apply(void)                      /* the knobs to the radio */
         nw_bt_was = bt;
         if (radio_wanted) plat_ble_enable(bt);
     }
+    nw_ble_out = (uint8_t)bt;                   /* (the radio starts its Bluetooth anyway: nothing goes out with it OFF) */
+    if (!bt && radio_wanted && plat_ble_connected() && (fm1_ms & 1023u) == 0u)
+        plat_ble_enable(0);                     /* (OFF given while it was starting: again, till it takes) */
 }
 /* ---- (2.1.9) MIDI over Wi-Fi (RTP-MIDI, Apple's "Network Session"), from FM-1 Again (app/net.h, GPL-3.0-or-later,
  * PolarPatch). With an address (JOIN's network, or HOTSPOT's own), the FM-1 looks for a session on the network (an
@@ -475,7 +478,7 @@ static int nw_status(char *a, char *b, char *c, char *d)   /* the page's four li
         put_u(p, (uint32_t)clamp(seq_bpm, 20, 300));
     } else if (nw_link)
         put_s(c, "LINK: WAITING FOR A NETWORK");
-    p = put_s(d, !nw_bt ? "BT OFF" : plat_ble_connected() ? "BT MIDI ON" : "BT WAITING");
+    p = put_s(d, plat_ble_connected() ? (nw_bt ? "BT MIDI ON" : "BT OFF, STILL LINKED") : nw_bt ? "BT WAITING" : "BT OFF");
     if (nm.open) put_s(p, nm.st == NM_UP ? ", NET MIDI ON" : ", NET MIDI LOOKING");
     return 1;
 }
