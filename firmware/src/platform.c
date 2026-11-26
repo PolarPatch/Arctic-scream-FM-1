@@ -417,6 +417,14 @@ void fm1_timer5_irq(void)
     static uint32_t sub, owed, last, acc;
     uint32_t t0 = fm1_ticks(), usb_due = sub % 5u == 0u, d;
     fm1_timer5_ack();
+#if ARCTIC_RADIO
+    if (radio_quiet) {                          /* (the radio calibrating: the milliseconds only, little code fetched) */
+        acc += t0 - last;
+        last = t0;
+        while (acc >= 1000u * FM1_TICKS_PER_US) acc -= 1000u * FM1_TICKS_PER_US, fm1_ms++;
+        return;
+    }
+#endif
     fm1_touch_harvest();                        /* (2.1.4: TOUCH, the keys' readings, hal/fm1_touch.h) */
     fm1_input_tick();
     fm1_touch_start();

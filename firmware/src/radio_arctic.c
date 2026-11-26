@@ -86,6 +86,10 @@ uint32_t nw_rx_prot, nw_rx_plain;              /* (wifi_own.c wl_rx: keyed, data
 /* ---- the stacks */
 static void plat_yield_radio(void);
 void plat_yield(void) { plat_yield_radio(); }
+/* the radio's start: while it calibrates (radio_quiet, ~1 s) the timer only counts (platform.c fm1_timer5_irq) and the
+ * render rests: Arctic Scream's 10 kHz timer fetched its code from the flash all the time, and a flash read under the
+ * calibration's current came back wrong: a jump to 0xFDD0 inside fm1_rfc_adc_peak (the USB rescue). Masking the timer
+ * (fm1-base's way for JieLi's Wi-Fi) stalls Arctic Scream's main loop, which waits on its milliseconds */
 #include "radio.c"
 #include "wifi_own.c"
 
