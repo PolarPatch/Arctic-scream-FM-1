@@ -214,7 +214,12 @@ C("02", "HOME and the mixers", "var(--aurora)",
     ["PAN", "Where the track sits.", "L64 – C – R63"],
     ["TYPE", "The track filter: low-pass, high-pass or band-pass. LP open (CUTOFF at the top) or HP open (at the bottom): no filtering. BP is gentle at RESONANCE 0 and narrows as you turn it up.", "LP / HP / BP"],
     ["POS", "PRE: the effect sends hear the filtered sound. POST: only the dry sound is filtered; GRAIN, DELAY and SPACE hear it unfiltered (a dark track with a bright reverb).", "PRE / POST"],
-    ["RESONANCE", "The track filter's resonance (on HOME before 1.3).", "0–100 %"]))]),
+    ["RESONANCE", "The track filter's resonance (on HOME before 1.3).", "0–100 %"])),
+  P("DRIFT " + NEW, "Tap HOME four times", "", K(
+    ["AMOUNT", "The mix moves by itself: the tracks' levels wander slowly, now and then one left almost alone. OFF: the mix stays as set (after TheGrizard's After Images).", "OFF – 100 %"],
+    ["PACE", "How fast it moves, from minutes to seconds.", "0–100 %"],
+    ["WANDER", "Each track walks round the stereo field (T1 half as far).", "0–100 %"],
+    ["DISTANCE", "A track fading sounds far off: more into SPACE, its filter darker.", "0–100 %"]))]),
 
 C("03", "Sources: EDIT", "var(--violet)",
   "EDIT opens the track's SOUND page, the source's four knobs, then SOURCE (a Holvut track has LOOP between them). Nine sources, each with its own picture.", [
@@ -477,6 +482,12 @@ C("11", "System: hold HOME", "var(--sky, #4fb3e8)",
     ["HELP", "A knob turned shows a short line under the picture saying what it does. The very first start shows a three-page guide.", "ON / OFF"],
     ["TOUCH", "How hard the keys are played, read from the keys themselves. VELOCITY: harder is louder (MIDI velocity too). VEL+PRESS: pressing a held key harder also deepens the track's LFO and is HOWL's pressure. Pressure on F3 to D5; the top seven keys give velocity only.", "OFF / VELOCITY / VEL+PRESS"],
     ["", "", ""])),
+  P("NETWORK " + NEW, "Hold HOME, then HOME four times", "", K(
+    ["WIFI", "HOTSPOT: the FM-1 is the network, its name and password on the page; join it from your phone, no router needed. JOIN: your own Wi-Fi, given once over USB (<code>tools/arctic_wifi.py join NAME PASSWORD</code>; only the WPA2 key is kept). With an address, the FM-1 finds a network MIDI session (RTP-MIDI, Apple's Network Session) by itself: in Ableton Note turn on <b>Network Session 1</b> under Input, and the FM-1's notes play Note.", "OFF / JOIN / HOTSPOT"],
+    ["LINK", "Ableton Link: CLOCK becomes LINK. Tempo, beat and PLAY / STOP shared with Ableton Live, Note and every Link app; PLAY starts on the session's next bar, and the tempo knobs set the session's tempo.", "OFF / ON"],
+    ["BLUETOOTH", "Bluetooth MIDI as <b>Arctic Scream XXXX</b>: notes and CCs in, the FM-1's MIDI out there too. Notes from USB or the TRS jack go on over Wi-Fi and Bluetooth as well (MIDI THRU).", "OFF / ON"],
+    ["", "", ""]),
+    ["The radio sleeps until one of them is turned on; when it starts, the sound pauses for about a second. The Wi-Fi, Bluetooth and Link stacks are Henri David's (Optimist), via Charles Vestal's fm1-base. Not in this browser demo: the page is there, the radio is not."]),
   P("MIDI, USB audio and good to know", "", "", [
     ["MIDI in", "USB (the MIDI port is called <b>Arctic Scream</b> too), or the TRS jack with a TRS-to-DIN adapter (type A). Notes play the tracks, a CC its MIDI LEARN link; ALL NOTES OFF lets go of MIDI's notes; aftertouch pushes Holvut's FEEDBACK.", ""],
     ["USB audio", "Class compliant, no driver: the FM-1 shows up on the computer, phone or tablet as <b>Arctic Scream</b>, an audio input, 16-bit stereo at 44.1 or 48 kHz, the whole mix at SYSTEM 3's USB LEVEL (the volume knob sets the speaker, not the recording). Solo each track (GLO + keys 5–8) to record them one by one.", ""],
