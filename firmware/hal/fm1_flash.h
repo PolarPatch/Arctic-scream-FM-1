@@ -155,6 +155,22 @@ static RAMFN uint32_t fl_jedec_ram(void)                 /* fl_id_known (fm1_fla
     return id;
 }
 
+/* (2.1.9, from felucca-bsp chip/fm1_flash.h, MPL-2.0 there: the radio's name and address) the part's factory unique ID
+ * (0x4B, four dummy bytes): dst (RAM) gets 16 bytes. Only with FL_UID defined */
+#ifdef FL_UID
+static RAMFN int fl_uid_ram(uint8_t *dst)
+{
+    fl_saved_t s; uint32_t i;
+    { int rc = fl_enter(&s); if (rc) return rc; }
+    fl_cs(0);
+    for (i = 0; i < 5u; i++) fl_tx(i ? 0 : 0x4B);
+    for (i = 0; i < 16u; i++) dst[i] = fl_rx();
+    fl_cs(1);
+    fl_exit(&s);
+    return 0;
+}
+#endif
+
 static RAMFN uint32_t fl_status_ram(void)                /* SR1 | SR2 << 8 */
 {
     fl_saved_t s; uint32_t v;
@@ -229,19 +245,29 @@ static void fl_plain_window_init(void)
 /* how long the interrupts stay off in one flash step (an erase ~50 ms: the key scan, the LEDs and the USB
  * audio all stand still): the longest, and how many went past 1 ms (TIMER4 ticks); the CPU command reads them */
 static uint32_t fl_irq_t0, fl_irq_max, fl_irq_slow;
+/* (2.1.9) It nests, as fm1-base's (felucca-bsp fm1_flash_access.h): the caller's ICFG is kept and given back, so a
+ * save inside an interrupt, or where they are already off, leaves them off (before, irq_restore always ran sti: inside
+ * the timer's interrupt the timer came in again, mid usb_poll, once the radio's stacks locked there). Both global
+ * enables go off, bit 9 (cli's) and bit 8 (the SDK's local_irq_save's), which also holds the radio's priority-7
+ * interrupts away from the flash while it is switched off. The time is measured from the outermost save */
 static inline uint32_t irq_save(void)
 {
-    __asm__ volatile("cli" ::: "memory");
-    fl_irq_t0 = T4_CNT;
-    return 0;
+    uint32_t f;
+    __asm__ volatile("%0 = icfg" : "=r"(f));
+    __asm__ volatile("icfg = %0" ::"r"(f & ~0x300u) : "memory");
+    __asm__ volatile("csync" ::: "memory");
+    if ((f & 0x300u) == 0x300u) fl_irq_t0 = T4_CNT;
+    return f;
 }
 static inline void irq_restore(uint32_t f)
 {
-    uint32_t d = T4_CNT - fl_irq_t0;
-    (void)f;
-    if (d > fl_irq_max) fl_irq_max = d;
-    fl_irq_slow += d > 24000u;
-    __asm__ volatile("csync\n\tsti" ::: "memory");
+    if ((f & 0x300u) == 0x300u) {
+        uint32_t d = T4_CNT - fl_irq_t0;
+        if (d > fl_irq_max) fl_irq_max = d;
+        fl_irq_slow += d > 24000u;
+    }
+    __asm__ volatile("csync" ::: "memory");
+    __asm__ volatile("icfg = %0" ::"r"(f) : "memory");
 }
 
 static int fl_erase4k(uint32_t off, uint32_t *took_us)

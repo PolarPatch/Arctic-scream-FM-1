@@ -80,6 +80,8 @@ static void fm1_irq_attach(uint32_t n, void (*h)(void), uint32_t prio)   /* IRQs
     FM1_ICFG(n) = (FM1_ICFG(n) & ~(0xFu << sh)) | ((((prio & 7u) << 1) | 1u) << sh);
 }
 static void fm1_irq_mask(uint32_t n) { FM1_ICFG(n) &= ~(1u << ((n & 7u) * 4u)); }
+static void fm1_irq_unmask(uint32_t n) { FM1_ICFG(n) |= 1u << ((n & 7u) * 4u); }   /* (2.1.9, felucca-bsp's: the radio's start) */
+static inline uint32_t fm1_uptime_ms(void) { return *(volatile uint32_t *)0x10804u / 24000u; }   /* (TIMER4, as fm1_fault_c) */
 
 static void fm1_irq_enable_all(void)
 {

@@ -89,6 +89,8 @@ static void host_probe(void)
             *trk_sname(0, nm) = 0;
             printf(" lv %u %u %u ch1 %d snd1 %s", lv_rvk, lv_dlk, lv_pre, (int)trk[0].chord, nm[0] ? nm : "-");
         }
+        printf(" drift %u %d %d,%d,%d,%d %d,%d,%d,%d %d,%d", page, (int)df_amt, (int)df_tga[0], (int)df_tga[1], (int)df_tga[2],
+               (int)df_tga[3], (int)df_pan[0], (int)df_pan[1], (int)df_pan[2], (int)df_pan[3], (int)df_rev[1], (int)df_cut[1]);   /* (2.1.8: DRIFT) */
         printf(" shot %d", (int)sh_now);        /* (2.1.4: the ONE-SHOT playing, -1 none) */
         printf(" tide %u %d %d", td_st, (int)td_lv, (int)td_gov_shown);   /* (2.1.4: TIDE, GUARD) */
         printf(" lit %x", host_lit);            /* (1.4: the keys lit, bit k: key k, F3 = 0) */

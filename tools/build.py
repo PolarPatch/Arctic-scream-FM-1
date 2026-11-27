@@ -52,7 +52,8 @@ PRODUCT = "FM-1_977"                # Arctic Scream 1.x: 977, every release (FM-
                                     # other firmwares hold 950, 95x, 961, so not Dinghy's 9 + minor); Dinghy is 99N
 VERSION = None                      # APP_VER for release builds (else DEFAULT_VERSION)
 DEFINES = []                        # --define: a test build's -D names (e.g. ARCTIC_FOO)
-DEFAULT_VERSION = "2.1.7"
+DEFAULT_VERSION = "2.1.9"
+RADIO_INC = [f"-Ifirmware/radio/{d}" for d in ("include", "device", "chip", "ble", "wifi", "link")]   # (2.1.9: the radio, firmware/radio/)
 
 
 def toolchain():
@@ -161,7 +162,7 @@ def words():                                    # (1.5) the screen reader's word
 
 def build_app():
     words()
-    flags = [*CFLAGS, "-Ifirmware/hal", "-Ifirmware/src", "-Ifirmware/gen", f'-DFELUCCA_ID="{PRODUCT}"', f'-DAPP_VER="{VERSION or DEFAULT_VERSION}"',
+    flags = [*CFLAGS, "-Ifirmware/hal", "-Ifirmware/src", "-Ifirmware/gen", *RADIO_INC, f'-DFELUCCA_ID="{PRODUCT}"', f'-DAPP_VER="{VERSION or DEFAULT_VERSION}"',
              *(f"-D{d}" for d in DEFINES)]
     cmds = [("cc", "-c", FW / "crt0.S", "-o", OUT / "crt0.o"),
             ("cc", "-c", FW / "hal" / "fm1_vec.S", "-o", OUT / "fm1_vec.o"),
@@ -237,7 +238,53 @@ def check(img, syms, dis, rt):
     notes.append(f"image {len(img)} B of {APP_SLOT}; RAM .data+.bss {ram} B of 98304; pool {pool} B of 344064")
     if ram > 96 * 1024:
         errors.append(f"RAM .data+.bss {ram} B > 96 KiB")
+    if sym("wifi_txb"):             # (2.1.9) the radio (firmware/radio/, fm1-base's checks): the Wi-Fi frame DMA reads
+        for n in ("wifi_txb", "wifi_rxb"):      # main RAM below 0x01C20000 only
+            mm = re.search(r"^([0-9a-f]+) .*\s([0-9a-f]+)\s+" + n + r"$", syms, re.M)
+            a, z = (int(mm.group(1), 16), int(mm.group(2), 16)) if mm else (0, 0)
+            if not (0x01C00000 <= a and a + z <= 0x01C20000):
+                errors.append(f"{n} at {a:#x} (+{z}): not in main RAM below 0x01C20000")
+        notes.append(f"the radio's frame buffers at {sym('wifi_txb'):#x} / {sym('wifi_rxb'):#x} (below 0x01C20000)")
+    mul64 = mul64_near_loads(dis)   # (2.1.9, fm1-base's: the CPU fault of felucca-bsp docs/CPU.md, a note)
+    radio = [f for f in mul64 if re.match(r"(ble|wifi|wl|wn|ws|lk|link|own|ap|dhcp|ip|sta|rf|fm1_ble|fm1_wifi|fm1_rf)_", f)]
+    notes.append(f"64-bit multiplies inlined beside loads: {len(mul64)} functions, of the radio's: "
+                 f"{', '.join(radio) if radio else 'none'}")
     return errors, notes
+
+
+def mul64_near_loads(dis, window=4):
+    """(2.1.9, from fm1-base tools/build.py, MPL-2.0) functions with a load in flight beside a 32x32->64-bit multiply:
+    one up to two instructions before it, or one after it before its product is used. On the FM-1 such code now and
+    then leaves a register a bit off (felucca-bsp docs/CPU.md); a multiply in a helper of its own is clear of it"""
+    found, fn, body = [], "", []
+
+    def scan():
+        for i, ins in enumerate(body):
+            m = re.match(r"(r\d+)_(r\d+) [+-]?= r\d+ \* r\d+", ins)
+            if not m:
+                continue
+            dst = {m.group(1), m.group(2)}
+            before = [x for x in body[max(0, i - 2):i] if not re.search(r"\bcall\b", x)]
+            if any(re.search(r"= [hbd]?\[", x) for x in before):
+                return True
+            for x in body[i + 1:i + 1 + window]:
+                if any(re.search(r"\b" + r + r"\b", x) for r in dst):
+                    break
+                if re.search(r"= [hbd]?\[", x):
+                    return True
+        return False
+
+    for ln in dis.splitlines() + ["end:"]:
+        mm = LINE.match(ln)
+        if not mm:
+            m2 = re.match(r"^([A-Za-z_.$][\w.$]*):$", ln.strip())
+            if m2 and not m2.group(1).startswith(".GJT"):
+                if fn and not fn.startswith("__") and fn.split(".")[0] != "vsnprintf" and scan() and fn not in found:
+                    found.append(fn)
+                fn, body = m2.group(1), []
+            continue
+        body.append(mm.group(3))
+    return found
 
 
 # Every hardware register access lives in hal/. In src/ and loader/ (comments stripped):

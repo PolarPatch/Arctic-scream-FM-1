@@ -70,6 +70,7 @@ static void rt_out(uint32_t st, uint32_t due)   /* audio ISR: a realtime byte ou
 #define FM1_CPU1_FALLBACK 1                     /* (a failure: one core from then on, never a restart) */
 #include "fm1_time.h"
 #include "fm1_sys.h"
+#include "fm1_power.h"                         /* (2.1.9: fm1-base's supplies and power setup) */
 #include "fm1_irq.h"
 #include "fm1_guard.h"
 #include "fm1_cpu1.h"
@@ -123,6 +124,8 @@ hl_boot_t hl_boot __attribute__((section(".noinit")));   /* (not static: the com
 #define MIDI_RT_SOON() (ro_r != ro_w && (int32_t)(ro_t[ro_r % RTQ] - fm1_ticks()) < 28800)   /* (usb.c: a clock message
                                                  * out due within 1.2 ms: EP1 left free for it, rt_flush) */
 static uint32_t rt_now(void) { return fm1_ticks(); }
+static void nw_out_tap(uint32_t pkt);           /* (2.1.9) MIDI out over the radio too (radio_arctic.c) */
+#define NW_OUT_TAP(pkt) nw_out_tap(pkt)
 #include "usb.c"
 #if FELUCCA_UART
 #include "midi_uart.c"
@@ -169,6 +172,7 @@ static const uint32_t SAVE_SECT[SAVE_NSECT] = {0xDF000u, 0xE5000u, 0xE6000u, 0xE
 #define FL_RANGE_OK(off, n) (FL_IN(off, n, FL_OTA_LO, FL_OTA_HI) || FL_IN(off, n, SETTINGS_AT, SETTINGS_AT + 0x1000u) || \
                              FL_IN(off, n, SAMPLE_AREA, SAMPLE_AREA + SAMPLE_AREA_LEN) || FL_IN(off, n, 0xDF000u, 0xE0000u) || \
                              FL_IN(off, n, 0xE5000u, 0xE8000u) || FL_IN(off, n, 0xFD000u, 0xFF000u))
+#define FL_UID 1                                /* (2.1.9: the radio's name and address, fl_uid_ram) */
 #include "fm1_flash.h"
 static uint8_t flash_ok;
 static int st_read(uint32_t off, void *dst, uint32_t n)
@@ -233,10 +237,20 @@ static void ota_commit(const uint8_t *parm)
 }
 #include "recovery.c"
 
+static uint32_t crc32(const uint8_t *p, uint32_t n);
+#ifndef ARCTIC_RADIO
+#define ARCTIC_RADIO 1                          /* (2.1.9) Bluetooth MIDI and Wi-Fi (radio_arctic.c; a build may leave them out) */
+#endif
+#if ARCTIC_RADIO
+#include "radio_arctic.c"
+#else
+static void nw_out_tap(uint32_t pkt) { (void)pkt; }
+#endif
+
 /* ---- settings: [magic][length][crc32] then the bytes; settings_save erases the sector (~50 ms with
  * the interrupts off: the sound drops out), so save when nothing plays, not on every knob step */
 #define SETTINGS_MAGIC 0x59474E44u              /* "DNGY" */
-static uint32_t crc32(const uint8_t *p, uint32_t n)
+static uint32_t crc32(const uint8_t *p, uint32_t n)   /* (radio_arctic.c's records too) */
 {
     uint32_t c = 0xFFFFFFFFu, k;
     while (n--) {
@@ -255,20 +269,38 @@ static int settings_load(void *p, uint32_t n)   /* 0: loaded; else p is untouche
     if (st_read(SETTINGS_AT + sizeof h, buf, n) || crc32(buf, n) != h[2])
         return -1;
     memcpy(p, buf, n);
+#if ARCTIC_RADIO
+    memcpy(st_last, buf, n), st_last_n = n;     /* (a radio record's save writes them again) */
+#endif
     return 0;
 }
-static int settings_save(const void *p, uint32_t n)   /* p in RAM, n <= 256 */
+static int settings_rewrite(const void *p, uint32_t n)   /* p in RAM (0: none), n <= 256 */
 {
     uint32_t h[3] = {SETTINGS_MAGIC, n, 0}, took;
     int rc;
     if (!flash_ok || n > 256u)
         return -1;
-    h[2] = crc32(p, n);
+    h[2] = p ? crc32(p, n) : 0;
     if ((rc = fl_erase4k(SETTINGS_AT, &took)) != 0)
         return rc;
+#if ARCTIC_RADIO
+    if ((rc = fl_write(SETTINGS_AT + RS_BLE_AT, rs_keep, sizeof rs_keep)) != 0)   /* (2.1.9: the radio's records, kept) */
+        return rc;
+#endif
+    if (!p)
+        return 0;
     if ((rc = fl_write(SETTINGS_AT + sizeof h, p, n)) != 0)
         return rc;
     return fl_write(SETTINGS_AT, (const uint8_t *)h, sizeof h);   /* the header last: a cut save stays invalid */
+}
+static int settings_save(const void *p, uint32_t n)   /* p in RAM, n <= 256 */
+{
+#if ARCTIC_RADIO
+    if (!flash_ok || n > 256u || st_read(SETTINGS_AT + RS_BLE_AT, rs_keep, sizeof rs_keep))
+        return -1;
+    memcpy(st_last, p, n), st_last_n = n;
+#endif
+    return settings_rewrite(p, n);
 }
 
 /* ---- Arctic Scream: the sample area (samples.c) and SysEx for the app. An erase or a write stops everything (the
@@ -386,6 +418,14 @@ void fm1_timer5_irq(void)
     static uint32_t sub, owed, last, acc;
     uint32_t t0 = fm1_ticks(), usb_due = sub % 5u == 0u, d;
     fm1_timer5_ack();
+#if ARCTIC_RADIO
+    if (radio_quiet) {                          /* (the radio calibrating: the milliseconds only, little code fetched) */
+        acc += t0 - last;
+        last = t0;
+        while (acc >= 1000u * FM1_TICKS_PER_US) acc -= 1000u * FM1_TICKS_PER_US, fm1_ms++;
+        return;
+    }
+#endif
     fm1_touch_harvest();                        /* (2.1.4: TOUCH, the keys' readings, hal/fm1_touch.h) */
     fm1_input_tick();
     fm1_touch_start();
@@ -451,6 +491,9 @@ void fm1_alnk0_irq(void)                       /* via isr_alnk0 (hal/fm1_isr.S) 
         for (i = 0; i < HALF_WORDS; i++)
             o[i] = 0;
         uac_render_start();
+#if ARCTIC_RADIO
+        if (!radio_quiet)                       /* (2.1.9: the radio calibrating: silence, nothing read from the flash) */
+#endif
         app_audio(o, HALF_FRAMES);
         for (i = 0; i < HALF_WORDS; i++)        /* (MASTER applied by the app) */
             o[i] = o[i] > 32767 ? 32767 : o[i] < -32767 ? -32767 : o[i];
@@ -470,6 +513,9 @@ static void platform_poll(void)
     fm1_wdt_feed();
     usb_retry(fm1_ms);
     fm1_jack_poll(fm1_ms);
+#if ARCTIC_RADIO
+    radio_poll();                               /* (2.1.9: Bluetooth MIDI, Wi-Fi, Link: once turned on) */
+#endif
     {                                           /* (the battery divider ~100 times a second: a supply that sags) */
         static uint32_t bt;
         if (fm1_ms - bt >= 10u) {
@@ -521,11 +567,11 @@ static void platform_poll(void)
 static void fm1_fault(const fm1_crash_t *c)
 {
     char b[12];
-    uint32_t i, t0, v[3] = {c->vec, c->pc, c->rets};
+    uint32_t i, t0, v[6] = {c->vec, c->pc, c->rets, c->emu, c->dbg, c->sp};   /* (2.1.9: which guard: EMU_MSG, DBG_MSG; the stack) */
     fm1_audio_stop();
     lcd_fill(0, 0, 240, 240, RGB(160, 0, 0));
     draw_text_box(0, 20, 240, &FONT_S, APP_NAME " CRASH", C_WHITE, 1);
-    for (i = 0; i < 3u; i++) {
+    for (i = 0; i < 6u; i++) {
         uint32_t k;
         for (k = 0; k < 8u; k++) b[k] = "0123456789ABCDEF"[(v[i] >> (28u - 4u * k)) & 15u];
         b[8] = 0;
@@ -594,6 +640,21 @@ void fm1_cstart(void)
     fm1_mailbox_clear();
     fm1_guard_enable(FM1_GUARD_STACK | FM1_GUARD_WRITE | FM1_GUARD_BUS | FM1_GUARD_PC);
     fm1_boot.p3_rst = (uint8_t)p3;
+    {                                           /* (2.1.9) M-VAVE's own supplies and power setup, as fm1-base's main_fm1.c does
+                                                 * before anything loads them (hal/fm1_sys.h): VDC14 1.60 V, SYSVDD 1.38 V
+                                                 * (read back, tried again), the 1.3 V supply on its DC-DC, VDDIO 3.2 V, the
+                                                 * Wi-Fi regulator automatic. At the boot loader's (1.40 V, 1.26 V) flash
+                                                 * fetches came back wrong under load: Wi-Fi and Bluetooth together crashed
+                                                 * Arctic Scream in harmless code (app_audio, usb_poll, the radio's own) */
+        uint32_t f = irq_save(), k;
+        for (k = 0; k < 3u; k++) {
+            fm1_vdc14_raise(7);
+            fm1_sysvdd_raise(15);
+            if (fm1_vdc14() == 7u && fm1_sysvdd() == 15u) break;
+        }
+        (void)fm1_power_stock();
+        irq_restore(f);
+    }
     if (boot_mode == BOOT_RECOVERY || recovery_key())
         recovery_main();                        /* OCT- at power-on: the USB rescue */
     flash_ok = fl_id_known(FL_FAR(fl_jedec_ram)());   /* either FM-1 chip (fm1_flash_id.h), else RAM only */
@@ -612,7 +673,9 @@ void fm1_cstart(void)
         uint32_t h = 2166136261u;
         while (*b) h = (h ^ (uint8_t)*b++) * 16777619u;
         fm1_cpu1_bar_build(h);
+#ifndef ARCTIC_ONE_CORE
         (void)fm1_cpu1_start();
+#endif
     }
     fm1_audio_init(abuf, HALF_WORDS, isr_alnk0, 3);   /* (abuf is zero: .bss) */
     usb_start();
