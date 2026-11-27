@@ -99,7 +99,7 @@ across the stereo field.
 - **TYPE** (MIXER 2): the track filter is a low-pass (`LP`), high-pass (`HP`) or band-pass (`BP`). `LP` open (CUTOFF at the top) or `HP` open (CUTOFF at the bottom) means no filtering. A band-pass is gentle at RESONANCE 0 and narrows as you turn it up.
 - **POS** (MIXER 2): `PRE`: the effect sends hear the filtered sound (as before 1.3). `POST`: only the track's dry sound is filtered; GRAIN, DELAY and SPACE hear it unfiltered (a dark track with a bright reverb, say).
 
-### DRIFT: the mix moving by itself (new in 2.1.8)
+### DRIFT: the mix moving by itself (new in 2.1.9)
 
 Press **HOME** a fourth time for **DRIFT**: an ambient mixer that slowly rearranges the tracks while they play, so a
 drone never settles. Every so often it deals a new mix: one sounding track near full, the others somewhere under it,
@@ -763,8 +763,8 @@ A track can play by itself: random notes of the **SCALE** (with chord mode on: r
 
 ## 11 · System: hold HOME
 
-**Hold HOME** for **SYSTEM**; press HOME again for **SYSTEM 2**, again for **SYSTEM 3**. These settings belong to the
-FM-1, not the project.
+**Hold HOME** for **SYSTEM**; press HOME again for **SYSTEM 2**, **SYSTEM 3**, **SYSTEM 4** and **NETWORK**. These
+settings belong to the FM-1, not the project.
 
 | SYSTEM | SYSTEM 2 |
 |---|---|
@@ -780,6 +780,7 @@ FM-1, not the project.
 | SYSTEM 2 | MIDI LEARN | SEQ MIDI OUT | SAMPLES | CLOCK (INT, I+OUT, USB, TRS) |
 | SYSTEM 3 | LATCH (FROM SOUND, ALWAYS OFF) | USB LEVEL (−12 to +24 dB, and each with SPK OFF) | MOD OUT (OFF, ON) | PICTURE (CARD, SKY, OFF) |
 | SYSTEM 4 (new in 2.1) | SOUND (AUTO, HEADPHONES, SPEAKER) | HELP (ON, OFF) | TOUCH (OFF, VELOCITY, VEL+PRESS) | |
+| NETWORK (new in 2.1.9) | WIFI (OFF, JOIN, HOTSPOT) | LINK (OFF, ON) | BLUETOOTH (OFF, ON) | |
 
 - **COLOUR:** pick the one that matches your FM-1. **MONO** (new in 2.0) turns the whole screen black and white, the
   greys as a fine pattern of dots, as on an old one-bit screen. The header stays clean so the sound's name reads.
@@ -856,6 +857,46 @@ go of the notes MIDI holds (a latched note stays). Aftertouch pushes a Holvut tr
 **SUSTAIN** (new in 2.1.7): a sustain pedal's CC 64 holds the notes you let go, keys and MIDI notes alike, until the
 pedal comes up. A note played again while it is down starts afresh instead of doubling. A latched track, the sequence
 and the arp are not touched. ALL NOTES OFF lets go of what the pedal holds too.
+
+### NETWORK: Wi-Fi, Ableton Link and Bluetooth MIDI (new in 2.1.9)
+
+The FM-1 has a radio inside, and Arctic Scream now uses it. **Hold HOME** and press HOME four more times for
+**NETWORK**. Its lines say what the radio is doing.
+
+- **WIFI**
+  - **HOTSPOT:** the FM-1 is the network. Its name (`FM1-` and four digits) and password are on the page. Join it from
+    your phone or laptop: no router needed, on stage or out in the woods.
+  - **JOIN:** the FM-1 joins your own Wi-Fi. Give it the network once from a computer, over USB:
+    `python3 tools/arctic_wifi.py join "NETWORK" "PASSWORD"`. The FM-1 keeps only the WPA2 key made from the password,
+    never the password itself, and joins again at every start. `arctic_wifi.py forget` forgets every network kept.
+  - **OFF:** the radio's Wi-Fi sleeps.
+- **MIDI over Wi-Fi:** with an address (HOTSPOT or JOIN), the FM-1 looks for a network MIDI session (RTP-MIDI, Apple's
+  "Network Session") and connects to the first it finds. On an iPhone: turn on the app's network session (in Ableton
+  Note: Settings, Link & MIDI, Input, **Network Session 1**). What the FM-1 sends over USB-MIDI goes there too: the
+  keys' notes, and with SEQ MIDI OUT the sequence's and the arp's. What the app sends comes in as MIDI in does. The page
+  says **NET MIDI ON** when it is connected.
+- **LINK (Ableton Link):** ON sets CLOCK to LINK (SYSTEM 2 shows it too). The FM-1 joins the Link session on the
+  network: the tempo, the beat and PLAY / STOP are shared with Ableton Live, Note and every Link app.
+  - The tempo knobs set the session's tempo, and another peer's comes here.
+  - PLAY starts on the session's next bar (alone: the next beat). STOP from anyone stops everyone.
+  - The sequencer and the arps play on the session's beat. The page shows the number of peers and the tempo.
+- **BLUETOOTH:** Bluetooth MIDI, as **Arctic Scream XXXX** (this FM-1's own four digits). Connect from the app's own
+  Bluetooth MIDI list (Ableton Note: Connect to Bluetooth; GarageBand: Settings, Advanced, Bluetooth MIDI Devices). Notes
+  and CCs in, as from USB; the FM-1's MIDI out goes there too.
+- **MIDI THRU:** notes that come in over USB or the TRS jack go on over Wi-Fi and Bluetooth MIDI too, so a computer
+  playing the FM-1 plays the phone's app through it as well. Never back to USB.
+- The radio stays asleep until one of the three is turned on; an FM-1 that never uses it plays as before. It starts a
+  few seconds after power-on when it was left on, and the sound pauses for about a second while it calibrates.
+- From a computer: `python3 tools/arctic_wifi.py status` prints the page's lines; `hotspot "PASSWORD"` sets the
+  hotspot's own password (8 to 63 characters; `hotspot ""` makes a new random one).
+- iOS sometimes keeps saying "Connected" after a Bluetooth link has dropped: tap the FM-1 in the app's Bluetooth list
+  to disconnect, and again to connect. Ableton Note plays incoming MIDI while an instrument's screen is open (tap a
+  clip slot in a Synth track).
+- Security: on a shared network, anyone in range could send the FM-1 faked network packets (a Link tempo, a stop).
+  Use HOTSPOT with its own password, or your own home network, when it matters.
+
+The Wi-Fi, Bluetooth and Link stacks are Henri David's (Optimist), as Charles Vestal's fm1-base carries them
+(`firmware/radio/README.md`, LICENSING.md).
 
 ### Good to know
 

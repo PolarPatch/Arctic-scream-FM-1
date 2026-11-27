@@ -52,7 +52,7 @@ PRODUCT = "FM-1_977"                # Arctic Scream 1.x: 977, every release (FM-
                                     # other firmwares hold 950, 95x, 961, so not Dinghy's 9 + minor); Dinghy is 99N
 VERSION = None                      # APP_VER for release builds (else DEFAULT_VERSION)
 DEFINES = []                        # --define: a test build's -D names (e.g. ARCTIC_FOO)
-DEFAULT_VERSION = "2.1.8"
+DEFAULT_VERSION = "2.1.9"
 RADIO_INC = [f"-Ifirmware/radio/{d}" for d in ("include", "device", "chip", "ble", "wifi", "link")]   # (2.1.9: the radio, firmware/radio/)
 
 

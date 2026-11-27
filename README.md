@@ -31,7 +31,14 @@ Free and open source (GPL-3.0). Unofficial firmware, not made or endorsed by M-V
   - **FEEDBACK** wakes it, **BODY** bends it, **DAMP** turns the scream into a growl, and **DRIVE** tears it.
   - New in 1.3: push **FEEDBACK** to its last steps and the howl **overblows**: it leaps up the note's overtones and screams higher. Play from a MIDI keyboard with **aftertouch** and pressing harder does the same: the note feeds back more, screams and climbs, and falls back when you ease off.
   - **BODY** now reaches ~92 ms, for slow pulses at the top of its range; four all-passes in the loop smear the scream like a small reverb.
-- **New in 2.1.8:**
+- **New in 2.1.9: Wi-Fi!** Play straight to Ableton Note on your phone.
+  - **NETWORK** (hold HOME, then HOME four more times): **WIFI** OFF, JOIN (your own network) or **HOTSPOT** (the FM-1
+    is the network: no router, on stage, anywhere).
+  - **MIDI over Wi-Fi** (RTP-MIDI, Apple's Network Session): the FM-1's notes go to Ableton Note or any app that
+    takes network MIDI, and come back in from it.
+  - **Ableton Link:** tempo, beat and PLAY / STOP shared with Live, Note and every Link app.
+  - **Bluetooth MIDI** too, and **MIDI THRU**: notes from USB or the jack go on over Wi-Fi and Bluetooth.
+  - The radio sleeps until you turn it on. The stacks are Henri David's (Optimist), via Charles Vestal's fm1-base.
   - **DRIFT** (HOME, tapped a fourth time): the mix moves by itself. The tracks' levels wander slowly, now and then
     one is left almost alone, each walks round the stereo field, and a track fading sounds far off (more reverb,
     darker). AMOUNT, PACE, WANDER and DISTANCE; at OFF the mix stays as set. After TheGrizard's After Images.
@@ -197,6 +204,7 @@ In the chip's download mode, Windows may ask to format the FM-1 as a disk. Alway
 - **Book of the Dead II** by DigDugDIY: the FX loop inside the feedback that became the LOOP page's BLOOM. An idea only; it is hardware.
 - **[FM-1 Screen Reader](https://github.com/charlesvestal/fm1-reader)** by Charles Vestal: the reader page and its protocol; `firmware/src/announce.c` and `tools/gen_words.py` are [fm1-base](https://github.com/charlesvestal/fm1-base)'s (MPL-2.0).
 - **[BlueWatch](https://github.com/PolarPatch/BlueWatch)** by PolarPatch: the colour palette.
+- **[Optimist](https://github.com/w0ts/optimist)** by Henri David and **[fm1-base](https://github.com/charlesvestal/fm1-base)** by Charles Vestal (2.1.9): the FM-1's own Wi-Fi, Bluetooth and Ableton Link stacks (GPL-3.0-only / MPL-2.0; Apache-2.0 radio tables), carried unchanged in `firmware/radio/`, and fm1-base's supply setup. MIDI over Wi-Fi is from PolarPatch's FM-1 Again.
 - **Press Start 2P** font by CodeMan38 and **Terminus** font by Dimitar Zhekov (SIL Open Font License 1.1).
 
 The PolarPatch logo belongs to PolarPatch and is not under the GPL. See [LICENSING.md](LICENSING.md) for the details.
